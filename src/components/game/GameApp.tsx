@@ -176,7 +176,10 @@ export function GameApp({
 
   function newStageQuestion(topic: Topic, n: number) {
     const problem = topic.gen(STAGE_DIFF[n - 1] as Difficulty);
-    const mode = weightedPick<Mode>([["type", 1], ["choice", 2], ["target", 2], ["truefalse", 2], ["arcade", 3]]);
+    const mode =
+      n === 1
+        ? weightedPick<Mode>([["type", 1], ["choice", 2], ["truefalse", 2]])
+        : weightedPick<Mode>([["type", 1], ["choice", 1], ["target", 2], ["truefalse", 1], ["arcade", 3]]);
     setCurProblem(problem);
     setCurMode(mode);
     setCurSelection(null);
