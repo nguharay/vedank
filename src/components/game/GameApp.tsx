@@ -42,7 +42,7 @@ import { useSound } from "./useSound";
 import { useTheme } from "./useTheme";
 
 type View = "home" | "topic" | "stagemap" | "practice" | "arena";
-type Mode = "type" | "choice" | "target" | "truefalse" | "arcade";
+type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "memory";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
 function ri(a: number, b: number) {
@@ -165,6 +165,7 @@ export function GameApp({
   const [streakPop, setStreakPop] = useState(false);
   const [buddyPop, setBuddyPop] = useState(false);
   const [runs, setRuns] = useState(0);
+  const [runReady, setRunReady] = useState(false);
   const [swingAnim, setSwingAnim] = useState<"hit" | "miss" | null>(null);
   const [feedback, setFeedback] = useState<{ show: boolean; ok: boolean; t2: string } | null>(null);
 
@@ -179,15 +180,16 @@ export function GameApp({
     const mode =
       n === 1
         ? weightedPick<Mode>([["type", 1], ["choice", 2], ["truefalse", 2]])
-        : weightedPick<Mode>([["type", 1], ["choice", 1], ["target", 2], ["truefalse", 1], ["arcade", 3]]);
+        : weightedPick<Mode>([["type", 1], ["choice", 1], ["target", 2], ["truefalse", 1], ["arcade", 3], ["memory", 2]]);
     setCurProblem(problem);
     setCurMode(mode);
     setCurSelection(null);
     setCheckEnabled(false);
     setWrongFlash(false);
     setSwingAnim(null);
+    setRunReady(false);
     if (mode === "choice") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
-    else if (mode === "target" || mode === "arcade") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 5)]));
+    else if (mode === "target" || mode === "arcade" || mode === "memory") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 5)]));
     else if (mode === "truefalse") {
       const isTrue = Math.random() < 0.5;
       setTfIsTrue(isTrue);
@@ -238,8 +240,8 @@ export function GameApp({
       setTimeout(() => setStreakPop(false), 220);
       if (curMode === "arcade") {
         setSwingAnim("hit");
-        setTimeout(() => setRuns((r) => r + 1), 380);
         setTimeout(() => setSwingAnim(null), 900);
+        setTimeout(() => setRunReady(true), 700);
       }
     } else {
       setHearts((h) => Math.max(0, h - 1));
@@ -259,8 +261,15 @@ export function GameApp({
     setFeedback({ show: true, ok, t2: ok ? "" : `${curProblem.prompt} = ${fmt(curProblem.answer)}` });
   }
 
+  function addRun() {
+    setRuns((r) => r + 1);
+    setRunReady(false);
+    sound.correct();
+  }
+
   async function onFeedbackContinue() {
     setFeedback(null);
+    if (runReady) addRun();
     const nextIndex = curStage.qIndex + 1;
     if (nextIndex >= QUESTIONS_PER_STAGE) {
       await finishStage();
@@ -536,7 +545,9 @@ export function GameApp({
             buddyMood={feedback ? (feedback.ok ? "excited" : "sad") : "happy"}
             buddyPop={buddyPop}
             runs={runs}
+            runReady={runReady}
             swingAnim={swingAnim}
+            onAddRun={addRun}
             typeInputRef={typeInputRef}
             practiceCardRef={practiceCardRef}
             onSelect={(v) => { setCurSelection(v); setCheckEnabled(true); sound.click(); }}
@@ -863,12 +874,14 @@ function PracticeView({
   buddyMood,
   buddyPop,
   runs,
+  runReady,
   swingAnim,
   typeInputRef,
   practiceCardRef,
   onSelect,
   onInputChange,
   onCheck,
+  onAddRun,
 }: {
   topic: Topic;
   stageN: number;
@@ -887,15 +900,18 @@ function PracticeView({
   buddyMood: "happy" | "excited" | "sad";
   buddyPop: boolean;
   runs: number;
+  runReady: boolean;
   swingAnim: "hit" | "miss" | null;
   typeInputRef: React.RefObject<HTMLInputElement | null>;
   practiceCardRef: React.RefObject<HTMLDivElement | null>;
   onSelect: (v: number | boolean) => void;
   onInputChange: (v: string) => void;
   onCheck: () => void;
+  onAddRun: () => void;
 }) {
   const modeTag =
-    mode === "type" ? "⌨️ Type it" : mode === "choice" ? "🧩 Choose the answer" : mode === "target" ? "🎯 Tap it fast!" : mode === "arcade" ? "⚾ Homerun Math" : "🔎 True or false?";
+    mode === "type" ? "⌨️ Type it" : mode === "choice" ? "🧩 Choose the answer" : mode === "target" ? "🎯 Tap it fast!" :
+    mode === "arcade" ? "⚾ Homerun Math" : mode === "memory" ? "🃏 Memory Flip" : "🔎 True or false?";
 
   return (
     <section className="view active">
@@ -963,7 +979,18 @@ function PracticeView({
             <div className="scoreboard">
               <span className="scoreboard-label">RUNS</span>
               <span className="scoreboard-runs mono">{runs}</span>
-              <span className="scoreboard-bat">⚾</span>
+              {runReady ? (
+                <button className="scoreboard-addrun" onClick={onAddRun}>➕ Score it!</button>
+              ) : (
+                <span className="scoreboard-bat">⚾</span>
+              )}
+            </div>
+            <div className="ballfield">
+              <div className={`batter${swingAnim === "hit" ? " swing-hit" : swingAnim === "miss" ? " swing-miss" : ""}`}>
+                <span className="batter-bat">🏏</span>
+                <span className="batter-fig">🧍</span>
+              </div>
+              {swingAnim === "hit" && <div className="hit-ball">⚾</div>}
             </div>
             <div className="diamond-tile-grid">
               {tileOptions.map((o) => (
@@ -978,6 +1005,22 @@ function PracticeView({
             </div>
             {swingAnim === "hit" && <div className="homerun-fx">HOME RUN!</div>}
             {swingAnim === "miss" && <div className="strike-fx">STRIKE!</div>}
+          </div>
+        )}
+        {mode === "memory" && (
+          <div className="memory-grid">
+            {tileOptions.map((o) => (
+              <button
+                key={o}
+                className={`memory-card${curSelection === o ? " flipped" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}`}
+                onClick={() => onSelect(o)}
+              >
+                <div className="memory-card-inner">
+                  <div className="memory-card-back">❓</div>
+                  <div className="memory-card-front">{fmt(o)}</div>
+                </div>
+              </button>
+            ))}
           </div>
         )}
         {mode === "truefalse" && (
