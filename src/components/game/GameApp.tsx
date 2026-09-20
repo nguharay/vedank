@@ -10,9 +10,11 @@ import {
   QUESTIONS_PER_STAGE,
   gradCss,
   makeDistractors,
+  RANKS_JA,
   type Difficulty,
   type Problem,
   type Topic,
+  type Lang,
 } from "@/lib/game/topics";
 import {
   PUZZLES,
@@ -41,6 +43,7 @@ import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS } from "./useSkins";
+import { useLang, UI, type UIDict } from "./i18n";
 
 type View = "home" | "topic" | "stagemap" | "practice" | "arena";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "memory";
@@ -91,6 +94,9 @@ export function GameApp({
   const [skinsOpen, setSkinsOpen] = useState(false);
   const theme = useTheme();
   const skin = useSkins();
+  const langHook = useLang();
+  const lang: Lang = langHook.lang;
+  const t = UI[lang];
   const [currentTopicId, setCurrentTopicId] = useState<string | null>(null);
   const currentTopic: Topic | null = currentTopicId ? TOPIC_BY_ID[currentTopicId] : null;
 
@@ -149,8 +155,7 @@ export function GameApp({
     setView("stagemap");
   }
 
-  const headerTitle =
-    view === "arena" ? "Matchstick Dojo" : view === "practice" ? "Speed Drill" : view === "stagemap" ? "Stage Map" : view === "topic" ? "Lesson" : "Sutra Sprint";
+  const headerTitle = t.headerTitles[view];
 
   function handleBack() {
     if (view === "practice") { openStageMap(currentTopicId!); }
@@ -329,8 +334,8 @@ export function GameApp({
       setTimeout(() => {
         setCelebrate({
           mood: "excited",
-          title: "Sutra Mastered!",
-          body: `You've cleared every stage of ${currentTopic.title}.`,
+          title: t.celebrate.sutraTitle,
+          body: t.celebrate.sutraBody(lang === "ja" ? currentTopic.titleJa : currentTopic.title),
         });
       }, 900);
     }
@@ -379,7 +384,7 @@ export function GameApp({
 
     if (selection === null) {
       if (isActive) setSelection(here);
-      else setPuzzleStatus({ text: "Tap a lit stick first, then tap where it should go.", color: "var(--ink-dim)" });
+      else setPuzzleStatus({ text: t.arena.tapFirst, color: "var(--ink-dim)" });
       return;
     }
     if (sameLoc(selection, here)) { setSelection(null); return; }
@@ -403,12 +408,12 @@ export function GameApp({
   async function checkSolved(g: Glyph[]) {
     const eq = currentEquationText(g);
     if (!eq.valid) {
-      setPuzzleStatus({ text: "Shape in progress: " + eq.text, color: "var(--ink-dim)" });
+      setPuzzleStatus({ text: t.arena.shapeInProgress + eq.text, color: "var(--ink-dim)" });
       return;
     }
     const ok = evalEquation(eq.parts);
     if (ok) {
-      setPuzzleStatus({ text: "🎉 Solved! " + eq.parts.join(" ") + " is true.", color: "var(--green-dk)" });
+      setPuzzleStatus({ text: t.arena.solvedPrefix + eq.parts.join(" ") + t.arena.solvedSuffix, color: "var(--green-dk)" });
       const p = PUZZLES[puzIdx];
       const already = !!progress.arena.solved[p.id];
       const res = await solvePuzzleAction(p.id, moveCount + 1);
@@ -425,13 +430,13 @@ export function GameApp({
         setTimeout(() => {
           setCelebrate({
             mood: "excited",
-            title: "Dojo round cleared!",
-            body: `You fixed it in ${moveCount + 1} move${moveCount + 1 === 1 ? "" : "s"} — par is ${p.par}.`,
+            title: t.celebrate.dojoTitle,
+            body: t.celebrate.dojoBody(moveCount + 1, p.par),
           });
         }, 300);
       }
     } else {
-      setPuzzleStatus({ text: eq.parts.join(" ") + " — not true yet.", color: "var(--red-dk)" });
+      setPuzzleStatus({ text: eq.parts.join(" ") + t.arena.notTrueYet, color: "var(--red-dk)" });
     }
   }
 
@@ -455,11 +460,11 @@ export function GameApp({
   function onHint() {
     const pair = computeHintDiff();
     if (!pair) {
-      setPuzzleStatus({ text: "You're already on the solution shape — place your move to win!", color: "var(--ink-dim)" });
+      setPuzzleStatus({ text: t.arena.alreadySolved, color: "var(--ink-dim)" });
       return;
     }
     setHintPair(pair);
-    setPuzzleStatus({ text: "💡 Pick up the glowing stick, then place it on the glowing target.", color: "var(--ink-dim)" });
+    setPuzzleStatus({ text: t.arena.hintText, color: "var(--ink-dim)" });
     setTimeout(() => setHintPair(null), 3200);
   }
 
@@ -483,7 +488,7 @@ export function GameApp({
             ←
           </button>
         ) : (
-          <button className="back-btn avatar-btn" aria-label="Account menu" onClick={() => setMenuOpen((o) => !o)}>
+          <button className="back-btn avatar-btn" aria-label={t.menu.accountLabel} onClick={() => setMenuOpen((o) => !o)}>
             {(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
           </button>
         )}
@@ -503,20 +508,24 @@ export function GameApp({
             <div className="account-menu-head">
               <div className="avatar-btn avatar-lg">{(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}</div>
               <div>
-                <div className="account-name">{user.name || "Player"}</div>
+                <div className="account-name">{user.name || t.menu.player}</div>
                 <div className="account-email">{user.email}</div>
               </div>
             </div>
             <button className="menu-row" onClick={sound.toggle}>
-              <span>{sound.on ? "🔊" : "🔇"} Sound</span>
-              <span className="menu-row-val">{sound.on ? "On" : "Off"}</span>
+              <span>{sound.on ? "🔊" : "🔇"} {t.menu.sound}</span>
+              <span className="menu-row-val">{sound.on ? t.menu.on : t.menu.off}</span>
             </button>
             <button className="menu-row" onClick={theme.cycle}>
-              <span>{theme.theme === "dark" ? "🌙" : theme.theme === "light" ? "☀️" : "🖥️"} Theme</span>
-              <span className="menu-row-val">{theme.theme === "system" ? "Auto" : theme.theme === "light" ? "Light" : "Dark"}</span>
+              <span>{theme.theme === "dark" ? "🌙" : theme.theme === "light" ? "☀️" : "🖥️"} {t.menu.theme}</span>
+              <span className="menu-row-val">{theme.theme === "system" ? t.menu.auto : theme.theme === "light" ? t.menu.light : t.menu.dark}</span>
+            </button>
+            <button className="menu-row" onClick={langHook.toggle}>
+              <span>🌐 {t.menu.language}</span>
+              <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
             </button>
             <button className="menu-row" onClick={() => setSkinsOpen((o) => !o)}>
-              <span>🎨 Skins</span>
+              <span>🎨 {t.menu.skins}</span>
               <span className="menu-row-val">{activeSkin.name}</span>
             </button>
             {skinsOpen && (
@@ -540,7 +549,7 @@ export function GameApp({
             )}
             <div className="menu-divider" />
             <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
-              <span>⏻ Sign out</span>
+              <span>⏻ {t.menu.signOut}</span>
             </button>
           </div>
         </>
@@ -561,18 +570,22 @@ export function GameApp({
             dailyStreak={dailyStreak}
             onOpenTopic={openTopic}
             onOpenArena={() => { loadPuzzle(puzIdx); setView("arena"); }}
+            lang={lang}
+            t={t}
           />
         )}
 
-        {view === "topic" && currentTopic && <TopicView topic={currentTopic} />}
+        {view === "topic" && currentTopic && <TopicView topic={currentTopic} lang={lang} t={t} />}
 
         {view === "stagemap" && currentTopic && (
-          <StageMapView topic={currentTopic} progress={progress} onPlay={startStage} />
+          <StageMapView topic={currentTopic} progress={progress} onPlay={startStage} lang={lang} t={t} />
         )}
 
         {view === "practice" && currentTopic && curProblem && (
           <PracticeView
             topic={currentTopic}
+            lang={lang}
+            t={t}
             stageN={curStage.n}
             qIndex={curStage.qIndex}
             correct={curStage.correct}
@@ -605,6 +618,7 @@ export function GameApp({
 
         {view === "arena" && (
           <ArenaView
+            t={t}
             puzIdx={puzIdx}
             glyphs={glyphs}
             tray={tray}
@@ -626,24 +640,24 @@ export function GameApp({
       <footer className="footerbar active" style={{ display: view === "home" ? "none" : "flex" }}>
         {view === "topic" && (
           <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
-            See the Stage Map →
+            {t.stageMap.seeStageMap}
           </button>
         )}
         {view === "practice" && (
           <>
             <button className="btn btn-ghost" onClick={() => openTopic(currentTopicId!)}>
-              📖 Lesson
+              {t.practice.lesson}
             </button>
             <button className="btn btn-primary" disabled={!checkEnabled} onClick={checkPractice}>
-              Check
+              {t.practice.check}
             </button>
           </>
         )}
         {view === "arena" && (
           <>
-            <button className="btn btn-ghost" onClick={onHint}>💡 Hint</button>
-            <button className="btn btn-ghost" onClick={() => loadPuzzle(puzIdx)}>↺ Reset</button>
-            <button className="btn btn-primary" onClick={() => loadPuzzle(puzIdx + 1)}>Next →</button>
+            <button className="btn btn-ghost" onClick={onHint}>{t.arena.hint}</button>
+            <button className="btn btn-ghost" onClick={() => loadPuzzle(puzIdx)}>{t.arena.reset}</button>
+            <button className="btn btn-primary" onClick={() => loadPuzzle(puzIdx + 1)}>{t.arena.next}</button>
           </>
         )}
       </footer>
@@ -653,11 +667,11 @@ export function GameApp({
           <div className="feedback-inner">
             <div className="feedback-icon">{feedback.ok ? "✓" : "✕"}</div>
             <div className="feedback-text">
-              <div className="t1">{feedback.ok ? "Correct!" : "Not quite!"}</div>
+              <div className="t1">{feedback.ok ? t.practice.correct : t.practice.incorrect}</div>
               <div className="t2">{feedback.t2}</div>
             </div>
             <button className="btn" style={{ flex: "0 0 auto" }} onClick={onFeedbackContinue}>
-              Continue
+              {t.practice.continueBtn}
             </button>
           </div>
         </div>
@@ -667,11 +681,11 @@ export function GameApp({
         <div className="show" id="stageResult" style={{ display: "flex", position: "fixed", inset: 0, zIndex: 55, alignItems: "center", justifyContent: "center", background: "rgba(15,15,30,.6)", backdropFilter: "blur(3px)" }}>
           <div className={`result-card${stageResult.isBoss && stageResult.passed ? " boss-clear" : ""}`}>
             {stageResult.isBoss && (
-              <div className="boss-badge">{stageResult.passed ? "👑 BOSS DEFEATED" : "👑 BOSS STAGE"}</div>
+              <div className="boss-badge">{stageResult.passed ? t.result.bossDefeated : t.result.bossStage}</div>
             )}
             <div className={`hanko ${stageResult.passed ? "" : "fail"}`}>
               <span className="jp">{stageResult.passed ? "合格" : "再挑戦"}</span>
-              <span className="en">{stageResult.passed ? "Clear" : "Retry"}</span>
+              <span className="en">{stageResult.passed ? t.result.clear : t.result.retry}</span>
             </div>
             <div className="result-stars">
               {[0, 1, 2].map((i) => (
@@ -680,19 +694,19 @@ export function GameApp({
                 </span>
               ))}
             </div>
-            <div className="result-sub">{stageResult.correct} / {QUESTIONS_PER_STAGE} correct</div>
+            <div className="result-sub">{t.result.correctOf(stageResult.correct, QUESTIONS_PER_STAGE)}</div>
             <div className="result-gems">+{stageResult.gemsGained} 💎</div>
             <div className="result-actions">
               {stageResult.passed ? (
                 stageResult.n < STAGE_COUNT ? (
-                  <button className="btn btn-primary" onClick={() => afterStageResult("next")}>Next Stage →</button>
+                  <button className="btn btn-primary" onClick={() => afterStageResult("next")}>{t.result.nextStage}</button>
                 ) : (
-                  <button className="btn btn-primary" onClick={() => afterStageResult("map")}>Back to Map</button>
+                  <button className="btn btn-primary" onClick={() => afterStageResult("map")}>{t.result.backToMap}</button>
                 )
               ) : (
-                <button className="btn btn-primary" onClick={() => afterStageResult("retry")}>Retry Stage</button>
+                <button className="btn btn-primary" onClick={() => afterStageResult("retry")}>{t.result.retryStage}</button>
               )}
-              <button className="btn btn-ghost" onClick={() => afterStageResult("map")}>Map</button>
+              <button className="btn btn-ghost" onClick={() => afterStageResult("map")}>{t.result.map}</button>
             </div>
           </div>
         </div>
@@ -705,7 +719,7 @@ export function GameApp({
             <h3>{celebrate.title}</h3>
             <p>{celebrate.body}</p>
             <button className="btn btn-primary" style={{ flex: "none", padding: "14px 28px" }} onClick={() => setCelebrate(null)}>
-              Continue
+              {t.celebrate.continueBtn}
             </button>
           </div>
         </div>
@@ -725,6 +739,8 @@ function HomeView({
   dailyStreak,
   onOpenTopic,
   onOpenArena,
+  lang,
+  t,
 }: {
   progress: ProgressState;
   li: ReturnType<typeof levelInfo>;
@@ -732,25 +748,28 @@ function HomeView({
   dailyStreak: number;
   onOpenTopic: (id: string) => void;
   onOpenArena: () => void;
+  lang: Lang;
+  t: UIDict;
 }) {
   const firstIncompleteIdx = (() => {
-    const idx = TOPICS.findIndex((t) => topicProgressOf(progress, t.id).cleared < STAGE_COUNT);
+    const idx = TOPICS.findIndex((tp) => topicProgressOf(progress, tp.id).cleared < STAGE_COUNT);
     return idx === -1 ? TOPICS.length - 1 : idx;
   })();
+  const rank = lang === "ja" ? RANKS_JA[li.rank] || li.rank : li.rank;
 
   return (
     <section className="view active">
       <div className="unit-banner">
         <svg className="mandala" viewBox="0 0 100 100"><Mandala stroke="#fff" /></svg>
         <div className="mascot"><Mascot mood="happy" /></div>
-        <div className="eyebrow">The Sutra Deck</div>
-        <h1>Play the Sutras</h1>
+        <div className="eyebrow">{t.home.eyebrow}</div>
+        <h1>{t.home.title}</h1>
         <div className="home-byline">
           <img src="/brand/vedank-mark.png" alt="" />
-          <span>VedAnk Academy</span>
+          <span>{t.home.brand}</span>
         </div>
         <div className="levelrow">
-          <span>Level {li.level} · {li.rank}</span>
+          <span>{t.home.level} {li.level} · {rank}</span>
           <span>{li.into} / 150</span>
         </div>
         <div className="bar-track"><div className="bar-fill" style={{ width: `${li.pct}%` }} /></div>
@@ -758,7 +777,7 @@ function HomeView({
 
       {dailyStreak > 0 && (
         <div className="streak-calendar">
-          <span className="streak-calendar-label">🔥 {dailyStreak}-day streak</span>
+          <span className="streak-calendar-label">🔥 {dailyStreak}{t.home.streakSuffix}</span>
           <div className="streak-days">
             {Array.from({ length: 7 }, (_, i) => 6 - i).map((daysAgo) => (
               <span key={daysAgo} className={`streak-day${daysAgo < dailyStreak ? " lit" : ""}`}>
@@ -771,8 +790,8 @@ function HomeView({
 
       <div className="path-wrap">
         <div className="path-line" />
-        {TOPICS.map((t, i) => {
-          const p = topicProgressOf(progress, t.id);
+        {TOPICS.map((tp, i) => {
+          const p = topicProgressOf(progress, tp.id);
           const isCurrent = i === firstIncompleteIdx;
           const boss =
             i === 6 ? (
@@ -782,29 +801,29 @@ function HomeView({
                     🔥
                     <span className="boss-chip">{solvedCount}/{PUZZLES.length}</span>
                   </div>
-                  <div className="node-label">Matchstick Dojo</div>
+                  <div className="node-label">{t.home.dojo}</div>
                 </div>
               </div>
             ) : null;
           return (
-            <div key={t.id}>
+            <div key={tp.id}>
               {boss}
               <div className={`path-row pos-${PATH_POS[i % PATH_POS.length]}`}>
                 <div className="node-wrap">
-                  {isCurrent && <div className="node-bubble">Play</div>}
+                  {isCurrent && <div className="node-bubble">{t.home.play}</div>}
                   <div
                     className={`node${isCurrent ? " current" : ""}`}
-                    style={{ background: gradCss(t.grad) }}
-                    onClick={() => onOpenTopic(t.id)}
+                    style={{ background: gradCss(tp.grad) }}
+                    onClick={() => onOpenTopic(tp.id)}
                   >
-                    {t.icon}
+                    {tp.icon}
                     <span className="stage-pips">
                       {Array.from({ length: STAGE_COUNT }, (_, k) => (
                         <i key={k} className={k < p.cleared ? "on" : ""} />
                       ))}
                     </span>
                   </div>
-                  <div className="node-label">{t.title}</div>
+                  <div className="node-label">{lang === "ja" ? tp.titleJa : tp.title}</div>
                 </div>
               </div>
             </div>
@@ -815,30 +834,35 @@ function HomeView({
   );
 }
 
-function TopicView({ topic }: { topic: Topic }) {
+function TopicView({ topic, lang, t }: { topic: Topic; lang: Lang; t: UIDict }) {
   const ex = topic.example();
-  const rows = topic.exSteps(ex);
+  const rows = topic.exSteps(ex, lang);
+  const title = lang === "ja" ? topic.titleJa : topic.title;
+  const sutraEn = lang === "ja" ? topic.sutraEnJa : topic.sutraEn;
+  const blurb = lang === "ja" ? topic.blurbJa : topic.blurb;
+  const steps = lang === "ja" ? topic.stepsJa : topic.steps;
   return (
     <section className="view active">
       <div className="topic-head">
         <div className="icon-badge" style={{ background: gradCss(topic.grad) }}>{topic.icon}</div>
         <div className="sutra-tag" style={{ background: gradCss(topic.grad) }}>
-          🕉 {topic.sutraSa} — {topic.sutraEn}
+          🕉 {topic.sutraSa} — {sutraEn}
         </div>
-        <h1>{topic.title}</h1>
-        <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 8, lineHeight: 1.5, fontWeight: 600 }}>{topic.blurb}</p>
+        <h1>{title}</h1>
+        <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 8, lineHeight: 1.5, fontWeight: 600 }}>{blurb}</p>
       </div>
       <div className="topic-illus" dangerouslySetInnerHTML={{ __html: ILLUS[topic.illus](topic.grad[0], topic.grad[1]) }} />
       <div className="card">
-        <h4>How it works</h4>
+        <h4>{t.topicView.howItWorks}</h4>
         <ol className="steps">
-          {topic.steps.map((s, i) => (
+          {steps.map((s, i) => (
             <li key={i}>
               <span className="n" style={{ background: gradCss(topic.grad) }}>{i + 1}</span>
               <span>{s}</span>
             </li>
           ))}
         </ol>
+        <div className="worked-caption">{lang === "ja" ? "計算例" : "Worked example"}</div>
         <div className="worked">
           {rows.map((r, i) => (
             <div className="ex-line mono" key={i}>
@@ -856,10 +880,14 @@ function StageMapView({
   topic,
   progress,
   onPlay,
+  lang,
+  t,
 }: {
   topic: Topic;
   progress: ProgressState;
   onPlay: (n: number) => void;
+  lang: Lang;
+  t: UIDict;
 }) {
   const p = topicProgressOf(progress, topic.id);
   return (
@@ -868,9 +896,9 @@ function StageMapView({
         <div className="sutra-tag" style={{ background: gradCss(topic.grad), display: "inline-flex" }}>
           🕉 {topic.sutraSa}
         </div>
-        <h1 style={{ fontSize: 22 }}>{topic.title}</h1>
+        <h1 style={{ fontSize: 22 }}>{lang === "ja" ? topic.titleJa : topic.title}</h1>
         <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 6, fontWeight: 600 }}>
-          Clear a stage (3 of 5 right) to unlock the next. 5 in a row earns all 3 stars.
+          {t.stageMap.instructions}
         </p>
       </div>
       <div className="stage-track">
@@ -882,7 +910,7 @@ function StageMapView({
           return (
             <div className={`stage-row pos-${STAGE_POS[(n - 1) % STAGE_POS.length]}`} key={n}>
               <div className="node-wrap">
-                {isCurrent && <div className="node-bubble">Play</div>}
+                {isCurrent && <div className="node-bubble">{t.stageMap.play}</div>}
                 <div
                   className={`stage-node${unlocked ? "" : " locked"}${isCurrent ? " current" : ""}`}
                   style={unlocked ? { background: gradCss(topic.grad) } : {}}
@@ -935,6 +963,8 @@ function PracticeView({
   onInputChange,
   onCheck,
   onAddRun,
+  lang,
+  t,
 }: {
   topic: Topic;
   stageN: number;
@@ -964,11 +994,12 @@ function PracticeView({
   onInputChange: (v: string) => void;
   onCheck: () => void;
   onAddRun: () => void;
+  lang: Lang;
+  t: UIDict;
 }) {
   const comboTier = comboStreak >= 9 ? 3 : comboStreak >= 6 ? 2 : comboStreak >= 3 ? 1 : 0;
-  const modeTag =
-    mode === "type" ? "⌨️ Type it" : mode === "choice" ? "🧩 Choose the answer" : mode === "target" ? "🎯 Tap it fast!" :
-    mode === "arcade" ? "⚾ Homerun Math" : mode === "memory" ? "🃏 Memory Flip" : "🔎 True or false?";
+  const modeTag = t.practice.modeTags[mode];
+  const title = lang === "ja" ? topic.titleJa : topic.title;
 
   return (
     <section className="view active">
@@ -976,16 +1007,16 @@ function PracticeView({
         <div className="progress-top-fill" style={{ width: `${Math.round((qIndex / QUESTIONS_PER_STAGE) * 100)}%` }} />
       </div>
       <div className="topic-head" style={{ marginTop: 2 }}>
-        <div className={`eyebrow-tag${isBoss ? " boss-tag" : ""}`}>{isBoss ? "👑 Boss Stage" : `Stage ${stageN} of ${STAGE_COUNT}`}</div>
+        <div className={`eyebrow-tag${isBoss ? " boss-tag" : ""}`}>{isBoss ? t.practice.bossStage : t.practice.stageOf(stageN, STAGE_COUNT)}</div>
         <div className="sutra-tag" style={{ background: gradCss(topic.grad) }}>🕉 {topic.sutraSa}</div>
-        <h1>{topic.title}</h1>
+        <h1>{title}</h1>
       </div>
       <div className={`practice-card${isBoss ? " boss-card" : ""}`} ref={practiceCardRef}>
         <div className={`practice-buddy${buddyPop ? " pop" : ""}`}>
           <Mascot mood={buddyMood} />
         </div>
         <div className="practice-meta">
-          <span>Question {qIndex + 1} / {QUESTIONS_PER_STAGE}</span>
+          <span>{t.practice.question} {qIndex + 1} / {QUESTIONS_PER_STAGE}</span>
           <span className={`streak-flame${streakPop ? " pop" : ""}${correct >= 3 ? " combo3" : ""}`}>🔥 {correct}</span>
           {comboTier > 0 && <span className="combo-badge">×{comboTier + 1}</span>}
         </div>
@@ -1035,10 +1066,10 @@ function PracticeView({
         {mode === "arcade" && (
           <div className={`arcade-board skin-${skinId}${swingAnim ? ` swing-${swingAnim}` : ""}`}>
             <div className="scoreboard">
-              <span className="scoreboard-label">RUNS</span>
+              <span className="scoreboard-label">{t.practice.runs}</span>
               <span className="scoreboard-runs mono">{runs}</span>
               {runReady ? (
-                <button className="scoreboard-addrun" onClick={onAddRun}>➕ Score it!</button>
+                <button className="scoreboard-addrun" onClick={onAddRun}>{t.practice.scoreIt}</button>
               ) : (
                 <span className="scoreboard-bat">⚾</span>
               )}
@@ -1061,8 +1092,8 @@ function PracticeView({
                 </button>
               ))}
             </div>
-            {swingAnim === "hit" && <div className="homerun-fx">HOME RUN!</div>}
-            {swingAnim === "miss" && <div className="strike-fx">STRIKE!</div>}
+            {swingAnim === "hit" && <div className="homerun-fx">{t.practice.homeRun}</div>}
+            {swingAnim === "miss" && <div className="strike-fx">{t.practice.strike}</div>}
           </div>
         )}
         {mode === "memory" && (
@@ -1089,13 +1120,13 @@ function PracticeView({
                 className={`tf-btn${curSelection === true ? " picked true" : ""}${curSelection === true && shakeTile ? " shake-tile" : ""}`}
                 onClick={() => onSelect(true)}
               >
-                <span className="ic">✅</span>True
+                <span className="ic">✅</span>{t.practice.true}
               </button>
               <button
                 className={`tf-btn${curSelection === false ? " picked false" : ""}${curSelection === false && shakeTile ? " shake-tile" : ""}`}
                 onClick={() => onSelect(false)}
               >
-                <span className="ic">❌</span>False
+                <span className="ic">❌</span>{t.practice.false}
               </button>
             </div>
           </>
@@ -1120,6 +1151,7 @@ function ArenaView({
   onHint,
   onReset,
   onNext,
+  t,
 }: {
   puzIdx: number;
   glyphs: Glyph[];
@@ -1135,6 +1167,7 @@ function ArenaView({
   onHint: () => void;
   onReset: () => void;
   onNext: () => void;
+  t: UIDict;
 }) {
   const p = PUZZLES[puzIdx];
   const cellW = 46, gap = 16, opW = 40;
@@ -1175,21 +1208,21 @@ function ArenaView({
     <section className="view active">
       <div className="topic-head">
         <div className="icon-badge" style={{ background: "linear-gradient(135deg,#FF5D3A,#FFC93C)" }}>🔥</div>
-        <div className="sutra-tag" style={{ background: "linear-gradient(135deg,#FF5D3A,#FF9A2E)" }}>Matchstick Dojo</div>
-        <h1>Move a stick, fix the sum</h1>
+        <div className="sutra-tag" style={{ background: "linear-gradient(135deg,#FF5D3A,#FF9A2E)" }}>{t.headerTitles.arena}</div>
+        <h1>{t.arena.title}</h1>
         <p style={{ color: "var(--muted)", fontSize: 13.5, marginTop: 6, lineHeight: 1.5, fontWeight: 600 }}>
-          Tap a lit stick to pick it up, then tap an empty spot — on the board or the tray — to place it. Every equation here bends true in exactly one move.
+          {t.arena.instructions}
         </p>
       </div>
       <div className="puzzle-nav">
-        <span>Round {puzIdx + 1} of {PUZZLES.length}</span>
+        <span>{t.arena.round(puzIdx + 1, PUZZLES.length)}</span>
         <div className="dot-row">
           {PUZZLES.map((pz, i) => (
             <div key={pz.id} className={`dot${i === puzIdx ? " on" : ""}${solvedMap[pz.id] && i !== puzIdx ? " solved" : ""}`} />
           ))}
         </div>
       </div>
-      <div><span className="par-chip">🎯 Par: {p.par} move{p.par === 1 ? "" : "s"}</span></div>
+      <div><span className="par-chip">{t.arena.par(p.par)}</span></div>
       <div className="puzzle-board">
         <svg className="mandala-watermark" viewBox="0 0 100 100"><Mandala stroke="#7A4E2C" /></svg>
         <div className="board-svg-wrap">
@@ -1197,7 +1230,7 @@ function ArenaView({
         </div>
       </div>
       <div className="tray-wrap">
-        <span className="tray-label">Spare tray</span>
+        <span className="tray-label">{t.arena.trayLabel}</span>
         <div className="tray-slots">
           {tray.map((on, idx) => {
             const isSel = selection && selection.loc === "tray" && selection.idx === idx;
@@ -1214,8 +1247,8 @@ function ArenaView({
         </div>
       </div>
       <div className="moves-row">
-        <span>Moves used: <b>{moveCount}</b></span>
-        <span>Best: <b>{bestMoves != null ? bestMoves : "–"}</b></span>
+        <span>{t.arena.movesUsed} <b>{moveCount}</b></span>
+        <span>{t.arena.best} <b>{bestMoves != null ? bestMoves : "–"}</b></span>
       </div>
       <div className="puzzle-status" style={{ color: status.color }}>{status.text}</div>
       <div className="story-chip">{p.story}</div>

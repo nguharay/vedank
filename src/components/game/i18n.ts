@@ -1,0 +1,256 @@
+"use client";
+import { useEffect, useState } from "react";
+
+const STORE_KEY = "sutraSprint.lang";
+export type LangCode = "en" | "ja";
+
+export function useLang() {
+  const [lang, setLangState] = useState<LangCode>("en");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORE_KEY) as LangCode | null;
+      if (saved === "en" || saved === "ja") setLangState(saved);
+    } catch {}
+  }, []);
+
+  function setLang(next: LangCode) {
+    setLangState(next);
+    try {
+      localStorage.setItem(STORE_KEY, next);
+    } catch {}
+  }
+
+  function toggle() {
+    setLang(lang === "en" ? "ja" : "en");
+  }
+
+  return { lang, setLang, toggle };
+}
+
+export type UIDict = {
+  appName: string;
+  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string };
+  menu: {
+    accountLabel: string; player: string; sound: string; on: string; off: string;
+    theme: string; auto: string; light: string; dark: string; skins: string; language: string; signOut: string;
+  };
+  home: { eyebrow: string; title: string; brand: string; level: string; dojo: string; streakSuffix: string; play: string };
+  topicView: { howItWorks: string };
+  stageMap: { instructions: string; play: string; seeStageMap: string };
+  practice: {
+    question: string; lesson: string; check: string; continueBtn: string; correct: string; incorrect: string; bossStage: string;
+    stageOf: (n: number, total: number) => string;
+    modeTags: { type: string; choice: string; target: string; arcade: string; memory: string; truefalse: string };
+    runs: string; scoreIt: string; homeRun: string; strike: string; true: string; false: string;
+  };
+  result: {
+    clear: string; retry: string; correctOf: (c: number, total: number) => string;
+    bossDefeated: string; bossStage: string; nextStage: string; backToMap: string; retryStage: string; map: string;
+  };
+  celebrate: {
+    continueBtn: string; dojoTitle: string; dojoBody: (moves: number, par: number) => string;
+    sutraTitle: string; sutraBody: (topicTitle: string) => string;
+  };
+  arena: {
+    title: string; instructions: string; round: (n: number, total: number) => string; par: (n: number) => string;
+    trayLabel: string; movesUsed: string; best: string; hint: string; reset: string; next: string;
+    alreadySolved: string; hintText: string; tapFirst: string; shapeInProgress: string; solvedPrefix: string;
+    solvedSuffix: string; notTrueYet: string;
+  };
+};
+
+export const UI: Record<LangCode, UIDict> = {
+  en: {
+    appName: "Sutra Sprint",
+    headerTitles: { home: "Sutra Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Speed Drill", arena: "Matchstick Dojo" },
+    menu: {
+      accountLabel: "Account menu",
+      player: "Player",
+      sound: "Sound",
+      on: "On",
+      off: "Off",
+      theme: "Theme",
+      auto: "Auto",
+      light: "Light",
+      dark: "Dark",
+      skins: "Skins",
+      language: "Language",
+      signOut: "Sign out",
+    },
+    home: {
+      eyebrow: "The Sutra Deck",
+      title: "Play the Sutras",
+      brand: "VedAnk Academy",
+      level: "Level",
+      dojo: "Matchstick Dojo",
+      streakSuffix: "-day streak",
+      play: "Play",
+    },
+    topicView: {
+      howItWorks: "How it works",
+    },
+    stageMap: {
+      instructions: "Clear a stage (3 of 5 right) to unlock the next. 5 in a row earns all 3 stars.",
+      play: "Play",
+      seeStageMap: "See the Stage Map →",
+    },
+    practice: {
+      question: "Question",
+      lesson: "📖 Lesson",
+      check: "Check",
+      continueBtn: "Continue",
+      correct: "Correct!",
+      incorrect: "Not quite!",
+      bossStage: "👑 Boss Stage",
+      stageOf: (n: number, total: number) => `Stage ${n} of ${total}`,
+      modeTags: {
+        type: "⌨️ Type it",
+        choice: "🧩 Choose the answer",
+        target: "🎯 Tap it fast!",
+        arcade: "⚾ Homerun Math",
+        memory: "🃏 Memory Flip",
+        truefalse: "🔎 True or false?",
+      },
+      runs: "RUNS",
+      scoreIt: "➕ Score it!",
+      homeRun: "HOME RUN!",
+      strike: "STRIKE!",
+      true: "True",
+      false: "False",
+    },
+    result: {
+      clear: "Clear",
+      retry: "Retry",
+      correctOf: (c: number, total: number) => `${c} / ${total} correct`,
+      bossDefeated: "👑 BOSS DEFEATED",
+      bossStage: "👑 BOSS STAGE",
+      nextStage: "Next Stage →",
+      backToMap: "Back to Map",
+      retryStage: "Retry Stage",
+      map: "Map",
+    },
+    celebrate: {
+      continueBtn: "Continue",
+      dojoTitle: "Dojo round cleared!",
+      dojoBody: (moves: number, par: number) => `You fixed it in ${moves} move${moves === 1 ? "" : "s"} — par is ${par}.`,
+      sutraTitle: "Sutra Mastered!",
+      sutraBody: (topicTitle: string) => `You've cleared every stage of ${topicTitle}.`,
+    },
+    arena: {
+      title: "Move a stick, fix the sum",
+      instructions: "Tap a lit stick to pick it up, then tap an empty spot — on the board or the tray — to place it. Every equation here bends true in exactly one move.",
+      round: (n: number, total: number) => `Round ${n} of ${total}`,
+      par: (n: number) => `🎯 Par: ${n} move${n === 1 ? "" : "s"}`,
+      trayLabel: "Spare tray",
+      movesUsed: "Moves used:",
+      best: "Best:",
+      hint: "💡 Hint",
+      reset: "↺ Reset",
+      next: "Next →",
+      alreadySolved: "You're already on the solution shape — place your move to win!",
+      hintText: "💡 Pick up the glowing stick, then place it on the glowing target.",
+      tapFirst: "Tap a lit stick first, then tap where it should go.",
+      shapeInProgress: "Shape in progress: ",
+      solvedPrefix: "🎉 Solved! ",
+      solvedSuffix: " is true.",
+      notTrueYet: " — not true yet.",
+    },
+  },
+  ja: {
+    appName: "スートラ・スプリント",
+    headerTitles: { home: "スートラ・スプリント", topic: "レッスン", stagemap: "ステージマップ", practice: "スピードドリル", arena: "マッチ棒道場" },
+    menu: {
+      accountLabel: "アカウントメニュー",
+      player: "プレイヤー",
+      sound: "サウンド",
+      on: "オン",
+      off: "オフ",
+      theme: "テーマ",
+      auto: "自動",
+      light: "ライト",
+      dark: "ダーク",
+      skins: "スキン",
+      language: "言語",
+      signOut: "ログアウト",
+    },
+    home: {
+      eyebrow: "スートラデッキ",
+      title: "スートラで遊ぼう",
+      brand: "VedAnk Academy",
+      level: "レベル",
+      dojo: "マッチ棒道場",
+      streakSuffix: "日連続",
+      play: "プレイ",
+    },
+    topicView: {
+      howItWorks: "解き方",
+    },
+    stageMap: {
+      instructions: "ステージをクリア（5問中3問正解）すると次に進めます。5問連続正解で星3つ獲得。",
+      play: "プレイ",
+      seeStageMap: "ステージマップを見る →",
+    },
+    practice: {
+      question: "問題",
+      lesson: "📖 レッスン",
+      check: "確認",
+      continueBtn: "続ける",
+      correct: "正解！",
+      incorrect: "ちがうよ！",
+      bossStage: "👑 ボスステージ",
+      stageOf: (n: number, total: number) => `ステージ ${n} / ${total}`,
+      modeTags: {
+        type: "⌨️ 数字を入力",
+        choice: "🧩 答えを選ぶ",
+        target: "🎯 すばやくタップ！",
+        arcade: "⚾ ホームラン算",
+        memory: "🃏 カードめくり",
+        truefalse: "🔎 正か誤か？",
+      },
+      runs: "得点",
+      scoreIt: "➕ 得点を入れる！",
+      homeRun: "ホームラン！",
+      strike: "ストライク！",
+      true: "正しい",
+      false: "誤り",
+    },
+    result: {
+      clear: "合格",
+      retry: "再挑戦",
+      correctOf: (c: number, total: number) => `${total}問中 ${c}問 正解`,
+      bossDefeated: "👑 ボス撃破！",
+      bossStage: "👑 ボスステージ",
+      nextStage: "次のステージへ →",
+      backToMap: "マップへ戻る",
+      retryStage: "ステージ再挑戦",
+      map: "マップ",
+    },
+    celebrate: {
+      continueBtn: "続ける",
+      dojoTitle: "道場ラウンドクリア！",
+      dojoBody: (moves: number, par: number) => `${moves}手で解けました――目標は${par}手。`,
+      sutraTitle: "スートラ マスター！",
+      sutraBody: (topicTitle: string) => `「${topicTitle}」のすべてのステージをクリアしました。`,
+    },
+    arena: {
+      title: "マッチ棒を1本動かして式を直そう",
+      instructions: "光っているマッチ棒をタップして持ち上げ、空いている場所（ボードまたはトレイ）にタップして置きます。すべての式はちょうど1手で正しくなります。",
+      round: (n: number, total: number) => `ラウンド ${n} / ${total}`,
+      par: (n: number) => `🎯 目標：${n}手`,
+      trayLabel: "予備トレイ",
+      movesUsed: "使った手数：",
+      best: "ベスト：",
+      hint: "💡 ヒント",
+      reset: "↺ リセット",
+      next: "次へ →",
+      alreadySolved: "もう正解の形になっています――そのまま動かして勝利！",
+      hintText: "💡 光っているマッチ棒を持ち上げて、光っている場所に置きましょう。",
+      tapFirst: "まず光っているマッチ棒をタップし、次に置きたい場所をタップしてください。",
+      shapeInProgress: "形を変えています：",
+      solvedPrefix: "🎉 解けました！ ",
+      solvedSuffix: " は正しい式です。",
+      notTrueYet: " ――まだ正しくありません。",
+    },
+  },
+};
