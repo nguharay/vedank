@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
-const PUBLIC_PATHS = ["/login", "/signup"];
+const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password"];
+// Signed-in visitors get bounced home from these — but not from
+// forgot/reset-password, since resetting while logged in is reasonable.
+const AUTH_ONLY_PATHS = ["/login", "/signup"];
 
 export const proxy = auth((req) => {
   const { pathname } = req.nextUrl;
-  const isPublic = PUBLIC_PATHS.some((p) => pathname === p);
+  const isPublic = PUBLIC_PATHS.some((p) => pathname === p) || pathname.startsWith("/reset-password/");
   const isAuthed = !!req.auth;
 
   if (!isAuthed && !isPublic) {
@@ -13,7 +16,7 @@ export const proxy = auth((req) => {
     url.searchParams.set("from", pathname);
     return NextResponse.redirect(url);
   }
-  if (isAuthed && isPublic) {
+  if (isAuthed && AUTH_ONLY_PATHS.includes(pathname)) {
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   }
   return NextResponse.next();
@@ -25,5 +28,5 @@ export const proxy = auth((req) => {
 // Keep this list explicit rather than a negative-lookahead pattern —
 // simpler to reason about, and avoids the whole app matching by accident.
 export const config = {
-  matcher: ["/", "/login", "/signup"],
+  matcher: ["/", "/login", "/signup", "/forgot-password", "/reset-password/:token*"],
 };

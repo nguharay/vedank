@@ -11,6 +11,7 @@ export default function LoginPage() {
   return (
     <div className="auth-shell">
       <div className="auth-card">
+        <img src="/brand/vedank-logo.png" alt="VedAnk Academy" className="auth-logo" />
         <div className="auth-mascot">
           <Mascot mood="happy" />
         </div>
@@ -30,6 +31,9 @@ export default function LoginPage() {
             {pending ? "Signing in…" : "Sign in"}
           </button>
         </form>
+        <div className="auth-switch">
+          <Link href="/forgot-password">Forgot password?</Link>
+        </div>
         <div className="auth-switch">
           New here? <Link href="/signup">Create an account</Link>
         </div>

@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Sutra Sprint",
   description:
     "A Vedic Math game: 14 sutras as stage-based lessons, an interactive matchstick puzzle dojo, and mixed question formats.",
+  icons: { icon: "/brand/vedank-mark.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

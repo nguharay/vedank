@@ -300,3 +300,45 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .auth-submit{ width:100%; margin-top:20px; }
 .auth-switch{ text-align:center; margin-top:18px; font-size:13.5px; color:var(--muted); font-weight:600; }
 .auth-switch a{ color:var(--blue); font-weight:800; text-decoration:none; }
+
+/* ---------- reward toast ---------- */
+.reward-toast{ position:fixed; z-index:70; pointer-events:none; font-weight:800; font-size:15px; color:var(--blue);
+  transform:translate(-50%,-10px); animation: rewardFloat .9s ease-out forwards; }
+@keyframes rewardFloat{ 0%{ opacity:0; transform:translate(-50%,-10px) scale(.8); } 15%{ opacity:1; transform:translate(-50%,-24px) scale(1.05); }
+  100%{ opacity:0; transform:translate(-50%,-70px) scale(1); } }
+@media (prefers-reduced-motion: reduce){ .reward-toast{ animation:none; opacity:0; } }
+
+/* ---------- daily streak calendar ---------- */
+.streak-calendar{ margin-top:14px; background:var(--surface); border:2px solid var(--line); border-radius:16px; padding:12px 14px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.streak-calendar-label{ font-weight:800; font-size:13px; color:var(--ink); white-space:nowrap; }
+.streak-days{ display:flex; gap:5px; }
+.streak-day{ font-size:15px; opacity:.25; filter:grayscale(1); }
+.streak-day.lit{ opacity:1; filter:none; }
+
+/* ---------- mascot animation ---------- */
+.mascot-bob{ animation: mascotBob 2.4s ease-in-out infinite; transform-origin: 50% 85%; }
+@keyframes mascotBob{ 0%,100%{ transform: translateY(0) rotate(0deg); } 50%{ transform: translateY(-4px) rotate(-2deg); } }
+.mascot-shadow{ animation: mascotShadow 2.4s ease-in-out infinite; }
+@keyframes mascotShadow{ 0%,100%{ opacity:.1; transform:scale(1); } 50%{ opacity:.06; transform:scale(.85); } }
+.mascot-blink{ animation: mascotBlink 4.5s ease-in-out infinite; transform-origin: 50% 50%; transform-box: fill-box; }
+@keyframes mascotBlink{ 0%,93%,100%{ transform:scaleY(1); } 96%{ transform:scaleY(.12); } }
+@media (prefers-reduced-motion: reduce){ .mascot-bob, .mascot-shadow, .mascot-blink{ animation:none; } }
+
+/* practice-screen reactive buddy */
+.practice-buddy{ position:absolute; top:14px; right:14px; width:44px; height:44px; }
+.practice-buddy.pop{ animation: buddyPop .4s ease; }
+@keyframes buddyPop{ 0%{ transform:scale(1); } 40%{ transform:scale(1.25) rotate(6deg); } 100%{ transform:scale(1); } }
+
+/* ---------- stage-map node stagger ---------- */
+.stage-row{ animation: cardIn .35s cubic-bezier(.2,.9,.3,1) both; }
+
+/* ---------- brand lockup ---------- */
+.brand-lockup{ display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:14px; }
+.brand-lockup img{ height:28px; width:auto; }
+.brand-lockup span{ font-size:11px; font-weight:800; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+.header-mark{ width:26px; height:26px; border-radius:8px; flex:0 0 auto; object-fit:contain; }
+.auth-logo{ display:block; margin:0 auto 14px; height:40px; width:auto; }
+.home-byline{ display:flex; align-items:center; gap:6px; margin-top:8px; opacity:.85; }
+.home-byline img{ height:16px; width:auto; filter:brightness(0) invert(1); }
+.home-byline span{ font-size:10.5px; font-weight:700; color:#fff; letter-spacing:.04em; text-transform:uppercase; }

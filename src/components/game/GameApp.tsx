@@ -38,6 +38,7 @@ import { finishStageAction, solvePuzzleAction } from "@/lib/actions/game-actions
 import { ILLUS } from "./illustrations";
 import { Mascot, Mandala } from "./Mascot";
 import { useConfetti } from "./useConfetti";
+import { useSound } from "./useSound";
 
 type View = "home" | "topic" | "stagemap" | "practice" | "arena";
 type Mode = "type" | "choice" | "target" | "truefalse";
@@ -73,7 +74,13 @@ function sameLoc(a: Loc | null, b: Loc | null) {
 const PATH_POS = ["c", "l", "r", "c", "l", "r", "c", "l", "r", "c", "l", "r", "c"];
 const STAGE_POS = ["c", "l", "r", "l", "c"];
 
-export function GameApp({ initialProgress }: { initialProgress: ProgressState }) {
+export function GameApp({
+  initialProgress,
+  dailyStreak,
+}: {
+  initialProgress: ProgressState;
+  dailyStreak: number;
+}) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
   const [currentTopicId, setCurrentTopicId] = useState<string | null>(null);
@@ -82,11 +89,23 @@ export function GameApp({ initialProgress }: { initialProgress: ProgressState })
   const [hearts, setHearts] = useState(5);
   const [bestStreakEver, setBestStreakEver] = useState(0);
   const [sparkles, setSparkles] = useState<{ left: number; top: number; delay: number; size: number }[]>([]);
+  const [toasts, setToasts] = useState<{ id: number; x: number; y: number; text: string }[]>([]);
+  const toastIdRef = useRef(0);
 
   const confetti = useConfetti();
+  const sound = useSound();
   const practiceCardRef = useRef<HTMLDivElement | null>(null);
   const puzzleSvgRef = useRef<SVGSVGElement | null>(null);
   const typeInputRef = useRef<HTMLInputElement | null>(null);
+
+  function spawnToast(text: string, fromEl: HTMLElement | null) {
+    const r = fromEl?.getBoundingClientRect();
+    const x = r ? r.left + r.width / 2 : window.innerWidth / 2;
+    const y = r ? r.top : window.innerHeight / 3;
+    const id = ++toastIdRef.current;
+    setToasts((t) => [...t, { id, x, y, text }]);
+    setTimeout(() => setToasts((t) => t.filter((tt) => tt.id !== id)), 1000);
+  }
 
   useEffect(() => {
     const glyphs = ["✦", "✧", "⋆", "✺", "✴"];
@@ -139,6 +158,7 @@ export function GameApp({ initialProgress }: { initialProgress: ProgressState })
   const [wrongFlash, setWrongFlash] = useState(false);
   const [shakeTile, setShakeTile] = useState(false);
   const [streakPop, setStreakPop] = useState(false);
+  const [buddyPop, setBuddyPop] = useState(false);
   const [feedback, setFeedback] = useState<{ show: boolean; ok: boolean; t2: string } | null>(null);
 
   const [stageResult, setStageResult] = useState<
@@ -200,16 +220,21 @@ export function GameApp({ initialProgress }: { initialProgress: ProgressState })
         return { ...s, correct };
       });
       confetti.burstFromEl(practiceCardRef.current, 22);
+      sound.correct();
+      spawnToast("+10 💎", practiceCardRef.current);
       setStreakPop(true);
       setTimeout(() => setStreakPop(false), 220);
     } else {
       setHearts((h) => Math.max(0, h - 1));
+      sound.wrong();
       if (curMode === "type") setWrongFlash(true);
       else setShakeTile(true);
       setShakeQuestion(true);
       setTimeout(() => setShakeQuestion(false), 400);
       setTimeout(() => setShakeTile(false), 400);
     }
+    setBuddyPop(true);
+    setTimeout(() => setBuddyPop(false), 400);
     setFeedback({ show: true, ok, t2: ok ? "" : `${curProblem.prompt} = ${fmt(curProblem.answer)}` });
   }
 
@@ -229,20 +254,26 @@ export function GameApp({ initialProgress }: { initialProgress: ProgressState })
     const correct = curStage.correct;
     const n = curStage.n;
     const result = await finishStageAction(currentTopic.id, n, correct);
+    const levelBefore = li.level;
 
     setProgress((prev) => {
       const p = topicProgressOf(prev, currentTopic.id);
       const nextStars = { ...p.stageStars };
       if (result.stars > (nextStars[String(n)] || 0)) nextStars[String(n)] = result.stars;
       const nextCleared = result.justUnlocked ? n : p.cleared;
-      return {
+      const next: ProgressState = {
         ...prev,
         topics: { ...prev.topics, [currentTopic.id]: { cleared: nextCleared, stageStars: nextStars } },
       };
+      if (levelInfo(next).level > levelBefore) setTimeout(() => sound.levelUp(), 500);
+      return next;
     });
 
     setStageResult({ passed: result.passed, stars: result.stars, correct, gemsGained: result.gemsGained, n });
-    if (result.passed) confetti.burstCenter(100, 0.4);
+    if (result.passed) {
+      confetti.burstCenter(100, 0.4);
+      sound.stageClear();
+    }
     if (result.passed && n === STAGE_COUNT) {
       setTimeout(() => {
         setCelebrate({
@@ -314,6 +345,7 @@ export function GameApp({ initialProgress }: { initialProgress: ProgressState })
     setTray(nextTray);
     setMoveCount((m) => m + 1);
     setSelection(null);
+    sound.click();
     checkSolved(nextGlyphs);
   }
 
@@ -337,6 +369,7 @@ export function GameApp({ initialProgress }: { initialProgress: ProgressState })
         },
       }));
       confetti.burstFromEl(puzzleSvgRef.current as unknown as HTMLElement, 70);
+      sound.stageClear();
       if (!already) {
         setTimeout(() => {
           setCelebrate({
@@ -403,13 +436,23 @@ export function GameApp({ initialProgress }: { initialProgress: ProgressState })
             ⏻
           </button>
         )}
+        <img src="/brand/vedank-mark.png" alt="" className="header-mark" />
         <div className="header-title"><h1>{headerTitle}</h1></div>
         <div className="stats-row">
           <span className="stat stat-flame">🔥 {bestStreakEver}</span>
           <span className="stat stat-gem">💎 {gems}</span>
           <span className="stat stat-heart">❤️ {hearts}</span>
+          <button className="back-btn" aria-label={sound.on ? "Mute sound" : "Unmute sound"} onClick={sound.toggle} style={{ width: 30, height: 30, fontSize: 14 }}>
+            {sound.on ? "🔊" : "🔇"}
+          </button>
         </div>
       </header>
+
+      {toasts.map((t) => (
+        <span key={t.id} className="reward-toast" style={{ left: t.x, top: t.y }}>
+          {t.text}
+        </span>
+      ))}
 
       <main>
         {view === "home" && (
@@ -417,6 +460,7 @@ export function GameApp({ initialProgress }: { initialProgress: ProgressState })
             progress={progress}
             li={li}
             solvedCount={solvedCount}
+            dailyStreak={dailyStreak}
             onOpenTopic={openTopic}
             onOpenArena={() => { loadPuzzle(puzIdx); setView("arena"); }}
           />
@@ -444,9 +488,11 @@ export function GameApp({ initialProgress }: { initialProgress: ProgressState })
             wrongFlash={wrongFlash}
             shakeTile={shakeTile}
             streakPop={streakPop}
+            buddyMood={feedback ? (feedback.ok ? "excited" : "sad") : "happy"}
+            buddyPop={buddyPop}
             typeInputRef={typeInputRef}
             practiceCardRef={practiceCardRef}
-            onSelect={(v) => { setCurSelection(v); setCheckEnabled(true); }}
+            onSelect={(v) => { setCurSelection(v); setCheckEnabled(true); sound.click(); }}
             onInputChange={(v) => setCheckEnabled(v.trim() !== "")}
             onCheck={checkPractice}
           />
@@ -568,12 +614,14 @@ function HomeView({
   progress,
   li,
   solvedCount,
+  dailyStreak,
   onOpenTopic,
   onOpenArena,
 }: {
   progress: ProgressState;
   li: ReturnType<typeof levelInfo>;
   solvedCount: number;
+  dailyStreak: number;
   onOpenTopic: (id: string) => void;
   onOpenArena: () => void;
 }) {
@@ -589,12 +637,29 @@ function HomeView({
         <div className="mascot"><Mascot mood="happy" /></div>
         <div className="eyebrow">The Sutra Deck</div>
         <h1>Play the Sutras</h1>
+        <div className="home-byline">
+          <img src="/brand/vedank-mark.png" alt="" />
+          <span>VedAnk Academy</span>
+        </div>
         <div className="levelrow">
           <span>Level {li.level} · {li.rank}</span>
           <span>{li.into} / 150</span>
         </div>
         <div className="bar-track"><div className="bar-fill" style={{ width: `${li.pct}%` }} /></div>
       </div>
+
+      {dailyStreak > 0 && (
+        <div className="streak-calendar">
+          <span className="streak-calendar-label">🔥 {dailyStreak}-day streak</span>
+          <div className="streak-days">
+            {Array.from({ length: 7 }, (_, i) => 6 - i).map((daysAgo) => (
+              <span key={daysAgo} className={`streak-day${daysAgo < dailyStreak ? " lit" : ""}`}>
+                🔥
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="path-wrap">
         <div className="path-line" />
@@ -748,6 +813,8 @@ function PracticeView({
   wrongFlash,
   shakeTile,
   streakPop,
+  buddyMood,
+  buddyPop,
   typeInputRef,
   practiceCardRef,
   onSelect,
@@ -768,6 +835,8 @@ function PracticeView({
   wrongFlash: boolean;
   shakeTile: boolean;
   streakPop: boolean;
+  buddyMood: "happy" | "excited" | "sad";
+  buddyPop: boolean;
   typeInputRef: React.RefObject<HTMLInputElement | null>;
   practiceCardRef: React.RefObject<HTMLDivElement | null>;
   onSelect: (v: number | boolean) => void;
@@ -788,6 +857,9 @@ function PracticeView({
         <h1>{topic.title}</h1>
       </div>
       <div className="practice-card" ref={practiceCardRef}>
+        <div className={`practice-buddy${buddyPop ? " pop" : ""}`}>
+          <Mascot mood={buddyMood} />
+        </div>
         <div className="practice-meta">
           <span>Question {qIndex + 1} / {QUESTIONS_PER_STAGE}</span>
           <span className={`streak-flame${streakPop ? " pop" : ""}${correct >= 3 ? " combo3" : ""}`}>🔥 {correct}</span>

@@ -28,6 +28,38 @@ for (const t of TOPICS) {
           const n = Number(m![1].replace(/,/g, ""));
           if (digitSumFn(n) !== r.answer) fails.push(`digitsum mismatch ${n}`);
         }
+        // formula-based topics: verify the "trick" answer against direct arithmetic on the prompt
+        const mult = r.prompt.match(/^(\d+) × (\d+)$/);
+        if (mult && (t.id === "balancing" || t.id === "baseBelow100" || t.id === "baseAbove100" || t.id === "generalMult2d")) {
+          const [, a, b] = mult;
+          if (Number(a) * Number(b) !== r.answer) fails.push(`${t.id} mult mismatch: ${r.prompt} -> ${r.answer}`);
+        }
+        const times9or111 = r.prompt.match(/^(\d+) × (9|111)$/);
+        if (times9or111 && (t.id === "mult9" || t.id === "mult111")) {
+          const [, n, factor] = times9or111;
+          if (Number(n) * Number(factor) !== r.answer) fails.push(`${t.id} mismatch: ${r.prompt} -> ${r.answer}`);
+        }
+        const addM = r.prompt.match(/^(\d+) \+ (\d+)$/);
+        if (addM && t.id === "additionGeneral") {
+          const [, a, b] = addM;
+          if (Number(a) + Number(b) !== r.answer) fails.push(`additionGeneral mismatch: ${r.prompt} -> ${r.answer}`);
+        }
+        const subM = r.prompt.match(/^([\d,]+) − ([\d,]+)$/);
+        if (subM && (t.id === "subtractionGeneral" || t.id === "subOtherThan10s")) {
+          const a = Number(subM[1].replace(/,/g, "")), b = Number(subM[2].replace(/,/g, ""));
+          if (a - b !== r.answer) fails.push(`${t.id} mismatch: ${r.prompt} -> ${r.answer}`);
+          if (a <= b) fails.push(`${t.id} non-positive operands: ${r.prompt}`);
+        }
+        const divM = r.prompt.match(/^(\d+) ÷ 8/);
+        if (divM && t.id === "div8") {
+          if (Math.floor(Number(divM[1]) / 8) !== r.answer) fails.push(`div8 mismatch: ${r.prompt} -> ${r.answer}`);
+        }
+        const sq5 = r.prompt.match(/^(\d+)²$/);
+        if (sq5 && t.id === "squareStart5") {
+          const n = Number(sq5[1]);
+          if (n * n !== r.answer) fails.push(`squareStart5 mismatch: ${r.prompt} -> ${r.answer}`);
+          if (!/^5/.test(sq5[1])) fails.push(`squareStart5 doesn't start with 5: ${sq5[1]}`);
+        }
         const d3 = makeDistractors(r.answer, 3);
         const d5 = makeDistractors(r.answer, 5);
         if (new Set(d3).size !== 3 || d3.includes(r.answer)) fails.push(`${t.id} bad d3 ${JSON.stringify(d3)}`);

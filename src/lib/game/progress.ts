@@ -1,12 +1,47 @@
 import { eq, and } from "drizzle-orm";
 import { getDb } from "@/db";
-import { topicProgress, arenaProgress } from "@/db/schema";
+import { topicProgress, arenaProgress, users } from "@/db/schema";
 import { TOPICS, PASS_THRESHOLD, QUESTIONS_PER_STAGE } from "./topics";
 import { PUZZLES } from "./matchstick";
 import type { ProgressState, TopicProgressRow } from "./state";
 
 export type { ProgressState, TopicProgressRow };
 export { totalGems, levelInfo } from "./state";
+
+function todayUTC() {
+  return new Date().toISOString().slice(0, 10);
+}
+function daysBetween(a: string, b: string) {
+  return Math.round((new Date(a + "T00:00:00Z").getTime() - new Date(b + "T00:00:00Z").getTime()) / 86_400_000);
+}
+
+export type DailyStreakInfo = { dailyStreak: number; bestDailyStreak: number; isNewDay: boolean };
+
+// Called once per app-open (from the home page server component) — not tied
+// to signing in, since a JWT session can persist across days without a
+// fresh login. Advances the calendar streak at most once per calendar day.
+export async function touchDailyStreak(userId: string): Promise<DailyStreakInfo> {
+  const db = getDb();
+  const rows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const user = rows[0];
+  if (!user) return { dailyStreak: 0, bestDailyStreak: 0, isNewDay: false };
+
+  const today = todayUTC();
+  if (user.lastActiveDate === today) {
+    return { dailyStreak: user.dailyStreak, bestDailyStreak: user.bestDailyStreak, isNewDay: false };
+  }
+
+  const gap = user.lastActiveDate ? daysBetween(today, user.lastActiveDate) : null;
+  const nextStreak = gap === 1 ? user.dailyStreak + 1 : 1;
+  const nextBest = Math.max(user.bestDailyStreak, nextStreak);
+
+  await db
+    .update(users)
+    .set({ lastActiveDate: today, dailyStreak: nextStreak, bestDailyStreak: nextBest })
+    .where(eq(users.id, userId));
+
+  return { dailyStreak: nextStreak, bestDailyStreak: nextBest, isNewDay: true };
+}
 
 export async function loadProgress(userId: string): Promise<ProgressState> {
   const db = getDb();

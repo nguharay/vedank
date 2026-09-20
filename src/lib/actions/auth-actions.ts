@@ -43,7 +43,9 @@ export async function loginAction(
     await signIn("credentials", { email, password, redirectTo: "/" });
   } catch (err: unknown) {
     if (err instanceof AuthError) {
-      return { error: "Incorrect email or password." };
+      return {
+        error: "Incorrect email or password, or this account is temporarily locked after too many attempts.",
+      };
     }
     throw err;
   }

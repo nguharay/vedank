@@ -6,6 +6,7 @@ import {
   boolean,
   jsonb,
   timestamp,
+  date,
   primaryKey,
 } from "drizzle-orm/pg-core";
 
@@ -15,6 +16,15 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   name: text("name").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+
+  // login rate-limiting
+  failedAttempts: integer("failed_attempts").notNull().default(0),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+
+  // daily login streak (separate from in-stage streaks)
+  lastActiveDate: date("last_active_date"),
+  dailyStreak: integer("daily_streak").notNull().default(0),
+  bestDailyStreak: integer("best_daily_streak").notNull().default(0),
 });
 
 export const topicProgress = pgTable(
@@ -44,3 +54,14 @@ export const arenaProgress = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.puzzleId] })]
 );
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});

@@ -11,6 +11,7 @@ export default function SignupPage() {
   return (
     <div className="auth-shell">
       <div className="auth-card">
+        <img src="/brand/vedank-logo.png" alt="VedAnk Academy" className="auth-logo" />
         <div className="auth-mascot">
           <Mascot mood="excited" />
         </div>
