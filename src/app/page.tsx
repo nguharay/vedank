@@ -9,5 +9,11 @@ export default async function HomePage() {
     ? await Promise.all([loadProgress(userId), touchDailyStreak(userId)])
     : [{ topics: {}, arena: { solved: {}, bestMoves: {} } }, { dailyStreak: 0, bestDailyStreak: 0, isNewDay: false }];
 
-  return <GameApp initialProgress={progress} dailyStreak={daily.dailyStreak} />;
+  return (
+    <GameApp
+      initialProgress={progress}
+      dailyStreak={daily.dailyStreak}
+      user={{ name: session?.user?.name ?? null, email: session?.user?.email ?? null }}
+    />
+  );
 }

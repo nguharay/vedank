@@ -39,9 +39,10 @@ import { ILLUS } from "./illustrations";
 import { Mascot, Mandala } from "./Mascot";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
+import { useTheme } from "./useTheme";
 
 type View = "home" | "topic" | "stagemap" | "practice" | "arena";
-type Mode = "type" | "choice" | "target" | "truefalse";
+type Mode = "type" | "choice" | "target" | "truefalse" | "arcade";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
 function ri(a: number, b: number) {
@@ -77,12 +78,16 @@ const STAGE_POS = ["c", "l", "r", "l", "c"];
 export function GameApp({
   initialProgress,
   dailyStreak,
+  user,
 }: {
   initialProgress: ProgressState;
   dailyStreak: number;
+  user: { name: string | null; email: string | null };
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const theme = useTheme();
   const [currentTopicId, setCurrentTopicId] = useState<string | null>(null);
   const currentTopic: Topic | null = currentTopicId ? TOPIC_BY_ID[currentTopicId] : null;
 
@@ -159,6 +164,8 @@ export function GameApp({
   const [shakeTile, setShakeTile] = useState(false);
   const [streakPop, setStreakPop] = useState(false);
   const [buddyPop, setBuddyPop] = useState(false);
+  const [runs, setRuns] = useState(0);
+  const [swingAnim, setSwingAnim] = useState<"hit" | "miss" | null>(null);
   const [feedback, setFeedback] = useState<{ show: boolean; ok: boolean; t2: string } | null>(null);
 
   const [stageResult, setStageResult] = useState<
@@ -169,14 +176,15 @@ export function GameApp({
 
   function newStageQuestion(topic: Topic, n: number) {
     const problem = topic.gen(STAGE_DIFF[n - 1] as Difficulty);
-    const mode = weightedPick<Mode>([["type", 1], ["choice", 2], ["target", 2], ["truefalse", 2]]);
+    const mode = weightedPick<Mode>([["type", 1], ["choice", 2], ["target", 2], ["truefalse", 2], ["arcade", 3]]);
     setCurProblem(problem);
     setCurMode(mode);
     setCurSelection(null);
     setCheckEnabled(false);
     setWrongFlash(false);
+    setSwingAnim(null);
     if (mode === "choice") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
-    else if (mode === "target") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 5)]));
+    else if (mode === "target" || mode === "arcade") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 5)]));
     else if (mode === "truefalse") {
       const isTrue = Math.random() < 0.5;
       setTfIsTrue(isTrue);
@@ -188,6 +196,7 @@ export function GameApp({
     if (!currentTopic) return;
     setCurStage({ n, qIndex: 0, correct: 0 });
     setHearts(5);
+    setRuns(0);
     newStageQuestion(currentTopic, n);
     setView("practice");
   }
@@ -224,6 +233,11 @@ export function GameApp({
       spawnToast("+10 💎", practiceCardRef.current);
       setStreakPop(true);
       setTimeout(() => setStreakPop(false), 220);
+      if (curMode === "arcade") {
+        setSwingAnim("hit");
+        setTimeout(() => setRuns((r) => r + 1), 380);
+        setTimeout(() => setSwingAnim(null), 900);
+      }
     } else {
       setHearts((h) => Math.max(0, h - 1));
       sound.wrong();
@@ -232,6 +246,10 @@ export function GameApp({
       setShakeQuestion(true);
       setTimeout(() => setShakeQuestion(false), 400);
       setTimeout(() => setShakeTile(false), 400);
+      if (curMode === "arcade") {
+        setSwingAnim("miss");
+        setTimeout(() => setSwingAnim(null), 700);
+      }
     }
     setBuddyPop(true);
     setTimeout(() => setBuddyPop(false), 400);
@@ -432,8 +450,8 @@ export function GameApp({
             ←
           </button>
         ) : (
-          <button className="back-btn" aria-label="Sign out" onClick={() => signOut({ redirectTo: "/login" })} title="Sign out">
-            ⏻
+          <button className="back-btn avatar-btn" aria-label="Account menu" onClick={() => setMenuOpen((o) => !o)}>
+            {(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
           </button>
         )}
         <img src="/brand/vedank-mark.png" alt="" className="header-mark" />
@@ -442,11 +460,35 @@ export function GameApp({
           <span className="stat stat-flame">🔥 {bestStreakEver}</span>
           <span className="stat stat-gem">💎 {gems}</span>
           <span className="stat stat-heart">❤️ {hearts}</span>
-          <button className="back-btn" aria-label={sound.on ? "Mute sound" : "Unmute sound"} onClick={sound.toggle} style={{ width: 30, height: 30, fontSize: 14 }}>
-            {sound.on ? "🔊" : "🔇"}
-          </button>
         </div>
       </header>
+
+      {menuOpen && (
+        <>
+          <div className="menu-overlay" onClick={() => setMenuOpen(false)} />
+          <div className="account-menu">
+            <div className="account-menu-head">
+              <div className="avatar-btn avatar-lg">{(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}</div>
+              <div>
+                <div className="account-name">{user.name || "Player"}</div>
+                <div className="account-email">{user.email}</div>
+              </div>
+            </div>
+            <button className="menu-row" onClick={sound.toggle}>
+              <span>{sound.on ? "🔊" : "🔇"} Sound</span>
+              <span className="menu-row-val">{sound.on ? "On" : "Off"}</span>
+            </button>
+            <button className="menu-row" onClick={theme.cycle}>
+              <span>{theme.theme === "dark" ? "🌙" : theme.theme === "light" ? "☀️" : "🖥️"} Theme</span>
+              <span className="menu-row-val">{theme.theme === "system" ? "Auto" : theme.theme === "light" ? "Light" : "Dark"}</span>
+            </button>
+            <div className="menu-divider" />
+            <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
+              <span>⏻ Sign out</span>
+            </button>
+          </div>
+        </>
+      )}
 
       {toasts.map((t) => (
         <span key={t.id} className="reward-toast" style={{ left: t.x, top: t.y }}>
@@ -490,6 +532,8 @@ export function GameApp({
             streakPop={streakPop}
             buddyMood={feedback ? (feedback.ok ? "excited" : "sad") : "happy"}
             buddyPop={buddyPop}
+            runs={runs}
+            swingAnim={swingAnim}
             typeInputRef={typeInputRef}
             practiceCardRef={practiceCardRef}
             onSelect={(v) => { setCurSelection(v); setCheckEnabled(true); sound.click(); }}
@@ -815,6 +859,8 @@ function PracticeView({
   streakPop,
   buddyMood,
   buddyPop,
+  runs,
+  swingAnim,
   typeInputRef,
   practiceCardRef,
   onSelect,
@@ -837,6 +883,8 @@ function PracticeView({
   streakPop: boolean;
   buddyMood: "happy" | "excited" | "sad";
   buddyPop: boolean;
+  runs: number;
+  swingAnim: "hit" | "miss" | null;
   typeInputRef: React.RefObject<HTMLInputElement | null>;
   practiceCardRef: React.RefObject<HTMLDivElement | null>;
   onSelect: (v: number | boolean) => void;
@@ -844,7 +892,7 @@ function PracticeView({
   onCheck: () => void;
 }) {
   const modeTag =
-    mode === "type" ? "⌨️ Type it" : mode === "choice" ? "🧩 Choose the answer" : mode === "target" ? "🎯 Tap it fast!" : "🔎 True or false?";
+    mode === "type" ? "⌨️ Type it" : mode === "choice" ? "🧩 Choose the answer" : mode === "target" ? "🎯 Tap it fast!" : mode === "arcade" ? "⚾ Homerun Math" : "🔎 True or false?";
 
   return (
     <section className="view active">
@@ -905,6 +953,28 @@ function PracticeView({
                 {fmt(o)}
               </button>
             ))}
+          </div>
+        )}
+        {mode === "arcade" && (
+          <div className={`arcade-board${swingAnim ? ` swing-${swingAnim}` : ""}`}>
+            <div className="scoreboard">
+              <span className="scoreboard-label">RUNS</span>
+              <span className="scoreboard-runs mono">{runs}</span>
+              <span className="scoreboard-bat">⚾</span>
+            </div>
+            <div className="diamond-tile-grid">
+              {tileOptions.map((o) => (
+                <button
+                  key={o}
+                  className={`ball-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}`}
+                  onClick={() => onSelect(o)}
+                >
+                  {fmt(o)}
+                </button>
+              ))}
+            </div>
+            {swingAnim === "hit" && <div className="homerun-fx">HOME RUN!</div>}
+            {swingAnim === "miss" && <div className="strike-fx">STRIKE!</div>}
           </div>
         )}
         {mode === "truefalse" && (
