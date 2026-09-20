@@ -40,6 +40,7 @@ import { Mascot, Mandala } from "./Mascot";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
 import { useTheme } from "./useTheme";
+import { useSkins, SKINS } from "./useSkins";
 
 type View = "home" | "topic" | "stagemap" | "practice" | "arena";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "memory";
@@ -87,7 +88,9 @@ export function GameApp({
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [skinsOpen, setSkinsOpen] = useState(false);
   const theme = useTheme();
+  const skin = useSkins();
   const [currentTopicId, setCurrentTopicId] = useState<string | null>(null);
   const currentTopic: Topic | null = currentTopicId ? TOPIC_BY_ID[currentTopicId] : null;
 
@@ -128,6 +131,11 @@ export function GameApp({
   const li = useMemo(() => levelInfo(progress), [progress]);
   const gems = useMemo(() => totalGems(progress), [progress]);
   const solvedCount = Object.values(progress.arena.solved).filter(Boolean).length;
+  const bossClears = useMemo(
+    () => Object.values(progress.topics).filter((p) => p.cleared >= STAGE_COUNT).length,
+    [progress]
+  );
+  const activeSkin = SKINS.find((s) => s.id === skin.skinId) || SKINS[0];
 
   function goHome() {
     setView("home");
@@ -167,11 +175,13 @@ export function GameApp({
   const [runs, setRuns] = useState(0);
   const [runReady, setRunReady] = useState(false);
   const [swingAnim, setSwingAnim] = useState<"hit" | "miss" | null>(null);
+  const [comboStreak, setComboStreak] = useState(0);
   const [feedback, setFeedback] = useState<{ show: boolean; ok: boolean; t2: string } | null>(null);
+  const isBoss = curStage.n === STAGE_COUNT;
 
   const [stageResult, setStageResult] = useState<
     | null
-    | { passed: boolean; stars: number; correct: number; gemsGained: number; n: number }
+    | { passed: boolean; stars: number; correct: number; gemsGained: number; n: number; isBoss: boolean }
   >(null);
   const [celebrate, setCelebrate] = useState<{ mood: "happy" | "excited"; title: string; body: string } | null>(null);
 
@@ -202,6 +212,7 @@ export function GameApp({
     setCurStage({ n, qIndex: 0, correct: 0 });
     setHearts(5);
     setRuns(0);
+    setComboStreak(0);
     newStageQuestion(currentTopic, n);
     setView("practice");
   }
@@ -233,18 +244,26 @@ export function GameApp({
         setBestStreakEver((b) => Math.max(b, correct));
         return { ...s, correct };
       });
-      confetti.burstFromEl(practiceCardRef.current, 22);
-      sound.correct();
-      spawnToast("+10 💎", practiceCardRef.current);
+      const nextCombo = comboStreak + 1;
+      const tier = nextCombo >= 9 ? 3 : nextCombo >= 6 ? 2 : nextCombo >= 3 ? 1 : 0;
+      const multiplier = tier + 1;
+      setComboStreak(nextCombo);
+      confetti.burstFromEl(practiceCardRef.current, 18 + tier * 8);
+      if (tier > 0 && (nextCombo === 3 || nextCombo === 6 || nextCombo === 9)) sound.combo(tier);
+      else sound.correct();
+      spawnToast(tier > 0 ? `+${10 * multiplier} 💎 COMBO x${multiplier}!` : "+10 💎", practiceCardRef.current);
       setStreakPop(true);
       setTimeout(() => setStreakPop(false), 220);
       if (curMode === "arcade") {
+        sound.hit();
         setSwingAnim("hit");
         setTimeout(() => setSwingAnim(null), 900);
         setTimeout(() => setRunReady(true), 700);
       }
+      if (curMode === "memory") sound.flip();
     } else {
       setHearts((h) => Math.max(0, h - 1));
+      setComboStreak(0);
       sound.wrong();
       if (curMode === "type") setWrongFlash(true);
       else setShakeTile(true);
@@ -299,10 +318,12 @@ export function GameApp({
       return next;
     });
 
-    setStageResult({ passed: result.passed, stars: result.stars, correct, gemsGained: result.gemsGained, n });
+    const wasBoss = n === STAGE_COUNT;
+    setStageResult({ passed: result.passed, stars: result.stars, correct, gemsGained: result.gemsGained, n, isBoss: wasBoss });
     if (result.passed) {
-      confetti.burstCenter(100, 0.4);
-      sound.stageClear();
+      confetti.burstCenter(wasBoss ? 160 : 100, wasBoss ? 0.55 : 0.4);
+      if (wasBoss) sound.bossFanfare();
+      else sound.stageClear();
     }
     if (result.passed && n === STAGE_COUNT) {
       setTimeout(() => {
@@ -494,6 +515,29 @@ export function GameApp({
               <span>{theme.theme === "dark" ? "🌙" : theme.theme === "light" ? "☀️" : "🖥️"} Theme</span>
               <span className="menu-row-val">{theme.theme === "system" ? "Auto" : theme.theme === "light" ? "Light" : "Dark"}</span>
             </button>
+            <button className="menu-row" onClick={() => setSkinsOpen((o) => !o)}>
+              <span>🎨 Skins</span>
+              <span className="menu-row-val">{activeSkin.name}</span>
+            </button>
+            {skinsOpen && (
+              <div className="skins-panel">
+                {SKINS.map((s) => {
+                  const unlocked = s.unlocked(li.level, bossClears);
+                  return (
+                    <button
+                      key={s.id}
+                      className={`skin-swatch${skin.skinId === s.id ? " active" : ""}${unlocked ? "" : " locked"}`}
+                      disabled={!unlocked}
+                      title={unlocked ? s.name : s.unlockLabel}
+                      onClick={() => unlocked && skin.selectSkin(s.id)}
+                    >
+                      <span className="skin-swatch-dot" style={{ background: s.swatch }} />
+                      <span className="skin-swatch-name">{unlocked ? s.name : "🔒"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <div className="menu-divider" />
             <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
               <span>⏻ Sign out</span>
@@ -548,6 +592,9 @@ export function GameApp({
             runReady={runReady}
             swingAnim={swingAnim}
             onAddRun={addRun}
+            isBoss={isBoss}
+            comboStreak={comboStreak}
+            skinId={skin.skinId}
             typeInputRef={typeInputRef}
             practiceCardRef={practiceCardRef}
             onSelect={(v) => { setCurSelection(v); setCheckEnabled(true); sound.click(); }}
@@ -618,7 +665,10 @@ export function GameApp({
 
       {stageResult && (
         <div className="show" id="stageResult" style={{ display: "flex", position: "fixed", inset: 0, zIndex: 55, alignItems: "center", justifyContent: "center", background: "rgba(15,15,30,.6)", backdropFilter: "blur(3px)" }}>
-          <div className="result-card">
+          <div className={`result-card${stageResult.isBoss && stageResult.passed ? " boss-clear" : ""}`}>
+            {stageResult.isBoss && (
+              <div className="boss-badge">{stageResult.passed ? "👑 BOSS DEFEATED" : "👑 BOSS STAGE"}</div>
+            )}
             <div className={`hanko ${stageResult.passed ? "" : "fail"}`}>
               <span className="jp">{stageResult.passed ? "合格" : "再挑戦"}</span>
               <span className="en">{stageResult.passed ? "Clear" : "Retry"}</span>
@@ -876,6 +926,9 @@ function PracticeView({
   runs,
   runReady,
   swingAnim,
+  isBoss,
+  comboStreak,
+  skinId,
   typeInputRef,
   practiceCardRef,
   onSelect,
@@ -902,6 +955,9 @@ function PracticeView({
   runs: number;
   runReady: boolean;
   swingAnim: "hit" | "miss" | null;
+  isBoss: boolean;
+  comboStreak: number;
+  skinId: string;
   typeInputRef: React.RefObject<HTMLInputElement | null>;
   practiceCardRef: React.RefObject<HTMLDivElement | null>;
   onSelect: (v: number | boolean) => void;
@@ -909,6 +965,7 @@ function PracticeView({
   onCheck: () => void;
   onAddRun: () => void;
 }) {
+  const comboTier = comboStreak >= 9 ? 3 : comboStreak >= 6 ? 2 : comboStreak >= 3 ? 1 : 0;
   const modeTag =
     mode === "type" ? "⌨️ Type it" : mode === "choice" ? "🧩 Choose the answer" : mode === "target" ? "🎯 Tap it fast!" :
     mode === "arcade" ? "⚾ Homerun Math" : mode === "memory" ? "🃏 Memory Flip" : "🔎 True or false?";
@@ -919,17 +976,18 @@ function PracticeView({
         <div className="progress-top-fill" style={{ width: `${Math.round((qIndex / QUESTIONS_PER_STAGE) * 100)}%` }} />
       </div>
       <div className="topic-head" style={{ marginTop: 2 }}>
-        <div className="eyebrow-tag">Stage {stageN} of {STAGE_COUNT}</div>
+        <div className={`eyebrow-tag${isBoss ? " boss-tag" : ""}`}>{isBoss ? "👑 Boss Stage" : `Stage ${stageN} of ${STAGE_COUNT}`}</div>
         <div className="sutra-tag" style={{ background: gradCss(topic.grad) }}>🕉 {topic.sutraSa}</div>
         <h1>{topic.title}</h1>
       </div>
-      <div className="practice-card" ref={practiceCardRef}>
+      <div className={`practice-card${isBoss ? " boss-card" : ""}`} ref={practiceCardRef}>
         <div className={`practice-buddy${buddyPop ? " pop" : ""}`}>
           <Mascot mood={buddyMood} />
         </div>
         <div className="practice-meta">
           <span>Question {qIndex + 1} / {QUESTIONS_PER_STAGE}</span>
           <span className={`streak-flame${streakPop ? " pop" : ""}${correct >= 3 ? " combo3" : ""}`}>🔥 {correct}</span>
+          {comboTier > 0 && <span className="combo-badge">×{comboTier + 1}</span>}
         </div>
         <div className="mode-eyebrow">{modeTag}</div>
         {mode !== "truefalse" && (
@@ -975,7 +1033,7 @@ function PracticeView({
           </div>
         )}
         {mode === "arcade" && (
-          <div className={`arcade-board${swingAnim ? ` swing-${swingAnim}` : ""}`}>
+          <div className={`arcade-board skin-${skinId}${swingAnim ? ` swing-${swingAnim}` : ""}`}>
             <div className="scoreboard">
               <span className="scoreboard-label">RUNS</span>
               <span className="scoreboard-runs mono">{runs}</span>
@@ -1008,7 +1066,7 @@ function PracticeView({
           </div>
         )}
         {mode === "memory" && (
-          <div className="memory-grid">
+          <div className={`memory-grid skin-${skinId}`}>
             {tileOptions.map((o) => (
               <button
                 key={o}

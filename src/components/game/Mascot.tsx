@@ -2,6 +2,8 @@ export function Mascot({ mood = "happy" as "happy" | "excited" | "sad", animated
   const mouth =
     mood === "excited" ? "M27 41 Q34 50 41 41" : mood === "sad" ? "M27 45 Q34 39 41 45" : "M28 40 Q34 46 40 40";
   const cheeks = mood === "excited";
+  const brow =
+    mood === "excited" ? "M20 26 Q24 22 28 25 M40 25 Q44 22 48 26" : mood === "sad" ? "M20 27 Q24 30 28 28 M40 28 Q44 30 48 27" : "M20 26 Q24 24 28 26 M40 26 Q44 24 48 26";
   return (
     <svg viewBox="0 0 68 68" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" className={animated ? "mascot-bob" : ""}>
       <defs>
@@ -24,11 +26,14 @@ export function Mascot({ mood = "happy" as "happy" | "excited" | "sad", animated
           <circle cx="49" cy="36" r="3.4" fill="#3E9401" opacity=".5" />
         </>
       )}
+      <path d={brow} fill="none" stroke="#2E5A10" strokeWidth="1.6" strokeLinecap="round" />
       <g className={animated ? "mascot-blink" : ""}>
-        <circle cx="24" cy="33" r="4.2" fill="#20360C" />
-        <circle cx="44" cy="33" r="4.2" fill="#20360C" />
-        <circle cx="25.4" cy="31.6" r="1.1" fill="#fff" />
-        <circle cx="45.4" cy="31.6" r="1.1" fill="#fff" />
+        <ellipse cx="24" cy="33.5" rx="5.1" ry="5.6" fill="#20360C" />
+        <ellipse cx="44" cy="33.5" rx="5.1" ry="5.6" fill="#20360C" />
+        <ellipse cx="25.8" cy="31.2" rx="1.7" ry="2.2" fill="#fff" />
+        <ellipse cx="45.8" cy="31.2" rx="1.7" ry="2.2" fill="#fff" />
+        <circle cx="22.6" cy="35.2" r="0.8" fill="#fff" opacity=".75" />
+        <circle cx="42.6" cy="35.2" r="0.8" fill="#fff" opacity=".75" />
       </g>
       <path d={mouth} fill="none" stroke="#2E5A10" strokeWidth="2.4" strokeLinecap="round" />
     </svg>

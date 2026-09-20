@@ -421,3 +421,37 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .memory-card-back{ background:linear-gradient(135deg,var(--violet),var(--sun1)); color:#fff; font-size:22px; box-shadow:0 5px 0 var(--violet-dk); }
 .memory-card-front{ background:var(--surface); color:var(--ink); border:2px solid var(--gold); transform:rotateY(180deg); box-shadow:0 5px 0 var(--gold-dk); }
 .memory-card.flipped.shake-tile .memory-card-front{ border-color:var(--red); box-shadow:0 5px 0 var(--red-dk); color:var(--red-dk); }
+
+/* ---------- combo badge ---------- */
+.combo-badge{ margin-left:6px; background:linear-gradient(135deg,var(--gold),var(--gold-dk)); color:#3A2400; font-size:11px;
+  font-weight:800; padding:2px 8px; border-radius:999px; animation: comboBadgeIn .25s ease both; }
+@keyframes comboBadgeIn{ from{ transform:scale(.5); opacity:0; } to{ transform:scale(1); opacity:1; } }
+
+/* ---------- boss stage theming ---------- */
+.eyebrow-tag.boss-tag{ background:linear-gradient(135deg,var(--red),var(--gold)); color:#fff; }
+.practice-card.boss-card{ box-shadow:0 0 0 2px var(--gold), 0 10px 30px -12px rgba(224,169,58,.5); }
+.result-card.boss-clear{ box-shadow:0 0 0 3px var(--gold), 0 20px 50px -18px rgba(224,169,58,.6); }
+.boss-badge{ text-align:center; font-weight:800; font-size:13px; letter-spacing:.05em; color:var(--gold-dk);
+  margin-bottom:6px; }
+
+/* ---------- skins panel ---------- */
+.skins-panel{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; padding:6px 8px 10px; }
+.skin-swatch{ display:flex; align-items:center; gap:6px; border:2px solid var(--line); background:var(--surface-2);
+  border-radius:10px; padding:6px 8px; cursor:pointer; font-size:11.5px; font-weight:800; color:var(--ink); }
+.skin-swatch.active{ border-color:var(--gold); box-shadow:0 0 0 2px var(--gold) inset; }
+.skin-swatch.locked{ opacity:.55; cursor:not-allowed; }
+.skin-swatch-dot{ width:16px; height:16px; border-radius:50%; flex:0 0 auto; }
+
+/* ---------- skin color overrides ---------- */
+.arcade-board.skin-inferno .scoreboard-runs{ background:#2A1208; color:#FF7A3D; }
+.arcade-board.skin-inferno .batter-bat{ filter:hue-rotate(-40deg) saturate(1.6); }
+.arcade-board.skin-inferno .ball-tile.picked{ background:radial-gradient(circle at 35% 30%,#FFD3B8,#FF7A3D 60%,#B8380F); box-shadow:0 5px 0 #B8380F; }
+.arcade-board.skin-electric .scoreboard-runs{ background:#062430; color:#00C2FF; }
+.arcade-board.skin-electric .batter-bat{ filter:hue-rotate(150deg) saturate(1.6); }
+.arcade-board.skin-electric .ball-tile.picked{ background:radial-gradient(circle at 35% 30%,#C7EEFF,#00C2FF 60%,#0E7BAE); box-shadow:0 5px 0 #0E7BAE; }
+.arcade-board.skin-cosmic .scoreboard-runs{ background:#1E1030; color:#C79BFF; }
+.arcade-board.skin-cosmic .batter-bat{ filter:hue-rotate(60deg) saturate(1.6); }
+.arcade-board.skin-cosmic .ball-tile.picked{ background:radial-gradient(circle at 35% 30%,#E9D4FF,#8B5CF6 60%,#5A2FC7); box-shadow:0 5px 0 #5A2FC7; }
+.memory-grid.skin-inferno .memory-card-back{ background:linear-gradient(135deg,#FF7A3D,#D81B5B); box-shadow:0 5px 0 #B8380F; }
+.memory-grid.skin-electric .memory-card-back{ background:linear-gradient(135deg,#00C2FF,#4D6BFF); box-shadow:0 5px 0 #0E7BAE; }
+.memory-grid.skin-cosmic .memory-card-back{ background:linear-gradient(135deg,#8B5CF6,#FF3DA6); box-shadow:0 5px 0 #5A2FC7; }
