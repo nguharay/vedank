@@ -23,8 +23,6 @@ import {
   OP_GEO,
   OP_TIP,
   TRAY_SIZE,
-  DIGIT_SEGS,
-  SYMBOL_SLOTS,
   slotsFor,
   cloneGlyphs,
   currentEquationText,
@@ -620,12 +618,6 @@ export function GameApp({
     return loc === "board" ? !!g[gi!].active[slot!] : !!tr[idx!];
   }
 
-  function isValidPartial(g: Glyph): boolean {
-    const activeSlots = Object.keys(g.active).filter((k) => g.active[k]);
-    const patterns = g.type === "digit" ? Object.values(DIGIT_SEGS) : Object.values(SYMBOL_SLOTS);
-    return patterns.some((segs) => activeSlots.every((s) => segs.includes(s)));
-  }
-
   function onSlotClick(loc: "board" | "tray", gi: number | null, slot: string | null, idx: number | null) {
     if (boardLocked) return;
     setHintPair(null);
@@ -646,14 +638,6 @@ export function GameApp({
     else nextTray[selection.idx!] = false;
     if (loc === "board") nextGlyphs[gi!].active[slot!] = true;
     else nextTray[idx!] = true;
-
-    if (loc === "board" && !isValidPartial(nextGlyphs[gi!])) {
-      setSelection(null);
-      sound.wrong();
-      haptic([25, 45, 25]);
-      setPuzzleStatus({ text: lang === "ja" ? "それは数字や記号になりません" : "That's not a real digit or symbol", color: "var(--wrong)" });
-      return;
-    }
 
     setGlyphs(nextGlyphs);
     setTray(nextTray);
