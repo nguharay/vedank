@@ -133,9 +133,9 @@ export const SEG_TIP: Record<string, "start" | "end"> = {
 };
 export const OP_GEO: Record<string, [number, number, number, number]> = {
   h: [2, 46, 38, 46],
-  v: [20, 26, 20, 66],
-  h1: [2, 34, 38, 34],
-  h2: [2, 58, 38, 58],
+  v: [20, 20, 20, 72],
+  h1: [2, 28, 38, 28],
+  h2: [2, 64, 38, 64],
 };
 export const OP_TIP: Record<string, "start" | "end"> = {
   h: "end",

@@ -45,8 +45,8 @@ export const TOPICS: Topic[] = [
     sutraSa: "Ekadhikena Pūrvena",
     sutraEn: "one more than the one before",
     sutraEnJa: "一つ前より1多い",
-    blurb: "One More in the tens place, One Less in the units place — the shortcut for adding a number ending in 9.",
-    blurbJa: "十の位に1多く、一の位に1少なく――9で終わる数を足すときの近道。",
+    blurb: "One More than the One Before → tens place. One Less than the One Before → units place.",
+    blurbJa: "一つ前より1多い → 十の位。一つ前より1少ない → 一の位。",
     steps: [
       "A number ending in 9 is one less than the next multiple of ten.",
       "One More than the One Before → add 1 extra to the tens place of the other number.",
@@ -98,8 +98,8 @@ export const TOPICS: Topic[] = [
     sutraSa: "Ekanyūnena Pūrvena",
     sutraEn: "one less than the one before",
     sutraEnJa: "一つ前より1少ない",
-    blurb: "One Less in the tens place, One More in the units place — the shortcut for subtracting a number ending in 9.",
-    blurbJa: "十の位に1少なく、一の位に1多く――9で終わる数を引くときの近道。",
+    blurb: "One Less than the One Before → tens place. One More than the One Before → units place.",
+    blurbJa: "一つ前より1少ない → 十の位。一つ前より1多い → 一の位。",
     steps: [
       "A number ending in 9 is one less than the next multiple of ten.",
       "One Less than the One Before → subtract 1 extra from the tens place of the number you're subtracting from.",
@@ -210,8 +210,8 @@ export const TOPICS: Topic[] = [
     sutraSa: "Corollary · Ekadhikena",
     sutraEn: "slot the digit-sum in the middle",
     sutraEnJa: "数字の合計を真ん中に入れる",
-    blurb: "Keep the outer digits, drop their sum in between — carry if it overflows.",
-    blurbJa: "外側の数字はそのまま、その合計を真ん中に入れます――10以上になったら繰り上げます。",
+    blurb: "Write the outer digits; insert the sum of adjacent digits between them. If a sum is 10 or more, carry 1 to the digit on its left.",
+    blurbJa: "外側の数字を書き、隣り合う数字の合計を間に入れます。合計が10以上なら、左の桁に1繰り上げます。",
     steps: [
       "Write the first digit of the number.",
       "Write the sum of the two digits next to it (this is the middle digit).",
@@ -229,13 +229,13 @@ export const TOPICS: Topic[] = [
       const n = ex.n as number, a = Math.floor(n / 10), b = n % 10;
       if (lang === "ja")
         return [
-          [`${n} の各桁`, `${a} と ${b}`],
-          [`合計 ${a}+${b}`, `= ${a + b}`],
+          [`${n} × 11`, "="],
+          [`各桁: ${a} と ${b}`, `合計 = ${a + b}`],
           ["真ん中に入れる", `${a} ${a + b} ${b}  →  ${n * 11}`],
         ];
       return [
-        [`digits of ${n}`, `${a} and ${b}`],
-        [`sum ${a}+${b}`, `= ${a + b}`],
+        [`${n} × 11`, "="],
+        [`digits: ${a} and ${b}`, `sum = ${a + b}`],
         ["slot it in the middle", `${a} ${a + b} ${b}  →  ${n * 11}`],
       ];
     },
@@ -263,8 +263,8 @@ export const TOPICS: Topic[] = [
     sutraSa: "Corollary · Ůrdhva-Tiryagbhyām",
     sutraEn: "multiply the units, bump the tens",
     sutraEnJa: "一の位をかけて、十の位を1つ増やす",
-    blurb: "When both numbers share a tens digit and their units add to 10 — e.g. 23×27 — multiply in two clean chunks.",
-    blurbJa: "2つの数の十の位が同じで、一の位の合計が10のとき（例 23×27）は、2つの計算だけで求められます。",
+    blurb: "Step 1: 10's digit × the next number → first part. Step 2: units × units → second part (2 digits).",
+    blurbJa: "手順1：十の位 ×（次の数）→ 最初の部分。手順2：一の位 × 一の位 → 2番目の部分（2桁）。",
     steps: [
       "Check: same tens digit, and units add to 10.",
       "Multiply the tens digit by (itself + 1).",
@@ -280,16 +280,19 @@ export const TOPICS: Topic[] = [
     example: () => ({ t: 2, u1: 3, u2: 7 }),
     exSteps: (ex, lang) => {
       const t = ex.t as number, u1 = ex.u1 as number, u2 = ex.u2 as number;
+      const a = 10 * t + u1, b = 10 * t + u2;
       if (lang === "ja")
         return [
+          [`${a} × ${b}`, "="],
           [`十の位 ${t} × (${t}+1)`, `= ${t * (t + 1)}`],
           [`一の位 ${u1} × ${u2}`, `= ${pad2(u1 * u2)}`],
-          ["組み合わせる", `${t * (t + 1)}${pad2(u1 * u2)}  →  ${t * (t + 1) * 100 + u1 * u2}`],
+          ["組み合わせる", `${t * (t + 1)}${pad2(u1 * u2)}  →  ${a * b}`],
         ];
       return [
+        [`${a} × ${b}`, "="],
         [`tens ${t} × (${t}+1)`, `= ${t * (t + 1)}`],
         [`units ${u1} × ${u2}`, `= ${pad2(u1 * u2)}`],
-        ["combine", `${t * (t + 1)}${pad2(u1 * u2)}  →  ${t * (t + 1) * 100 + u1 * u2}`],
+        ["combine", `${t * (t + 1)}${pad2(u1 * u2)}  →  ${a * b}`],
       ];
     },
     gen: (diff) => {
@@ -310,8 +313,8 @@ export const TOPICS: Topic[] = [
     sutraSa: "Corollary · Ůrdhva-Tiryagbhyām",
     sutraEn: "cross-multiply the tens",
     sutraEnJa: "十の位を交差してかける",
-    blurb: "When both numbers share a units digit and their tens add to 10 — e.g. 23×83 — another two-chunk shortcut.",
-    blurbJa: "2つの数の一の位が同じで、十の位の合計が10のとき（例 23×83）――もう一つの2ステップの近道です。",
+    blurb: "Step 1: (10's × 10's) + the shared units digit → first part. Step 2: units × units → second part (2 digits).",
+    blurbJa: "手順1：（十の位×十の位）＋共通の一の位 → 最初の部分。手順2：一の位×一の位 → 2番目の部分（2桁）。",
     steps: [
       "Check: same units digit, and tens add to 10.",
       "Multiply the two tens digits and add the shared unit.",
@@ -327,16 +330,19 @@ export const TOPICS: Topic[] = [
     example: () => ({ t1: 2, t2: 8, u: 3 }),
     exSteps: (ex, lang) => {
       const t1 = ex.t1 as number, t2 = ex.t2 as number, u = ex.u as number;
+      const a = 10 * t1 + u, b = 10 * t2 + u;
       if (lang === "ja")
         return [
+          [`${a} × ${b}`, "="],
           [`十の位 ${t1}×${t2} + ${u}`, `= ${t1 * t2 + u}`],
           [`一の位 ${u}×${u}`, `= ${pad2(u * u)}`],
-          ["組み合わせる", `${t1 * t2 + u}${pad2(u * u)}  →  ${(t1 * t2 + u) * 100 + u * u}`],
+          ["組み合わせる", `${t1 * t2 + u}${pad2(u * u)}  →  ${a * b}`],
         ];
       return [
+        [`${a} × ${b}`, "="],
         [`tens ${t1}×${t2} + ${u}`, `= ${t1 * t2 + u}`],
         [`units ${u}×${u}`, `= ${pad2(u * u)}`],
-        ["combine", `${t1 * t2 + u}${pad2(u * u)}  →  ${(t1 * t2 + u) * 100 + u * u}`],
+        ["combine", `${t1 * t2 + u}${pad2(u * u)}  →  ${a * b}`],
       ];
     },
     gen: (diff) => {
@@ -356,8 +362,8 @@ export const TOPICS: Topic[] = [
     sutraSa: "Corollary · Ůrdhva-Tiryagbhyām",
     sutraEn: "cross-add, then multiply the tails",
     sutraEnJa: "一の位を足してからかける",
-    blurb: "For any 11–19 × 11–19: add the units crosswise, then multiply the units.",
-    blurbJa: "11〜19 × 11〜19 なら：一の位を足し合わせてから、一の位どうしをかけます。",
+    blurb: "Step 1: units × units — write the last digit, carry the rest. Step 2: (first number + units of the second) + carry → the rest.",
+    blurbJa: "手順1：一の位×一の位――最後の桁を書き、残りを繰り上げる。手順2：（最初の数＋2番目の数の一の位）＋繰り上げ → 残りの部分。",
     steps: [
       'Take the two "extra" digits past 10 (e.g. 14 → 4).',
       "Add 100 (10×10) as the base.",
@@ -370,21 +376,26 @@ export const TOPICS: Topic[] = [
       "10 ×（2つの余りの合計）を足す。",
       "2つの余りの積を足す。",
     ],
-    example: () => ({ x: 4, y: 3 }),
+    example: () => ({ x: 9, y: 6 }),
     exSteps: (ex, lang) => {
       const x = ex.x as number, y = ex.y as number;
+      const a = 10 + x, b = 10 + y;
+      const unitsProd = x * y;
+      const lastDigit = unitsProd % 10;
+      const carry = Math.floor(unitsProd / 10);
+      const rest = a + y + carry;
       if (lang === "ja")
         return [
-          ["基準 10×10", "= 100"],
-          [`10 × (${x}+${y})`, `= ${10 * (x + y)}`],
-          [`余り ${x}×${y}`, `= ${x * y}`],
-          ["合計", `100 + ${10 * (x + y)} + ${x * y} = ${100 + 10 * (x + y) + x * y}`],
+          [`${a} × ${b}`, "="],
+          [`一の位 ${x} × ${y}`, `= ${unitsProd}（${lastDigit}を書き${carry}を繰り上げ）`],
+          [`${a} + ${y} + 繰り上げ${carry}`, `= ${rest}`],
+          ["組み合わせる", `${rest}${lastDigit}  →  ${a * b}`],
         ];
       return [
-        ["base 10×10", "= 100"],
-        [`10 × (${x}+${y})`, `= ${10 * (x + y)}`],
-        [`extras ${x}×${y}`, `= ${x * y}`],
-        ["sum", `100 + ${10 * (x + y)} + ${x * y} = ${100 + 10 * (x + y) + x * y}`],
+        [`${a} × ${b}`, "="],
+        [`units ${x} × ${y}`, `= ${unitsProd} (write ${lastDigit}, carry ${carry})`],
+        [`${a} + ${y} + carry ${carry}`, `= ${rest}`],
+        ["combine", `${rest}${lastDigit}  →  ${a * b}`],
       ];
     },
     gen: (diff) => {
@@ -423,11 +434,13 @@ export const TOPICS: Topic[] = [
       const n = ex.n as number, d = ex.d as number;
       if (lang === "ja")
         return [
+          [`${n} × ${10 + d}`, "="],
           [`${n} × 10`, `= ${n * 10}`],
           [`${n} × ${d}`, `= ${n * d}`],
           ["足す", `${n * 10} + ${n * d} = ${n * 10 + n * d}`],
         ];
       return [
+        [`${n} × ${10 + d}`, "="],
         [`${n} × 10`, `= ${n * 10}`],
         [`${n} × ${d}`, `= ${n * d}`],
         ["add", `${n * 10} + ${n * d} = ${n * 10 + n * d}`],
@@ -468,12 +481,14 @@ export const TOPICS: Topic[] = [
       const a = ex.a as number, b = ex.b as number, x = 10 - a, y = 10 - b;
       if (lang === "ja")
         return [
+          [`${a} × ${b}`, "="],
           ["不足数", `10−${a}=${x}、  10−${b}=${y}`],
           ["交差減算 ×10", `(${a}−${y})×10 = ${(a - y) * 10}`],
           ["不足数どうしをかける", `${x}×${y} = ${x * y}`],
           ["足す", `${(a - y) * 10} + ${x * y} = ${a * b}`],
         ];
       return [
+        [`${a} × ${b}`, "="],
         ["deficiencies", `10−${a}=${x},  10−${b}=${y}`],
         ["cross-subtract ×10", `(${a}−${y})×10 = ${(a - y) * 10}`],
         ["deficiencies × each other", `${x}×${y} = ${x * y}`],
@@ -515,12 +530,14 @@ export const TOPICS: Topic[] = [
       const a = ex.a as number, b = ex.b as number, x = a - 10, y = b - 10;
       if (lang === "ja")
         return [
+          [`${a} × ${b}`, "="],
           ["超過数", `${a}−10=${x}、  ${b}−10=${y}`],
           ["交差加算 ×10", `(${a}+${y})×10 = ${(a + y) * 10}`],
           ["超過数どうしをかける", `${x}×${y} = ${x * y}`],
           ["足す", `${(a + y) * 10} + ${x * y} = ${a * b}`],
         ];
       return [
+        [`${a} × ${b}`, "="],
         ["excesses", `${a}−10=${x},  ${b}−10=${y}`],
         ["cross-add ×10", `(${a}+${y})×10 = ${(a + y) * 10}`],
         ["excesses × each other", `${x}×${y} = ${x * y}`],
@@ -562,11 +579,13 @@ export const TOPICS: Topic[] = [
       const n = ex.n as number;
       if (lang === "ja")
         return [
+          [`${n * 10 + 5}²`, "="],
           ["前の部分", `${n}`],
           [`${n} × ${n + 1}`, `= ${n * (n + 1)}`],
           ["25を付ける", `${n * (n + 1)}25  →  ${n * (n + 1) * 100 + 25}`],
         ];
       return [
+        [`${n * 10 + 5}²`, "="],
         ["front part", `${n}`],
         [`${n} × ${n + 1}`, `= ${n * (n + 1)}`],
         ["append 25", `${n * (n + 1)}25  →  ${n * (n + 1) * 100 + 25}`],
@@ -609,11 +628,13 @@ export const TOPICS: Topic[] = [
       const out = s.split("").map((c, i) => (i === s.length - 1 ? 10 - +c : 9 - +c));
       if (lang === "ja")
         return [
+          [`${fmt(base)} − ${fmt(x)}`, "="],
           [`${x} の各桁`, s.split("").join(" ")],
           ["9,9,…,10 から各桁を引く", out.join(" ")],
           ["並べて読む", `${out.join("")}  →  ${base - x}`],
         ];
       return [
+        [`${fmt(base)} − ${fmt(x)}`, "="],
         [`digits of ${x}`, s.split("").join(" ")],
         ["9,9,…,10 minus each digit", out.join(" ")],
         ["read together", `${out.join("")}  →  ${base - x}`],
@@ -660,11 +681,13 @@ export const TOPICS: Topic[] = [
       }
       if (lang === "ja")
         return [
+          [`${n} ÷ 9`, "="],
           ["各桁", `${t} と ${u}`],
           [`余り = ${t}+${u}`, `= ${t + u}`],
           ["商・余り", `商 ${q}、余り ${r}（${n} ÷ 9）`],
         ];
       return [
+        [`${n} ÷ 9`, "="],
         ["digits", `${t} and ${u}`],
         [`remainder = ${t}+${u}`, `= ${t + u}`],
         ["quotient / remainder", `${q} remainder ${r}  (${n} ÷ 9)`],
@@ -705,6 +728,7 @@ export const TOPICS: Topic[] = [
         .reduce((a, c) => a + +c, 0);
       if (lang === "ja")
         return [
+          [`${n} の各桁の合計`, "="],
           [`${n} の各桁`, `${String(n).split("").join(" + ")} = ${s}`],
           [
             "1桁？",
@@ -712,6 +736,7 @@ export const TOPICS: Topic[] = [
           ],
         ];
       return [
+        [`digit sum of ${n}`, "="],
         [`digits of ${n}`, `${String(n).split("").join(" + ")} = ${s}`],
         [
           "single digit?",
@@ -742,8 +767,8 @@ export const TOPICS: Topic[] = [
     example: () => ({ n: 23 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number;
-      if (lang === "ja") return [[`${n} × 10`, `= ${n * 10}`], [`${n * 10} − ${n}`, `= ${n * 9}`]];
-      return [[`${n} × 10`, `= ${n * 10}`], [`${n * 10} − ${n}`, `= ${n * 9}`]];
+      if (lang === "ja") return [[`${n} × 9`, "="], [`${n} × 10`, `= ${n * 10}`], [`${n * 10} − ${n}`, `= ${n * 9}`]];
+      return [[`${n} × 9`, "="], [`${n} × 10`, `= ${n * 10}`], [`${n * 10} − ${n}`, `= ${n * 9}`]];
     },
     gen: (diff) => {
       const n = diff === "easy" ? ri(2, 9) : diff === "medium" ? ri(10, 99) : ri(100, 999);
@@ -768,8 +793,8 @@ export const TOPICS: Topic[] = [
     exSteps: (ex, lang) => {
       const n = ex.n as number, a = Math.floor(n / 10), b = n % 10, s = a + b;
       if (lang === "ja")
-        return [[`${n} の各桁`, `${a} と ${b}`], [`合計 ${a}+${b}`, `= ${s}`], ["2回入れる", `${a} ${s} ${s} ${b}  →  ${n * 111}`]];
-      return [[`digits of ${n}`, `${a} and ${b}`], [`sum ${a}+${b}`, `= ${s}`], ["slot it twice", `${a} ${s} ${s} ${b}  →  ${n * 111}`]];
+        return [[`${n} × 111`, "="], [`${n} の各桁`, `${a} と ${b}`], [`合計 ${a}+${b}`, `= ${s}`], ["2回入れる", `${a} ${s} ${s} ${b}  →  ${n * 111}`]];
+      return [[`${n} × 111`, "="], [`digits of ${n}`, `${a} and ${b}`], [`sum ${a}+${b}`, `= ${s}`], ["slot it twice", `${a} ${s} ${s} ${b}  →  ${n * 111}`]];
     },
     gen: (diff) => {
       let n: number;
@@ -798,12 +823,14 @@ export const TOPICS: Topic[] = [
       const base = ex.base as number, d = ex.d as number;
       if (lang === "ja")
         return [
+          [`${base - d} × ${base + d}`, "="],
           [`${base - d} と ${base + d} の真ん中`, `${base}`],
           [`${base}²`, `= ${base * base}`],
           [`${d}²`, `= ${d * d}`],
           ["引く", `${base * base} − ${d * d} = ${base * base - d * d}`],
         ];
       return [
+        [`${base - d} × ${base + d}`, "="],
         [`middle of ${base - d} and ${base + d}`, `${base}`],
         [`${base}²`, `= ${base * base}`],
         [`${d}²`, `= ${d * d}`],
@@ -836,12 +863,14 @@ export const TOPICS: Topic[] = [
       const a = ex.a as number, b = ex.b as number, x = 100 - a, y = 100 - b;
       if (lang === "ja")
         return [
+          [`${a} × ${b}`, "="],
           ["不足数", `100−${a}=${x}、  100−${b}=${y}`],
           ["交差減算 ×100", `(${a}−${y})×100 = ${(a - y) * 100}`],
           ["不足数どうしをかける", `${x}×${y} = ${x * y}`],
           ["足す", `${(a - y) * 100} + ${x * y} = ${a * b}`],
         ];
       return [
+        [`${a} × ${b}`, "="],
         ["deficiencies", `100−${a}=${x},  100−${b}=${y}`],
         ["cross-subtract ×100", `(${a}−${y})×100 = ${(a - y) * 100}`],
         ["deficiencies × each other", `${x}×${y} = ${x * y}`],
@@ -873,12 +902,14 @@ export const TOPICS: Topic[] = [
       const a = ex.a as number, b = ex.b as number, x = a - 100, y = b - 100;
       if (lang === "ja")
         return [
+          [`${a} × ${b}`, "="],
           ["超過数", `${a}−100=${x}、  ${b}−100=${y}`],
           ["交差加算 ×100", `(${a}+${y})×100 = ${(a + y) * 100}`],
           ["超過数どうしをかける", `${x}×${y} = ${x * y}`],
           ["足す", `${(a + y) * 100} + ${x * y} = ${a * b}`],
         ];
       return [
+        [`${a} × ${b}`, "="],
         ["excesses", `${a}−100=${x},  ${b}−100=${y}`],
         ["cross-add ×100", `(${a}+${y})×100 = ${(a + y) * 100}`],
         ["excesses × each other", `${x}×${y} = ${x * y}`],
@@ -912,12 +943,14 @@ export const TOPICS: Topic[] = [
       const units = a0 * b0, cross = a1 * b0 + a0 * b1, tens = a1 * b1;
       if (lang === "ja")
         return [
+          [`${a} × ${b}`, "="],
           [`一の位 ${a0}×${b0}`, `= ${units}`],
           [`交差 ${a1}×${b0} + ${a0}×${b1}`, `= ${cross}`],
           [`十の位 ${a1}×${b1}`, `= ${tens}`],
           ["組み合わせる", `${tens}00 + ${cross}0 + ${units} = ${a * b}`],
         ];
       return [
+        [`${a} × ${b}`, "="],
         [`units ${a0}×${b0}`, `= ${units}`],
         [`cross ${a1}×${b0} + ${a0}×${b1}`, `= ${cross}`],
         [`tens ${a1}×${b1}`, `= ${tens}`],
@@ -951,7 +984,7 @@ export const TOPICS: Topic[] = [
       const sa = String(a), sb = String(b), len = Math.max(sa.length, sb.length);
       const pa = sa.padStart(len, "0"), pb = sb.padStart(len, "0");
       let running = 0;
-      const rows: ExStep[] = [];
+      const rows: ExStep[] = [[`${a} + ${b}`, "="]];
       for (let i = 0; i < len; i++) {
         const place = Math.pow(10, len - 1 - i);
         const da = +pa[i], db = +pb[i];
@@ -993,6 +1026,7 @@ export const TOPICS: Topic[] = [
       const pb = sb.padStart(len, "0");
       let running = a;
       const rows: ExStep[] = [
+        [`${a} − ${b}`, "="],
         lang === "ja" ? [`${a} から始める`, `途中の合計 = ${a}`] : [`start at ${a}`, `running total = ${a}`],
       ];
       for (let i = 0; i < len; i++) {
@@ -1031,11 +1065,13 @@ export const TOPICS: Topic[] = [
       const k = String(b).length, base = Math.pow(10, k), comp = base - b;
       if (lang === "ja")
         return [
+          [`${a} − ${b}`, "="],
           [`${b} の補数`, `${base} − ${b} = ${comp}`],
           [`${a} に足す`, `${a} + ${comp} = ${a + comp}`],
           [`${base} を引く`, `${a + comp} − ${base} = ${a + comp - base}`],
         ];
       return [
+        [`${a} − ${b}`, "="],
         [`complement of ${b}`, `${base} − ${b} = ${comp}`],
         [`add to ${a}`, `${a} + ${comp} = ${a + comp}`],
         [`subtract ${base}`, `${a + comp} − ${base} = ${a + comp - base}`],
@@ -1057,16 +1093,53 @@ export const TOPICS: Topic[] = [
     title: "Dividing by 8",
     titleJa: "8で割る",
     sutraSa: "Corollary · Nikhilam",
-    sutraEn: "halve it three times",
-    sutraEnJa: "3回半分にする",
-    blurb: "Dividing by 8 is just halving a number three times in a row.",
-    blurbJa: "8で割るのは、数を3回連続で半分にするだけです。",
-    steps: ["Halve the number.", "Halve it again.", "Halve it a third time — that's n ÷ 8.", "If it doesn't divide evenly, work from the nearest multiple of 8 below it and note the remainder."],
-    stepsJa: ["数を半分にする。", "もう一度半分にする。", "3回目の半分にする――それがn÷8。", "割り切れないときは、その下にある8の倍数から計算し、余りを記録する。"],
-    example: () => ({ n: 96 }),
+    sutraEn: "base method — work with the deficiency of 8 from 10",
+    sutraEnJa: "基準数法――8の10からの不足数で計算する",
+    blurb: "8 = 10 − 2. Mark off the last digit as the remainder zone. Each quotient digit = its own digit + 2×(quotient digit to its left). Fix up the remainder at the end.",
+    blurbJa: "8 = 10−2。最後の桁を余りの部分として区切る。各商の桁 = その桁の数字 ＋ 2×（左隣の商の桁）。最後に余りを調整する。",
+    steps: [
+      "Mark off the last digit — that's the remainder zone.",
+      "The first digit becomes the first quotient digit.",
+      "Each next digit = itself + 2 × (the quotient digit just found).",
+      "In the remainder zone, if the total is 8 or more, add 1 to the quotient and subtract 8.",
+    ],
+    stepsJa: [
+      "最後の桁を余りの部分として区切る。",
+      "最初の桁がそのまま商の最初の桁になる。",
+      "次の桁 = その桁の数字 ＋ 2×（直前に求めた商の桁）。",
+      "余りの部分が8以上になったら、商に1を足し、8を引く。",
+    ],
+    example: () => ({ n: 243 }),
     exSteps: (ex, lang) => {
-      const n = ex.n as number, h1 = n / 2, h2 = h1 / 2, h3 = h2 / 2;
-      return [[`${n} ÷ 2`, `= ${h1}`], [`${h1} ÷ 2`, `= ${h2}`], [`${h2} ÷ 2`, `= ${h3}`]];
+      const n = ex.n as number;
+      const digits = String(n).split("").map(Number);
+      const m = digits.length;
+      const q = digits.slice(0, m - 1);
+      const rows: ExStep[] = [[`${n} ÷ 8`, "="]];
+      for (let i = 1; i < m - 1; i++) {
+        q[i] = digits[i] + 2 * q[i - 1];
+        rows.push([`${digits[i]} + 2×${q[i - 1]}`, `= ${q[i]}`]);
+      }
+      let rem = digits[m - 1] + 2 * q[m - 2];
+      rows.push([
+        lang === "ja" ? `余り部分：${digits[m - 1]} + 2×${q[m - 2]}` : `remainder zone: ${digits[m - 1]} + 2×${q[m - 2]}`,
+        `= ${rem}`,
+      ]);
+      const carry = Math.floor(rem / 8);
+      rem = rem - carry * 8;
+      q[m - 2] += carry;
+      for (let i = m - 2; i > 0; i--) {
+        if (q[i] >= 10) {
+          q[i - 1] += Math.floor(q[i] / 10);
+          q[i] = q[i] % 10;
+        }
+      }
+      const quotient = Number(q.join(""));
+      rows.push([
+        lang === "ja" ? "商・余り" : "quotient / remainder",
+        lang === "ja" ? `商 ${quotient}、余り ${rem}` : `${quotient} remainder ${rem}`,
+      ]);
+      return rows;
     },
     gen: (diff) => {
       const n = diff === "easy" ? ri(16, 199) : diff === "medium" ? ri(100, 999) : ri(1000, 9999);
@@ -1083,27 +1156,36 @@ export const TOPICS: Topic[] = [
     sutraSa: "Corollary · (a+b)² identity",
     sutraEn: "25, then double, then the tail squared",
     sutraEnJa: "25、それから2倍、そして残りの2乗",
-    blurb: "Any number that starts with a 5 squares the same clean way, no matter how many digits follow.",
-    blurbJa: "5から始まる数は、桁数が何桁でも同じきれいな方法で2乗できます。",
-    steps: ["Split the number into the leading 5 (times a power of ten) and the rest, x.", "\"25\" followed by the right number of zeros is the first part.", "x times the next power of ten up is the middle part.", "x² is the last part — add all three together."],
-    stepsJa: ["数を、先頭の5（10のべき乗倍）と残りのxに分ける。", "「25」の後ろに適切な数のゼロをつけたものが最初の部分。", "xに次のべき乗の10をかけたものが真ん中の部分。", "x²が最後の部分――3つを合計する。"],
-    example: () => ({ k: 1, x: 2 }),
+    blurb: "5 × 5 = 25, then add the units digit once → first part. Units × units → second part (always 2 digits).",
+    blurbJa: "5×5=25に残りを足したものが最初の部分。残りの2乗（常に2桁）が2番目の部分。",
+    steps: [
+      "Split the number into the leading 5 and the rest, X.",
+      "5 × 5 = 25, then add X once — that's the first part.",
+      "X × X is the second part — it fills the last two digits.",
+      "If X² spills past two digits, carry the extra into the first part.",
+    ],
+    stepsJa: [
+      "数を、先頭の5と残りのXに分ける。",
+      "5×5=25に、Xを1回足す――それが最初の部分。",
+      "X×Xが2番目の部分――最後の2桁を埋める。",
+      "X²が2桁を超えたら、あふれた分を最初の部分に繰り上げる。",
+    ],
+    example: () => ({ k: 1, x: 4 }),
     exSteps: (ex, lang) => {
       const k = ex.k as number, x = ex.x as number;
       const num = 5 * Math.pow(10, k) + x;
-      const first = 25 * Math.pow(10, 2 * k), mid = x * Math.pow(10, k + 1), last = x * x;
+      const firstPart = 25 * Math.pow(10, k - 1) + x;
+      const secondPart = String(x * x).padStart(2, "0");
       if (lang === "ja")
         return [
-          [`25 の後ろに ${2 * k} 個の0`, `${first}`],
-          [`${x} × 10^${k + 1}`, `= ${mid}`],
-          [`${x}²`, `= ${last}`],
-          ["3つを合計", `${num * num}`],
+          [`${num}²`, "="],
+          [`十: (5×5) + ${x}`, `= ${firstPart}`],
+          [`一: ${x} × ${x}`, `= ${secondPart}  →  ${num * num}`],
         ];
       return [
-        [`25 followed by ${2 * k} zeros`, `${first}`],
-        [`${x} × 10^${k + 1}`, `= ${mid}`],
-        [`${x}²`, `= ${last}`],
-        ["add all three", `${num * num}`],
+        [`${num}²`, "="],
+        [`tens: (5×5) + ${x}`, `= ${firstPart}`],
+        [`units: ${x} × ${x}`, `= ${secondPart}  →  ${num * num}`],
       ];
     },
     gen: (diff) => {

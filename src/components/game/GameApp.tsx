@@ -23,6 +23,8 @@ import {
   OP_GEO,
   OP_TIP,
   TRAY_SIZE,
+  DIGIT_SEGS,
+  SYMBOL_SLOTS,
   slotsFor,
   cloneGlyphs,
   currentEquationText,
@@ -39,7 +41,6 @@ import {
 import { finishStageAction, solvePuzzleAction, leaderboardAction } from "@/lib/actions/game-actions";
 import type { LeaderboardEntry } from "@/lib/game/progress";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
-import { ILLUS } from "./illustrations";
 import { Mascot, Mandala } from "./Mascot";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
@@ -226,6 +227,48 @@ export function GameApp({
     else { goHome(); }
   }
 
+  // Restore whatever screen the player was on before a refresh, instead of
+  // always dropping them back at the home screen.
+  useEffect(() => {
+    try {
+      const savedView = localStorage.getItem("sutraSprint.navView");
+      const savedTopic = localStorage.getItem("sutraSprint.navTopic");
+      if (savedTopic) setCurrentTopicId(savedTopic);
+      if (savedView === "topic" && savedTopic) setView("topic");
+      else if (savedView === "stagemap" && savedTopic) setView("stagemap");
+      else if (savedView === "arena") {
+        loadPuzzle(0);
+        setView("arena");
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    try {
+      const persistView = view === "practice" ? "stagemap" : view === "blitz" ? "home" : view;
+      localStorage.setItem("sutraSprint.navView", persistView);
+      if (currentTopicId) localStorage.setItem("sutraSprint.navTopic", currentTopicId);
+    } catch {}
+  }, [view, currentTopicId]);
+
+  // Make the phone/browser back gesture behave the same as the in-app back
+  // arrow, instead of leaving the app or doing nothing.
+  useEffect(() => {
+    try {
+      window.history.pushState({ appNav: true }, "");
+    } catch {}
+  }, [view]);
+
+  useEffect(() => {
+    function onPopState() {
+      handleBack();
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, currentTopicId]);
+
   /* ================= PRACTICE ================= */
   const [curStage, setCurStage] = useState({ n: 1, qIndex: 0, correct: 0 });
   const [curProblem, setCurProblem] = useState<Problem | null>(null);
@@ -286,7 +329,7 @@ export function GameApp({
     setRunReady(false);
     setEliminated([]);
     answeredRef.current = false;
-    setTimerMs(mode === "type" ? 13000 : mode === "catch" ? 11000 : mode === "numberline" ? 9000 : 8000);
+    setTimerMs(60000);
     setTimerKey((k) => k + 1);
     questionStartRef.current = Date.now();
     if (mode === "choice") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
@@ -308,6 +351,23 @@ export function GameApp({
     setComboStreak(0);
     setFiftyLeft(1);
     newStageQuestion(currentTopic, n);
+    setView("practice");
+    setStageIntro(n);
+    setTimeout(() => setStageIntro(null), 900);
+  }
+
+  // Jump straight into practice for a given topic+stage, without relying on
+  // currentTopic already being set (used by the home-screen "Continue" card).
+  function continueStage(topicId: string, n: number) {
+    const topic = TOPIC_BY_ID[topicId];
+    if (!topic) return;
+    setCurrentTopicId(topicId);
+    setCurStage({ n, qIndex: 0, correct: 0 });
+    setHearts(5);
+    setRuns(0);
+    setComboStreak(0);
+    setFiftyLeft(1);
+    newStageQuestion(topic, n);
     setView("practice");
     setStageIntro(n);
     setTimeout(() => setStageIntro(null), 900);
@@ -527,6 +587,7 @@ export function GameApp({
   const [selection, setSelection] = useState<Loc | null>(null);
   const [hintPair, setHintPair] = useState<{ from: Loc; to: Loc } | null>(null);
   const [puzzleStatus, setPuzzleStatus] = useState<{ text: string; color: string }>({ text: "", color: "" });
+  const [boardLocked, setBoardLocked] = useState(false);
   const [puzzleElapsed, setPuzzleElapsed] = useState(0);
   const puzzleStartRef = useRef<number>(0);
 
@@ -542,6 +603,7 @@ export function GameApp({
     setSelection(null);
     setHintPair(null);
     setPuzzleStatus({ text: "", color: "" });
+    setBoardLocked(false);
     setPuzzleElapsed(0);
     puzzleStartRef.current = Date.now();
   }
@@ -558,7 +620,14 @@ export function GameApp({
     return loc === "board" ? !!g[gi!].active[slot!] : !!tr[idx!];
   }
 
+  function isValidPartial(g: Glyph): boolean {
+    const activeSlots = Object.keys(g.active).filter((k) => g.active[k]);
+    const patterns = g.type === "digit" ? Object.values(DIGIT_SEGS) : Object.values(SYMBOL_SLOTS);
+    return patterns.some((segs) => activeSlots.every((s) => segs.includes(s)));
+  }
+
   function onSlotClick(loc: "board" | "tray", gi: number | null, slot: string | null, idx: number | null) {
+    if (boardLocked) return;
     setHintPair(null);
     const here: Loc = { loc, gi, slot, idx };
     const isActive = getActive(loc, gi, slot, idx, glyphs, tray);
@@ -578,6 +647,14 @@ export function GameApp({
     if (loc === "board") nextGlyphs[gi!].active[slot!] = true;
     else nextTray[idx!] = true;
 
+    if (loc === "board" && !isValidPartial(nextGlyphs[gi!])) {
+      setSelection(null);
+      sound.wrong();
+      haptic([25, 45, 25]);
+      setPuzzleStatus({ text: lang === "ja" ? "それは数字や記号になりません" : "That's not a real digit or symbol", color: "var(--wrong)" });
+      return;
+    }
+
     setGlyphs(nextGlyphs);
     setTray(nextTray);
     setMoveCount((m) => m + 1);
@@ -595,6 +672,7 @@ export function GameApp({
     const ok = evalEquation(eq.parts);
     if (ok) {
       setPuzzleStatus({ text: t.arena.solvedPrefix + eq.parts.join(" ") + t.arena.solvedSuffix, color: "var(--green-dk)" });
+      setBoardLocked(true);
       const p = PUZZLES[puzIdx];
       const already = !!progress.arena.solved[p.id];
       const res = await solvePuzzleAction(p.id, moveCount + 1);
@@ -786,11 +864,7 @@ export function GameApp({
       </div>
 
       <header>
-        {view !== "home" ? (
-          <button className="back-btn" aria-label="Back" onClick={handleBack}>
-            ←
-          </button>
-        ) : (
+        {view === "home" && (
           <button className="back-btn avatar-btn" aria-label={t.menu.accountLabel} onClick={() => setMenuOpen((o) => !o)}>
             {(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
           </button>
@@ -850,56 +924,68 @@ export function GameApp({
                 })}
               </div>
             )}
-            <button className="menu-row" onClick={() => setAchievementsOpen((o) => !o)}>
-              <span>🏅 {lang === "ja" ? "実績" : "Achievements"}</span>
-              <span className="menu-row-val">{unlockedAchievements}/{ACHIEVEMENTS.length}</span>
-            </button>
-            {achievementsOpen && (
-              <div className="achievements-panel">
-                {ACHIEVEMENTS.map((a) => {
-                  const unlocked = a.isUnlocked(achievementCtx);
-                  return (
-                    <div key={a.id} className={`badge-card${unlocked ? " unlocked" : " locked"}`}>
-                      <span className="badge-icon">{unlocked ? a.icon : "🔒"}</span>
-                      <div className="badge-text">
-                        <div className="badge-title">{lang === "ja" ? a.titleJa : a.title}</div>
-                        <div className="badge-desc">{lang === "ja" ? a.descJa : a.desc}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            <button className="menu-row" onClick={toggleLeaderboard}>
-              <span>🏆 {lang === "ja" ? "ランキング" : "Leaderboard"}</span>
-              <span className="menu-row-val">{leaderboard?.me ? `#${leaderboard.me.position}` : ""}</span>
-            </button>
-            {leaderboardOpen && (
-              <div className="leaderboard-panel">
-                {leaderboardLoading && <div className="leaderboard-loading">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>}
-                {!leaderboardLoading &&
-                  leaderboard?.top.map((e, i) => (
-                    <div key={e.userId} className={`leaderboard-row${e.userId === leaderboard.me?.userId ? " me" : ""}`}>
-                      <span className={`leaderboard-rank${i < 3 ? ` top${i + 1}` : ""}`}>{i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
-                      <span className="leaderboard-name">{e.name}</span>
-                      <span className="leaderboard-level">{lang === "ja" ? "Lv" : "Lv"}.{e.level}</span>
-                      <span className="leaderboard-gems">💎 {e.gems}</span>
-                    </div>
-                  ))}
-                {!leaderboardLoading && leaderboard?.me && leaderboard.me.position > leaderboard.top.length && (
-                  <div className="leaderboard-row me leaderboard-row-me-sep">
-                    <span className="leaderboard-rank">{leaderboard.me.position}</span>
-                    <span className="leaderboard-name">{leaderboard.me.name}</span>
-                    <span className="leaderboard-level">Lv.{leaderboard.me.level}</span>
-                    <span className="leaderboard-gems">💎 {leaderboard.me.gems}</span>
-                  </div>
-                )}
-              </div>
-            )}
             <div className="menu-divider" />
             <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
               <span>⏻ {t.menu.signOut}</span>
             </button>
+          </div>
+        </>
+      )}
+
+      {achievementsOpen && (
+        <>
+          <div className="menu-overlay" onClick={() => setAchievementsOpen(false)} />
+          <div className="sheet-panel">
+            <div className="sheet-panel-title">
+              <span>🏅 {lang === "ja" ? "実績" : "Achievements"}</span>
+              <span className="sheet-panel-count">{unlockedAchievements}/{ACHIEVEMENTS.length}</span>
+            </div>
+            <div className="achievements-panel">
+              {ACHIEVEMENTS.map((a) => {
+                const unlocked = a.isUnlocked(achievementCtx);
+                return (
+                  <div key={a.id} className={`badge-card${unlocked ? " unlocked" : " locked"}`}>
+                    <span className="badge-icon">{unlocked ? a.icon : "🔒"}</span>
+                    <div className="badge-text">
+                      <div className="badge-title">{lang === "ja" ? a.titleJa : a.title}</div>
+                      <div className="badge-desc">{lang === "ja" ? a.descJa : a.desc}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {leaderboardOpen && (
+        <>
+          <div className="menu-overlay" onClick={() => setLeaderboardOpen(false)} />
+          <div className="sheet-panel">
+            <div className="sheet-panel-title">
+              <span>🏆 {lang === "ja" ? "ランキング" : "Leaderboard"}</span>
+              {leaderboard?.me && <span className="sheet-panel-count">#{leaderboard.me.position}</span>}
+            </div>
+            <div className="leaderboard-panel">
+              {leaderboardLoading && <div className="leaderboard-loading">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>}
+              {!leaderboardLoading &&
+                leaderboard?.top.map((e, i) => (
+                  <div key={e.userId} className={`leaderboard-row${e.userId === leaderboard.me?.userId ? " me" : ""}`}>
+                    <span className={`leaderboard-rank${i < 3 ? ` top${i + 1}` : ""}`}>{i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
+                    <span className="leaderboard-name">{e.name}</span>
+                    <span className="leaderboard-level">{lang === "ja" ? "Lv" : "Lv"}.{e.level}</span>
+                    <span className="leaderboard-gems">💎 {e.gems}</span>
+                  </div>
+                ))}
+              {!leaderboardLoading && leaderboard?.me && leaderboard.me.position > leaderboard.top.length && (
+                <div className="leaderboard-row me leaderboard-row-me-sep">
+                  <span className="leaderboard-rank">{leaderboard.me.position}</span>
+                  <span className="leaderboard-name">{leaderboard.me.name}</span>
+                  <span className="leaderboard-level">Lv.{leaderboard.me.level}</span>
+                  <span className="leaderboard-gems">💎 {leaderboard.me.gems}</span>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
@@ -920,6 +1006,7 @@ export function GameApp({
             onOpenTopic={openTopic}
             onOpenArena={() => { loadPuzzle(puzIdx); setView("arena"); }}
             onOpenBlitz={startBlitz}
+            onContinue={continueStage}
             lang={lang}
             t={t}
           />
@@ -1023,40 +1110,63 @@ export function GameApp({
         </div>
       )}
 
-      <footer className="footerbar active" style={{ display: view === "home" || view === "blitz" ? "none" : "flex" }}>
-        {view === "topic" && (
-          <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
-            {t.stageMap.seeStageMap}
-          </button>
-        )}
-        {view === "practice" && (
+      <footer className="footerbar active" style={{ display: "flex" }}>
+        {view === "home" ? (
           <>
-            <button className="btn btn-ghost" onClick={() => openTopic(currentTopicId!)}>
-              {t.practice.lesson}
+            <button className="bottomnav-item active" onClick={goHome}>
+              <span className="bottomnav-icon">🏠</span>
+              <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
-            {(curMode === "choice" || curMode === "target" || curMode === "balloon" || curMode === "numberline" || curMode === "catch") &&
-              fiftyLeft > 0 &&
-              curSelection === null && (
-                <button className="btn btn-ghost fifty-btn" onClick={useFiftyFifty}>
-                  🎯 50/50
-                </button>
-              )}
-            {curMode === "type" && (
-              <button className="btn btn-primary" disabled={!checkEnabled} onClick={checkPractice}>
-                {t.practice.check}
+            <button className="bottomnav-item" onClick={toggleLeaderboard}>
+              <span className="bottomnav-icon">🏆</span>
+              <span>{lang === "ja" ? "ランク" : "Rank"}</span>
+            </button>
+            <button className="bottomnav-item" onClick={() => setAchievementsOpen((o) => !o)}>
+              <span className="bottomnav-icon">🏅</span>
+              <span>{lang === "ja" ? "実績" : "Badges"}</span>
+            </button>
+            <button className="bottomnav-item" onClick={() => setMenuOpen((o) => !o)}>
+              <span className="bottomnav-icon bottomnav-avatar">{(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}</span>
+              <span>{lang === "ja" ? "設定" : "Profile"}</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn btn-ghost back-footer-btn" aria-label="Back" onClick={handleBack}>
+              ← {lang === "ja" ? "戻る" : "Back"}
+            </button>
+            {view === "topic" && (
+              <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
+                {t.stageMap.seeStageMap}
               </button>
             )}
-          </>
-        )}
-        {view === "arena" && (
-          <>
-            {!progress.arena.solved[PUZZLES[puzIdx].id] && (
+            {view === "practice" && (
               <>
-                <button className="btn btn-ghost" onClick={onHint}>{t.arena.hint}</button>
-                <button className="btn btn-ghost" onClick={() => loadPuzzle(puzIdx)}>{t.arena.reset}</button>
+                <button className="btn btn-ghost" onClick={() => openTopic(currentTopicId!)}>
+                  {t.practice.lesson}
+                </button>
+                {(curMode === "choice" || curMode === "target" || curMode === "balloon" || curMode === "numberline" || curMode === "catch") &&
+                  fiftyLeft > 0 &&
+                  curSelection === null && (
+                    <button className="btn btn-ghost fifty-btn" onClick={useFiftyFifty}>
+                      🎯 50/50
+                    </button>
+                  )}
+                {curMode === "type" && (
+                  <button className="btn btn-primary" disabled={!checkEnabled} onClick={checkPractice}>
+                    {t.practice.check}
+                  </button>
+                )}
               </>
             )}
-            <button className="btn btn-primary" onClick={() => loadPuzzle(puzIdx + 1)}>{t.arena.next}</button>
+            {view === "arena" && (
+              <>
+                <button className="btn btn-ghost" onClick={() => loadPuzzle(puzIdx - 1)}>{lang === "ja" ? "◀ 前へ" : "◀ Prev"}</button>
+                {!boardLocked && <button className="btn btn-ghost" onClick={onHint}>{t.arena.hint}</button>}
+                <button className="btn btn-ghost" onClick={() => loadPuzzle(puzIdx)}>{t.arena.reset}</button>
+                <button className="btn btn-primary" onClick={() => loadPuzzle(puzIdx + 1)}>{t.arena.next}</button>
+              </>
+            )}
           </>
         )}
       </footer>
@@ -1189,6 +1299,7 @@ function HomeView({
   onOpenTopic,
   onOpenArena,
   onOpenBlitz,
+  onContinue,
   lang,
   t,
 }: {
@@ -1199,6 +1310,7 @@ function HomeView({
   onOpenTopic: (id: string) => void;
   onOpenArena: () => void;
   onOpenBlitz: () => void;
+  onContinue: (topicId: string, stageN: number) => void;
   lang: Lang;
   t: UIDict;
 }) {
@@ -1206,6 +1318,8 @@ function HomeView({
     const idx = TOPICS.findIndex((tp) => topicProgressOf(progress, tp.id).cleared < STAGE_COUNT);
     return idx === -1 ? TOPICS.length - 1 : idx;
   })();
+  const continueTopic = TOPICS[firstIncompleteIdx];
+  const continueStageN = Math.min(topicProgressOf(progress, continueTopic.id).cleared + 1, STAGE_COUNT);
   const rank = lang === "ja" ? RANKS_JA[li.rank] || li.rank : li.rank;
 
   const [resetIn, setResetIn] = useState(() => msUntilUTCMidnight());
@@ -1268,6 +1382,14 @@ function HomeView({
           <span>{li.into} / 150</span>
         </div>
         <div className="bar-track"><div className="bar-fill" style={{ width: `${li.pct}%` }} /></div>
+      </div>
+
+      <div className="continue-card" style={{ background: gradCss(continueTopic.grad) }} onClick={() => onContinue(continueTopic.id, continueStageN)}>
+        <div className="continue-card-label">{lang === "ja" ? "続きから" : "Continue"}</div>
+        <div className="continue-card-title">
+          {(lang === "ja" ? continueTopic.titleJa : continueTopic.title)} — {lang === "ja" ? `ステージ ${continueStageN}` : `Stage ${continueStageN}`}
+        </div>
+        <span className="continue-card-arrow">▶</span>
       </div>
 
       {dailyStreak > 0 && (
@@ -1351,34 +1473,133 @@ function HomeView({
   );
 }
 
-const DIGIT_FLOW_TOPICS = new Set(["add9", "sub9", "add8sub8"]);
+const DIGIT_FLOW_TOPICS = new Set(["add9", "sub9", "add8sub8", "squareStart5"]);
+
+const DIGIT_ARROW_EX: Record<string, { before: string; tensLabel: string; unitsLabel: string; after: string; eq: string }> = {
+  add9: { before: "36", tensLabel: "+1", unitsLabel: "−1", after: "45", eq: "36 + 9" },
+  sub9: { before: "36", tensLabel: "−1", unitsLabel: "+1", after: "27", eq: "36 − 9" },
+  add8sub8: { before: "73", tensLabel: "+1", unitsLabel: "−2", after: "81", eq: "73 + 8" },
+};
+
+function DigitArrowSVG({ before, tensLabel, unitsLabel, after }: { before: string; tensLabel: string; unitsLabel: string; after: string }) {
+  const beforeTens = before[0];
+  const beforeUnits = before[1];
+  const afterTens = after[after.length - 2];
+  const afterUnits = after[after.length - 1];
+  return (
+    <svg viewBox="0 0 240 140" className="digitarrow-svg">
+      <text x="95" y="60" className="digitarrow-digit">{beforeTens}</text>
+      <text x="130" y="60" className="digitarrow-digit">{beforeUnits}</text>
+      <path d="M100,42 Q118,12 150,18" className="digitarrow-path up" fill="none" markerEnd="url(#daArrowUp)" />
+      <text x="155" y="15" className="digitarrow-label up">{tensLabel}</text>
+      <text x="188" y="22" className="digitarrow-newdigit up">{afterTens}</text>
+      <path d="M133,68 Q150,98 182,104" className="digitarrow-path down" fill="none" markerEnd="url(#daArrowDown)" />
+      <text x="155" y="120" className="digitarrow-label down">{unitsLabel}</text>
+      <text x="188" y="126" className="digitarrow-newdigit down">{afterUnits}</text>
+      <text x="20" y="112" className="digitarrow-eq-sign">=</text>
+      <text x="42" y="112" className="digitarrow-answer">{after}</text>
+      <defs>
+        <marker id="daArrowUp" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" className="digitarrow-path up" />
+        </marker>
+        <marker id="daArrowDown" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" className="digitarrow-path down" />
+        </marker>
+      </defs>
+    </svg>
+  );
+}
 
 function DigitFlowIllus({
   topic,
   rows,
+  blurb,
   lang,
 }: {
   topic: Topic;
   rows: [string, string][];
+  blurb: string;
   lang: Lang;
 }) {
   const [eq] = rows[0];
   const tens = rows[1];
   const units = rows[2];
+  const [unitsVal, unitsAnswer] = units[1].split("→").map((s) => s.trim());
+  const arrowEx = DIGIT_ARROW_EX[topic.id];
   return (
-    <div className="digitflow-illus" style={{ background: gradCss(topic.grad) }}>
-      <div className="digitflow-eq mono">{eq}</div>
-      <div className="digitflow-row">
-        <span className="digitflow-arrow up">▲</span>
-        <span className="digitflow-label">{tens[0]}</span>
-        <span className="digitflow-val mono">{tens[1]}</span>
+    <div className="bookmethod-wrap">
+      <div className="bookmethod-card" style={{ background: `color-mix(in srgb, ${topic.grad[0]} 14%, var(--surface-2))`, borderColor: topic.grad[0] }}>
+        <span className="bookmethod-badge" style={{ background: gradCss(topic.grad) }}>{topic.icon}</span>
+        <div>
+          <div className="bookmethod-title">{lang === "ja" ? "やり方" : "The Method"}</div>
+          <div className="bookmethod-desc">{blurb}</div>
+        </div>
       </div>
-      <div className="digitflow-row">
-        <span className="digitflow-arrow down">▼</span>
-        <span className="digitflow-label">{units[0]}</span>
-        <span className="digitflow-val mono">{units[1]}</span>
+      <div className="bookexample-card">
+        <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
+          {lang === "ja" ? "例：" : "Example: "}{arrowEx ? arrowEx.eq : eq}
+        </div>
+        {arrowEx ? (
+          <DigitArrowSVG before={arrowEx.before} tensLabel={arrowEx.tensLabel} unitsLabel={arrowEx.unitsLabel} after={arrowEx.after} />
+        ) : (
+          <div className="bookexample-body">
+            <div className="bookexample-col">
+              <div className="bookexample-col-label">{lang === "ja" ? "手順1・十の位" : "Step 1 · tens"}</div>
+              <div className="bookexample-arrow up">▲</div>
+              <div className="bookexample-expr mono">{tens[0]}</div>
+              <div className="bookexample-val mono">{tens[1]}</div>
+            </div>
+            <div className="bookexample-col">
+              <div className="bookexample-col-label">{lang === "ja" ? "手順2・一の位" : "Step 2 · units"}</div>
+              <div className="bookexample-arrow down">▼</div>
+              <div className="bookexample-expr mono">{units[0]}</div>
+              <div className="bookexample-val mono">{unitsVal}</div>
+            </div>
+          </div>
+        )}
+        {!arrowEx && (
+          <div className="bookexample-answer mono" style={{ borderColor: topic.grad[0], color: topic.grad[0] }}>{unitsAnswer}</div>
+        )}
       </div>
-      <div className="digitflow-caption">{lang === "ja" ? "本の教え方どおり" : "straight from the book"}</div>
+    </div>
+  );
+}
+
+function BookMethodCard({
+  topic,
+  rows,
+  blurb,
+  lang,
+}: {
+  topic: Topic;
+  rows: [string, string][];
+  blurb: string;
+  lang: Lang;
+}) {
+  const [eq] = rows[0];
+  const bodyRows = rows.slice(1);
+  return (
+    <div className="bookmethod-wrap">
+      <div className="bookmethod-card" style={{ background: `color-mix(in srgb, ${topic.grad[0]} 14%, var(--surface-2))`, borderColor: topic.grad[0] }}>
+        <span className="bookmethod-badge" style={{ background: gradCss(topic.grad) }}>{topic.icon}</span>
+        <div>
+          <div className="bookmethod-title">{lang === "ja" ? "やり方" : "The Method"}</div>
+          <div className="bookmethod-desc">{blurb}</div>
+        </div>
+      </div>
+      <div className="bookexample-card">
+        <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
+          {lang === "ja" ? "例：" : "Example: "}{eq}
+        </div>
+        <div className="bookexample-list">
+          {bodyRows.map((r, i) => (
+            <div className="bookexample-list-row mono" key={i}>
+              <span>{r[0]}</span>
+              <b>{r[1]}</b>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1387,43 +1608,21 @@ function TopicView({ topic, lang, t }: { topic: Topic; lang: Lang; t: UIDict }) 
   const ex = topic.example();
   const rows = topic.exSteps(ex, lang);
   const title = lang === "ja" ? topic.titleJa : topic.title;
-  const sutraEn = lang === "ja" ? topic.sutraEnJa : topic.sutraEn;
   const blurb = lang === "ja" ? topic.blurbJa : topic.blurb;
-  const steps = lang === "ja" ? topic.stepsJa : topic.steps;
   return (
     <section className="view active">
       <div className="topic-head">
         <div className="icon-badge" style={{ background: gradCss(topic.grad) }}>{topic.icon}</div>
-        <div className="sutra-tag" style={{ background: gradCss(topic.grad) }}>
-          🕉 {topic.sutraSa} — {sutraEn}
-        </div>
         <h1>{title}</h1>
         <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 8, lineHeight: 1.5, fontWeight: 600 }}>{blurb}</p>
       </div>
       <div className="card">
         <h4>{t.topicView.howItWorks}</h4>
         {DIGIT_FLOW_TOPICS.has(topic.id) ? (
-          <DigitFlowIllus topic={topic} rows={rows} lang={lang} />
+          <DigitFlowIllus topic={topic} rows={rows} blurb={blurb} lang={lang} />
         ) : (
-          <div className="topic-illus" dangerouslySetInnerHTML={{ __html: ILLUS[topic.illus](topic.grad[0], topic.grad[1]) }} />
+          <BookMethodCard topic={topic} rows={rows} blurb={blurb} lang={lang} />
         )}
-        <ol className="steps">
-          {steps.map((s, i) => (
-            <li key={i}>
-              <span className="n" style={{ background: gradCss(topic.grad) }}>{i + 1}</span>
-              <span>{s}</span>
-            </li>
-          ))}
-        </ol>
-        <div className="worked-caption">{lang === "ja" ? "計算例" : "Worked example"}</div>
-        <div className="worked">
-          {rows.map((r, i) => (
-            <div className="ex-line mono" key={i}>
-              <span>{r[0]}</span>
-              <b>{r[1]}</b>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -1446,9 +1645,6 @@ function StageMapView({
   return (
     <section className="view active">
       <div className="stagemap-head">
-        <div className="sutra-tag" style={{ background: gradCss(topic.grad), display: "inline-flex" }}>
-          🕉 {topic.sutraSa}
-        </div>
         <h1 style={{ fontSize: 22 }}>{lang === "ja" ? topic.titleJa : topic.title}</h1>
         <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 6, fontWeight: 600 }}>
           {t.stageMap.instructions}
@@ -1574,7 +1770,6 @@ function PracticeView({
       </div>
       <div className="topic-head" style={{ marginTop: 2 }}>
         <div className={`eyebrow-tag${isBoss ? " boss-tag" : ""}`}>{isBoss ? t.practice.bossStage : t.practice.stageOf(stageN, STAGE_COUNT)}</div>
-        <div className="sutra-tag" style={{ background: gradCss(topic.grad) }}>🕉 {topic.sutraSa}</div>
         <h1>{title}</h1>
       </div>
       <div
@@ -1777,7 +1972,13 @@ function ArenaView({
 }) {
   const [dragging, setDragging] = useState(false);
   const [ghostPos, setGhostPos] = useState<{ x: number; y: number } | null>(null);
+  const draggingRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number; loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null } | null>(null);
+  // onSlotClick reads `selection` state from its enclosing render; the document-level
+  // drag listeners below live across multiple re-renders (pickup, then drop), so they
+  // must always call the LATEST onSlotClick, not the one closed over at pointerdown time.
+  const onSlotClickRef = useRef(onSlotClick);
+  onSlotClickRef.current = onSlotClick;
 
   function parseDragTarget(el: Element | null) {
     const target = el?.closest<HTMLElement>("[data-drag-loc]");
@@ -1789,41 +1990,60 @@ function ArenaView({
       idx: target.dataset.dragIdx ? Number(target.dataset.dragIdx) : null,
     };
   }
-  function handlePointerDown(e: React.PointerEvent, loc: "board" | "tray", gi: number | null, slot: string | null, idx: number | null) {
-    dragStartRef.current = { x: e.clientX, y: e.clientY, loc, gi, slot, idx };
-    (e.currentTarget as Element).setPointerCapture(e.pointerId);
-  }
-  function handlePointerMove(e: React.PointerEvent) {
+
+  // Document-level listeners (rather than per-stick pointer capture) so a drag
+  // survives the finger sliding off the thin stick hit-line — SVG pointer
+  // capture is unreliable on mobile WebKit and silently drops the drag mid-move.
+  function docPointerMove(e: PointerEvent) {
     const start = dragStartRef.current;
     if (!start) return;
     const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y) > 6;
-    if (moved && !dragging) {
+    if (moved && !draggingRef.current) {
+      draggingRef.current = true;
       setDragging(true);
-      onSlotClick(start.loc, start.gi, start.slot, start.idx);
+      onSlotClickRef.current(start.loc, start.gi, start.slot, start.idx);
     }
-    if (moved || dragging) setGhostPos({ x: e.clientX, y: e.clientY });
+    if (moved || draggingRef.current) setGhostPos({ x: e.clientX, y: e.clientY });
   }
-  function handlePointerUp(e: React.PointerEvent) {
+  function docPointerUp(e: PointerEvent) {
     const start = dragStartRef.current;
     if (start) {
-      if (dragging) {
+      if (draggingRef.current) {
         const target = parseDragTarget(document.elementFromPoint(e.clientX, e.clientY));
-        if (target) onSlotClick(target.loc, target.gi, target.slot, target.idx);
+        if (target) onSlotClickRef.current(target.loc, target.gi, target.slot, target.idx);
       } else {
-        onSlotClick(start.loc, start.gi, start.slot, start.idx);
+        onSlotClickRef.current(start.loc, start.gi, start.slot, start.idx);
       }
     }
     dragStartRef.current = null;
+    draggingRef.current = false;
     setDragging(false);
     setGhostPos(null);
+    document.removeEventListener("pointermove", docPointerMove);
+    document.removeEventListener("pointerup", docPointerUp);
+    document.removeEventListener("pointercancel", docPointerUp);
   }
+  function handlePointerDown(e: React.PointerEvent, loc: "board" | "tray", gi: number | null, slot: string | null, idx: number | null) {
+    dragStartRef.current = { x: e.clientX, y: e.clientY, loc, gi, slot, idx };
+    document.addEventListener("pointermove", docPointerMove);
+    document.addEventListener("pointerup", docPointerUp);
+    document.addEventListener("pointercancel", docPointerUp);
+  }
+  useEffect(() => {
+    return () => {
+      document.removeEventListener("pointermove", docPointerMove);
+      document.removeEventListener("pointerup", docPointerUp);
+      document.removeEventListener("pointercancel", docPointerUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const p = PUZZLES[puzIdx];
-  const cellW = 46, gap = 16, opW = 40;
+  const cellW = 46, gap = 26, opW = 40;
   let total = 0;
   for (const g of glyphs) total += (g.type === "digit" ? cellW : opW) + gap;
   total -= gap;
-  const startX = Math.max(6, (400 - total) / 2);
+  const startX = Math.max(10, (440 - total) / 2);
   const y = 24;
 
   const sticks: React.ReactElement[] = [];
@@ -1850,10 +2070,8 @@ function ArenaView({
           data-drag-gi={gi}
           data-drag-slot={slot}
           onPointerDown={(e) => handlePointerDown(e, "board", gi, slot, null)}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
         >
+          <line className="stick-hit" x1={x1} y1={y1} x2={x2} y2={y2} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
           <line className={lineCls} x1={x1} y1={y1} x2={x2} y2={y2} />
           <circle className={tipCls} cx={tipX} cy={tipY} r={isSel ? 6 : on ? 5.5 : 4} />
         </g>
@@ -1865,8 +2083,8 @@ function ArenaView({
   return (
     <section className="view active">
       <div className="topic-head">
-        <div className="icon-badge" style={{ background: "linear-gradient(135deg,#FF5D3A,#FFC93C)" }}>🔥</div>
-        <div className="sutra-tag" style={{ background: "linear-gradient(135deg,#FF5D3A,#FF9A2E)" }}>{t.headerTitles.arena}</div>
+        <div className="icon-badge" style={{ background: "linear-gradient(135deg,#9B30FF,#FFC93C)" }}>🔥</div>
+        <div className="sutra-tag" style={{ background: "linear-gradient(135deg,#9B30FF,#FFB020)" }}>{t.headerTitles.arena}</div>
         <h1>{t.arena.title}</h1>
         <p style={{ color: "var(--muted)", fontSize: 13.5, marginTop: 6, lineHeight: 1.5, fontWeight: 600 }}>
           {t.arena.instructions}
@@ -1891,7 +2109,7 @@ function ArenaView({
       <div className="puzzle-board">
         <svg className="mandala-watermark" viewBox="0 0 100 100"><Mandala stroke="#7A4E2C" /></svg>
         <div className="board-svg-wrap">
-          <svg ref={svgRef} viewBox="0 0 400 140" width="400" height="140">{sticks}</svg>
+          <svg ref={svgRef} viewBox="0 0 440 140" width="440" height="140">{sticks}</svg>
         </div>
       </div>
       <div className="tray-wrap">
@@ -1906,9 +2124,6 @@ function ArenaView({
                 data-drag-loc="tray"
                 data-drag-idx={idx}
                 onPointerDown={(e) => handlePointerDown(e, "tray", null, null, idx)}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerCancel={handlePointerUp}
               >
                 {on && <div className="stick-mini" />}
               </div>
