@@ -67,6 +67,38 @@ export const arenaProgress = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.puzzleId] })]
 );
 
+// one shared puzzle set per calendar day; one attempt per player
+export const dailyChallenge = pgTable(
+  "daily_challenge",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    correct: integer("correct").notNull().default(0),
+    total: integer("total").notNull().default(0),
+    elapsedMs: integer("elapsed_ms").notNull().default(0),
+    points: integer("points").notNull().default(0),
+    playedAt: timestamp("played_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.day] })]
+);
+
+// points earned inside one ISO week, which decides league standing
+export const leaguePoints = pgTable(
+  "league_points",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    weekStart: date("week_start").notNull(),
+    points: integer("points").notNull().default(0),
+    tier: integer("tier").notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.weekStart] })]
+);
+
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")

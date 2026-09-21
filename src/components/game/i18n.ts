@@ -31,7 +31,7 @@ export function useLang(initialLang: LangCode = "en") {
 
 export type UIDict = {
   appName: string;
-  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string; blitz: string; tricks: string };
+  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string; blitz: string; tricks: string; daily: string };
   menu: {
     accountLabel: string; player: string; sound: string; on: string; off: string;
     theme: string; auto: string; light: string; dark: string; skins: string; language: string; signOut: string;
@@ -67,7 +67,7 @@ export type UIDict = {
 export const UI: Record<LangCode, UIDict> = {
   en: {
     appName: "Sutra Sprint",
-    headerTitles: { home: "Sutra Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Speed Drill", arena: "Matchstick Dojo", blitz: "Number Blitz", tricks: "Magic Tricks" },
+    headerTitles: { home: "Sutra Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Speed Drill", arena: "Matchstick Dojo", blitz: "Number Blitz", tricks: "Magic Tricks", daily: "Daily Challenge" },
     menu: {
       accountLabel: "Account menu",
       player: "Player",
@@ -176,7 +176,7 @@ export const UI: Record<LangCode, UIDict> = {
   },
   ja: {
     appName: "スートラ・スプリント",
-    headerTitles: { home: "スートラ・スプリント", topic: "レッスン", stagemap: "ステージマップ", practice: "スピードドリル", arena: "マッチ棒道場", blitz: "ナンバーブリッツ", tricks: "マジック" },
+    headerTitles: { home: "スートラ・スプリント", topic: "レッスン", stagemap: "ステージマップ", practice: "スピードドリル", arena: "マッチ棒道場", blitz: "ナンバーブリッツ", tricks: "マジック", daily: "デイリーチャレンジ" },
     menu: {
       accountLabel: "アカウントメニュー",
       player: "プレイヤー",

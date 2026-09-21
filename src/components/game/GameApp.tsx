@@ -39,19 +39,21 @@ import {
   levelInfo,
   type ProgressState,
 } from "@/lib/game/state";
-import { finishStageAction, solvePuzzleAction, leaderboardAction } from "@/lib/actions/game-actions";
+import { finishStageAction, solvePuzzleAction, leaderboardAction, dailyStatusAction, submitDailyAction, leagueAction } from "@/lib/actions/game-actions";
 import type { LeaderboardEntry } from "@/lib/game/progress";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { Mascot, Mandala } from "./Mascot";
 import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ } from "./BookDiagrams";
 import { TRICKS, TRICK_BY_ID } from "@/lib/game/tricks";
+import { dailyQuestions, todayKey, DAILY_QUESTIONS, type DailyQuestion } from "@/lib/game/daily";
+import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS } from "./useSkins";
 import { useLang, UI, type UIDict } from "./i18n";
 
-type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks";
+type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
@@ -134,6 +136,63 @@ export function GameApp({
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [leaderboard, setLeaderboard] = useState<{ top: LeaderboardEntry[]; me: (LeaderboardEntry & { position: number }) | null } | null>(null);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
+  useEffect(() => {
+    dailyStatusAction().then(setDailyStatus).catch(() => {});
+  }, []);
+
+  async function toggleLeague() {
+    const next = !leagueOpen;
+    setLeagueOpen(next);
+    if (next) {
+      setLeagueLoading(true);
+      try {
+        setLeague(await leagueAction());
+      } finally {
+        setLeagueLoading(false);
+      }
+    }
+  }
+
+  function startDaily() {
+    if (dailyStatus?.played) return;
+    setDailyQs(dailyQuestions(todayKey()));
+    setDailyIdx(0);
+    setDailyCorrect(0);
+    setDailyPick(null);
+    setDailyDone(null);
+    dailyStartRef.current = Date.now();
+    setView("daily");
+  }
+
+  async function onDailyPick(v: number) {
+    if (dailyPick !== null) return;
+    const q = dailyQs[dailyIdx];
+    const ok = v === q.problem.answer;
+    setDailyPick(v);
+    if (ok) {
+      setDailyCorrect((c) => c + 1);
+      sound.correct();
+      haptic(14);
+    } else {
+      sound.wrong();
+      haptic([20, 40, 20]);
+    }
+    const nextCorrect = dailyCorrect + (ok ? 1 : 0);
+    setTimeout(async () => {
+      if (dailyIdx + 1 >= dailyQs.length) {
+        const elapsed = Date.now() - dailyStartRef.current;
+        const res = await submitDailyAction(nextCorrect, elapsed);
+        setDailyDone({ points: res.points, correct: res.correct });
+        setDailyStatus({ day: todayKey(), played: true, correct: res.correct, total: dailyQs.length, points: res.points });
+        setLeague(null);
+        if (res.correct >= 6) confetti.burstCenter();
+      } else {
+        setDailyIdx((i) => i + 1);
+        setDailyPick(null);
+      }
+    }, 750);
+  }
 
   async function toggleLeaderboard() {
     const next = !leaderboardOpen;
@@ -305,6 +364,17 @@ export function GameApp({
   const [trickId, setTrickId] = useState<string | null>(null);
   const [trickStep, setTrickStep] = useState(0);
   const [trickNum, setTrickNum] = useState(0);
+
+  const [dailyStatus, setDailyStatus] = useState<DailyStatus | null>(null);
+  const [dailyQs, setDailyQs] = useState<DailyQuestion[]>([]);
+  const [dailyIdx, setDailyIdx] = useState(0);
+  const [dailyCorrect, setDailyCorrect] = useState(0);
+  const [dailyPick, setDailyPick] = useState<number | null>(null);
+  const [dailyDone, setDailyDone] = useState<{ points: number; correct: number } | null>(null);
+  const dailyStartRef = useRef(0);
+  const [leagueOpen, setLeagueOpen] = useState(false);
+  const [league, setLeague] = useState<LeagueStanding | null>(null);
+  const [leagueLoading, setLeagueLoading] = useState(false);
   const [stageIntro, setStageIntro] = useState<number | null>(null);
   const isBoss = curStage.n === STAGE_COUNT;
 
@@ -968,6 +1038,44 @@ export function GameApp({
         </>
       )}
 
+      {leagueOpen && (
+        <>
+          <div className="menu-overlay" onClick={() => setLeagueOpen(false)} />
+          <div className="sheet-panel">
+            <div className="sheet-panel-title">
+              <span>
+                {league?.league.icon} {lang === "ja" ? league?.league.nameJa : league?.league.name}{" "}
+                {lang === "ja" ? "リーグ" : "League"}
+              </span>
+              {league && league.myRank > 0 && <span className="sheet-panel-count">#{league.myRank}</span>}
+            </div>
+            <div className="league-note">
+              {lang === "ja"
+                ? "デイリーチャレンジのポイントで毎週きそいます。上位は昇格、下位は降格。"
+                : "Weekly table, scored from Daily Challenge points. Top players promote, bottom relegate."}
+            </div>
+            <div className="leaderboard-panel">
+              {leagueLoading && <div className="leaderboard-loading">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>}
+              {!leagueLoading && league?.rows.length === 0 && (
+                <div className="leaderboard-loading">
+                  {lang === "ja" ? "今週はまだ誰もいません。最初の一人になろう！" : "Nobody here yet this week — be the first!"}
+                </div>
+              )}
+              {!leagueLoading &&
+                league?.rows.map((r) => (
+                  <div key={r.userId} className={`leaderboard-row${r.isMe ? " me" : ""}`}>
+                    <span className={`leaderboard-rank${r.rank <= 3 ? ` top${r.rank}` : ""}`}>
+                      {r.rank <= 3 ? ["🥇", "🥈", "🥉"][r.rank - 1] : r.rank}
+                    </span>
+                    <span className="leaderboard-name">{r.name}</span>
+                    <span className="leaderboard-gems">⚡ {r.points}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </>
+      )}
+
       {leaderboardOpen && (
         <>
           <div className="menu-overlay" onClick={() => setLeaderboardOpen(false)} />
@@ -1017,6 +1125,8 @@ export function GameApp({
             onOpenArena={() => { loadPuzzle(puzIdx); setView("arena"); }}
             onOpenBlitz={startBlitz}
             onOpenTricks={() => { setTrickId(null); setView("tricks"); }}
+            onOpenDaily={startDaily}
+            dailyPlayed={!!dailyStatus?.played}
             onContinue={continueStage}
             lang={lang}
             t={t}
@@ -1088,6 +1198,19 @@ export function GameApp({
           />
         )}
 
+        {view === "daily" && (
+          <DailyView
+            qs={dailyQs}
+            idx={dailyIdx}
+            pick={dailyPick}
+            done={dailyDone}
+            status={dailyStatus}
+            lang={lang}
+            onPick={onDailyPick}
+            onHome={goHome}
+          />
+        )}
+
         {view === "tricks" && (
           <TricksView
             trickId={trickId}
@@ -1153,8 +1276,12 @@ export function GameApp({
               <span className="bottomnav-icon">🏠</span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
-            <button className="bottomnav-item" onClick={toggleLeaderboard}>
+            <button className="bottomnav-item" onClick={toggleLeague}>
               <span className="bottomnav-icon">🏆</span>
+              <span>{lang === "ja" ? "リーグ" : "League"}</span>
+            </button>
+            <button className="bottomnav-item" onClick={toggleLeaderboard}>
+              <span className="bottomnav-icon">🌍</span>
               <span>{lang === "ja" ? "ランク" : "Rank"}</span>
             </button>
             <button className="bottomnav-item" onClick={() => setAchievementsOpen((o) => !o)}>
@@ -1336,6 +1463,8 @@ function HomeView({
   onOpenArena,
   onOpenBlitz,
   onOpenTricks,
+  onOpenDaily,
+  dailyPlayed,
   onContinue,
   lang,
   t,
@@ -1348,6 +1477,8 @@ function HomeView({
   onOpenArena: () => void;
   onOpenBlitz: () => void;
   onOpenTricks: () => void;
+  onOpenDaily: () => void;
+  dailyPlayed: boolean;
   onContinue: (topicId: string, stageN: number) => void;
   lang: Lang;
   t: UIDict;
@@ -1457,6 +1588,23 @@ function HomeView({
         <span className="blitz-cta-arrow">›</span>
       </div>
 
+      <div className={`blitz-cta daily-cta${dailyPlayed ? " played" : ""}`} onClick={onOpenDaily}>
+        <div className="blitz-cta-icon">{dailyPlayed ? "✅" : "🗓️"}</div>
+        <div className="blitz-cta-info">
+          <div className="blitz-cta-title">{lang === "ja" ? "デイリーチャレンジ" : "Daily Challenge"}</div>
+          <div className="blitz-cta-sub">
+            {dailyPlayed
+              ? lang === "ja"
+                ? "今日はクリア済み。また明日！"
+                : "Done for today — come back tomorrow!"
+              : lang === "ja"
+              ? "世界中が同じ8問に挑戦中"
+              : "The same 8 questions for everyone, today only"}
+          </div>
+        </div>
+        <span className="blitz-cta-arrow">›</span>
+      </div>
+
       <div className="blitz-cta trick-cta" onClick={onOpenTricks}>
         <div className="blitz-cta-icon">🔮</div>
         <div className="blitz-cta-info">
@@ -1518,6 +1666,79 @@ function HomeView({
             </div>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function DailyView({
+  qs,
+  idx,
+  pick,
+  done,
+  status,
+  lang,
+  onPick,
+  onHome,
+}: {
+  qs: DailyQuestion[];
+  idx: number;
+  pick: number | null;
+  done: { points: number; correct: number } | null;
+  status: DailyStatus | null;
+  lang: Lang;
+  onPick: (v: number) => void;
+  onHome: () => void;
+}) {
+  if (done || status?.played) {
+    const correct = done?.correct ?? status?.correct ?? 0;
+    const points = done?.points ?? status?.points ?? 0;
+    return (
+      <section className="view active">
+        <div className="daily-done">
+          <div className="daily-done-icon">{correct >= 6 ? "🎉" : correct >= 4 ? "👏" : "💪"}</div>
+          <h1>{lang === "ja" ? "今日の挑戦は完了！" : "Today's challenge is done!"}</h1>
+          <div className="daily-done-score mono">{correct} / {DAILY_QUESTIONS}</div>
+          <div className="daily-done-points">+{points} {lang === "ja" ? "リーグポイント" : "league points"}</div>
+          <p className="daily-done-note">
+            {lang === "ja"
+              ? "同じ問題を世界中のみんなが解いています。また明日！"
+              : "Everyone in the world got these same questions today. Come back tomorrow!"}
+          </p>
+          <button className="btn btn-primary" onClick={onHome}>
+            {lang === "ja" ? "ホームへ" : "Back home"}
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  const q = qs[idx];
+  if (!q) return null;
+  return (
+    <section className="view active">
+      <div className="daily-top">
+        <div className="daily-chip">🗓️ {lang === "ja" ? "デイリー" : "Daily"}</div>
+        <div className="daily-count">{idx + 1} / {qs.length}</div>
+      </div>
+      <div className="daily-progress">
+        {qs.map((_, i) => (
+          <i key={i} className={i < idx ? "done" : i === idx ? "now" : ""} />
+        ))}
+      </div>
+      <div className="practice-card daily-card">
+        <div className="question mono">{q.problem.prompt} = ?</div>
+        <div className="tile-grid">
+          {q.options.map((o) => {
+            const state =
+              pick === null ? "" : o === q.problem.answer ? " correct" : o === pick ? " wrong" : " dim";
+            return (
+              <button key={o} className={`tile mono${state}`} disabled={pick !== null} onClick={() => onPick(o)}>
+                {fmt(o)}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

@@ -299,6 +299,25 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .bd-partbox-hi{ fill:color-mix(in srgb, var(--blue) 10%, var(--surface)); stroke:var(--blue); }
 .bd-partline{ font-family:"JetBrains Mono",monospace; font-size:14px; font-weight:800; fill:var(--ink); }
 
+/* ---------- daily challenge + leagues ---------- */
+.daily-cta{ background:linear-gradient(135deg,#0F766E,#14B8A6) !important; }
+.daily-cta.played{ background:linear-gradient(135deg,#475569,#94A3B8) !important; }
+.daily-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.daily-chip{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#0F766E;
+  background:color-mix(in srgb, #14B8A6 16%, var(--surface)); border:2px solid #0F766E; border-radius:999px; padding:4px 12px; }
+.daily-count{ font-size:13px; font-weight:800; color:var(--muted); }
+.daily-progress{ display:flex; gap:5px; margin-bottom:14px; }
+.daily-progress i{ flex:1; height:7px; border-radius:999px; background:var(--line); }
+.daily-progress i.done{ background:#14B8A6; }
+.daily-progress i.now{ background:var(--gold); }
+.daily-done{ text-align:center; padding:26px 8px; }
+.daily-done-icon{ font-size:58px; }
+.daily-done h1{ font-size:22px; margin-top:8px; }
+.daily-done-score{ font-size:46px; font-weight:800; color:#0F766E; margin:12px 0 4px; }
+.daily-done-points{ font-size:15px; font-weight:800; color:var(--gold-dk); }
+.daily-done-note{ font-size:13px; font-weight:600; color:var(--muted); line-height:1.5; margin:14px 0 20px; }
+.league-note{ font-size:11.5px; font-weight:600; color:var(--muted); line-height:1.45; padding:0 6px 10px; }
+
 /* ---------- magic tricks ---------- */
 .trick-cta{ background:linear-gradient(135deg,#7C3AED,#C026D3) !important; }
 .trick-intro{ color:var(--muted); font-size:13px; font-weight:600; line-height:1.5; margin-top:8px; }
@@ -766,14 +785,11 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .header-mark{ width:52px; height:52px; border-radius:12px; flex:0 0 auto; object-fit:contain; }
 .auth-logo{ display:block; margin:0 auto 14px; height:40px; width:auto; }
 /* the full lockup is a wide tree+wordmark, so size it by width instead of height */
-.auth-logo-full{ height:auto; width:100%; max-width:300px; margin:0 auto 10px; }
-.auth-tagline{ text-align:center; font-size:12.5px; font-weight:800; letter-spacing:.03em;
-  color:#1F6F6B; margin:0 0 14px; }
-:root[data-theme="dark"] .auth-tagline{ color:#6FC9C2; }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .auth-tagline{ color:#6FC9C2; } }
+.auth-logo-full{ height:auto; width:100%; max-width:300px; margin:0 auto 14px; }
 .home-byline{ display:flex; align-items:center; gap:8px; margin-top:8px; opacity:.9; }
 .home-byline img{ height:46px; width:auto; border-radius:8px; background:rgba(255,255,255,.85); padding:3px 5px; }
-.home-byline span{ font-size:13px; font-weight:700; color:#fff; letter-spacing:.04em; text-transform:uppercase; }
+/* no text-transform — the brand is cased "VedAnk", never VEDANK */
+.home-byline span{ font-size:13px; font-weight:700; color:#fff; letter-spacing:.04em; }
 
 /* ---------- account menu ---------- */
 .avatar-btn{ background:linear-gradient(135deg,var(--sun1),var(--sky1)); color:#fff; font-weight:800; font-size:15px; }
