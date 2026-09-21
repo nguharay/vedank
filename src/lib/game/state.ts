@@ -20,6 +20,34 @@ export function starsForStage(state: ProgressState, id: string, n: number): numb
   return topicProgressOf(state, id).stageStars[String(n)] || 0;
 }
 
+// A stage opens only once the stage before it in the same topic is cleared AND
+// the same-numbered stage of the previous topic is cleared, so the whole course
+// advances one stage at a time across topics.
+export function stageUnlocked(state: ProgressState, topicId: string, n: number): boolean {
+  if (n > topicProgressOf(state, topicId).cleared + 1) return false;
+  const idx = TOPICS.findIndex((t) => t.id === topicId);
+  if (idx <= 0) return true;
+  return topicProgressOf(state, TOPICS[idx - 1].id).cleared >= n;
+}
+
+// The topic that gates this one, and the stage of it still to clear — used to
+// tell the player exactly what to finish first.
+export function stageBlocker(
+  state: ProgressState,
+  topicId: string,
+  n: number
+): { topicId: string; stage: number } | null {
+  const idx = TOPICS.findIndex((t) => t.id === topicId);
+  if (idx <= 0) return null;
+  const prev = TOPICS[idx - 1];
+  const prevCleared = topicProgressOf(state, prev.id).cleared;
+  return prevCleared >= n ? null : { topicId: prev.id, stage: prevCleared + 1 };
+}
+
+export function topicUnlocked(state: ProgressState, topicId: string): boolean {
+  return stageUnlocked(state, topicId, 1);
+}
+
 export function totalGems(state: ProgressState): number {
   let g = 0;
   for (const t of TOPICS) {

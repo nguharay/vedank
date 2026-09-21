@@ -31,6 +31,12 @@ export const users = pgTable("users", {
 
   // chosen at signup, used as the default UI language
   preferredLang: text("preferred_lang").notNull().default("en"),
+
+  // signup profile
+  username: text("username").unique(),
+  country: text("country"),
+  phoneCode: text("phone_code"),
+  phone: text("phone"),
 });
 
 export const topicProgress = pgTable(

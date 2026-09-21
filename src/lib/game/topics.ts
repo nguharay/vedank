@@ -412,39 +412,39 @@ export const TOPICS: Topic[] = [
     illus: "ladder",
     title: "Multiplying by 12–19",
     titleJa: "12〜19をかける",
-    sutraSa: "Corollary · Ůrdhva-Tiryagbhyām",
-    sutraEn: "split into tens and the extra",
-    sutraEnJa: "10とあまりに分ける",
-    blurb: "Multiplying by a teen number? Split it into ×10 plus ×(the extra digit).",
-    blurbJa: "10代の数をかけるときは、×10 と ×（あまりの数字）に分けます。",
+    sutraSa: "Ūrdhva-Tiryagbhyām · flag digit",
+    sutraEn: "ultimate and twice the penultimate",
+    sutraEnJa: "旗の数字を使う",
+    blurb: "The flag digit is the units of 12–19 (the 2…9). Sandwich the number with a 0; working right to left, each digit = itself + (flag × the digit beside it), carrying as you go.",
+    blurbJa: "旗の数字は12〜19の一の位（2〜9）。数の前後を0ではさみ、右から左へ、各桁＝その桁＋（旗×となりの桁）。繰り上がりも足します。",
     steps: [
-      "Write the multiplier as 10 + d.",
-      "Multiply the number by 10.",
-      "Multiply the number by d.",
-      "Add the two together.",
+      "The flag digit is the units digit of the 12–19 multiplier.",
+      "Write a 0 before and after the number.",
+      "From the right, each digit = itself + (flag × the digit beside it), plus any carry.",
+      "Keep the units of each result and carry the rest, until the leading 0 is reached.",
     ],
     stepsJa: [
-      "かける数を 10 + d と書く。",
-      "元の数に10をかける。",
-      "元の数にdをかける。",
-      "2つの結果を足す。",
+      "旗の数字は、12〜19の一の位。",
+      "数の前と後ろに0を書く。",
+      "右から、各桁＝その桁＋（旗×となりの桁）＋繰り上がり。",
+      "各結果の一の位を残し、残りを繰り上げ、先頭の0に達するまで続ける。",
     ],
-    example: () => ({ n: 34, d: 4 }),
+    example: () => ({ n: 243, d: 4 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number, d = ex.d as number;
-      if (lang === "ja")
-        return [
-          [`${n} × ${10 + d}`, "="],
-          [`${n} × 10`, `= ${n * 10}`],
-          [`${n} × ${d}`, `= ${n * d}`],
-          ["足す", `${n * 10} + ${n * d} = ${n * 10 + n * d}`],
-        ];
-      return [
-        [`${n} × ${10 + d}`, "="],
-        [`${n} × 10`, `= ${n * 10}`],
-        [`${n} × ${d}`, `= ${n * d}`],
-        ["add", `${n * 10} + ${n * d} = ${n * 10 + n * d}`],
-      ];
+      const s = `0${n}0`.split("").map(Number);
+      const rows: ExStep[] = [[`${n} × ${10 + d}`, "="]];
+      let carry = 0;
+      const out: number[] = [];
+      for (let i = s.length - 1; i >= 1; i--) {
+        const v = s[i] + d * s[i - 1] + carry;
+        out.unshift(v % 10);
+        const expr = `${s[i]} + ${d}×${s[i - 1]}${carry ? ` + ${carry}` : ""}`;
+        rows.push([expr, `= ${v} → ${lang === "ja" ? "書く" : "write"} ${v % 10}${v >= 10 ? `, ${lang === "ja" ? "繰り上げ" : "carry"} ${Math.floor(v / 10)}` : ""}`]);
+        carry = Math.floor(v / 10);
+      }
+      rows.push([lang === "ja" ? "答え" : "answer", `${out.join("")}`]);
+      return rows;
     },
     gen: (diff) => {
       const n = diff === "easy" ? ri(2, 9) : diff === "medium" ? ri(10, 99) : ri(100, 499);
@@ -758,20 +758,47 @@ export const TOPICS: Topic[] = [
     title: "Multiplying by 9",
     titleJa: "9をかける",
     sutraSa: "Corollary · Ekanyūnena Pūrvena",
-    sutraEn: "ten times, then one less",
-    sutraEnJa: "10倍してから1回引く",
-    blurb: "×9 is just ×10 with the original number taken back off once.",
-    blurbJa: "×9は×10をしてから、元の数を1回引くだけです。",
-    steps: ["Multiply the number by 10.", "Subtract the original number once.", "That's the answer — no long multiplication needed."],
-    stepsJa: ["元の数に10をかける。", "元の数を1回引く。", "それが答え――筆算のかけ算は不要。"],
-    example: () => ({ n: 23 }),
+    sutraEn: "answer in two parts — no multiplication",
+    sutraEnJa: "答えを2つの部分に分ける――かけ算なし",
+    blurb: "Answer in two parts, no multiplication! Left: (Number − 1) − all the digits except the units. Right: the 10's complement of the units digit.",
+    blurbJa: "かけ算なしで、答えを2つの部分に分けます。左：（数 − 1）−（一の位を除いた部分）。右：一の位の10の補数。",
+    steps: [
+      "Take the number and subtract 1.",
+      "From that, subtract all the digits except the units — this is the left part.",
+      "Take the 10's complement of the units digit — this is the right part.",
+      "Write the two parts side by side.",
+    ],
+    stepsJa: [
+      "数から1を引く。",
+      "そこから一の位を除いた部分を引く――これが左の部分。",
+      "一の位の10の補数を求める――これが右の部分。",
+      "2つの部分を並べて書く。",
+    ],
+    example: () => ({ n: 32 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number;
-      if (lang === "ja") return [[`${n} × 9`, "="], [`${n} × 10`, `= ${n * 10}`], [`${n * 10} − ${n}`, `= ${n * 9}`]];
-      return [[`${n} × 9`, "="], [`${n} × 10`, `= ${n * 10}`], [`${n * 10} − ${n}`, `= ${n * 9}`]];
+      const rest = Math.floor(n / 10), u = n % 10;
+      const left = n - 1 - rest, right = 10 - u;
+      if (lang === "ja")
+        return [
+          [`${n} × 9`, "="],
+          ["左の部分", `(${n} − 1) − ${rest} = ${left}`],
+          ["右の部分", `${u} の補数 = ${right}`],
+          ["並べる", `${left} | ${right}  →  ${n * 9}`],
+        ];
+      return [
+        [`${n} × 9`, "="],
+        ["left part", `(${n} − 1) − ${rest} = ${left}`],
+        ["right part", `complement of ${u} = ${right}`],
+        ["put together", `${left} | ${right}  →  ${n * 9}`],
+      ];
     },
     gen: (diff) => {
-      const n = diff === "easy" ? ri(2, 9) : diff === "medium" ? ri(10, 99) : ri(100, 999);
+      // a units digit of 0 has no single-digit 10's complement, so the book's rule needs one
+      let n: number;
+      do {
+        n = diff === "easy" ? ri(2, 9) : diff === "medium" ? ri(10, 99) : ri(100, 999);
+      } while (n % 10 === 0);
       return { prompt: `${n} × 9`, answer: n * 9 };
     },
   },

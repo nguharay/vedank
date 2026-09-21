@@ -32,6 +32,9 @@ import {
 import {
   topicProgressOf,
   starsForStage,
+  stageUnlocked,
+  stageBlocker,
+  topicUnlocked,
   totalGems,
   levelInfo,
   type ProgressState,
@@ -40,6 +43,7 @@ import { finishStageAction, solvePuzzleAction, leaderboardAction } from "@/lib/a
 import type { LeaderboardEntry } from "@/lib/game/progress";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { Mascot, Mandala } from "./Mascot";
+import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ } from "./BookDiagrams";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
 import { useTheme } from "./useTheme";
@@ -182,7 +186,7 @@ export function GameApp({
         left: ri(0, 96),
         delay: Math.random() * 8,
         duration: 9 + Math.random() * 6,
-        size: 14 + Math.random() * 10,
+        size: 34 + Math.random() * 18,
         sway: ri(-40, 40),
       }))
     );
@@ -294,6 +298,9 @@ export function GameApp({
   const answeredRef = useRef(false);
   const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasFeedbackRef = useRef(false);
+  // the feedback banner sits directly on top of the footer rather than over it
+  const footerRef = useRef<HTMLElement>(null);
+  const [footerH, setFooterH] = useState(0);
   const [stageIntro, setStageIntro] = useState<number | null>(null);
   const isBoss = curStage.n === STAGE_COUNT;
 
@@ -327,7 +334,7 @@ export function GameApp({
     setRunReady(false);
     setEliminated([]);
     answeredRef.current = false;
-    setTimerMs(60000);
+    setTimerMs((30 + 10 * (n - 1)) * 1000);
     setTimerKey((k) => k + 1);
     questionStartRef.current = Date.now();
     if (mode === "choice") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
@@ -343,6 +350,7 @@ export function GameApp({
 
   function startStage(n: number) {
     if (!currentTopic) return;
+    if (!stageUnlocked(progress, currentTopic.id, n)) return;
     setCurStage({ n, qIndex: 0, correct: 0 });
     setHearts(5);
     setRuns(0);
@@ -359,6 +367,7 @@ export function GameApp({
   function continueStage(topicId: string, n: number) {
     const topic = TOPIC_BY_ID[topicId];
     if (!topic) return;
+    if (!stageUnlocked(progress, topicId, n)) return;
     setCurrentTopicId(topicId);
     setCurStage({ n, qIndex: 0, correct: 0 });
     setHearts(5);
@@ -509,7 +518,10 @@ export function GameApp({
   }
 
   async function onFeedbackContinue() {
-    if (!feedback) return;
+    // the scheduled timeout closes over a render where `feedback` was still null,
+    // so the guard has to read the ref, which is set synchronously alongside it
+    if (!hasFeedbackRef.current) return;
+    hasFeedbackRef.current = false;
     if (advanceTimeoutRef.current) {
       clearTimeout(advanceTimeoutRef.current);
       advanceTimeoutRef.current = null;
@@ -613,6 +625,16 @@ export function GameApp({
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, puzIdx, progress.arena.solved[PUZZLES[puzIdx]?.id]]);
+
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    const measure = () => setFooterH(el.offsetHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   function getActive(loc: "board" | "tray", gi: number | null, slot: string | null, idx: number | null, g: Glyph[], tr: boolean[]) {
     return loc === "board" ? !!g[gi!].active[slot!] : !!tr[idx!];
@@ -842,7 +864,7 @@ export function GameApp({
               "--sway": `${s.sway}px`,
             } as React.CSSProperties}
           >
-            🌸
+            🍁
           </span>
         ))}
       </div>
@@ -1094,7 +1116,7 @@ export function GameApp({
         </div>
       )}
 
-      <footer className="footerbar active" style={{ display: "flex" }}>
+      <footer ref={footerRef} className="footerbar active" style={{ display: "flex" }}>
         {view === "home" ? (
           <>
             <button className="bottomnav-item active" onClick={goHome}>
@@ -1156,7 +1178,7 @@ export function GameApp({
       </footer>
 
       {feedback?.show && (
-        <div className={`feedback-banner show ${feedback.ok ? "good" : "bad"}`}>
+        <div className={`feedback-banner show ${feedback.ok ? "good" : "bad"}`} style={{ bottom: footerH }}>
           <div className="feedback-sfx-stamp">{feedback.ok ? "ピンポン♪" : "ブブー"}</div>
           <div className="feedback-inner">
             <div className="feedback-icon">{feedback.ok ? "✓" : "✕"}</div>
@@ -1380,7 +1402,7 @@ function HomeView({
         <div className="streak-calendar">
           <span className="streak-calendar-label">🔥 {dailyStreak}{t.home.streakSuffix}</span>
           <div className="streak-days">
-            {Array.from({ length: 7 }, (_, i) => 6 - i).map((daysAgo) => (
+            {Array.from({ length: 7 }, (_, i) => i).map((daysAgo) => (
               <span key={daysAgo} className={`streak-day${daysAgo < dailyStreak ? " lit" : ""}`}>
                 🔥
               </span>
@@ -1412,6 +1434,7 @@ function HomeView({
         )}
         {TOPICS.map((tp, i) => {
           const p = topicProgressOf(progress, tp.id);
+          const locked = !topicUnlocked(progress, tp.id);
           const isCurrent = i === firstIncompleteIdx;
           const boss =
             i === 6 ? (
@@ -1434,11 +1457,11 @@ function HomeView({
                   {isCurrent && <div className="node-bubble">{t.home.play}</div>}
                   <span className="node-level">{i + 1}</span>
                   <div
-                    className={`node${isCurrent ? " current" : ""}`}
-                    style={{ background: gradCss(tp.grad) }}
+                    className={`node${isCurrent ? " current" : ""}${locked ? " node-locked" : ""}`}
+                    style={locked ? undefined : { background: gradCss(tp.grad) }}
                     onClick={() => onOpenTopic(tp.id)}
                   >
-                    {tp.icon}
+                    {locked ? "🔒" : tp.icon}
                     <span className="stage-pips">
                       {Array.from({ length: STAGE_COUNT }, (_, k) => (
                         <i key={k} className={k < p.cleared ? "on" : ""} />
@@ -1457,7 +1480,7 @@ function HomeView({
   );
 }
 
-const DIGIT_FLOW_TOPICS = new Set(["add9", "sub9", "add8sub8", "squareStart5"]);
+const DIGIT_FLOW_TOPICS = new Set(["add9", "sub9", "add8sub8"]);
 
 const DIGIT_ARROW_EX: Record<string, { before: string; tensLabel: string; unitsLabel: string; after: string; eq: string }> = {
   add9: { before: "36", tensLabel: "+1", unitsLabel: "−1", after: "45", eq: "36 + 9" },
@@ -1465,29 +1488,32 @@ const DIGIT_ARROW_EX: Record<string, { before: string; tensLabel: string; unitsL
   add8sub8: { before: "73", tensLabel: "+1", unitsLabel: "−2", after: "81", eq: "73 + 8" },
 };
 
-function DigitArrowSVG({ before, tensLabel, unitsLabel, after }: { before: string; tensLabel: string; unitsLabel: string; after: string }) {
+// Mirrors the book's example card: "tens x → y / units a → b" lines on the left,
+// right-angle elbow arrows off the two digits, answer in a green box.
+function DigitArrowSVG({ before, after, lang }: { before: string; after: string; lang: Lang }) {
   const beforeTens = before[0];
   const beforeUnits = before[1];
   const afterTens = after[after.length - 2];
   const afterUnits = after[after.length - 1];
+  const tensWord = lang === "ja" ? "十の位" : "tens";
+  const unitsWord = lang === "ja" ? "一の位" : "units";
   return (
-    <svg viewBox="0 0 240 140" className="digitarrow-svg">
-      <text x="95" y="60" className="digitarrow-digit">{beforeTens}</text>
-      <text x="130" y="60" className="digitarrow-digit">{beforeUnits}</text>
-      <path d="M100,42 Q118,12 150,18" className="digitarrow-path up" fill="none" markerEnd="url(#daArrowUp)" />
-      <text x="155" y="15" className="digitarrow-label up">{tensLabel}</text>
-      <text x="188" y="22" className="digitarrow-newdigit up">{afterTens}</text>
-      <path d="M133,68 Q150,98 182,104" className="digitarrow-path down" fill="none" markerEnd="url(#daArrowDown)" />
-      <text x="155" y="120" className="digitarrow-label down">{unitsLabel}</text>
-      <text x="188" y="126" className="digitarrow-newdigit down">{afterUnits}</text>
-      <text x="20" y="112" className="digitarrow-eq-sign">=</text>
-      <text x="42" y="112" className="digitarrow-answer">{after}</text>
+    <svg viewBox="0 0 300 190" className="digitarrow-svg">
+      <text x="14" y="56" className="digitarrow-line">{tensWord} {beforeTens} → {afterTens}</text>
+      <text x="14" y="82" className="digitarrow-line">{unitsWord} {beforeUnits} → {afterUnits}</text>
+
+      <text x="172" y="36" className="digitarrow-newdigit" textAnchor="middle">{afterTens}</text>
+      <path d="M202,72 H172 V48" className="digitarrow-elbow" fill="none" markerEnd="url(#daArrow)" />
+      <text x="214" y="80" className="digitarrow-digit" textAnchor="middle">{beforeTens}</text>
+      <text x="240" y="80" className="digitarrow-digit" textAnchor="middle">{beforeUnits}</text>
+      <path d="M252,80 H276 V110" className="digitarrow-elbow" fill="none" markerEnd="url(#daArrow)" />
+      <text x="276" y="136" className="digitarrow-newdigit" textAnchor="middle">{afterUnits}</text>
+
+      <rect x="48" y="112" width="104" height="44" rx="11" className="digitarrow-ansbox" />
+      <text x="100" y="144" className="digitarrow-ansnum" textAnchor="middle">{after}</text>
       <defs>
-        <marker id="daArrowUp" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
-          <path d="M0,0 L7,3.5 L0,7 Z" className="digitarrow-path up" />
-        </marker>
-        <marker id="daArrowDown" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
-          <path d="M0,0 L7,3.5 L0,7 Z" className="digitarrow-path down" />
+        <marker id="daArrow" markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" className="digitarrow-elbow" />
         </marker>
       </defs>
     </svg>
@@ -1515,16 +1541,29 @@ function DigitFlowIllus({
       <div className="bookmethod-card" style={{ background: `color-mix(in srgb, ${topic.grad[0]} 14%, var(--surface-2))`, borderColor: topic.grad[0] }}>
         <span className="bookmethod-badge" style={{ background: gradCss(topic.grad) }}>{topic.icon}</span>
         <div>
-          <div className="bookmethod-title">{lang === "ja" ? "やり方" : "The Method"}</div>
+          <div className="bookmethod-title">{lang === "ja" ? "ルール" : "The Rule"}</div>
           <div className="bookmethod-desc">{blurb}</div>
+          {arrowEx && (
+            <div className="bookmethod-badges">
+              <span className="bookmethod-pill plus">{arrowEx.tensLabel} {lang === "ja" ? "十の位" : "tens"}</span>
+              <span className="bookmethod-pill minus">{arrowEx.unitsLabel} {lang === "ja" ? "一の位" : "units"}</span>
+            </div>
+          )}
         </div>
+      </div>
+      <div className="bookexample-flow-title">
+        {lang === "ja" ? (
+          <>まずパターンを見つける <span>→</span> それから左から右へ計算</>
+        ) : (
+          <>Spot the Pattern First <span>→</span> Then Calculate From Left to Right</>
+        )}
       </div>
       <div className="bookexample-card">
         <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
           {lang === "ja" ? "例：" : "Example: "}{arrowEx ? arrowEx.eq : eq}
         </div>
         {arrowEx ? (
-          <DigitArrowSVG before={arrowEx.before} tensLabel={arrowEx.tensLabel} unitsLabel={arrowEx.unitsLabel} after={arrowEx.after} />
+          <DigitArrowSVG before={arrowEx.before} after={arrowEx.after} lang={lang} />
         ) : (
           <div className="bookexample-body">
             <div className="bookexample-col">
@@ -1562,6 +1601,8 @@ function BookMethodCard({
 }) {
   const [eq] = rows[0];
   const bodyRows = rows.slice(1);
+  const Diagram = BOOK_DIAGRAMS[topic.id];
+  const diagramEq = BOOK_DIAGRAM_EQ[topic.id];
   return (
     <div className="bookmethod-wrap">
       <div className="bookmethod-card" style={{ background: `color-mix(in srgb, ${topic.grad[0]} 14%, var(--surface-2))`, borderColor: topic.grad[0] }}>
@@ -1571,18 +1612,29 @@ function BookMethodCard({
           <div className="bookmethod-desc">{blurb}</div>
         </div>
       </div>
+      <div className="bookexample-flow-title">
+        {lang === "ja" ? (
+          <>まずパターンを見つける <span>→</span> それから左から右へ計算</>
+        ) : (
+          <>Spot the Pattern First <span>→</span> Then Calculate From Left to Right</>
+        )}
+      </div>
       <div className="bookexample-card">
         <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
-          {lang === "ja" ? "例：" : "Example: "}{eq}
+          {lang === "ja" ? "例：" : "Example: "}{Diagram ? diagramEq! : eq}
         </div>
-        <div className="bookexample-list">
-          {bodyRows.map((r, i) => (
-            <div className="bookexample-list-row mono" key={i}>
-              <span>{r[0]}</span>
-              <b>{r[1]}</b>
-            </div>
-          ))}
-        </div>
+        {Diagram ? (
+          <Diagram lang={lang} />
+        ) : (
+          <div className="bookexample-list">
+            {bodyRows.map((r, i) => (
+              <div className="bookexample-list-row mono" key={i}>
+                <span>{r[0]}</span>
+                <b>{r[1]}</b>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1637,7 +1689,9 @@ function StageMapView({
       <div className="stage-track">
         <div className="stage-line" />
         {Array.from({ length: STAGE_COUNT }, (_, k) => k + 1).map((n) => {
-          const unlocked = n <= p.cleared + 1;
+          const unlocked = stageUnlocked(progress, topic.id, n);
+          const blocker = unlocked ? null : stageBlocker(progress, topic.id, n);
+          const blockerTopic = blocker ? TOPICS.find((tp) => tp.id === blocker.topicId) : null;
           const stars = starsForStage(progress, topic.id, n);
           const isCurrent = unlocked && n === p.cleared + 1;
           return (
@@ -1658,12 +1712,56 @@ function StageMapView({
                     </span>
                   )}
                 </div>
+                {blockerTopic && (
+                  <div className="stage-blocked-note">
+                    {lang === "ja"
+                      ? `先に「${blockerTopic.titleJa}」のステージ${blocker!.stage}をクリア`
+                      : `Clear Stage ${blocker!.stage} of ${blockerTopic.title} first`}
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
       </div>
     </section>
+  );
+}
+
+function CountdownTimer({ timerKey, timerMs, paused }: { timerKey: number; timerMs: number; paused: boolean }) {
+  const [left, setLeft] = useState(timerMs);
+  const startRef = useRef(Date.now());
+  const pausedAtRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    startRef.current = Date.now();
+    pausedAtRef.current = null;
+    setLeft(timerMs);
+  }, [timerKey, timerMs]);
+
+  useEffect(() => {
+    if (paused) pausedAtRef.current = Date.now();
+    else if (pausedAtRef.current !== null) {
+      startRef.current += Date.now() - pausedAtRef.current;
+      pausedAtRef.current = null;
+    }
+  }, [paused]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (pausedAtRef.current !== null) return;
+      setLeft(Math.max(0, timerMs - (Date.now() - startRef.current)));
+    }, 100);
+    return () => clearInterval(id);
+  }, [timerKey, timerMs]);
+
+  const secs = Math.ceil(left / 1000);
+  const label = secs >= 60 ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}` : `${secs}`;
+  return (
+    <div className={`timer-count${left <= 5000 ? " low" : left <= 10000 ? " mid" : ""}`}>
+      <span className="timer-count-icon">⏱</span>
+      <span className="timer-count-num mono">{label}</span>
+    </div>
   );
 }
 
@@ -1745,13 +1843,7 @@ function PracticeView({
       <div className="progress-top">
         <div className="progress-top-fill" style={{ width: `${Math.round((qIndex / QUESTIONS_PER_STAGE) * 100)}%` }} />
       </div>
-      <div className="timer-bar-wrap">
-        <div
-          key={timerKey}
-          className={`timer-bar-fill${timerPaused ? " paused" : ""}`}
-          style={{ animationDuration: `${timerMs}ms` }}
-        />
-      </div>
+      <CountdownTimer timerKey={timerKey} timerMs={timerMs} paused={timerPaused} />
       <div className="topic-head" style={{ marginTop: 2 }}>
         <div className={`eyebrow-tag${isBoss ? " boss-tag" : ""}`}>{isBoss ? t.practice.bossStage : t.practice.stageOf(stageN, STAGE_COUNT)}</div>
         <h1>{title}</h1>

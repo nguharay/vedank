@@ -1,42 +1,193 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { signupAction } from "@/lib/actions/auth-actions";
 import { Mascot } from "@/components/game/Mascot";
+import { COUNTRIES } from "@/lib/countries";
+
+const COPY = {
+  en: {
+    kicker: "Free · takes a minute",
+    title: "Begin your Vedic journey",
+    sub: "Ancient shortcuts, modern speed. Make an account so your stars, streaks and stages are always waiting for you.",
+    lang: "Pick your language",
+    name: "Your name",
+    namePh: "Your name",
+    username: "Username",
+    usernamePh: "sutra_ninja",
+    usernameHint: "3–20 characters · letters, numbers or _ · this is what the leaderboard shows",
+    email: "Email",
+    emailPh: "you@example.com",
+    emailHint: "Used to sign back in and save your progress.",
+    country: "Country",
+    countryPh: "Choose your country",
+    phone: "Phone",
+    optional: "optional",
+    phonePh: "90000 00000",
+    phoneHint: "Only if you'd like updates. We'll never share it.",
+    password: "Password",
+    passwordHint: "At least 8 characters. Make it tricky — you're a mental-maths pro now.",
+    strength: ["Too short", "Getting there", "Good", "Strong", "Unbreakable"],
+    submit: "Create my account",
+    pending: "Setting up your dojo…",
+    have: "Already playing?",
+    signin: "Sign in",
+    perks: ["Your stars and stages saved forever", "Daily streaks and mystery chests", "Climb the global leaderboard"],
+  },
+  ja: {
+    kicker: "無料・1分でできます",
+    title: "ヴェーダの冒険をはじめよう",
+    sub: "古代の裏ワザで、計算はもっと速く。アカウントを作れば、星もステージも連続記録もぜんぶ保存されます。",
+    lang: "言語をえらぶ",
+    name: "お名前",
+    namePh: "なんて呼べばいい？",
+    username: "ユーザー名",
+    usernamePh: "sutra_ninja",
+    usernameHint: "3〜20文字・英数字と _ ・ランキングに表示されます",
+    email: "メールアドレス",
+    emailPh: "you@example.com",
+    emailHint: "ログインと進行状況の保存に使います。",
+    country: "国",
+    countryPh: "国をえらんでください",
+    phone: "電話番号",
+    optional: "任意",
+    phonePh: "90 0000 0000",
+    phoneHint: "お知らせがほしい方のみ。共有はしません。",
+    password: "パスワード",
+    passwordHint: "8文字以上。あなたはもう暗算の達人――むずかしくしよう。",
+    strength: ["みじかすぎ", "もう少し", "いいね", "つよい", "かんぺき"],
+    submit: "アカウントを作る",
+    pending: "道場を準備中…",
+    have: "すでにプレイ中？",
+    signin: "ログイン",
+    perks: ["星とステージをずっと保存", "毎日の連続記録とミステリーボックス", "世界ランキングに挑戦"],
+  },
+};
+
+function scorePassword(pw: string): number {
+  if (pw.length < 8) return 0;
+  let s = 1;
+  if (pw.length >= 12) s++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+  if (/[0-9]/.test(pw) && /[^A-Za-z0-9]/.test(pw)) s++;
+  return Math.min(s, 4);
+}
 
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signupAction, undefined);
   const [lang, setLang] = useState<"en" | "ja">("en");
+  const [country, setCountry] = useState("");
+  const [password, setPassword] = useState("");
+  const c = COPY[lang];
+
+  const dial = useMemo(() => COUNTRIES.find((x) => x.code === country)?.dial ?? "", [country]);
+  const strength = scorePassword(password);
 
   return (
     <div className="auth-shell">
-      <div className="auth-card">
+      <div className="auth-card auth-card-wide">
         <img src="/brand/vedank-logo.png" alt="VedAnk Academy" className="auth-logo" />
         <div className="auth-mascot">
           <Mascot mood="excited" />
         </div>
-        <h1>{lang === "ja" ? "冒険をはじめよう" : "Start your journey"}</h1>
-        <p className="sub">{lang === "ja" ? "アカウントを作って星とステージを保存しよう。" : "Create an account to save your stars and stages."}</p>
+        <div className="auth-kicker">{c.kicker}</div>
+        <h1>{c.title}</h1>
+        <p className="sub">{c.sub}</p>
+
+        <ul className="auth-perks">
+          {c.perks.map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ul>
+
         <form action={formAction}>
           <div className="field">
-            <label>{lang === "ja" ? "言語" : "Language"}</label>
+            <label>{c.lang}</label>
             <div className="lang-toggle">
-              <button type="button" className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>English</button>
-              <button type="button" className={lang === "ja" ? "active" : ""} onClick={() => setLang("ja")}>日本語</button>
+              <button type="button" className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>
+                English
+              </button>
+              <button type="button" className={lang === "ja" ? "active" : ""} onClick={() => setLang("ja")}>
+                日本語
+              </button>
             </div>
             <input type="hidden" name="lang" value={lang} />
           </div>
-          <div className="field">
-            <label htmlFor="name">{lang === "ja" ? "名前" : "Name"}</label>
-            <input id="name" name="name" type="text" required autoComplete="name" />
+
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="name">{c.name}</label>
+              <input id="name" name="name" type="text" required autoComplete="name" placeholder={c.namePh} />
+            </div>
+            <div className="field">
+              <label htmlFor="username">{c.username}</label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                pattern="[a-zA-Z0-9_]{3,20}"
+                autoComplete="username"
+                placeholder={c.usernamePh}
+              />
+            </div>
           </div>
+          <p className="field-hint">{c.usernameHint}</p>
+
           <div className="field">
-            <label htmlFor="email">{lang === "ja" ? "メールアドレス" : "Email"}</label>
-            <input id="email" name="email" type="email" required autoComplete="email" />
+            <label htmlFor="email">{c.email}</label>
+            <input id="email" name="email" type="email" required autoComplete="email" placeholder={c.emailPh} />
+            <p className="field-hint">{c.emailHint}</p>
           </div>
+
           <div className="field">
-            <label htmlFor="password">{lang === "ja" ? "パスワード" : "Password"}</label>
+            <label htmlFor="country">{c.country}</label>
+            <select
+              id="country"
+              name="country"
+              required
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+            >
+              <option value="" disabled>
+                {c.countryPh}
+              </option>
+              {COUNTRIES.map((x) => (
+                <option key={x.code} value={x.code}>
+                  {x.flag} {lang === "ja" ? x.nameJa : x.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field">
+            <label htmlFor="phone">
+              {c.phone} <span className="field-optional">{c.optional}</span>
+            </label>
+            <div className="phone-row">
+              <select name="phoneCode" aria-label="Country code" defaultValue="">
+                <option value="">+—</option>
+                {COUNTRIES.map((x) => (
+                  <option key={x.code} value={x.dial}>
+                    {x.flag} {x.dial}
+                  </option>
+                ))}
+              </select>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                placeholder={dial ? `${dial} ${c.phonePh}` : c.phonePh}
+              />
+            </div>
+            <p className="field-hint">{c.phoneHint}</p>
+          </div>
+
+          <div className="field">
+            <label htmlFor="password">{c.password}</label>
             <input
               id="password"
               name="password"
@@ -44,15 +195,27 @@ export default function SignupPage() {
               required
               minLength={8}
               autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
+            <div className="pw-meter" aria-hidden="true">
+              {[0, 1, 2, 3].map((i) => (
+                <span key={i} className={i < strength ? `on s${strength}` : ""} />
+              ))}
+            </div>
+            <p className="field-hint">
+              {password ? c.strength[strength] : c.passwordHint}
+            </p>
           </div>
+
           {state?.error && <div className="auth-error">{state.error}</div>}
           <button className="btn btn-primary auth-submit" type="submit" disabled={pending}>
-            {pending ? (lang === "ja" ? "作成中…" : "Creating account…") : lang === "ja" ? "アカウント作成" : "Create account"}
+            {pending ? c.pending : c.submit}
           </button>
         </form>
+
         <div className="auth-switch">
-          {lang === "ja" ? "すでにプレイ中？" : "Already playing?"} <Link href="/login">{lang === "ja" ? "ログイン" : "Sign in"}</Link>
+          {c.have} <Link href="/login">{c.signin}</Link>
         </div>
       </div>
     </div>
