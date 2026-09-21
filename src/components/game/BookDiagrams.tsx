@@ -412,7 +412,7 @@ function BalancingDiagram() {
   const segs = [24, 51, 39];
   const out = [29, 4, 9];
   return (
-    <svg viewBox="0 0 330 216" className="bd-svg bd-svg-wide">
+    <svg viewBox="0 0 330 230" className="bd-svg bd-svg-wide">
       <text x="10" y="15" className="bd-caption">carry right → left, keep one digit per segment</text>
 
       {segs.map((v, i) => (
@@ -432,9 +432,10 @@ function BalancingDiagram() {
         <text key={i} x={80 + i * 80} y="140" className="bd-part bd-part-hi" textAnchor="middle">{v}</text>
       ))}
 
-      <text x="14" y="166" className="bd-note">39 → keep 9, carry 3. 51+3=54 → keep 4, carry 5. 24+5=29.</text>
+      <text x="14" y="164" className="bd-note">39 → keep 9, carry 3.  51+3=54 → keep 4, carry 5.</text>
+      <text x="14" y="180" className="bd-note">24+5 = 29 (leftmost segment keeps both digits).</text>
 
-      <AnswerBox x={100} y={176} w={130} h={34} value={String(out.join(""))} />
+      <AnswerBox x={100} y={188} w={130} h={34} value={String(out.join(""))} />
       <defs>
         <marker id="bdBalTip" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
           <path d="M0,0 L7,3.5 L0,7 Z" className="bd-hopHead" />
@@ -449,7 +450,7 @@ function CrosswiseDiagram({ lang }: { lang: Lang }) {
   const a = [2, 1], b = [1, 3];
   const left = a[0] * b[0], cross = a[0] * b[1] + a[1] * b[0], right = a[1] * b[1];
   return (
-    <svg viewBox="0 0 330 224" className="bd-svg bd-svg-wide">
+    <svg viewBox="0 0 330 232" className="bd-svg bd-svg-wide">
       <text x="10" y="15" className="bd-caption">the I X I pattern</text>
 
       <text x="132" y="52" className="bd-num" textAnchor="middle">{a[0]}</text>
@@ -484,25 +485,46 @@ function CrosswiseDiagram({ lang }: { lang: Lang }) {
 }
 
 // Books pp.109/136/114 — "all from 9, the last from 10" written above the minuend.
-type NikhilamSpec = { caption: string; top: string[]; minuend: string; subtrahend: string; notes: string[]; answer: string };
+// Every row is right-aligned to one units column so the place values line up.
+type NikhilamSpec = { caption: string; top: string[]; minuend: string[]; subtrahend: string[]; notes: string[]; answer: string[] };
+
+const NK_RIGHT = 232, NK_PITCH = 30;
+
+function DigitRow({ cells, y, cls }: { cells: string[]; y: number; cls: string }) {
+  return (
+    <>
+      {cells.map((v, i) => (
+        <text
+          key={i}
+          x={NK_RIGHT - (cells.length - 1 - i) * NK_PITCH}
+          y={y}
+          className={cls}
+          textAnchor="middle"
+        >
+          {v}
+        </text>
+      ))}
+    </>
+  );
+}
 
 function AllFrom9Diagram({ spec }: { spec: NikhilamSpec }) {
   const s = spec;
+  const widest = Math.max(s.top.length, s.minuend.length, s.subtrahend.length, s.answer.length);
+  const leftEdge = NK_RIGHT - (widest - 1) * NK_PITCH - 20;
   return (
-    <svg viewBox="0 0 330 214" className="bd-svg bd-svg-wide">
+    <svg viewBox="0 0 330 220" className="bd-svg bd-svg-wide">
       <text x="10" y="15" className="bd-caption">{s.caption}</text>
 
-      {s.top.map((v, i) => (
-        <text key={i} x={70 + i * 34} y="44" className="bd-nine" textAnchor="middle">{v}</text>
-      ))}
-      <text x="70" y="74" className="bd-num" textAnchor="start">{s.minuend}</text>
-      <text x="40" y="104" className="bd-op">−</text>
-      <text x="70" y="104" className="bd-num" textAnchor="start">{s.subtrahend}</text>
-      <line x1="36" y1="114" x2="250" y2="114" className="bd-rule" />
-      <text x="70" y="142" className="bd-part bd-part-hi" textAnchor="start">{s.answer}</text>
+      <DigitRow cells={s.top} y={44} cls="bd-nine" />
+      <DigitRow cells={s.minuend} y={76} cls="bd-num" />
+      <text x={leftEdge - 22} y={108} className="bd-op">−</text>
+      <DigitRow cells={s.subtrahend} y={108} cls="bd-num" />
+      <line x1={leftEdge - 26} y1="118" x2={NK_RIGHT + 16} y2="118" className="bd-rule" />
+      <DigitRow cells={s.answer} y={146} cls="bd-part bd-part-hi" />
 
       {s.notes.map((n, i) => (
-        <text key={`n${i}`} x="14" y={168 + i * 17} className="bd-note">{n}</text>
+        <text key={`n${i}`} x="10" y={176 + i * 16} className="bd-note">{n}</text>
       ))}
     </svg>
   );
@@ -511,21 +533,27 @@ function AllFrom9Diagram({ spec }: { spec: NikhilamSpec }) {
 const NIKHILAM_SPECS: Record<string, NikhilamSpec> = {
   subFromPower10: {
     caption: "all from 9, the last from 10",
-    top: ["9", "9", "9", "10"], minuend: "1 0 0 0 0", subtrahend: "0 0 7 8",
+    top: ["9", "9", "9", "10"],
+    minuend: ["1", "0", "0", "0", "0"],
+    subtrahend: ["0", "0", "7", "8"],
     notes: ["Pad 78 to 0078 to match the four zeros.", "9−0=9, 9−0=9, 9−7=2, 10−8=2"],
-    answer: "9 9 2 2",
+    answer: ["9", "9", "2", "2"],
   },
   subtractionGeneral: {
     caption: "smaller digit above? take the complement",
-    top: ["", "9", "10"], minuend: "6 2 4", subtrahend: "3 4 7",
+    top: ["", "9", "10"],
+    minuend: ["6", "2", "4"],
+    subtrahend: ["3", "4", "7"],
     notes: ["Left: 6−3=3 → reduce to 2", "Middle: 4−2=2 → (9−2)=7", "Last: 7−4=3 → (10−3)=7"],
-    answer: "2 7 7",
+    answer: ["2", "7", "7"],
   },
   subOtherThan10s: {
     caption: "drop the leading digit by 1, then Nikhilam",
-    top: ["", "9", "9", "10"], minuend: "4 0 0 0", subtrahend: "  6 2 8",
+    top: ["9", "9", "10"],
+    minuend: ["4", "0", "0", "0"],
+    subtrahend: ["6", "2", "8"],
     notes: ["4 becomes 'one less' → 3", "then 1000 − 628 = 372"],
-    answer: "3 3 7 2",
+    answer: ["3", "3", "7", "2"],
   },
 };
 
@@ -553,24 +581,30 @@ function FriendlyTensDiagram() {
 }
 
 // Books pp.104/64 — answers built from a left part and a right part.
-type PartsSpec = { caption: string; leftLabel: string; leftWork: string; rightLabel: string; rightWork: string; join: string; answer: string };
+type PartsSpec = { caption: string; leftLabel: string; leftWork: string[]; rightLabel: string; rightWork: string[]; join: string; answer: string };
 
 function TwoPartsDiagram({ spec }: { spec: PartsSpec }) {
   const s = spec;
+  const rows = Math.max(s.leftWork.length, s.rightWork.length);
+  const boxH = 44 + rows * 22;
   return (
-    <svg viewBox="0 0 330 200" className="bd-svg bd-svg-wide">
+    <svg viewBox="0 0 330 214" className="bd-svg bd-svg-wide">
       <text x="10" y="15" className="bd-caption">{s.caption}</text>
 
-      <rect x="12" y="30" width="150" height="62" rx="12" className="bd-partbox" />
-      <text x="87" y="50" className="bd-steplabel" textAnchor="middle">{s.leftLabel}</text>
-      <text x="87" y="76" className="bd-part" textAnchor="middle">{s.leftWork}</text>
+      <rect x="10" y="28" width="152" height={boxH} rx="12" className="bd-partbox" />
+      <text x="86" y="48" className="bd-steplabel" textAnchor="middle">{s.leftLabel}</text>
+      {s.leftWork.map((w, i) => (
+        <text key={i} x="86" y={74 + i * 22} className="bd-partline" textAnchor="middle">{w}</text>
+      ))}
 
-      <rect x="172" y="30" width="146" height="62" rx="12" className="bd-partbox bd-partbox-hi" />
-      <text x="245" y="50" className="bd-steplabel" textAnchor="middle">{s.rightLabel}</text>
-      <text x="245" y="76" className="bd-part bd-part-hi" textAnchor="middle">{s.rightWork}</text>
+      <rect x="170" y="28" width="150" height={boxH} rx="12" className="bd-partbox bd-partbox-hi" />
+      <text x="245" y="48" className="bd-steplabel" textAnchor="middle">{s.rightLabel}</text>
+      {s.rightWork.map((w, i) => (
+        <text key={i} x="245" y={74 + i * 22} className="bd-partline bd-part-hi" textAnchor="middle">{w}</text>
+      ))}
 
-      <text x="165" y="124" className="bd-part" textAnchor="middle">{s.join}</text>
-      <AnswerBox x={100} y={142} w={130} h={40} value={s.answer} />
+      <text x="165" y={boxH + 58} className="bd-part" textAnchor="middle">{s.join}</text>
+      <AnswerBox x={100} y={boxH + 70} w={130} h={38} value={s.answer} />
     </svg>
   );
 }
@@ -578,14 +612,14 @@ function TwoPartsDiagram({ spec }: { spec: PartsSpec }) {
 const PARTS_SPECS: Record<string, PartsSpec> = {
   mult9: {
     caption: "answer in two parts — no multiplication!",
-    leftLabel: "left part", leftWork: "(32−1) − 3 = 28",
-    rightLabel: "right part", rightWork: "10 − 2 = 8",
+    leftLabel: "left part", leftWork: ["(32 − 1) − 3", "= 28"],
+    rightLabel: "right part", rightWork: ["10 − 2", "= 8"],
     join: "28 | 8", answer: "288",
   },
   mult1x: {
     caption: "units × units, then the cross-total",
-    leftLabel: "step 2 · left", leftWork: "19 + 6 = 25, +5 = 30",
-    rightLabel: "step 1 · units", rightWork: "9 × 6 = 54",
+    leftLabel: "step 2 · left", leftWork: ["19 + 6 = 25", "+ carry 5 = 30"],
+    rightLabel: "step 1 · units", rightWork: ["9 × 6 = 54", "write 4, carry 5"],
     join: "30 | 4", answer: "304",
   },
 };

@@ -9,7 +9,7 @@ import { COUNTRIES } from "@/lib/countries";
 const COPY = {
   en: {
     kicker: "Free · takes a minute",
-    title: "Begin your Vedic journey",
+    title: "Begin Your Indian Style Mathematics Journey",
     sub: "Ancient shortcuts, modern speed. Make an account so your stars, streaks and stages are always waiting for you.",
     lang: "Pick your language",
     name: "Your name",
@@ -37,7 +37,7 @@ const COPY = {
   },
   ja: {
     kicker: "無料・1分でできます",
-    title: "ヴェーダの冒険をはじめよう",
+    title: "インド式数学の冒険をはじめよう",
     sub: "古代の裏ワザで、計算はもっと速く。アカウントを作れば、星もステージも連続記録もぜんぶ保存されます。",
     lang: "言語をえらぶ",
     name: "お名前",
@@ -87,7 +87,8 @@ export default function SignupPage() {
   return (
     <div className="auth-shell">
       <div className="auth-card auth-card-wide">
-        <img src="/brand/vedank-logo.png" alt="VedAnk Academy" className="auth-logo" />
+        <img src="/brand/vedank-full.png" alt="VedAnk Academy" className="auth-logo auth-logo-full" />
+        <div className="auth-tagline">Unleashing Brainpower &amp; Creativity</div>
         <div className="auth-mascot">
           <Mascot mood="excited" />
         </div>

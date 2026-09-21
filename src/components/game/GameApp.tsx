@@ -44,13 +44,14 @@ import type { LeaderboardEntry } from "@/lib/game/progress";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { Mascot, Mandala } from "./Mascot";
 import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ } from "./BookDiagrams";
+import { TRICKS, TRICK_BY_ID } from "@/lib/game/tricks";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS } from "./useSkins";
 import { useLang, UI, type UIDict } from "./i18n";
 
-type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz";
+type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
@@ -301,6 +302,9 @@ export function GameApp({
   // the feedback banner sits directly on top of the footer rather than over it
   const footerRef = useRef<HTMLElement>(null);
   const [footerH, setFooterH] = useState(0);
+  const [trickId, setTrickId] = useState<string | null>(null);
+  const [trickStep, setTrickStep] = useState(0);
+  const [trickNum, setTrickNum] = useState(0);
   const [stageIntro, setStageIntro] = useState<number | null>(null);
   const isBoss = curStage.n === STAGE_COUNT;
 
@@ -1012,6 +1016,7 @@ export function GameApp({
             onOpenTopic={openTopic}
             onOpenArena={() => { loadPuzzle(puzIdx); setView("arena"); }}
             onOpenBlitz={startBlitz}
+            onOpenTricks={() => { setTrickId(null); setView("tricks"); }}
             onContinue={continueStage}
             lang={lang}
             t={t}
@@ -1080,6 +1085,31 @@ export function GameApp({
             onHint={onHint}
             onReset={() => loadPuzzle(puzIdx)}
             onNext={() => loadPuzzle(puzIdx + 1)}
+          />
+        )}
+
+        {view === "tricks" && (
+          <TricksView
+            trickId={trickId}
+            step={trickStep}
+            num={trickNum}
+            lang={lang}
+            onOpen={(id) => {
+              const tk = TRICK_BY_ID[id];
+              setTrickId(id);
+              setTrickStep(0);
+              setTrickNum(tk.sample());
+              haptic(12);
+            }}
+            onStep={(d) => {
+              setTrickStep((s) => Math.max(0, s + d));
+              haptic(8);
+            }}
+            onReroll={() => {
+              if (trickId) setTrickNum(TRICK_BY_ID[trickId].sample());
+              haptic(12);
+            }}
+            onBackToList={() => setTrickId(null)}
           />
         )}
 
@@ -1305,6 +1335,7 @@ function HomeView({
   onOpenTopic,
   onOpenArena,
   onOpenBlitz,
+  onOpenTricks,
   onContinue,
   lang,
   t,
@@ -1316,6 +1347,7 @@ function HomeView({
   onOpenTopic: (id: string) => void;
   onOpenArena: () => void;
   onOpenBlitz: () => void;
+  onOpenTricks: () => void;
   onContinue: (topicId: string, stageN: number) => void;
   lang: Lang;
   t: UIDict;
@@ -1425,6 +1457,17 @@ function HomeView({
         <span className="blitz-cta-arrow">›</span>
       </div>
 
+      <div className="blitz-cta trick-cta" onClick={onOpenTricks}>
+        <div className="blitz-cta-icon">🔮</div>
+        <div className="blitz-cta-info">
+          <div className="blitz-cta-title">{lang === "ja" ? "マジックモード" : "Magic Tricks"}</div>
+          <div className="blitz-cta-sub">
+            {lang === "ja" ? "友だちをおどろかせる4つのネタ" : "Four tricks to amaze your friends"}
+          </div>
+        </div>
+        <span className="blitz-cta-arrow">›</span>
+      </div>
+
       <div className="path-wrap" ref={pathWrapRef}>
         {mapGeo.d && (
           <svg className="path-svg" width={mapGeo.w} height={mapGeo.h} style={{ position: "absolute", top: 0, left: 0, zIndex: 0, pointerEvents: "none" }}>
@@ -1476,6 +1519,118 @@ function HomeView({
           );
         })}
       </div>
+    </section>
+  );
+}
+
+function TricksView({
+  trickId,
+  step,
+  num,
+  lang,
+  onOpen,
+  onStep,
+  onReroll,
+  onBackToList,
+}: {
+  trickId: string | null;
+  step: number;
+  num: number;
+  lang: Lang;
+  onOpen: (id: string) => void;
+  onStep: (d: number) => void;
+  onReroll: () => void;
+  onBackToList: () => void;
+}) {
+  if (!trickId) {
+    return (
+      <section className="view active">
+        <div className="topic-head">
+          <div className="eyebrow-tag">{lang === "ja" ? "マジック" : "Magic"}</div>
+          <h1>{lang === "ja" ? "友だちをおどろかせよう" : "Amaze your friends"}</h1>
+          <p className="trick-intro">
+            {lang === "ja"
+              ? "どれも本物の数学。タネも仕掛けもありません――だから絶対に失敗しません。"
+              : "Every one of these is real maths, not sleight of hand — which is why they never fail."}
+          </p>
+        </div>
+        <div className="trick-list">
+          {TRICKS.map((tk) => (
+            <button key={tk.id} className="trick-card" onClick={() => onOpen(tk.id)}>
+              <span className="trick-card-icon" style={{ background: gradCss(tk.grad) }}>{tk.icon}</span>
+              <span className="trick-card-body">
+                <span className="trick-card-title">{lang === "ja" ? tk.titleJa : tk.title}</span>
+                <span className="trick-card-hook">{lang === "ja" ? tk.hookJa : tk.hook}</span>
+              </span>
+              <span className="trick-card-go">›</span>
+            </button>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  const tk = TRICK_BY_ID[trickId];
+  const total = tk.steps.length;
+  const done = step >= total;
+  const cur = done ? null : tk.steps[step];
+  const secret = cur && (lang === "ja" ? cur.secretJa?.(num) : cur.secret?.(num));
+
+  return (
+    <section className="view active">
+      <button className="trick-back" onClick={onBackToList}>
+        ‹ {lang === "ja" ? "マジック一覧" : "All tricks"}
+      </button>
+      <div className="trick-hero" style={{ background: gradCss(tk.grad) }}>
+        <div className="trick-hero-icon">{tk.icon}</div>
+        <div className="trick-hero-title">{lang === "ja" ? tk.titleJa : tk.title}</div>
+      </div>
+
+      <div className="trick-rehearse">
+        <span>{lang === "ja" ? "練習用の数" : "Rehearse with"}</span>
+        <b className="mono">{num}</b>
+        <button onClick={onReroll}>{lang === "ja" ? "べつの数" : "New number"}</button>
+      </div>
+
+      {done ? (
+        <div className="trick-finale">
+          <div className="trick-finale-label">{lang === "ja" ? "答えはいつも" : "The answer is always"}</div>
+          <div className="trick-finale-value mono">{lang === "ja" ? tk.revealJa(num) : tk.reveal(num)}</div>
+          <div className="trick-why">
+            <b>{lang === "ja" ? "なぜ？" : "Why it works"}</b>
+            <p>{lang === "ja" ? tk.whyJa : tk.why}</p>
+          </div>
+          <button className="btn btn-primary" onClick={() => onStep(-total)}>
+            {lang === "ja" ? "もう一度" : "Run it again"}
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="trick-progress">
+            {tk.steps.map((_, i) => (
+              <i key={i} className={i <= step ? "on" : ""} />
+            ))}
+          </div>
+          <div className="trick-say">
+            <div className="trick-say-label">{lang === "ja" ? "こう言おう" : "Say this out loud"}</div>
+            <p>{lang === "ja" ? cur!.sayJa : cur!.say}</p>
+          </div>
+          {secret && (
+            <div className="trick-secret">
+              <div className="trick-secret-label">🤫 {lang === "ja" ? "きみだけのメモ" : "Only you see this"}</div>
+              <p className="mono">{secret}</p>
+            </div>
+          )}
+          <div className="trick-nav">
+            <button className="btn btn-ghost" disabled={step === 0} onClick={() => onStep(-1)}>
+              {lang === "ja" ? "◀ もどる" : "◀ Back"}
+            </button>
+            <button className="btn btn-primary" onClick={() => onStep(1)}>
+              {step === total - 1 ? (lang === "ja" ? "ネタばらし" : "Reveal") : lang === "ja" ? "つぎへ ▶" : "Next ▶"}
+            </button>
+          </div>
+        </>
+      )}
     </section>
   );
 }
