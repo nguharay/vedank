@@ -82,6 +82,34 @@ export const PUZZLES: Puzzle[] = [
     hint: () => [glyphDigit("6"), glyphOp("-"), glyphDigit("4"), glyphOp("="), glyphDigit("2")],
     story: "6 − 4 = 3 is wrong. Slide the last digit's lower-right stick over to lower-left.",
   },
+  {
+    id: "p5",
+    par: 1,
+    start: () => [glyphDigit("2"), glyphOp("+"), glyphDigit("2"), glyphOp("="), glyphDigit("5")],
+    hint: () => [glyphDigit("3"), glyphOp("+"), glyphDigit("2"), glyphOp("="), glyphDigit("5")],
+    story: "2 + 2 = 5 is wrong. One stick move turns the first 2 into a 3.",
+  },
+  {
+    id: "p6",
+    par: 1,
+    start: () => [glyphDigit("5"), glyphOp("+"), glyphDigit("5"), glyphOp("="), glyphDigit("8")],
+    hint: () => [glyphDigit("3"), glyphOp("+"), glyphDigit("5"), glyphOp("="), glyphDigit("8")],
+    story: "5 + 5 = 8 is wrong. One stick move turns the first 5 into a 3.",
+  },
+  {
+    id: "p7",
+    par: 1,
+    start: () => [glyphDigit("0"), glyphOp("+"), glyphDigit("3"), glyphOp("="), glyphDigit("1"), glyphDigit("2")],
+    hint: () => [glyphDigit("9"), glyphOp("+"), glyphDigit("3"), glyphOp("="), glyphDigit("1"), glyphDigit("2")],
+    story: "0 + 3 = 12 is wrong. One stick move turns the 0 into a 9.",
+  },
+  {
+    id: "p8",
+    par: 1,
+    start: () => [glyphDigit("9"), glyphOp("+"), glyphDigit("3"), glyphOp("="), glyphDigit("9")],
+    hint: () => [glyphDigit("6"), glyphOp("+"), glyphDigit("3"), glyphOp("="), glyphDigit("9")],
+    story: "9 + 3 = 9 is wrong. One stick move turns the 9 into a 6.",
+  },
 ];
 export const TRAY_SIZE = 2;
 

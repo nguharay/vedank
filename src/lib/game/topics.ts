@@ -45,33 +45,34 @@ export const TOPICS: Topic[] = [
     sutraSa: "Ekadhikena Pūrvena",
     sutraEn: "one more than the one before",
     sutraEnJa: "一つ前より1多い",
-    blurb: "Round the 9-ending number up to the next ten, add, then step back by one.",
-    blurbJa: "9で終わる数を次の10の位に切り上げて足し、最後に1を戻します。",
+    blurb: "One More in the tens place, One Less in the units place — the shortcut for adding a number ending in 9.",
+    blurbJa: "十の位に1多く、一の位に1少なく――9で終わる数を足すときの近道。",
     steps: [
-      "Spot the number ending in 9.",
-      "Round it up to the next multiple of 10 (add 1).",
-      "Add the rounded number to the other one.",
-      "Subtract 1 from that total to undo the rounding.",
+      "A number ending in 9 is one less than the next multiple of ten.",
+      "One More than the One Before → add 1 extra to the tens place of the other number.",
+      "One Less than the One Before → subtract 1 from the units place of the other number.",
+      "Put the new tens and units together — that's the answer.",
     ],
     stepsJa: [
-      "9で終わる数を見つける。",
-      "次の10の倍数に切り上げる（1を足す）。",
-      "切り上げた数をもう一方の数に足す。",
-      "切り上げた分の1を引いて戻す。",
+      "9で終わる数は、次の10の倍数より1小さい数です。",
+      "「一つ前より1多い」――もう一方の数の十の位に1を足します。",
+      "「一つ前より1少ない」――もう一方の数の一の位から1を引きます。",
+      "新しい十の位と一の位を組み合わせると答えになります。",
     ],
-    example: () => ({ a: 47, b: 29 }),
+    example: () => ({ a: 47, b: 39 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number;
+      const aT = Math.floor(a / 10), bT = Math.floor(b / 10), aU = a % 10;
       if (lang === "ja")
         return [
           [`${a} + ${b}`, "="],
-          [`${b} を ${b + 1} に切り上げ`, `${a} + ${b + 1} = ${a + b + 1}`],
-          ["1戻す", `${a + b + 1} − 1 = ${a + b}`],
+          [`十の位: ${aT} + ${bT} + 1`, `= ${aT + bT + 1}`],
+          [`一の位: ${aU} − 1`, `= ${aU - 1}  →  ${a + b}`],
         ];
       return [
         [`${a} + ${b}`, "="],
-        [`${b} rounds up to ${b + 1}`, `${a} + ${b + 1} = ${a + b + 1}`],
-        ["step back by 1", `${a + b + 1} − 1 = ${a + b}`],
+        [`tens: ${aT} + ${bT} + 1`, `= ${aT + bT + 1}`],
+        [`units: ${aU} − 1`, `= ${aU - 1}  →  ${a + b}`],
       ];
     },
     gen: (diff) => {
@@ -97,33 +98,34 @@ export const TOPICS: Topic[] = [
     sutraSa: "Ekanyūnena Pūrvena",
     sutraEn: "one less than the one before",
     sutraEnJa: "一つ前より1少ない",
-    blurb: "Round the 9-ending number up to the next ten, subtract, then give one back.",
-    blurbJa: "引く数（9で終わる）を次の10の位に切り上げて引き、最後に1を足し戻します。",
+    blurb: "One Less in the tens place, One More in the units place — the shortcut for subtracting a number ending in 9.",
+    blurbJa: "十の位に1少なく、一の位に1多く――9で終わる数を引くときの近道。",
     steps: [
-      "Spot the number being subtracted, ending in 9.",
-      "Round it up to the next multiple of 10 (add 1).",
-      "Subtract that rounder number instead.",
-      "Add 1 back to the result to correct it.",
+      "A number ending in 9 is one less than the next multiple of ten.",
+      "One Less than the One Before → subtract 1 extra from the tens place of the number you're subtracting from.",
+      "One More than the One Before → add 1 to the units place of that number.",
+      "Put the new tens and units together — that's the answer.",
     ],
     stepsJa: [
-      "引かれる数の中で9で終わる数を見つける。",
-      "次の10の倍数に切り上げる（1を足す）。",
-      "その切り上げた数で代わりに引く。",
-      "結果に1を足し戻して修正する。",
+      "9で終わる数は、次の10の倍数より1小さい数です。",
+      "「一つ前より1少ない」――引かれる数の十の位から1を引きます。",
+      "「一つ前より1多い」――引かれる数の一の位に1を足します。",
+      "新しい十の位と一の位を組み合わせると答えになります。",
     ],
-    example: () => ({ a: 84, b: 39 }),
+    example: () => ({ a: 68, b: 29 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number;
+      const aT = Math.floor(a / 10), bT = Math.floor(b / 10), aU = a % 10;
       if (lang === "ja")
         return [
           [`${a} − ${b}`, "="],
-          [`${b} を ${b + 1} に切り上げ`, `${a} − ${b + 1} = ${a - b - 1}`],
-          ["1を足し戻す", `${a - b - 1} + 1 = ${a - b}`],
+          [`十の位: ${aT} − ${bT} − 1`, `= ${aT - bT - 1}`],
+          [`一の位: ${aU} + 1`, `= ${aU + 1}  →  ${a - b}`],
         ];
       return [
         [`${a} − ${b}`, "="],
-        [`${b} rounds up to ${b + 1}`, `${a} − ${b + 1} = ${a - b - 1}`],
-        ["add 1 back", `${a - b - 1} + 1 = ${a - b}`],
+        [`tens: ${aT} − ${bT} − 1`, `= ${aT - bT - 1}`],
+        [`units: ${aU} + 1`, `= ${aU + 1}  →  ${a - b}`],
       ];
     },
     gen: (diff) => {
@@ -145,46 +147,47 @@ export const TOPICS: Topic[] = [
     sutraSa: "Ekadhikena, extended",
     sutraEn: "round by two, not one",
     sutraEnJa: "1ではなく2で切り上げる",
-    blurb: "Numbers ending in 8 work the same way — just round by 2 instead of 1.",
-    blurbJa: "8で終わる数も同じ方法で――ただし2ずつ切り上げます。",
+    blurb: "1 More, 2 Less when adding; 1 Less, 2 More when subtracting — the shortcut for numbers ending in 8.",
+    blurbJa: "足すときは十の位+1・一の位−2、引くときは十の位−1・一の位+2――8で終わる数の近道。",
     steps: [
-      "Spot the number ending in 8.",
-      "Round it up to the next multiple of 10 (add 2).",
-      "Add or subtract using the rounder number.",
-      "Undo the rounding: subtract 2 (if adding) or add 2 back (if subtracting).",
+      "A number ending in 8 is two less than the next ten.",
+      "Adding: 1 More in the tens place, 2 Less in the units place.",
+      "Subtracting: 1 Less in the tens place, 2 More in the units place.",
+      "Put the new tens and units together — that's the answer.",
     ],
     stepsJa: [
-      "8で終わる数を見つける。",
-      "次の10の倍数に切り上げる（2を足す）。",
-      "切り上げた数で足し算・引き算をする。",
-      "切り上げを戻す：足し算なら2を引き、引き算なら2を足し戻す。",
+      "8で終わる数は、次の10より2小さい数です。",
+      "足し算：十の位に1多く、一の位に2少なく。",
+      "引き算：十の位に1少なく、一の位に2多く。",
+      "新しい十の位と一の位を組み合わせると答えになります。",
     ],
-    example: () => ({ a: 56, b: 48, op: "+" }),
+    example: () => ({ a: 57, b: 28, op: "+" }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number, op = ex.op as string;
-      if (lang === "ja") {
-        if (op === "+")
+      const aT = Math.floor(a / 10), bT = Math.floor(b / 10), aU = a % 10;
+      if (op === "+") {
+        if (lang === "ja")
           return [
             [`${a} + ${b}`, "="],
-            [`${b} を ${b + 2} に切り上げ`, `${a} + ${b + 2} = ${a + b + 2}`],
-            ["2戻す", `${a + b + 2} − 2 = ${a + b}`],
+            [`十の位: ${aT} + ${bT} + 1`, `= ${aT + bT + 1}`],
+            [`一の位: ${aU} − 2`, `= ${aU - 2}  →  ${a + b}`],
           ];
         return [
-          [`${a} − ${b}`, "="],
-          [`${b} を ${b + 2} に切り上げ`, `${a} − ${b + 2} = ${a - b - 2}`],
-          ["2を足し戻す", `${a - b - 2} + 2 = ${a - b}`],
+          [`${a} + ${b}`, "="],
+          [`tens: ${aT} + ${bT} + 1`, `= ${aT + bT + 1}`],
+          [`units: ${aU} − 2`, `= ${aU - 2}  →  ${a + b}`],
         ];
       }
-      if (op === "+")
+      if (lang === "ja")
         return [
-          [`${a} + ${b}`, "="],
-          [`${b} rounds up to ${b + 2}`, `${a} + ${b + 2} = ${a + b + 2}`],
-          ["step back by 2", `${a + b + 2} − 2 = ${a + b}`],
+          [`${a} − ${b}`, "="],
+          [`十の位: ${aT} − ${bT} − 1`, `= ${aT - bT - 1}`],
+          [`一の位: ${aU} + 2`, `= ${aU + 2}  →  ${a - b}`],
         ];
       return [
         [`${a} − ${b}`, "="],
-        [`${b} rounds up to ${b + 2}`, `${a} − ${b + 2} = ${a - b - 2}`],
-        ["add 2 back", `${a - b - 2} + 2 = ${a - b}`],
+        [`tens: ${aT} − ${bT} − 1`, `= ${aT - bT - 1}`],
+        [`units: ${aU} + 2`, `= ${aU + 2}  →  ${a - b}`],
       ];
     },
     gen: (diff) => {

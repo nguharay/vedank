@@ -37,6 +37,7 @@ import {
   type ProgressState,
 } from "@/lib/game/state";
 import { finishStageAction, solvePuzzleAction } from "@/lib/actions/game-actions";
+import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { ILLUS } from "./illustrations";
 import { Mascot, Mandala } from "./Mascot";
 import { useConfetti } from "./useConfetti";
@@ -46,7 +47,7 @@ import { useSkins, SKINS } from "./useSkins";
 import { useLang, UI, type UIDict } from "./i18n";
 
 type View = "home" | "topic" | "stagemap" | "practice" | "arena";
-type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "memory";
+type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
 function ri(a: number, b: number) {
@@ -102,6 +103,8 @@ export function GameApp({
 
   const [hearts, setHearts] = useState(5);
   const [bestStreakEver, setBestStreakEver] = useState(0);
+  const [gemPop, setGemPop] = useState(false);
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [sparkles, setSparkles] = useState<{ left: number; top: number; delay: number; size: number }[]>([]);
   const [toasts, setToasts] = useState<{ id: number; x: number; y: number; text: string }[]>([]);
   const toastIdRef = useRef(0);
@@ -142,6 +145,14 @@ export function GameApp({
     [progress]
   );
   const activeSkin = SKINS.find((s) => s.id === skin.skinId) || SKINS[0];
+  const achievementCtx = useMemo(
+    () => ({ progress, level: li.level, gems, dailyStreak, bestStreakEver, solvedCount, totalPuzzles: PUZZLES.length, bossClears }),
+    [progress, li.level, gems, dailyStreak, bestStreakEver, solvedCount, bossClears]
+  );
+  const unlockedAchievements = useMemo(
+    () => ACHIEVEMENTS.filter((a) => a.isUnlocked(achievementCtx)).length,
+    [achievementCtx]
+  );
 
   function goHome() {
     setView("home");
@@ -176,12 +187,21 @@ export function GameApp({
   const [wrongFlash, setWrongFlash] = useState(false);
   const [shakeTile, setShakeTile] = useState(false);
   const [streakPop, setStreakPop] = useState(false);
-  const [buddyPop, setBuddyPop] = useState(false);
   const [runs, setRuns] = useState(0);
   const [runReady, setRunReady] = useState(false);
   const [swingAnim, setSwingAnim] = useState<"hit" | "miss" | null>(null);
   const [comboStreak, setComboStreak] = useState(0);
   const [feedback, setFeedback] = useState<{ show: boolean; ok: boolean; t2: string } | null>(null);
+  const [eliminated, setEliminated] = useState<number[]>([]);
+  const [fiftyLeft, setFiftyLeft] = useState(1);
+  const [timerKey, setTimerKey] = useState(0);
+  const [timerMs, setTimerMs] = useState(8000);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const questionStartRef = useRef<number>(0);
+  const answeredRef = useRef(false);
+  const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasFeedbackRef = useRef(false);
+  const [stageIntro, setStageIntro] = useState<number | null>(null);
   const isBoss = curStage.n === STAGE_COUNT;
 
   const [stageResult, setStageResult] = useState<
@@ -195,7 +215,16 @@ export function GameApp({
     const mode =
       n === 1
         ? weightedPick<Mode>([["type", 1], ["choice", 2], ["truefalse", 2]])
-        : weightedPick<Mode>([["type", 1], ["choice", 1], ["target", 2], ["truefalse", 1], ["arcade", 3], ["memory", 2]]);
+        : weightedPick<Mode>([
+            ["type", 1],
+            ["choice", 1],
+            ["target", 2],
+            ["truefalse", 1],
+            ["arcade", 3],
+            ["catch", 2],
+            ["balloon", 2],
+            ["numberline", 2],
+          ]);
     setCurProblem(problem);
     setCurMode(mode);
     setCurSelection(null);
@@ -203,8 +232,15 @@ export function GameApp({
     setWrongFlash(false);
     setSwingAnim(null);
     setRunReady(false);
+    setEliminated([]);
+    answeredRef.current = false;
+    setTimerMs(mode === "type" ? 13000 : mode === "catch" ? 11000 : mode === "numberline" ? 9000 : 8000);
+    setTimerKey((k) => k + 1);
+    questionStartRef.current = Date.now();
     if (mode === "choice") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
-    else if (mode === "target" || mode === "arcade" || mode === "memory") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 5)]));
+    else if (mode === "target" || mode === "arcade" || mode === "catch" || mode === "balloon")
+      setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 5)]));
+    else if (mode === "numberline") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 4)]));
     else if (mode === "truefalse") {
       const isTrue = Math.random() < 0.5;
       setTfIsTrue(isTrue);
@@ -218,8 +254,31 @@ export function GameApp({
     setHearts(5);
     setRuns(0);
     setComboStreak(0);
+    setFiftyLeft(1);
     newStageQuestion(currentTopic, n);
     setView("practice");
+    setStageIntro(n);
+    setTimeout(() => setStageIntro(null), 900);
+  }
+
+  useEffect(() => {
+    if (view !== "practice" || !curProblem) return;
+    timeoutRef.current = setTimeout(() => handleTimeout(), timerMs);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [curProblem, view]);
+
+  function useFiftyFifty() {
+    if (fiftyLeft <= 0 || !curProblem) return;
+    const wrongs = tileOptions.filter((o) => o !== curProblem.answer);
+    setEliminated(shuffle(wrongs).slice(0, 2));
+    setFiftyLeft(0);
+    sound.click();
   }
 
   useEffect(() => {
@@ -228,20 +287,14 @@ export function GameApp({
     }
   }, [curMode, curProblem, view]);
 
-  function checkPractice() {
+  function resolveAnswer(ok: boolean, timedOut: boolean) {
     if (!curProblem) return;
-    let ok: boolean;
-    if (curMode === "type") {
-      const val = (typeInputRef.current?.value || "").trim().replace(/,/g, "");
-      if (val === "") return;
-      ok = Number(val) === curProblem.answer;
-    } else if (curMode === "truefalse") {
-      if (curSelection === null) return;
-      ok = curSelection === tfIsTrue;
-    } else {
-      if (curSelection === null) return;
-      ok = curSelection === curProblem.answer;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
+    const elapsed = Date.now() - questionStartRef.current;
+    const speedy = ok && !timedOut && elapsed <= timerMs * 0.45;
 
     if (ok) {
       setCurStage((s) => {
@@ -253,19 +306,28 @@ export function GameApp({
       const tier = nextCombo >= 9 ? 3 : nextCombo >= 6 ? 2 : nextCombo >= 3 ? 1 : 0;
       const multiplier = tier + 1;
       setComboStreak(nextCombo);
-      confetti.burstFromEl(practiceCardRef.current, 18 + tier * 8);
+      confetti.burstFromEl(practiceCardRef.current, 18 + tier * 8 + (speedy ? 12 : 0));
       if (tier > 0 && (nextCombo === 3 || nextCombo === 6 || nextCombo === 9)) sound.combo(tier);
       else sound.correct();
-      spawnToast(tier > 0 ? `+${10 * multiplier} 💎 COMBO x${multiplier}!` : "+10 💎", practiceCardRef.current);
+      spawnToast(
+        speedy
+          ? `⚡ +${10 * multiplier} SPEED!`
+          : tier > 0
+          ? `+${10 * multiplier} 💎 COMBO x${multiplier}!`
+          : "+10 💎",
+        practiceCardRef.current
+      );
       setStreakPop(true);
       setTimeout(() => setStreakPop(false), 220);
+      setGemPop(true);
+      setTimeout(() => setGemPop(false), 320);
       if (curMode === "arcade") {
         sound.hit();
         setSwingAnim("hit");
         setTimeout(() => setSwingAnim(null), 900);
         setTimeout(() => setRunReady(true), 700);
       }
-      if (curMode === "memory") sound.flip();
+      if (curMode === "catch") sound.flip();
     } else {
       setHearts((h) => Math.max(0, h - 1));
       setComboStreak(0);
@@ -280,9 +342,52 @@ export function GameApp({
         setTimeout(() => setSwingAnim(null), 700);
       }
     }
-    setBuddyPop(true);
-    setTimeout(() => setBuddyPop(false), 400);
-    setFeedback({ show: true, ok, t2: ok ? "" : `${curProblem.prompt} = ${fmt(curProblem.answer)}` });
+    setFeedback({
+      show: true,
+      ok,
+      t2: ok ? "" : `${timedOut ? "⏰ " : ""}${curProblem.prompt} = ${fmt(curProblem.answer)}`,
+    });
+    hasFeedbackRef.current = true;
+    if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
+    if (curMode !== "arcade") {
+      advanceTimeoutRef.current = setTimeout(() => onFeedbackContinue(), ok ? 1200 : 2000);
+    }
+  }
+
+  function submitSelection(v: number | boolean) {
+    if (!curProblem || answeredRef.current) return;
+    answeredRef.current = true;
+    setCurSelection(v);
+    setCheckEnabled(true);
+    sound.click();
+    const ok = curMode === "truefalse" ? v === tfIsTrue : v === curProblem.answer;
+    setTimeout(() => resolveAnswer(ok, false), 220);
+  }
+
+  function checkPractice() {
+    if (!curProblem || answeredRef.current) return;
+    let ok: boolean;
+    if (curMode === "type") {
+      const val = (typeInputRef.current?.value || "").trim().replace(/,/g, "");
+      if (val === "") return;
+      ok = Number(val) === curProblem.answer;
+      typeInputRef.current?.blur();
+    } else if (curMode === "truefalse") {
+      if (curSelection === null) return;
+      ok = curSelection === tfIsTrue;
+    } else {
+      if (curSelection === null) return;
+      ok = curSelection === curProblem.answer;
+    }
+    answeredRef.current = true;
+    resolveAnswer(ok, false);
+  }
+
+  function handleTimeout() {
+    if (!curProblem || answeredRef.current) return;
+    answeredRef.current = true;
+    if (curMode === "type") typeInputRef.current?.blur();
+    resolveAnswer(false, true);
   }
 
   function addRun() {
@@ -292,6 +397,11 @@ export function GameApp({
   }
 
   async function onFeedbackContinue() {
+    if (!feedback) return;
+    if (advanceTimeoutRef.current) {
+      clearTimeout(advanceTimeoutRef.current);
+      advanceTimeoutRef.current = null;
+    }
     setFeedback(null);
     if (runReady) addRun();
     const nextIndex = curStage.qIndex + 1;
@@ -358,6 +468,8 @@ export function GameApp({
   const [selection, setSelection] = useState<Loc | null>(null);
   const [hintPair, setHintPair] = useState<{ from: Loc; to: Loc } | null>(null);
   const [puzzleStatus, setPuzzleStatus] = useState<{ text: string; color: string }>({ text: "", color: "" });
+  const [puzzleElapsed, setPuzzleElapsed] = useState(0);
+  const puzzleStartRef = useRef<number>(0);
 
   function loadPuzzle(i: number) {
     const idx = ((i % PUZZLES.length) + PUZZLES.length) % PUZZLES.length;
@@ -371,7 +483,17 @@ export function GameApp({
     setSelection(null);
     setHintPair(null);
     setPuzzleStatus({ text: "", color: "" });
+    setPuzzleElapsed(0);
+    puzzleStartRef.current = Date.now();
   }
+
+  useEffect(() => {
+    if (view !== "arena") return;
+    if (progress.arena.solved[PUZZLES[puzIdx].id]) return;
+    const id = setInterval(() => setPuzzleElapsed((e) => e + 1), 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, puzIdx, progress.arena.solved[PUZZLES[puzIdx]?.id]]);
 
   function getActive(loc: "board" | "tray", gi: number | null, slot: string | null, idx: number | null, g: Glyph[], tr: boolean[]) {
     return loc === "board" ? !!g[gi!].active[slot!] : !!tr[idx!];
@@ -424,8 +546,11 @@ export function GameApp({
           bestMoves: { ...prev.arena.bestMoves, [p.id]: res.bestMoves },
         },
       }));
-      confetti.burstFromEl(puzzleSvgRef.current as unknown as HTMLElement, 70);
+      const solveTime = Date.now() - puzzleStartRef.current;
+      const speedy = solveTime <= 15000;
+      confetti.burstFromEl(puzzleSvgRef.current as unknown as HTMLElement, speedy ? 100 : 70);
       sound.stageClear();
+      if (speedy) spawnToast("⚡ Speed Solve!", puzzleSvgRef.current as unknown as HTMLElement);
       if (!already) {
         setTimeout(() => {
           setCelebrate({
@@ -496,7 +621,7 @@ export function GameApp({
         <div className="header-title"><h1>{headerTitle}</h1></div>
         <div className="stats-row">
           <span className="stat stat-flame">🔥 {bestStreakEver}</span>
-          <span className="stat stat-gem">💎 {gems}</span>
+          <span className={`stat stat-gem${gemPop ? " pop" : ""}`}>💎 {gems}</span>
           <span className="stat stat-heart">❤️ {hearts}</span>
         </div>
       </header>
@@ -543,6 +668,26 @@ export function GameApp({
                       <span className="skin-swatch-dot" style={{ background: s.swatch }} />
                       <span className="skin-swatch-name">{unlocked ? s.name : "🔒"}</span>
                     </button>
+                  );
+                })}
+              </div>
+            )}
+            <button className="menu-row" onClick={() => setAchievementsOpen((o) => !o)}>
+              <span>🏅 {lang === "ja" ? "実績" : "Achievements"}</span>
+              <span className="menu-row-val">{unlockedAchievements}/{ACHIEVEMENTS.length}</span>
+            </button>
+            {achievementsOpen && (
+              <div className="achievements-panel">
+                {ACHIEVEMENTS.map((a) => {
+                  const unlocked = a.isUnlocked(achievementCtx);
+                  return (
+                    <div key={a.id} className={`badge-card${unlocked ? " unlocked" : " locked"}`}>
+                      <span className="badge-icon">{unlocked ? a.icon : "🔒"}</span>
+                      <div className="badge-text">
+                        <div className="badge-title">{lang === "ja" ? a.titleJa : a.title}</div>
+                        <div className="badge-desc">{lang === "ja" ? a.descJa : a.desc}</div>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -599,8 +744,11 @@ export function GameApp({
             wrongFlash={wrongFlash}
             shakeTile={shakeTile}
             streakPop={streakPop}
-            buddyMood={feedback ? (feedback.ok ? "excited" : "sad") : "happy"}
-            buddyPop={buddyPop}
+            feedbackOk={feedback ? feedback.ok : null}
+            eliminated={eliminated}
+            timerKey={timerKey}
+            timerMs={timerMs}
+            timerPaused={!!feedback}
             runs={runs}
             runReady={runReady}
             swingAnim={swingAnim}
@@ -610,7 +758,7 @@ export function GameApp({
             skinId={skin.skinId}
             typeInputRef={typeInputRef}
             practiceCardRef={practiceCardRef}
-            onSelect={(v) => { setCurSelection(v); setCheckEnabled(true); sound.click(); }}
+            onSelect={submitSelection}
             onInputChange={(v) => setCheckEnabled(v.trim() !== "")}
             onCheck={checkPractice}
           />
@@ -625,6 +773,7 @@ export function GameApp({
             selection={selection}
             hintPair={hintPair}
             moveCount={moveCount}
+            elapsed={puzzleElapsed}
             bestMoves={progress.arena.bestMoves[PUZZLES[puzIdx].id]}
             solvedMap={progress.arena.solved}
             status={puzzleStatus}
@@ -637,6 +786,21 @@ export function GameApp({
         )}
       </main>
 
+      {stageIntro !== null && (
+        <div className="stage-intro-flash">
+          <div className="stage-intro-text">
+            {stageIntro === STAGE_COUNT
+              ? lang === "ja"
+                ? "ボス戦！"
+                : "BOSS BATTLE!"
+              : lang === "ja"
+              ? `ステージ ${stageIntro}`
+              : `STAGE ${stageIntro}`}
+          </div>
+          <div className="stage-intro-go">{lang === "ja" ? "スタート！" : "GO!"}</div>
+        </div>
+      )}
+
       <footer className="footerbar active" style={{ display: view === "home" ? "none" : "flex" }}>
         {view === "topic" && (
           <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
@@ -648,15 +812,28 @@ export function GameApp({
             <button className="btn btn-ghost" onClick={() => openTopic(currentTopicId!)}>
               {t.practice.lesson}
             </button>
-            <button className="btn btn-primary" disabled={!checkEnabled} onClick={checkPractice}>
-              {t.practice.check}
-            </button>
+            {(curMode === "choice" || curMode === "target" || curMode === "balloon" || curMode === "numberline" || curMode === "catch") &&
+              fiftyLeft > 0 &&
+              curSelection === null && (
+                <button className="btn btn-ghost fifty-btn" onClick={useFiftyFifty}>
+                  🎯 50/50
+                </button>
+              )}
+            {curMode === "type" && (
+              <button className="btn btn-primary" disabled={!checkEnabled} onClick={checkPractice}>
+                {t.practice.check}
+              </button>
+            )}
           </>
         )}
         {view === "arena" && (
           <>
-            <button className="btn btn-ghost" onClick={onHint}>{t.arena.hint}</button>
-            <button className="btn btn-ghost" onClick={() => loadPuzzle(puzIdx)}>{t.arena.reset}</button>
+            {!progress.arena.solved[PUZZLES[puzIdx].id] && (
+              <>
+                <button className="btn btn-ghost" onClick={onHint}>{t.arena.hint}</button>
+                <button className="btn btn-ghost" onClick={() => loadPuzzle(puzIdx)}>{t.arena.reset}</button>
+              </>
+            )}
             <button className="btn btn-primary" onClick={() => loadPuzzle(puzIdx + 1)}>{t.arena.next}</button>
           </>
         )}
@@ -851,9 +1028,9 @@ function TopicView({ topic, lang, t }: { topic: Topic; lang: Lang; t: UIDict }) 
         <h1>{title}</h1>
         <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 8, lineHeight: 1.5, fontWeight: 600 }}>{blurb}</p>
       </div>
-      <div className="topic-illus" dangerouslySetInnerHTML={{ __html: ILLUS[topic.illus](topic.grad[0], topic.grad[1]) }} />
       <div className="card">
         <h4>{t.topicView.howItWorks}</h4>
+        <div className="topic-illus" dangerouslySetInnerHTML={{ __html: ILLUS[topic.illus](topic.grad[0], topic.grad[1]) }} />
         <ol className="steps">
           {steps.map((s, i) => (
             <li key={i}>
@@ -949,8 +1126,11 @@ function PracticeView({
   wrongFlash,
   shakeTile,
   streakPop,
-  buddyMood,
-  buddyPop,
+  feedbackOk,
+  eliminated,
+  timerKey,
+  timerMs,
+  timerPaused,
   runs,
   runReady,
   swingAnim,
@@ -980,8 +1160,11 @@ function PracticeView({
   wrongFlash: boolean;
   shakeTile: boolean;
   streakPop: boolean;
-  buddyMood: "happy" | "excited" | "sad";
-  buddyPop: boolean;
+  feedbackOk: boolean | null;
+  eliminated: number[];
+  timerKey: number;
+  timerMs: number;
+  timerPaused: boolean;
   runs: number;
   runReady: boolean;
   swingAnim: "hit" | "miss" | null;
@@ -1006,15 +1189,23 @@ function PracticeView({
       <div className="progress-top">
         <div className="progress-top-fill" style={{ width: `${Math.round((qIndex / QUESTIONS_PER_STAGE) * 100)}%` }} />
       </div>
+      <div className="timer-bar-wrap">
+        <div
+          key={timerKey}
+          className={`timer-bar-fill${timerPaused ? " paused" : ""}`}
+          style={{ animationDuration: `${timerMs}ms` }}
+        />
+      </div>
       <div className="topic-head" style={{ marginTop: 2 }}>
         <div className={`eyebrow-tag${isBoss ? " boss-tag" : ""}`}>{isBoss ? t.practice.bossStage : t.practice.stageOf(stageN, STAGE_COUNT)}</div>
         <div className="sutra-tag" style={{ background: gradCss(topic.grad) }}>🕉 {topic.sutraSa}</div>
         <h1>{title}</h1>
       </div>
-      <div className={`practice-card${isBoss ? " boss-card" : ""}`} ref={practiceCardRef}>
-        <div className={`practice-buddy${buddyPop ? " pop" : ""}`}>
-          <Mascot mood={buddyMood} />
-        </div>
+      <div
+        key={qIndex}
+        className={`practice-card${isBoss ? " boss-card" : ""}${feedbackOk === true ? " correct-glow" : feedbackOk === false ? " wrong-glow" : ""}`}
+        ref={practiceCardRef}
+      >
         <div className="practice-meta">
           <span>{t.practice.question} {qIndex + 1} / {QUESTIONS_PER_STAGE}</span>
           <span className={`streak-flame${streakPop ? " pop" : ""}${correct >= 3 ? " combo3" : ""}`}>🔥 {correct}</span>
@@ -1042,7 +1233,8 @@ function PracticeView({
             {tileOptions.map((o) => (
               <button
                 key={o}
-                className={`choice-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}`}
+                className={`choice-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
+                disabled={eliminated.includes(o)}
                 onClick={() => onSelect(o)}
               >
                 {fmt(o)}
@@ -1055,12 +1247,45 @@ function PracticeView({
             {tileOptions.map((o) => (
               <button
                 key={o}
-                className={`target-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}`}
+                className={`target-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
+                disabled={eliminated.includes(o)}
                 onClick={() => onSelect(o)}
               >
                 {fmt(o)}
               </button>
             ))}
+          </div>
+        )}
+        {mode === "balloon" && (
+          <div className="balloon-grid">
+            {tileOptions.map((o) => (
+              <button
+                key={o}
+                className={`balloon-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
+                disabled={eliminated.includes(o)}
+                onClick={() => onSelect(o)}
+              >
+                <span className="balloon-body">{fmt(o)}</span>
+                <span className="balloon-string" />
+              </button>
+            ))}
+          </div>
+        )}
+        {mode === "numberline" && (
+          <div className="numberline-wrap">
+            <div className="numberline-track" />
+            <div className="numberline-dots">
+              {[...tileOptions].sort((a, b) => a - b).map((o) => (
+                <button
+                  key={o}
+                  className={`numberline-dot${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
+                  disabled={eliminated.includes(o)}
+                  onClick={() => onSelect(o)}
+                >
+                  <span className="numberline-dot-label">{fmt(o)}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {mode === "arcade" && (
@@ -1096,18 +1321,21 @@ function PracticeView({
             {swingAnim === "miss" && <div className="strike-fx">{t.practice.strike}</div>}
           </div>
         )}
-        {mode === "memory" && (
-          <div className={`memory-grid skin-${skinId}`}>
-            {tileOptions.map((o) => (
+        {mode === "catch" && (
+          <div className="catch-field">
+            {tileOptions.map((o, i) => (
               <button
                 key={o}
-                className={`memory-card${curSelection === o ? " flipped" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}`}
+                className={`catch-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
+                style={{
+                  "--col": i % 3,
+                  "--delay": `${(i % 3) * 0.7 + Math.floor(i / 3) * 0.35}s`,
+                  "--dur": `${3.4 + (i % 3) * 0.5}s`,
+                } as React.CSSProperties}
+                disabled={eliminated.includes(o)}
                 onClick={() => onSelect(o)}
               >
-                <div className="memory-card-inner">
-                  <div className="memory-card-back">❓</div>
-                  <div className="memory-card-front">{fmt(o)}</div>
-                </div>
+                {fmt(o)}
               </button>
             ))}
           </div>
@@ -1143,6 +1371,7 @@ function ArenaView({
   selection,
   hintPair,
   moveCount,
+  elapsed,
   bestMoves,
   solvedMap,
   status,
@@ -1159,6 +1388,7 @@ function ArenaView({
   selection: Loc | null;
   hintPair: { from: Loc; to: Loc } | null;
   moveCount: number;
+  elapsed: number;
   bestMoves: number | undefined;
   solvedMap: Record<string, boolean>;
   status: { text: string; color: string };
@@ -1222,7 +1452,14 @@ function ArenaView({
           ))}
         </div>
       </div>
-      <div><span className="par-chip">{t.arena.par(p.par)}</span></div>
+      <div className="par-row">
+        <span className="par-chip">{t.arena.par(p.par)}</span>
+        {!solvedMap[p.id] && (
+          <span className={`stopwatch-chip${elapsed <= 15 ? "" : " slow"}`}>
+            ⏱ {String(Math.floor(elapsed / 60)).padStart(1, "0")}:{String(elapsed % 60).padStart(2, "0")}
+          </span>
+        )}
+      </div>
       <div className="puzzle-board">
         <svg className="mandala-watermark" viewBox="0 0 100 100"><Mandala stroke="#7A4E2C" /></svg>
         <div className="board-svg-wrap">
