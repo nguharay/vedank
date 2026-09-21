@@ -317,6 +317,10 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .daily-done-points{ font-size:15px; font-weight:800; color:var(--gold-dk); }
 .daily-done-note{ font-size:13px; font-weight:600; color:var(--muted); line-height:1.5; margin:14px 0 20px; }
 .league-note{ font-size:11.5px; font-weight:600; color:var(--muted); line-height:1.45; padding:0 6px 10px; }
+.choice-tile.daily-right{ border-color:var(--green-dk); background:color-mix(in srgb, var(--green) 30%, var(--surface-2));
+  box-shadow:3px 3px 0 var(--green-dk); color:var(--green-dk); }
+.choice-tile.daily-wrong{ border-color:var(--wrong-dk); background:color-mix(in srgb, var(--wrong) 26%, var(--surface-2));
+  box-shadow:3px 3px 0 var(--wrong-dk); color:var(--wrong-dk); animation:shake .4s; }
 
 /* ---------- magic tricks ---------- */
 .trick-cta{ background:linear-gradient(135deg,#7C3AED,#C026D3) !important; }

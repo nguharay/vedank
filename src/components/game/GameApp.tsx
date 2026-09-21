@@ -1731,9 +1731,20 @@ function DailyView({
         <div className="tile-grid">
           {q.options.map((o) => {
             const state =
-              pick === null ? "" : o === q.problem.answer ? " correct" : o === pick ? " wrong" : " dim";
+              pick === null
+                ? ""
+                : o === q.problem.answer
+                ? " daily-right"
+                : o === pick
+                ? " daily-wrong"
+                : " eliminated";
             return (
-              <button key={o} className={`tile mono${state}`} disabled={pick !== null} onClick={() => onPick(o)}>
+              <button
+                key={o}
+                className={`choice-tile mono${state}`}
+                disabled={pick !== null}
+                onClick={() => onPick(o)}
+              >
                 {fmt(o)}
               </button>
             );
