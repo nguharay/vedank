@@ -36,7 +36,8 @@ import {
   levelInfo,
   type ProgressState,
 } from "@/lib/game/state";
-import { finishStageAction, solvePuzzleAction } from "@/lib/actions/game-actions";
+import { finishStageAction, solvePuzzleAction, leaderboardAction } from "@/lib/actions/game-actions";
+import type { LeaderboardEntry } from "@/lib/game/progress";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { ILLUS } from "./illustrations";
 import { Mascot, Mandala } from "./Mascot";
@@ -46,7 +47,7 @@ import { useTheme } from "./useTheme";
 import { useSkins, SKINS } from "./useSkins";
 import { useLang, UI, type UIDict } from "./i18n";
 
-type View = "home" | "topic" | "stagemap" | "practice" | "arena";
+type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
@@ -76,6 +77,18 @@ function fmt(n: number) {
 function sameLoc(a: Loc | null, b: Loc | null) {
   return !!a && !!b && a.loc === b.loc && a.gi === b.gi && a.slot === b.slot && a.idx === b.idx;
 }
+function msUntilUTCMidnight() {
+  const now = new Date();
+  const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0);
+  return next - now.getTime();
+}
+function haptic(pattern: number | number[]) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    try {
+      navigator.vibrate(pattern);
+    } catch {}
+  }
+}
 
 const PATH_POS = ["c", "l", "r", "c", "l", "r", "c", "l", "r", "c", "l", "r", "c"];
 const STAGE_POS = ["c", "l", "r", "l", "c"];
@@ -83,19 +96,28 @@ const STAGE_POS = ["c", "l", "r", "l", "c"];
 export function GameApp({
   initialProgress,
   dailyStreak,
+  initialLang,
+  initialBonusGems,
+  dailyChestReward,
   user,
 }: {
   initialProgress: ProgressState;
   dailyStreak: number;
+  initialLang?: "en" | "ja";
+  initialBonusGems?: number;
+  dailyChestReward?: number | null;
   user: { name: string | null; email: string | null };
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
+  const [bonusGems, setBonusGems] = useState(initialBonusGems || 0);
+  const [chestReward, setChestReward] = useState<number | null>(dailyChestReward ?? null);
+  const [chestOpened, setChestOpened] = useState(false);
   const theme = useTheme();
   const skin = useSkins();
-  const langHook = useLang();
+  const langHook = useLang(initialLang);
   const lang: Lang = langHook.lang;
   const t = UI[lang];
   const [currentTopicId, setCurrentTopicId] = useState<string | null>(null);
@@ -105,6 +127,23 @@ export function GameApp({
   const [bestStreakEver, setBestStreakEver] = useState(0);
   const [gemPop, setGemPop] = useState(false);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<{ top: LeaderboardEntry[]; me: (LeaderboardEntry & { position: number }) | null } | null>(null);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
+  async function toggleLeaderboard() {
+    const next = !leaderboardOpen;
+    setLeaderboardOpen(next);
+    if (next && !leaderboard) {
+      setLeaderboardLoading(true);
+      try {
+        const data = await leaderboardAction();
+        setLeaderboard(data);
+      } finally {
+        setLeaderboardLoading(false);
+      }
+    }
+  }
   const [sparkles, setSparkles] = useState<{ left: number; top: number; delay: number; size: number }[]>([]);
   const [toasts, setToasts] = useState<{ id: number; x: number; y: number; text: string }[]>([]);
   const toastIdRef = useRef(0);
@@ -137,8 +176,21 @@ export function GameApp({
   }, []);
   const sparkleGlyphs = ["✦", "✧", "⋆", "✺", "✴"];
 
+  const [sakura, setSakura] = useState<{ left: number; delay: number; duration: number; size: number; sway: number }[]>([]);
+  useEffect(() => {
+    setSakura(
+      Array.from({ length: 10 }, () => ({
+        left: ri(0, 96),
+        delay: Math.random() * 8,
+        duration: 9 + Math.random() * 6,
+        size: 14 + Math.random() * 10,
+        sway: ri(-40, 40),
+      }))
+    );
+  }, []);
+
   const li = useMemo(() => levelInfo(progress), [progress]);
-  const gems = useMemo(() => totalGems(progress), [progress]);
+  const gems = useMemo(() => totalGems(progress) + bonusGems, [progress, bonusGems]);
   const solvedCount = Object.values(progress.arena.solved).filter(Boolean).length;
   const bossClears = useMemo(
     () => Object.values(progress.topics).filter((p) => p.cleared >= STAGE_COUNT).length,
@@ -309,6 +361,7 @@ export function GameApp({
       confetti.burstFromEl(practiceCardRef.current, 18 + tier * 8 + (speedy ? 12 : 0));
       if (tier > 0 && (nextCombo === 3 || nextCombo === 6 || nextCombo === 9)) sound.combo(tier);
       else sound.correct();
+      haptic(tier > 0 ? [15, 30, 15, 30, 25] : 15);
       spawnToast(
         speedy
           ? `⚡ +${10 * multiplier} SPEED!`
@@ -332,6 +385,7 @@ export function GameApp({
       setHearts((h) => Math.max(0, h - 1));
       setComboStreak(0);
       sound.wrong();
+      haptic([25, 45, 25]);
       if (curMode === "type") setWrongFlash(true);
       else setShakeTile(true);
       setShakeQuestion(true);
@@ -439,6 +493,11 @@ export function GameApp({
       confetti.burstCenter(wasBoss ? 160 : 100, wasBoss ? 0.55 : 0.4);
       if (wasBoss) sound.bossFanfare();
       else sound.stageClear();
+      haptic(wasBoss ? [40, 60, 40, 60, 80] : [30, 50, 30]);
+      if (result.stars === 3) {
+        haptic([20, 30, 20, 30, 20, 30, 60]);
+        setTimeout(() => confetti.burstCenter(140, 0.6), 200);
+      }
     }
     if (result.passed && n === STAGE_COUNT) {
       setTimeout(() => {
@@ -593,6 +652,108 @@ export function GameApp({
     setTimeout(() => setHintPair(null), 3200);
   }
 
+  /* ================= NUMBER BLITZ (arcade mini-game) ================= */
+  const [blitzProblem, setBlitzProblem] = useState<Problem | null>(null);
+  const [blitzOptions, setBlitzOptions] = useState<number[]>([]);
+  const [blitzScore, setBlitzScore] = useState(0);
+  const [blitzHearts, setBlitzHearts] = useState(3);
+  const [blitzBest, setBlitzBest] = useState(0);
+  const [blitzTimerMs, setBlitzTimerMs] = useState(6000);
+  const [blitzTimerKey, setBlitzTimerKey] = useState(0);
+  const [blitzFeedback, setBlitzFeedback] = useState<"ok" | "bad" | null>(null);
+  const [blitzOver, setBlitzOver] = useState(false);
+  const [blitzJustBeatBest, setBlitzJustBeatBest] = useState(false);
+  const blitzAnsweredRef = useRef(false);
+  const blitzTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blitzCardRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("sutraSprint.blitzBest");
+      if (saved) setBlitzBest(Number(saved) || 0);
+    } catch {}
+  }, []);
+
+  function newBlitzQuestion(score: number) {
+    const topic = TOPICS[ri(0, TOPICS.length - 1)];
+    const diffIdx = Math.min(STAGE_DIFF.length - 1, Math.floor(score / 5));
+    const problem = topic.gen(STAGE_DIFF[diffIdx] as Difficulty);
+    setBlitzProblem(problem);
+    setBlitzOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
+    setBlitzTimerMs(Math.max(3000, 6000 - score * 150));
+    setBlitzTimerKey((k) => k + 1);
+    blitzAnsweredRef.current = false;
+  }
+
+  function startBlitz() {
+    setBlitzScore(0);
+    setBlitzHearts(3);
+    setBlitzOver(false);
+    setBlitzJustBeatBest(false);
+    setBlitzFeedback(null);
+    setView("blitz");
+    newBlitzQuestion(0);
+  }
+
+  function endBlitz(finalScore: number) {
+    setBlitzOver(true);
+    if (finalScore > blitzBest) {
+      setBlitzBest(finalScore);
+      setBlitzJustBeatBest(true);
+      try {
+        localStorage.setItem("sutraSprint.blitzBest", String(finalScore));
+      } catch {}
+    }
+    sound.stageClear();
+    haptic([30, 50, 30, 50, 80]);
+  }
+
+  function blitzResolve(ok: boolean) {
+    if (blitzAnsweredRef.current) return;
+    blitzAnsweredRef.current = true;
+    if (blitzTimeoutRef.current) {
+      clearTimeout(blitzTimeoutRef.current);
+      blitzTimeoutRef.current = null;
+    }
+    setBlitzFeedback(ok ? "ok" : "bad");
+    if (ok) {
+      const nextScore = blitzScore + 1;
+      setBlitzScore(nextScore);
+      confetti.burstFromEl(blitzCardRef.current, 14);
+      sound.correct();
+      haptic(15);
+      setTimeout(() => {
+        setBlitzFeedback(null);
+        newBlitzQuestion(nextScore);
+      }, 450);
+    } else {
+      sound.wrong();
+      haptic([25, 45, 25]);
+      const nextHearts = blitzHearts - 1;
+      setBlitzHearts(Math.max(0, nextHearts));
+      setTimeout(() => {
+        setBlitzFeedback(null);
+        if (nextHearts <= 0) endBlitz(blitzScore);
+        else newBlitzQuestion(blitzScore);
+      }, 450);
+    }
+  }
+
+  function onBlitzSelect(v: number) {
+    if (!blitzProblem || blitzAnsweredRef.current) return;
+    sound.click();
+    blitzResolve(v === blitzProblem.answer);
+  }
+
+  useEffect(() => {
+    if (view !== "blitz" || !blitzProblem || blitzOver) return;
+    blitzTimeoutRef.current = setTimeout(() => blitzResolve(false), blitzTimerMs);
+    return () => {
+      if (blitzTimeoutRef.current) clearTimeout(blitzTimeoutRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blitzProblem, view]);
+
   /* ================= RENDER ================= */
   return (
     <div id="app">
@@ -603,6 +764,23 @@ export function GameApp({
             style={{ left: `${s.left}%`, top: `${s.top}%`, animationDelay: `${s.delay}s`, fontSize: `${s.size}px` }}
           >
             {sparkleGlyphs[i % sparkleGlyphs.length]}
+          </span>
+        ))}
+      </div>
+
+      <div className="sakura-field">
+        {sakura.map((s, i) => (
+          <span
+            key={i}
+            style={{
+              left: `${s.left}%`,
+              animationDelay: `${s.delay}s`,
+              animationDuration: `${s.duration}s`,
+              fontSize: `${s.size}px`,
+              "--sway": `${s.sway}px`,
+            } as React.CSSProperties}
+          >
+            🌸
           </span>
         ))}
       </div>
@@ -692,6 +870,32 @@ export function GameApp({
                 })}
               </div>
             )}
+            <button className="menu-row" onClick={toggleLeaderboard}>
+              <span>🏆 {lang === "ja" ? "ランキング" : "Leaderboard"}</span>
+              <span className="menu-row-val">{leaderboard?.me ? `#${leaderboard.me.position}` : ""}</span>
+            </button>
+            {leaderboardOpen && (
+              <div className="leaderboard-panel">
+                {leaderboardLoading && <div className="leaderboard-loading">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>}
+                {!leaderboardLoading &&
+                  leaderboard?.top.map((e, i) => (
+                    <div key={e.userId} className={`leaderboard-row${e.userId === leaderboard.me?.userId ? " me" : ""}`}>
+                      <span className={`leaderboard-rank${i < 3 ? ` top${i + 1}` : ""}`}>{i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
+                      <span className="leaderboard-name">{e.name}</span>
+                      <span className="leaderboard-level">{lang === "ja" ? "Lv" : "Lv"}.{e.level}</span>
+                      <span className="leaderboard-gems">💎 {e.gems}</span>
+                    </div>
+                  ))}
+                {!leaderboardLoading && leaderboard?.me && leaderboard.me.position > leaderboard.top.length && (
+                  <div className="leaderboard-row me leaderboard-row-me-sep">
+                    <span className="leaderboard-rank">{leaderboard.me.position}</span>
+                    <span className="leaderboard-name">{leaderboard.me.name}</span>
+                    <span className="leaderboard-level">Lv.{leaderboard.me.level}</span>
+                    <span className="leaderboard-gems">💎 {leaderboard.me.gems}</span>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="menu-divider" />
             <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
               <span>⏻ {t.menu.signOut}</span>
@@ -715,6 +919,7 @@ export function GameApp({
             dailyStreak={dailyStreak}
             onOpenTopic={openTopic}
             onOpenArena={() => { loadPuzzle(puzIdx); setView("arena"); }}
+            onOpenBlitz={startBlitz}
             lang={lang}
             t={t}
           />
@@ -784,6 +989,23 @@ export function GameApp({
             onNext={() => loadPuzzle(puzIdx + 1)}
           />
         )}
+
+        {view === "blitz" && blitzProblem && (
+          <BlitzView
+            problem={blitzProblem}
+            options={blitzOptions}
+            score={blitzScore}
+            best={blitzBest}
+            hearts={blitzHearts}
+            timerKey={blitzTimerKey}
+            timerMs={blitzTimerMs}
+            feedback={blitzFeedback}
+            cardRef={blitzCardRef}
+            onSelect={onBlitzSelect}
+            lang={lang}
+            t={t}
+          />
+        )}
       </main>
 
       {stageIntro !== null && (
@@ -801,7 +1023,7 @@ export function GameApp({
         </div>
       )}
 
-      <footer className="footerbar active" style={{ display: view === "home" ? "none" : "flex" }}>
+      <footer className="footerbar active" style={{ display: view === "home" || view === "blitz" ? "none" : "flex" }}>
         {view === "topic" && (
           <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
             {t.stageMap.seeStageMap}
@@ -841,6 +1063,7 @@ export function GameApp({
 
       {feedback?.show && (
         <div className={`feedback-banner show ${feedback.ok ? "good" : "bad"}`}>
+          <div className="feedback-sfx-stamp">{feedback.ok ? "ピンポン♪" : "ブブー"}</div>
           <div className="feedback-inner">
             <div className="feedback-icon">{feedback.ok ? "✓" : "✕"}</div>
             <div className="feedback-text">
@@ -902,6 +1125,55 @@ export function GameApp({
         </div>
       )}
 
+      {chestReward !== null && (
+        <div className="show" id="dailyChest">
+          <div className="chest-card">
+            {!chestOpened ? (
+              <>
+                <div
+                  className="chest-box"
+                  onClick={() => {
+                    setChestOpened(true);
+                    confetti.burstCenter(90, 0.5);
+                    sound.levelUp();
+                    haptic([20, 60, 20]);
+                  }}
+                >
+                  🎁
+                </div>
+                <h3>{lang === "ja" ? "デイリーチェスト！" : "Daily Chest!"}</h3>
+                <p>{lang === "ja" ? "タップして開けよう" : "Tap to open"}</p>
+              </>
+            ) : (
+              <>
+                <div className="chest-box opened">🎉</div>
+                <h3>+{chestReward} 💎</h3>
+                <p>{lang === "ja" ? "毎日プレイしてもっと獲得しよう！" : "Come back tomorrow for another chest!"}</p>
+                <button className="btn btn-primary" style={{ flex: "none", padding: "14px 28px" }} onClick={() => setChestReward(null)}>
+                  {lang === "ja" ? "やった！" : "Nice!"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {blitzOver && (
+        <div className="show" id="blitzOver">
+          <div className="celebrate-card">
+            <h3>⚡ {t.blitz.over}</h3>
+            <p>
+              {t.blitz.scoreLabel}: {blitzScore}
+              {blitzJustBeatBest ? ` ${t.blitz.newBest}` : ""}
+            </p>
+            <div className="result-actions">
+              <button className="btn btn-primary" onClick={startBlitz}>{t.blitz.playAgain}</button>
+              <button className="btn btn-ghost" onClick={() => { setBlitzOver(false); goHome(); }}>{t.blitz.backHome}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <canvas ref={confetti.canvasRef} id="confettiCanvas" style={{ position: "fixed", inset: 0, zIndex: 60, pointerEvents: "none" }} />
     </div>
   );
@@ -916,6 +1188,7 @@ function HomeView({
   dailyStreak,
   onOpenTopic,
   onOpenArena,
+  onOpenBlitz,
   lang,
   t,
 }: {
@@ -925,6 +1198,7 @@ function HomeView({
   dailyStreak: number;
   onOpenTopic: (id: string) => void;
   onOpenArena: () => void;
+  onOpenBlitz: () => void;
   lang: Lang;
   t: UIDict;
 }) {
@@ -933,6 +1207,50 @@ function HomeView({
     return idx === -1 ? TOPICS.length - 1 : idx;
   })();
   const rank = lang === "ja" ? RANKS_JA[li.rank] || li.rank : li.rank;
+
+  const [resetIn, setResetIn] = useState(() => msUntilUTCMidnight());
+  useEffect(() => {
+    const id = setInterval(() => setResetIn(msUntilUTCMidnight()), 60000);
+    return () => clearInterval(id);
+  }, []);
+  const resetHours = Math.floor(resetIn / 3600000);
+  const resetMins = Math.floor((resetIn % 3600000) / 60000);
+
+  const pathWrapRef = useRef<HTMLDivElement | null>(null);
+  const [mapGeo, setMapGeo] = useState<{ w: number; h: number; d: string }>({ w: 0, h: 0, d: "" });
+
+  useEffect(() => {
+    const wrap = pathWrapRef.current;
+    if (!wrap) return;
+    function computePath() {
+      if (!wrap) return;
+      const wrapRect = wrap.getBoundingClientRect();
+      const nodeEls = Array.from(wrap.querySelectorAll<HTMLElement>(".node, .boss-node"));
+      const pts = nodeEls.map((n) => {
+        const r = n.getBoundingClientRect();
+        return { x: r.left + r.width / 2 - wrapRect.left, y: r.top + r.height / 2 - wrapRect.top };
+      });
+      if (pts.length < 2) {
+        setMapGeo({ w: wrapRect.width, h: wrapRect.height, d: "" });
+        return;
+      }
+      let d = `M ${pts[0].x} ${pts[0].y}`;
+      for (let i = 1; i < pts.length; i++) {
+        const p0 = pts[i - 1], p1 = pts[i];
+        const midY = (p0.y + p1.y) / 2;
+        d += ` C ${p0.x} ${midY}, ${p1.x} ${midY}, ${p1.x} ${p1.y}`;
+      }
+      setMapGeo({ w: wrapRect.width, h: wrapRect.height, d });
+    }
+    computePath();
+    const ro = new ResizeObserver(computePath);
+    ro.observe(wrap);
+    window.addEventListener("resize", computePath);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", computePath);
+    };
+  }, [progress, lang]);
 
   return (
     <section className="view active">
@@ -962,11 +1280,30 @@ function HomeView({
               </span>
             ))}
           </div>
+          {resetHours < 6 && (
+            <div className="streak-urgent">
+              ⏳ {lang === "ja" ? `あと${resetHours}時間${resetMins}分でリセット！` : `Resets in ${resetHours}h ${resetMins}m — play today!`}
+            </div>
+          )}
         </div>
       )}
 
-      <div className="path-wrap">
-        <div className="path-line" />
+      <div className="blitz-cta" onClick={onOpenBlitz}>
+        <div className="blitz-cta-icon">⚡</div>
+        <div className="blitz-cta-info">
+          <div className="blitz-cta-title">{t.home.blitzTitle}</div>
+          <div className="blitz-cta-sub">{t.home.blitzSub}</div>
+        </div>
+        <span className="blitz-cta-arrow">›</span>
+      </div>
+
+      <div className="path-wrap" ref={pathWrapRef}>
+        {mapGeo.d && (
+          <svg className="path-svg" width={mapGeo.w} height={mapGeo.h} style={{ position: "absolute", top: 0, left: 0, zIndex: 0, pointerEvents: "none" }}>
+            <path className="path-svg-glow" d={mapGeo.d} fill="none" />
+            <path className="path-svg-line" d={mapGeo.d} fill="none" />
+          </svg>
+        )}
         {TOPICS.map((tp, i) => {
           const p = topicProgressOf(progress, tp.id);
           const isCurrent = i === firstIncompleteIdx;
@@ -978,6 +1315,7 @@ function HomeView({
                     🔥
                     <span className="boss-chip">{solvedCount}/{PUZZLES.length}</span>
                   </div>
+                  <span className="node-platform" />
                   <div className="node-label">{t.home.dojo}</div>
                 </div>
               </div>
@@ -988,6 +1326,7 @@ function HomeView({
               <div className={`path-row pos-${PATH_POS[i % PATH_POS.length]}`}>
                 <div className="node-wrap">
                   {isCurrent && <div className="node-bubble">{t.home.play}</div>}
+                  <span className="node-level">{i + 1}</span>
                   <div
                     className={`node${isCurrent ? " current" : ""}`}
                     style={{ background: gradCss(tp.grad) }}
@@ -1000,6 +1339,7 @@ function HomeView({
                       ))}
                     </span>
                   </div>
+                  <span className="node-platform" />
                   <div className="node-label">{lang === "ja" ? tp.titleJa : tp.title}</div>
                 </div>
               </div>
@@ -1008,6 +1348,38 @@ function HomeView({
         })}
       </div>
     </section>
+  );
+}
+
+const DIGIT_FLOW_TOPICS = new Set(["add9", "sub9", "add8sub8"]);
+
+function DigitFlowIllus({
+  topic,
+  rows,
+  lang,
+}: {
+  topic: Topic;
+  rows: [string, string][];
+  lang: Lang;
+}) {
+  const [eq] = rows[0];
+  const tens = rows[1];
+  const units = rows[2];
+  return (
+    <div className="digitflow-illus" style={{ background: gradCss(topic.grad) }}>
+      <div className="digitflow-eq mono">{eq}</div>
+      <div className="digitflow-row">
+        <span className="digitflow-arrow up">▲</span>
+        <span className="digitflow-label">{tens[0]}</span>
+        <span className="digitflow-val mono">{tens[1]}</span>
+      </div>
+      <div className="digitflow-row">
+        <span className="digitflow-arrow down">▼</span>
+        <span className="digitflow-label">{units[0]}</span>
+        <span className="digitflow-val mono">{units[1]}</span>
+      </div>
+      <div className="digitflow-caption">{lang === "ja" ? "本の教え方どおり" : "straight from the book"}</div>
+    </div>
   );
 }
 
@@ -1030,7 +1402,11 @@ function TopicView({ topic, lang, t }: { topic: Topic; lang: Lang; t: UIDict }) 
       </div>
       <div className="card">
         <h4>{t.topicView.howItWorks}</h4>
-        <div className="topic-illus" dangerouslySetInnerHTML={{ __html: ILLUS[topic.illus](topic.grad[0], topic.grad[1]) }} />
+        {DIGIT_FLOW_TOPICS.has(topic.id) ? (
+          <DigitFlowIllus topic={topic} rows={rows} lang={lang} />
+        ) : (
+          <div className="topic-illus" dangerouslySetInnerHTML={{ __html: ILLUS[topic.illus](topic.grad[0], topic.grad[1]) }} />
+        )}
         <ol className="steps">
           {steps.map((s, i) => (
             <li key={i}>
@@ -1322,7 +1698,7 @@ function PracticeView({
           </div>
         )}
         {mode === "catch" && (
-          <div className="catch-field">
+          <div className={`catch-field skin-${skinId}`}>
             {tileOptions.map((o, i) => (
               <button
                 key={o}
@@ -1399,6 +1775,49 @@ function ArenaView({
   onNext: () => void;
   t: UIDict;
 }) {
+  const [dragging, setDragging] = useState(false);
+  const [ghostPos, setGhostPos] = useState<{ x: number; y: number } | null>(null);
+  const dragStartRef = useRef<{ x: number; y: number; loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null } | null>(null);
+
+  function parseDragTarget(el: Element | null) {
+    const target = el?.closest<HTMLElement>("[data-drag-loc]");
+    if (!target) return null;
+    return {
+      loc: target.dataset.dragLoc as "board" | "tray",
+      gi: target.dataset.dragGi ? Number(target.dataset.dragGi) : null,
+      slot: target.dataset.dragSlot || null,
+      idx: target.dataset.dragIdx ? Number(target.dataset.dragIdx) : null,
+    };
+  }
+  function handlePointerDown(e: React.PointerEvent, loc: "board" | "tray", gi: number | null, slot: string | null, idx: number | null) {
+    dragStartRef.current = { x: e.clientX, y: e.clientY, loc, gi, slot, idx };
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+  }
+  function handlePointerMove(e: React.PointerEvent) {
+    const start = dragStartRef.current;
+    if (!start) return;
+    const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y) > 6;
+    if (moved && !dragging) {
+      setDragging(true);
+      onSlotClick(start.loc, start.gi, start.slot, start.idx);
+    }
+    if (moved || dragging) setGhostPos({ x: e.clientX, y: e.clientY });
+  }
+  function handlePointerUp(e: React.PointerEvent) {
+    const start = dragStartRef.current;
+    if (start) {
+      if (dragging) {
+        const target = parseDragTarget(document.elementFromPoint(e.clientX, e.clientY));
+        if (target) onSlotClick(target.loc, target.gi, target.slot, target.idx);
+      } else {
+        onSlotClick(start.loc, start.gi, start.slot, start.idx);
+      }
+    }
+    dragStartRef.current = null;
+    setDragging(false);
+    setGhostPos(null);
+  }
+
   const p = PUZZLES[puzIdx];
   const cellW = 46, gap = 16, opW = 40;
   let total = 0;
@@ -1425,7 +1844,16 @@ function ArenaView({
       const lineCls = `stick ${isSel ? "stick-selected" : on ? "stick-active" : "stick-inactive"}${isHintSrc || isHintDst ? " stick-hint" : ""}`;
       const tipCls = isSel ? "stick-tip sel-tip" : on ? "stick-tip" : "stick-tip-off";
       sticks.push(
-        <g key={`${gi}-${slot}`} onClick={() => onSlotClick("board", gi, slot, null)}>
+        <g
+          key={`${gi}-${slot}`}
+          data-drag-loc="board"
+          data-drag-gi={gi}
+          data-drag-slot={slot}
+          onPointerDown={(e) => handlePointerDown(e, "board", gi, slot, null)}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
           <line className={lineCls} x1={x1} y1={y1} x2={x2} y2={y2} />
           <circle className={tipCls} cx={tipX} cy={tipY} r={isSel ? 6 : on ? 5.5 : 4} />
         </g>
@@ -1475,7 +1903,12 @@ function ArenaView({
               <div
                 key={idx}
                 className={`tray-slot${on ? " filled" : ""}${isSel ? " sel" : ""}`}
-                onClick={() => onSlotClick("tray", null, null, idx)}
+                data-drag-loc="tray"
+                data-drag-idx={idx}
+                onPointerDown={(e) => handlePointerDown(e, "tray", null, null, idx)}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
               >
                 {on && <div className="stick-mini" />}
               </div>
@@ -1489,6 +1922,69 @@ function ArenaView({
       </div>
       <div className="puzzle-status" style={{ color: status.color }}>{status.text}</div>
       <div className="story-chip">{p.story}</div>
+      {dragging && ghostPos && (
+        <div className="drag-ghost" style={{ left: ghostPos.x, top: ghostPos.y }} />
+      )}
+    </section>
+  );
+}
+
+function BlitzView({
+  problem,
+  options,
+  score,
+  best,
+  hearts,
+  timerKey,
+  timerMs,
+  feedback,
+  cardRef,
+  onSelect,
+  lang,
+  t,
+}: {
+  problem: Problem;
+  options: number[];
+  score: number;
+  best: number;
+  hearts: number;
+  timerKey: number;
+  timerMs: number;
+  feedback: "ok" | "bad" | null;
+  cardRef: React.RefObject<HTMLDivElement | null>;
+  onSelect: (v: number) => void;
+  lang: Lang;
+  t: UIDict;
+}) {
+  return (
+    <section className="view active">
+      <div className="blitz-header">
+        <div className="blitz-stat">⚡ {t.blitz.score} <b>{score}</b></div>
+        <div className="blitz-hearts">
+          {Array.from({ length: 3 }, (_, i) => (
+            <span key={i} className={i < hearts ? "on" : "off"}>❤️</span>
+          ))}
+        </div>
+        <div className="blitz-stat">🏆 {t.blitz.best} <b>{best}</b></div>
+      </div>
+      <div className="timer-bar-wrap">
+        <div key={timerKey} className="timer-bar-fill" style={{ animationDuration: `${timerMs}ms` }} />
+      </div>
+      <div
+        key={problem.prompt}
+        className={`practice-card blitz-card${feedback === "ok" ? " correct-glow" : feedback === "bad" ? " wrong-glow" : ""}`}
+        ref={cardRef}
+      >
+        <div className="mode-eyebrow">⚡ {lang === "ja" ? "スピード勝負！" : "Beat the clock!"}</div>
+        <div className="question mono">{problem.prompt} = ?</div>
+        <div className="tile-grid">
+          {options.map((o) => (
+            <button key={o} className="choice-tile" onClick={() => onSelect(o)}>
+              {fmt(o)}
+            </button>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

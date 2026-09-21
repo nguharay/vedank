@@ -4,14 +4,15 @@ import { useEffect, useState } from "react";
 const STORE_KEY = "sutraSprint.lang";
 export type LangCode = "en" | "ja";
 
-export function useLang() {
-  const [lang, setLangState] = useState<LangCode>("en");
+export function useLang(initialLang: LangCode = "en") {
+  const [lang, setLangState] = useState<LangCode>(initialLang);
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORE_KEY) as LangCode | null;
       if (saved === "en" || saved === "ja") setLangState(saved);
     } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function setLang(next: LangCode) {
@@ -30,12 +31,15 @@ export function useLang() {
 
 export type UIDict = {
   appName: string;
-  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string };
+  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string; blitz: string };
   menu: {
     accountLabel: string; player: string; sound: string; on: string; off: string;
     theme: string; auto: string; light: string; dark: string; skins: string; language: string; signOut: string;
   };
-  home: { eyebrow: string; title: string; brand: string; level: string; dojo: string; streakSuffix: string; play: string };
+  home: { eyebrow: string; title: string; brand: string; level: string; dojo: string; streakSuffix: string; play: string; blitzTitle: string; blitzSub: string };
+  blitz: {
+    score: string; best: string; over: string; scoreLabel: string; newBest: string; playAgain: string; backHome: string;
+  };
   topicView: { howItWorks: string };
   stageMap: { instructions: string; play: string; seeStageMap: string };
   practice: {
@@ -63,7 +67,7 @@ export type UIDict = {
 export const UI: Record<LangCode, UIDict> = {
   en: {
     appName: "Sutra Sprint",
-    headerTitles: { home: "Sutra Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Speed Drill", arena: "Matchstick Dojo" },
+    headerTitles: { home: "Sutra Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Speed Drill", arena: "Matchstick Dojo", blitz: "Number Blitz" },
     menu: {
       accountLabel: "Account menu",
       player: "Player",
@@ -86,6 +90,17 @@ export const UI: Record<LangCode, UIDict> = {
       dojo: "Matchstick Dojo",
       streakSuffix: "-day streak",
       play: "Play",
+      blitzTitle: "Number Blitz",
+      blitzSub: "Arcade time-attack",
+    },
+    blitz: {
+      score: "Score",
+      best: "Best",
+      over: "Blitz Over!",
+      scoreLabel: "Score",
+      newBest: "🎉 New Best!",
+      playAgain: "Play Again",
+      backHome: "Back Home",
     },
     topicView: {
       howItWorks: "How it works",
@@ -161,7 +176,7 @@ export const UI: Record<LangCode, UIDict> = {
   },
   ja: {
     appName: "スートラ・スプリント",
-    headerTitles: { home: "スートラ・スプリント", topic: "レッスン", stagemap: "ステージマップ", practice: "スピードドリル", arena: "マッチ棒道場" },
+    headerTitles: { home: "スートラ・スプリント", topic: "レッスン", stagemap: "ステージマップ", practice: "スピードドリル", arena: "マッチ棒道場", blitz: "ナンバーブリッツ" },
     menu: {
       accountLabel: "アカウントメニュー",
       player: "プレイヤー",
@@ -184,6 +199,17 @@ export const UI: Record<LangCode, UIDict> = {
       dojo: "マッチ棒道場",
       streakSuffix: "日連続",
       play: "プレイ",
+      blitzTitle: "ナンバーブリッツ",
+      blitzSub: "タイムアタック・アーケード",
+    },
+    blitz: {
+      score: "スコア",
+      best: "ベスト",
+      over: "ゲームオーバー！",
+      scoreLabel: "スコア",
+      newBest: "🎉 新記録！",
+      playAgain: "もう一度",
+      backHome: "ホームへ",
     },
     topicView: {
       howItWorks: "解き方",

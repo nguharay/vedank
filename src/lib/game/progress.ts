@@ -1,7 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { getDb } from "@/db";
 import { topicProgress, arenaProgress, users } from "@/db/schema";
-import { TOPICS, PASS_THRESHOLD, QUESTIONS_PER_STAGE } from "./topics";
+import { TOPICS, PASS_THRESHOLD, QUESTIONS_PER_STAGE, rankFor } from "./topics";
 import { PUZZLES } from "./matchstick";
 import type { ProgressState, TopicProgressRow } from "./state";
 
@@ -14,33 +14,68 @@ function todayUTC() {
 function daysBetween(a: string, b: string) {
   return Math.round((new Date(a + "T00:00:00Z").getTime() - new Date(b + "T00:00:00Z").getTime()) / 86_400_000);
 }
+function ri(a: number, b: number) {
+  return Math.floor(Math.random() * (b - a + 1)) + a;
+}
+// 60% small, 30% medium, 10% jackpot — variable reward on first play of the day.
+function rollChestReward(): number {
+  const r = Math.random();
+  if (r < 0.1) return ri(120, 200);
+  if (r < 0.4) return ri(50, 80);
+  return ri(20, 40);
+}
 
-export type DailyStreakInfo = { dailyStreak: number; bestDailyStreak: number; isNewDay: boolean };
+export type DailyStreakInfo = {
+  dailyStreak: number;
+  bestDailyStreak: number;
+  isNewDay: boolean;
+  preferredLang: "en" | "ja";
+  bonusGems: number;
+  chestReward: number | null;
+};
 
 // Called once per app-open (from the home page server component) — not tied
 // to signing in, since a JWT session can persist across days without a
-// fresh login. Advances the calendar streak at most once per calendar day.
+// fresh login. Advances the calendar streak at most once per calendar day,
+// and on that first visit of the day also rolls a daily mystery chest reward.
 export async function touchDailyStreak(userId: string): Promise<DailyStreakInfo> {
   const db = getDb();
   const rows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   const user = rows[0];
-  if (!user) return { dailyStreak: 0, bestDailyStreak: 0, isNewDay: false };
+  if (!user) return { dailyStreak: 0, bestDailyStreak: 0, isNewDay: false, preferredLang: "en", bonusGems: 0, chestReward: null };
 
+  const preferredLang: "en" | "ja" = user.preferredLang === "ja" ? "ja" : "en";
   const today = todayUTC();
   if (user.lastActiveDate === today) {
-    return { dailyStreak: user.dailyStreak, bestDailyStreak: user.bestDailyStreak, isNewDay: false };
+    return {
+      dailyStreak: user.dailyStreak,
+      bestDailyStreak: user.bestDailyStreak,
+      isNewDay: false,
+      preferredLang,
+      bonusGems: user.bonusGems,
+      chestReward: null,
+    };
   }
 
   const gap = user.lastActiveDate ? daysBetween(today, user.lastActiveDate) : null;
   const nextStreak = gap === 1 ? user.dailyStreak + 1 : 1;
   const nextBest = Math.max(user.bestDailyStreak, nextStreak);
+  const chestReward = rollChestReward();
+  const nextBonusGems = user.bonusGems + chestReward;
 
   await db
     .update(users)
-    .set({ lastActiveDate: today, dailyStreak: nextStreak, bestDailyStreak: nextBest })
+    .set({ lastActiveDate: today, dailyStreak: nextStreak, bestDailyStreak: nextBest, bonusGems: nextBonusGems })
     .where(eq(users.id, userId));
 
-  return { dailyStreak: nextStreak, bestDailyStreak: nextBest, isNewDay: true };
+  return {
+    dailyStreak: nextStreak,
+    bestDailyStreak: nextBest,
+    isNewDay: true,
+    preferredLang,
+    bonusGems: nextBonusGems,
+    chestReward,
+  };
 }
 
 export async function loadProgress(userId: string): Promise<ProgressState> {
@@ -137,6 +172,52 @@ export async function submitPuzzleSolved(userId: string, puzzleId: string, moves
     await db.insert(arenaProgress).values({ userId, puzzleId, solved: true, bestMoves });
   }
   return { alreadySolved, bestMoves };
+}
+
+export type LeaderboardEntry = {
+  userId: string;
+  name: string;
+  gems: number;
+  level: number;
+  rank: string;
+  dailyStreak: number;
+};
+
+export async function getLeaderboard(
+  currentUserId: string,
+  limit = 20
+): Promise<{ top: LeaderboardEntry[]; me: (LeaderboardEntry & { position: number }) | null }> {
+  const db = getDb();
+  const [userRows, tRows, aRows] = await Promise.all([
+    db.select({ id: users.id, name: users.name, dailyStreak: users.dailyStreak, bonusGems: users.bonusGems }).from(users),
+    db.select().from(topicProgress),
+    db.select().from(arenaProgress),
+  ]);
+
+  const gemsByUser = new Map<string, number>();
+  for (const u of userRows) gemsByUser.set(u.id, u.bonusGems);
+  for (const row of tRows) {
+    const stars = (row.stageStars as Record<string, number>) || {};
+    let g = row.cleared * 50;
+    for (const v of Object.values(stars)) g += (v || 0) * 25;
+    gemsByUser.set(row.userId, (gemsByUser.get(row.userId) || 0) + g);
+  }
+  for (const row of aRows) {
+    if (row.solved) gemsByUser.set(row.userId, (gemsByUser.get(row.userId) || 0) + 40);
+  }
+
+  const entries: LeaderboardEntry[] = userRows.map((u) => {
+    const gems = gemsByUser.get(u.id) || 0;
+    const level = Math.floor(gems / 150) + 1;
+    return { userId: u.id, name: u.name, gems, level, rank: rankFor(level), dailyStreak: u.dailyStreak };
+  });
+  entries.sort((a, b) => b.gems - a.gems);
+
+  const top = entries.slice(0, limit);
+  const idx = entries.findIndex((e) => e.userId === currentUserId);
+  const me = idx >= 0 ? { ...entries[idx], position: idx + 1 } : null;
+
+  return { top, me };
 }
 
 export { QUESTIONS_PER_STAGE, PUZZLES };

@@ -25,6 +25,12 @@ export const users = pgTable("users", {
   lastActiveDate: date("last_active_date"),
   dailyStreak: integer("daily_streak").notNull().default(0),
   bestDailyStreak: integer("best_daily_streak").notNull().default(0),
+
+  // daily mystery chest — gems granted outside of stage/arena progress
+  bonusGems: integer("bonus_gems").notNull().default(0),
+
+  // chosen at signup, used as the default UI language
+  preferredLang: text("preferred_lang").notNull().default("en"),
 });
 
 export const topicProgress = pgTable(

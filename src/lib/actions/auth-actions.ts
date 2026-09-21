@@ -18,6 +18,8 @@ export async function signupAction(
   const name = String(formData.get("name") || "").trim();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
+  const langRaw = String(formData.get("lang") || "en");
+  const preferredLang = langRaw === "ja" ? "ja" : "en";
 
   if (!name) return { error: "Enter your name." };
   if (!EMAIL_RE.test(email)) return { error: "Enter a valid email address." };
@@ -28,7 +30,7 @@ export async function signupAction(
   if (existing[0]) return { error: "An account with that email already exists." };
 
   const passwordHash = await bcrypt.hash(password, 12);
-  await db.insert(users).values({ name, email, passwordHash });
+  await db.insert(users).values({ name, email, passwordHash, preferredLang });
 
   await signIn("credentials", { email, password, redirectTo: "/" });
 }
