@@ -165,31 +165,41 @@ type BaseSpec = {
 
 function BaseMethodDiagram({ spec }: { spec: BaseSpec }) {
   const s = spec;
+  /* The numbers are end-anchored, so a three-digit one reaches further left than
+     a two-digit one. The multiplication sign and the rule follow it instead of
+     sitting at a fixed x, where 107 had the sign struck through its leading 1. */
+  const digits = Math.max(s.numA.length, s.numB.length);
+  const opL = 80 - digits * 12 - 14;
+  const opR = 255 - digits * 12 - 14;
+  /* Same idea on the right: the deviations are 16px and start at x=285, so the
+     vertical "x" arrow is parked clear of the longest of them. */
+  const devW = Math.max(s.devA.length, s.devB.length) * 9;
+  const vx = 285 + devW + 10;
   return (
-    <svg viewBox="0 0 340 236" className="bd-svg bd-svg-wide">
+    <svg viewBox={`0 0 ${Math.max(340, vx + 26)} 236`} className="bd-svg bd-svg-wide">
       <text x="10" y="15" className="bd-caption">{s.caption}</text>
 
       {/* left panel — cross the numbers with the opposite deviation */}
       <text x="80" y="56" className="bd-num" textAnchor="end">{s.numA}</text>
       <text x="110" y="56" className="bd-dev">{s.devA}</text>
-      <text x="44" y="84" className="bd-op">×</text>
+      <text x={opL} y="84" className="bd-op">×</text>
       <text x="80" y="84" className="bd-num" textAnchor="end">{s.numB}</text>
       <text x="110" y="84" className="bd-dev">{s.devB}</text>
       <path d="M86,60 L104,78" className="bd-curve" markerEnd="url(#bmTip)" />
       <path d="M104,60 L86,78" className="bd-curve" markerEnd="url(#bmTip)" />
-      <line x1="44" y1="92" x2="132" y2="92" className="bd-rule" />
+      <line x1={opL} y1="92" x2="132" y2="92" className="bd-rule" />
       <text x="80" y="116" className="bd-part" textAnchor="end">{s.leftPart}</text>
       {s.baseMult && <text x="88" y="116" className="bd-basemult">{s.baseMult}</text>}
 
       {/* right panel — multiply the two deviations */}
       <text x="255" y="56" className="bd-num" textAnchor="end">{s.numA}</text>
       <text x="285" y="56" className="bd-dev">{s.devA}</text>
-      <text x="219" y="84" className="bd-op">×</text>
+      <text x={opR} y="84" className="bd-op">×</text>
       <text x="255" y="84" className="bd-num" textAnchor="end">{s.numB}</text>
       <text x="285" y="84" className="bd-dev">{s.devB}</text>
-      <path d="M318,52 V88" className="bd-vdev" markerStart="url(#bmTipUp)" markerEnd="url(#bmTipDn)" />
-      <text x="326" y="74" className="bd-op">×</text>
-      <line x1="219" y1="92" x2="307" y2="92" className="bd-rule" />
+      <path d={`M${vx},52 V88`} className="bd-vdev" markerStart="url(#bmTipUp)" markerEnd="url(#bmTipDn)" />
+      <text x={vx + 8} y="74" className="bd-op">×</text>
+      <line x1={opR} y1="92" x2="307" y2="92" className="bd-rule" />
       <text x="255" y="116" className="bd-part" textAnchor="end">{s.leftPart}</text>
       <text x="265" y="116" className="bd-part bd-dev-part">{s.rightPart}</text>
 
@@ -289,8 +299,10 @@ function DivisionDiagram({ spec }: { spec: DivSpec }) {
       ))}
       <text x={barX + 20} y="100" className="bd-num bd-rdigit" textAnchor="middle">{s.remainder}</text>
 
+      {/* 19px digits on the y=100 baseline start at about y=87, so the hop runs
+          in the band between the rule and the digits rather than across them. */}
       <path
-        d={`M${x0 + 8},92 Q${(x0 + barX) / 2 + 14},72 ${barX + 12},84`}
+        d={`M${x0 + 8},84 Q${(x0 + barX) / 2 + 14},76 ${barX + 8},84`}
         className="bd-hop"
         fill="none"
         markerEnd="url(#bdHopTip)"
@@ -565,10 +577,12 @@ function CrosswisePanel({
   note?: string;
   uid: string;
 }) {
+  /* 22px digits reach about 15px above their baseline, so the rows sit 30px
+     apart: at 22px the connecting arrows ended inside the bottom digit. */
   const xL = 38, xR = 68, w = 104;
-  const yTop = 34, yBot = 56;
+  const yTop = 34, yBot = 64;
   return (
-    <svg viewBox={`0 0 ${w} 96`} className="bd-svg bd-flagpanel">
+    <svg viewBox={`0 0 ${w} 106`} className="bd-svg bd-flagpanel">
       <defs>
         <marker id={uid} markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 Z" fill="var(--sun1)" />
@@ -585,21 +599,21 @@ function CrosswisePanel({
 
       {/* the pattern the step is named after */}
       {kind === "left" && (
-        <path d={`M ${xL} ${yTop + 5} L ${xL} ${yBot - 13}`} className="bd-tick" markerEnd={`url(#${uid})`} />
+        <path d={`M ${xL} ${yTop + 5} L ${xL} ${yBot - 19}`} className="bd-tick" markerEnd={`url(#${uid})`} />
       )}
       {kind === "right" && (
-        <path d={`M ${xR} ${yTop + 5} L ${xR} ${yBot - 13}`} className="bd-tick" markerEnd={`url(#${uid})`} />
+        <path d={`M ${xR} ${yTop + 5} L ${xR} ${yBot - 19}`} className="bd-tick" markerEnd={`url(#${uid})`} />
       )}
       {kind === "cross" && (
         <>
-          <path d={`M ${xL + 5} ${yTop + 5} L ${xR - 5} ${yBot - 13}`} className="bd-tick" markerEnd={`url(#${uid})`} />
-          <path d={`M ${xR - 5} ${yTop + 5} L ${xL + 5} ${yBot - 13}`} className="bd-tick" />
+          <path d={`M ${xL + 5} ${yTop + 5} L ${xR - 5} ${yBot - 19}`} className="bd-tick" markerEnd={`url(#${uid})`} />
+          <path d={`M ${xR - 5} ${yTop + 5} L ${xL + 5} ${yBot - 19}`} className="bd-tick" />
         </>
       )}
 
-      <line x1="8" y1="64" x2={w - 6} y2="64" className="bd-rule" />
-      <text x={w - 6} y="82" className="bd-partline" textAnchor="end">{running}</text>
-      {note && <text x={w - 6} y="93" className="bd-caption" style={{ fontSize: 8 }} textAnchor="end">{note}</text>}
+      <line x1="8" y1="74" x2={w - 6} y2="74" className="bd-rule" />
+      <text x={w - 6} y="92" className="bd-partline" textAnchor="end">{running}</text>
+      {note && <text x={w - 6} y="103" className="bd-caption" style={{ fontSize: 8 }} textAnchor="end">{note}</text>}
     </svg>
   );
 }
@@ -901,9 +915,13 @@ function AdditionBarDiagram() {
 function Mult1xPanel({ a, b, label, arrow, result, note, uid }: {
   a: number; b: number; label: string; arrow: "units" | "cross"; result: string; note?: string; uid: string;
 }) {
+  /* The digits are 22px, so a glyph covers about 15px above its baseline. The
+     rows sit 28px apart to leave a band wide enough for an arrow to run between
+     them; at the old 22px spacing every arrow drawn there landed on a digit. */
   const w = 104, xT = 46, xU = 74;
+  const yA = 40, yB = 68;
   return (
-    <svg viewBox={`0 0 ${w} 112`} className="bd-svg bd-flagpanel">
+    <svg viewBox={`0 0 ${w} 116`} className="bd-svg bd-flagpanel">
       <defs>
         <marker id={uid} markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 Z" fill="var(--sun1)" />
@@ -911,21 +929,23 @@ function Mult1xPanel({ a, b, label, arrow, result, note, uid }: {
       </defs>
       <text x="8" y="13" className="bd-steplabel" style={{ fontSize: 9 }}>{label}</text>
 
-      <text x={xT} y="38" className="bd-digit" textAnchor="middle">{Math.floor(a / 10)}</text>
-      <text x={xU} y="38" className="bd-digit" textAnchor="middle">{a % 10}</text>
-      <text x="12" y="60" className="bd-num" textAnchor="start">×</text>
-      <text x={xT} y="60" className="bd-digit" textAnchor="middle">{Math.floor(b / 10)}</text>
-      <text x={xU} y="60" className="bd-digit" textAnchor="middle">{b % 10}</text>
+      <text x={xT} y={yA} className="bd-digit" textAnchor="middle">{Math.floor(a / 10)}</text>
+      <text x={xU} y={yA} className="bd-digit" textAnchor="middle">{a % 10}</text>
+      <text x="12" y={yB} className="bd-num" textAnchor="start">×</text>
+      <text x={xT} y={yB} className="bd-digit" textAnchor="middle">{Math.floor(b / 10)}</text>
+      <text x={xU} y={yB} className="bd-digit" textAnchor="middle">{b % 10}</text>
 
       {arrow === "units" ? (
+        /* units by units: straight down the units column, inside the band */
         <path d={`M ${xU} 44 L ${xU} 50`} className="bd-tick" markerEnd={`url(#${uid})`} />
       ) : (
-        <path d={`M ${xU - 6} 52 Q ${xT} 46 ${xT - 10} 34`} className="bd-tick" markerEnd={`url(#${uid})`} />
+        /* the units digit of the second number travels left to join the first */
+        <path d={`M ${xU - 4} 52 Q ${xT - 4} 53 ${xT - 16} 44`} className="bd-tick" markerEnd={`url(#${uid})`} />
       )}
 
-      <line x1="10" y1="68" x2={w - 6} y2="68" className="bd-rule" />
-      <text x={w - 6} y="88" className="bd-partline" textAnchor="end">{result}</text>
-      {note && <text x={w - 6} y="100" className="bd-caption" style={{ fontSize: 8 }} textAnchor="end">{note}</text>}
+      <line x1="10" y1="76" x2={w - 6} y2="76" className="bd-rule" />
+      <text x={w - 6} y="96" className="bd-partline" textAnchor="end">{result}</text>
+      {note && <text x={w - 6} y="108" className="bd-caption" style={{ fontSize: 8 }} textAnchor="end">{note}</text>}
     </svg>
   );
 }
