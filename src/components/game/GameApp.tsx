@@ -74,6 +74,7 @@ import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkin
 import { Buddy } from "./Buddy";
 import { useBuddy, line } from "./useBuddy";
 import { makeQuoteCycle, quoteText } from "@/lib/game/quotes";
+import { useBuddyPos } from "./useBuddyPos";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI, type UIDict } from "./i18n";
 
@@ -325,6 +326,10 @@ export function GameApp({
   /* Until it has been tapped once, the buddy wears a hint badge — a character
      in the corner with no affordance is a feature nobody finds. */
   const [buddyTapped, setBuddyTapped] = useState(false);
+  /* Drag it anywhere; position is remembered. tapBuddy is declared below, so the
+     handler reads it through a ref rather than capturing it before it exists. */
+  const tapRef = useRef<() => void>(() => {});
+  const buddyPos = useBuddyPos(() => tapRef.current());
 
   function tapBuddy() {
     setBuddyTapped(true);
@@ -396,6 +401,8 @@ export function GameApp({
       setReviewStats(r.stats);
     } catch {}
   }
+
+  tapRef.current = tapBuddy;
 
   /* A quote once, a beat after the app settles, so a first-time player sees what
      the buddy does instead of having to guess that it is tappable. */
@@ -1620,6 +1627,12 @@ export function GameApp({
               <span>🛍️ {lang === "ja" ? "ショップ" : "Shop"}</span>
               <span className="menu-row-val mono">💎 {gemBalance ?? "…"}</span>
             </button>
+            {buddyPos.pos && (
+              <button className="menu-row" onClick={buddyPos.reset}>
+                <span>📍 {ja ? "バディの位置をもどす" : "Reset buddy position"}</span>
+                <span className="menu-row-val">›</span>
+              </button>
+            )}
             <button className="menu-row" onClick={buddy.toggleHidden}>
               <span>🧚 {ja ? "バディ" : "Buddy"}</span>
               <span className="menu-row-val">{buddy.hidden ? t.menu.off : t.menu.on}</span>
@@ -2678,7 +2691,10 @@ export function GameApp({
       {/* The companion. Fixed above the nav so it never covers an answer tile,
           and tappable to hush it — a helper you can't silence is a nuisance. */}
       {!buddy.hidden && (
-        <div className={`buddy-dock${buddy.say ? " talking" : ""}`}>
+        <div
+          className={`buddy-dock${buddy.say ? " talking" : ""}${buddyPos.pos ? " free" : ""}${buddyPos.dragging ? " dragging" : ""}`}
+          style={buddyPos.pos ? { left: buddyPos.pos.x, top: buddyPos.pos.y } : undefined}
+        >
           {buddy.say && (
             <button
               className={`buddy-bubble${quoteBy ? " quoting" : ""}`}
@@ -2690,8 +2706,9 @@ export function GameApp({
           )}
           <button
             className="buddy-tap"
-            onClick={tapBuddy}
-            aria-label={ja ? "バディ（タップで名言）" : "Buddy — tap for a quote"}
+            {...buddyPos.handlers}
+            aria-label={ja ? "バディ（タップで名言、ドラッグで移動）" : "Buddy — tap for a quote, drag to move"}
+            title={ja ? "タップ：名言 / ドラッグ：移動" : "Tap for a quote · drag to move"}
           >
             <Buddy skinId={skin.skinId} mood={buddy.mood} />
             {!buddyTapped && !buddy.say && (

@@ -87,7 +87,15 @@ export default function SignupPage() {
   return (
     <div className="auth-shell">
       <div className="auth-card auth-card-wide">
-        <img src="/brand/vedank-full.png" alt="VedAnk Academy — Unleashing Brainpower & Creativity" className="auth-logo auth-logo-full" />
+        {/* Built from vedank-mark.png — the tree the brand actually uses. The old
+            vedank-full.png lockup carried a different, older tree baked in. */}
+        <div className="auth-lockup">
+          <img src="/brand/vedank-mark.png" alt="" className="auth-lockup-tree" />
+          <div className="auth-lockup-words">
+            <span className="auth-lockup-name">VedAnk Academy</span>
+            <span className="auth-lockup-tag">Unleashing Brainpower &amp; Creativity</span>
+          </div>
+        </div>
         <div className="auth-mascot">
           <Mascot mood="excited" />
         </div>

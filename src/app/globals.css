@@ -1713,3 +1713,29 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .chest-open-btn .chest-box{ display:inline-block; }
 .chest-open-btn:focus-visible{ outline:3px solid var(--blue); outline-offset:4px; border-radius:16px; }
 .chest-open-btn:active{ transform:scale(.97); }
+
+/* ---------- a buddy you can move ----------
+   Default is the docked bottom row. Once dragged it becomes freely positioned,
+   with left/top set inline and the centring transform dropped. */
+.buddy-dock.free{ left:0; top:0; width:auto; max-width:min(78vw, 420px); transform:none;
+  padding:0; align-items:flex-start; flex-direction:row-reverse; }
+.buddy-dock.free .buddy-bubble{ margin-right:8px; }
+.buddy-dock.dragging .buddy-tap{ animation:none; cursor:grabbing; transform:scale(1.08); }
+.buddy-dock.dragging .buddy-bubble{ opacity:.35; }
+.buddy-tap{ cursor:grab; touch-action:none; }
+@media (min-width:1024px){ .buddy-dock.free{ max-width:420px; padding:0; } }
+
+/* ---------- auth: the real tree, and a wordmark beside it ---------- */
+.auth-lockup{ display:flex; align-items:center; justify-content:center; gap:12px; margin:0 auto 14px; }
+.auth-lockup-tree{ width:64px; height:64px; flex:0 0 auto; object-fit:contain; }
+.auth-lockup-words{ display:flex; flex-direction:column; align-items:flex-start; min-width:0; }
+.auth-lockup-name{ font-family:"Baloo 2",system-ui,sans-serif; font-weight:800; font-size:20px;
+  line-height:1.1; color:var(--ink); letter-spacing:.01em; }
+.auth-lockup-tag{ font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); margin-top:2px; }
+@media (max-width:380px){
+  .auth-lockup{ gap:9px; }
+  .auth-lockup-tree{ width:52px; height:52px; }
+  .auth-lockup-name{ font-size:17px; }
+  .auth-lockup-tag{ font-size:9.5px; }
+}
