@@ -316,56 +316,108 @@ const DIV_SPECS: Record<string, DivSpec> = {
 
 // Book p.68 — Multiplication by 12 to 19, worked as 243 × 14 (flag = 4).
 // The number is sandwiched in zeros and swept right to left.
-function FlagDigitDiagram() {
-  const n = "243", flag = 4;
-  const s = `0${n}0`.split("").map(Number);
-  const stages: { expr: string; write: number; carry: number }[] = [];
-  let carry = 0;
-  const out: number[] = [];
-  for (let i = s.length - 1; i >= 1; i--) {
-    const v = s[i] + flag * s[i - 1] + carry;
-    out.unshift(v % 10);
-    stages.push({ expr: `${s[i]} + ${flag}×${s[i - 1]}${carry ? ` + ${carry}` : ""} = ${v}`, write: v % 10, carry: Math.floor(v / 10) });
-    carry = Math.floor(v / 10);
-  }
+/* Multiplication by 12-19, drawn the way page 68 draws it: one panel per step,
+   each showing the whole column form with the pair being combined arrowed, the
+   multiplier underlined, and the answer built up with its carry as a subscript.
+   The previous version explained the same arithmetic in four lines of prose,
+   which is a different thing from showing the work. */
+function FlagPanel({
+  digits,
+  mult,
+  at,
+  answer,
+  carry,
+  uid,
+}: {
+  digits: number[];
+  mult: string;
+  /* index of the left digit of the pair being combined */
+  at: number;
+  answer: string;
+  carry: number;
+  /* marker ids must be unique per panel — four panels share one document */
+  uid: string;
+}) {
+  const x0 = 12;
+  const step = 21;
+  const w = x0 + digits.length * step + 10;
+  const rx = x0 + (at + 1) * step;
+  const lx = x0 + at * step;
   return (
-    <svg viewBox="0 0 330 234" className="bd-svg bd-svg-wide">
-      <text x="10" y="15" className="bd-caption">flag = {flag} · sweep right → left</text>
-
-      {s.map((d, i) => (
+    <svg viewBox={`0 0 ${w} 96`} className="bd-svg bd-flagpanel">
+      <defs>
+        <marker id={uid} markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="var(--blue)" />
+        </marker>
+      </defs>
+      {digits.map((d, i) => (
         <text
           key={i}
-          x={92 + i * 30}
-          y="48"
-          className={`bd-num${i === 0 || i === s.length - 1 ? " bd-sandwich" : ""}`}
+          x={x0 + i * step}
+          y="26"
+          className={i === at || i === at + 1 ? "bd-digit-lg" : "bd-digit"}
           textAnchor="middle"
+          opacity={i === at || i === at + 1 ? 1 : 0.45}
         >
           {d}
         </text>
       ))}
-      <text x="250" y="48" className="bd-op">× 14</text>
-      <path d="M232,60 H92" className="bd-sweep" markerEnd="url(#bdSweep)" />
 
-      {stages.map((st, i) => (
-        <g key={i}>
-          <text x="14" y={84 + i * 22} className="bd-note">{st.expr}</text>
-          <text x="196" y={84 + i * 22} className="bd-stagewrite">
-            write {st.write}{st.carry ? ` · carry ${st.carry}` : ""}
-          </text>
-        </g>
-      ))}
+      {/* the pair: + above the right digit, x on the diagonal to the left one */}
+      <text x={rx} y="10" className="bd-plus" textAnchor="middle">+</text>
+      <path d={`M ${rx - 5} 32 L ${lx + 5} 44`} className="bd-hop" markerEnd={`url(#${uid})`} />
+      <text x={(rx + lx) / 2 + 7} y="43" className="bd-dev" textAnchor="middle">×</text>
 
-      <AnswerBox x={100} y={182} w={130} h={40} value={out.join("")} />
-      <defs>
-        <marker id="bdSweep" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-          <path d="M0,0 L8,4 L0,8 Z" className="bd-sweepHead" />
-        </marker>
-      </defs>
+      <text x={w - 14} y="62" className="bd-num" textAnchor="end">{mult}</text>
+      <line x1={x0 - 6} y1="68" x2={w - 10} y2="68" className="bd-rule" />
+
+      {carry > 0 && (
+        <text x={w - 16 - answer.length * 12} y="88" className="bd-carry" textAnchor="end">
+          {carry}
+        </text>
+      )}
+      <text x={w - 14} y="88" className="bd-partline" textAnchor="end">{answer}</text>
     </svg>
   );
 }
 
-// Book p.59 — Multiplication by 111, the "Double-Naught Sandwich", worked as 4213 × 111.
+function FlagDigitDiagram() {
+  const n = "243";
+  const flag = 4;
+  const digits = `0${n}0`.split("").map(Number);
+
+  /* Walk right to left exactly as the book does, keeping each panel's state. */
+  const panels: { at: number; answer: string; carry: number }[] = [];
+  let carry = 0;
+  let out = "";
+  for (let i = digits.length - 1; i >= 1; i--) {
+    const v = digits[i] + flag * digits[i - 1] + carry;
+    out = String(v % 10) + out;
+    carry = Math.floor(v / 10);
+    panels.push({ at: i - 1, answer: out, carry });
+  }
+
+  return (
+    <div className="bd-flaggrid">
+      <div className="bd-flagcap">flag = {flag} · sandwich with 0 · right → left</div>
+      <div className="bd-flagrow">
+        {panels.map((p, i) => (
+          <FlagPanel
+            key={i}
+            digits={digits}
+            mult={`× 1${flag}`}
+            at={p.at}
+            answer={p.answer}
+            carry={p.carry}
+            uid={`bdFlag${i}`}
+          />
+        ))}
+      </div>
+      <div className="bd-flaganswer">3402</div>
+    </div>
+  );
+}
+
 function Mult111Diagram() {
   const digits = "004213 00".replace(" ", "").split("");
   const nums = digits.map(Number);
