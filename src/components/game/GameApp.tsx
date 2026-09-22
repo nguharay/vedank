@@ -40,6 +40,17 @@ import {
   type ProgressState,
 } from "@/lib/game/state";
 import { finishStageAction, solvePuzzleAction, leaderboardAction, dailyStatusAction, submitDailyAction, leagueAction } from "@/lib/actions/game-actions";
+import {
+  questsAction, reportQuestAction, claimQuestAction, shopStateAction, buyItemAction,
+  consumeItemAction, recordMistakeAction, reviewListAction, fixMistakeAction,
+} from "@/lib/actions/game-actions";
+import { SHOP_ITEMS, type QuestEvent } from "@/lib/game/quests";
+import {
+  friendCodeAction, addFriendAction, removeFriendAction, friendsAction,
+  challengeAction, answerChallengeAction,
+} from "@/lib/actions/game-actions";
+import type { Friend, ChallengeRow } from "@/lib/game/friends";
+import type { QuestState, InventoryState } from "@/lib/game/engagement";
 import type { LeaderboardEntry } from "@/lib/game/progress";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { Mascot, Mandala } from "./Mascot";
@@ -54,7 +65,7 @@ import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkin
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI, type UIDict } from "./i18n";
 
-type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily";
+type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
@@ -106,6 +117,8 @@ const BLITZ_DIFF: Difficulty[] = ["easy", "easy", "easy", "medium", "hard"];
 const BLITZ_TIME_MS = 9000;
 const BLITZ_TIME_MIN_MS = 4500;
 const BLITZ_TIME_STEP_MS = 120;
+/* one bought Time Boost is worth this much extra clock, for one run */
+const BLITZ_BOOST_MS = 4000;
 
 export function GameApp({
   initialProgress,
@@ -195,6 +208,7 @@ export function GameApp({
       if (dailyIdx + 1 >= dailyQs.length) {
         const elapsed = Date.now() - dailyStartRef.current;
         const res = await submitDailyAction(nextCorrect, elapsed);
+        fireQuest("daily_played");
         setDailyDone({ points: res.points, correct: res.correct });
         setDailyStatus({ day: todayKey(), played: true, correct: res.correct, total: dailyQs.length, points: res.points });
         setLeague(null);
@@ -274,6 +288,238 @@ export function GameApp({
   const activeSkin = SKINS.find((s) => s.id === skin.skinId) || SKINS[0];
 
   const rank = lang === "ja" ? RANKS_JA[li.rank] || li.rank : li.rank;
+
+  /* ---------- engagement loop: quests, shop wallet, mistake review ---------- */
+  const [quests, setQuests] = useState<QuestState[]>([]);
+  const [questsOpen, setQuestsOpen] = useState(false);
+  const [inventory, setInventory] = useState<InventoryState | null>(null);
+  const [gemBalance, setGemBalance] = useState<number | null>(null);
+  const [shopOpen, setShopOpen] = useState(false);
+  const [shopBusy, setShopBusy] = useState<string | null>(null);
+  const [shopNote, setShopNote] = useState<string | null>(null);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [reviewQueue, setReviewQueue] = useState<Problem[]>([]);
+  const [reviewIdx, setReviewIdx] = useState(0);
+  const [reviewOptions, setReviewOptions] = useState<number[]>([]);
+  const [reviewFeedback, setReviewFeedback] = useState<"ok" | "bad" | null>(null);
+  const [reviewFixed, setReviewFixed] = useState(0);
+  const [hintOpen, setHintOpen] = useState(false);
+  /* correct answers are tallied per stage and reported once at the end rather
+     than one round trip per question */
+  const stageCorrectRef = useRef(0);
+
+  const claimableQuests = quests.filter((q) => q.done && !q.claimed).length;
+
+  async function refreshQuests() {
+    try {
+      setQuests((await questsAction()).quests);
+    } catch {}
+  }
+  async function refreshShop() {
+    try {
+      const st = await shopStateAction();
+      setInventory(st.inventory);
+      setGemBalance(st.balance);
+    } catch {}
+  }
+  async function refreshReview() {
+    try {
+      setReviewCount((await reviewListAction()).total);
+    } catch {}
+  }
+
+  /* One parallel load on mount; each value is also refreshed by the action that
+     changes it, so the panels never show a stale number. The alive flag keeps a
+     slow response from setting state on an unmounted component. */
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [q, sh, rv, fr] = await Promise.all([
+          questsAction(), shopStateAction(), reviewListAction(), friendsAction(),
+        ]);
+        if (!alive) return;
+        setQuests(q.quests);
+        setInventory(sh.inventory);
+        setGemBalance(sh.balance);
+        setReviewCount(rv.total);
+        setFriends(fr.friends);
+        setDuels(fr.duels);
+        setPendingDuels(fr.pending);
+      } catch {}
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  /* Fire-and-forget: a quest that fails to record must never break gameplay. */
+  function fireQuest(event: QuestEvent, amount = 1) {
+    reportQuestAction(event, amount)
+      .then((r) => setQuests(r.quests))
+      .catch(() => {});
+  }
+
+  async function onClaimQuest(id: string) {
+    const res = await claimQuestAction(id);
+    if (res.ok) {
+      setBonusGems((g) => g + res.reward);
+      spawnToast(`+${res.reward} 💎`, null);
+      confetti.burstCenter(70, 0.4);
+      sound.correct();
+    }
+    await Promise.all([refreshQuests(), refreshShop()]);
+  }
+
+  async function onBuy(itemId: string) {
+    setShopBusy(itemId);
+    setShopNote(null);
+    const res = await buyItemAction(itemId);
+    if (res.ok) {
+      setInventory(res.inventory ?? null);
+      setGemBalance(res.balance ?? null);
+      sound.correct();
+      const item = SHOP_ITEMS.find((i) => i.id === itemId);
+      spawnToast(`${item?.icon ?? "✅"} ${lang === "ja" ? "購入しました" : "Bought!"}`, null);
+    } else {
+      setShopNote(res.error ?? null);
+      sound.wrong();
+    }
+    setShopBusy(null);
+  }
+
+  /* ---------- friends & duels ---------- */
+  const [friendsOpen, setFriendsOpen] = useState(false);
+  const [friendCode, setFriendCode] = useState<string | null>(null);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [duels, setDuels] = useState<ChallengeRow[]>([]);
+  const [pendingDuels, setPendingDuels] = useState(0);
+  const [addCode, setAddCode] = useState("");
+  const [friendNote, setFriendNote] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
+  /* set while a Blitz run is answering a specific duel */
+  const [activeDuelId, setActiveDuelId] = useState<string | null>(null);
+  const [duelResult, setDuelResult] = useState<{ won: boolean; opponent: string } | null>(null);
+
+  const openDuels = duels.filter((d) => d.incoming && d.status === "open");
+
+  async function refreshFriends() {
+    try {
+      const r = await friendsAction();
+      setFriends(r.friends);
+      setDuels(r.duels);
+      setPendingDuels(r.pending);
+    } catch {}
+  }
+
+  async function openFriends() {
+    setFriendsOpen(true);
+    setFriendNote(null);
+    refreshFriends();
+    if (!friendCode) {
+      try {
+        setFriendCode((await friendCodeAction()).code);
+      } catch {}
+    }
+  }
+
+  async function onAddFriend() {
+    const code = addCode.trim();
+    if (!code) return;
+    const res = await addFriendAction(code);
+    if (res.ok) {
+      setAddCode("");
+      setFriendNote(lang === "ja" ? `${res.name} を追加しました！` : `Added ${res.name}!`);
+      sound.correct();
+      refreshFriends();
+    } else {
+      setFriendNote(res.error ?? null);
+      sound.wrong();
+    }
+  }
+
+  async function copyFriendCode() {
+    if (!friendCode) return;
+    try {
+      await navigator.clipboard.writeText(friendCode);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 1800);
+    } catch {}
+  }
+
+  /* Sending your just-finished Blitz score as a duel. */
+  async function onChallenge(friendId: string) {
+    const res = await challengeAction(friendId, blitzScore);
+    if (res.ok) {
+      spawnToast(lang === "ja" ? "対戦を送りました！" : "Duel sent!", null);
+      sound.correct();
+      setFriendsOpen(false);
+      setBlitzOver(false);
+      goHome();
+      refreshFriends();
+    } else {
+      setFriendNote(res.error ?? null);
+    }
+  }
+
+  /* Accepting: the next Blitz run settles this duel. */
+  function acceptDuel(d: ChallengeRow) {
+    setActiveDuelId(d.id);
+    setDuelResult(null);
+    setFriendsOpen(false);
+    startBlitz();
+  }
+
+  /* ---------- mistake review ----------
+     Pays out through the daily quest rather than per fix: fixMistakeAction is a
+     client-trusted call, so a per-fix gem reward would be a forgeable faucet. */
+  function dealReviewQuestion(queue: Problem[], idx: number) {
+    const p = queue[idx];
+    if (!p) return;
+    setReviewOptions(shuffle([p.answer, ...makeDistractors(p.answer, 3)]));
+  }
+
+  async function startReview() {
+    const { rows } = await reviewListAction();
+    if (!rows.length) return;
+    const queue: Problem[] = rows.map((r) => ({ prompt: r.prompt, answer: r.answer }));
+    setReviewQueue(queue);
+    setReviewIdx(0);
+    setReviewFixed(0);
+    setReviewFeedback(null);
+    dealReviewQuestion(queue, 0);
+    setQuestsOpen(false);
+    setView("review");
+  }
+
+  function onReviewAnswer(v: number) {
+    const p = reviewQueue[reviewIdx];
+    if (!p || reviewFeedback) return;
+    const ok = v === p.answer;
+    setReviewFeedback(ok ? "ok" : "bad");
+    if (ok) {
+      sound.correct();
+      haptic(15);
+      confetti.burstFromEl(practiceCardRef.current, 16);
+      setReviewFixed((n) => n + 1);
+      fixMistakeAction(p.prompt).then(refreshReview).catch(() => {});
+      fireQuest("mistake_fixed");
+    } else {
+      sound.wrong();
+      haptic([25, 45, 25]);
+    }
+    setTimeout(() => {
+      setReviewFeedback(null);
+      const next = reviewIdx + 1;
+      if (next >= reviewQueue.length) {
+        confetti.burstCenter(90, 0.45);
+        goHome();
+        return;
+      }
+      setReviewIdx(next);
+      dealReviewQuestion(reviewQueue, next);
+    }, ok ? 700 : 1400);
+  }
 
   /* share sheet: every header stat and the blitz result open it focused on that number */
   const [shareOpen, setShareOpen] = useState(false);
@@ -496,6 +742,30 @@ export function GameApp({
     sound.click();
   }
 
+  /* The free 50/50 is one per stage. Once it is gone, a bought token buys
+     another use — the server decrements, so the count can't be wished into
+     existence client-side. */
+  async function useFiftyToken() {
+    if (!curProblem || (inventory?.fiftyTokens ?? 0) <= 0) return;
+    const res = await consumeItemAction("fifty");
+    if (!res.ok) return;
+    setInventory(res.inventory ?? null);
+    const wrongs = tileOptions.filter((o) => o !== curProblem.answer);
+    setEliminated(shuffle(wrongs).slice(0, 2));
+    sound.click();
+    haptic(12);
+  }
+
+  /* A hint reveals the sutra's steps for the question in front of you. */
+  async function useHintToken() {
+    if ((inventory?.hintTokens ?? 0) <= 0) return;
+    const res = await consumeItemAction("hint");
+    if (!res.ok) return;
+    setInventory(res.inventory ?? null);
+    setHintOpen(true);
+    sound.click();
+  }
+
   useEffect(() => {
     if (curMode === "type" && view === "practice") {
       typeInputRef.current?.focus();
@@ -512,6 +782,7 @@ export function GameApp({
     const speedy = ok && !timedOut && elapsed <= timerMs * 0.45;
 
     if (ok) {
+      stageCorrectRef.current += 1;
       setCurStage((s) => {
         const correct = s.correct + 1;
         setBestStreakEver((b) => Math.max(b, correct));
@@ -545,6 +816,13 @@ export function GameApp({
       }
       if (curMode === "catch") sound.flip();
     } else {
+      /* Bank the miss for review. Silent on failure — a dropped mistake is a
+         smaller problem than an interrupted question. */
+      if (currentTopic) {
+        recordMistakeAction(currentTopic.id, curProblem.prompt, curProblem.answer)
+          .then(refreshReview)
+          .catch(() => {});
+      }
       setHearts((h) => Math.max(0, h - 1));
       setComboStreak(0);
       sound.wrong();
@@ -652,6 +930,14 @@ export function GameApp({
       if (levelInfo(next).level > levelBefore) setTimeout(() => sound.levelUp(), 500);
       return next;
     });
+
+    /* Report the run's quest-relevant facts in one go. */
+    if (stageCorrectRef.current > 0) fireQuest("correct_answer", stageCorrectRef.current);
+    stageCorrectRef.current = 0;
+    if (result.passed) {
+      fireQuest("stage_cleared");
+      if (correct === QUESTIONS_PER_STAGE) fireQuest("stage_perfect");
+    }
 
     const wasBoss = n === STAGE_COUNT;
     setStageResult({ passed: result.passed, stars: result.stars, correct, gemsGained: result.gemsGained, n, isBoss: wasBoss });
@@ -778,6 +1064,7 @@ export function GameApp({
       const p = PUZZLES[puzIdx];
       const already = !!progress.arena.solved[p.id];
       const res = await solvePuzzleAction(p.id, moveCount + 1);
+      fireQuest("puzzle_solved");
       setProgress((prev) => ({
         ...prev,
         arena: {
@@ -839,6 +1126,9 @@ export function GameApp({
   const [blitzHearts, setBlitzHearts] = useState(3);
   const [blitzBest, setBlitzBest] = useState(0);
   const [blitzTimerMs, setBlitzTimerMs] = useState(BLITZ_TIME_MS);
+  const [blitzBoost, setBlitzBoost] = useState(false);
+  /* read inside newBlitzQuestion, which runs from timers outside render */
+  const blitzBoostRef = useRef(false);
   const [blitzTimerKey, setBlitzTimerKey] = useState(0);
   const [blitzFeedback, setBlitzFeedback] = useState<"ok" | "bad" | null>(null);
   const [blitzOver, setBlitzOver] = useState(false);
@@ -860,12 +1150,31 @@ export function GameApp({
     const problem = topic.gen(BLITZ_DIFF[diffIdx]);
     setBlitzProblem(problem);
     setBlitzOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
-    setBlitzTimerMs(Math.max(BLITZ_TIME_MIN_MS, BLITZ_TIME_MS - score * BLITZ_TIME_STEP_MS));
+    const boost = blitzBoostRef.current ? BLITZ_BOOST_MS : 0;
+    setBlitzTimerMs(Math.max(BLITZ_TIME_MIN_MS + boost, BLITZ_TIME_MS + boost - score * BLITZ_TIME_STEP_MS));
     setBlitzTimerKey((k) => k + 1);
     blitzAnsweredRef.current = false;
   }
 
   function startBlitz() {
+    fireQuest("blitz_played");
+    /* Spend a Time Boost if one is held: the whole run gets a longer clock.
+       Consumed server-side first, so a failed spend means no boost. */
+    if ((inventory?.timeBoosts ?? 0) > 0) {
+      consumeItemAction("timeBoost")
+        .then((res) => {
+          if (res.ok) {
+            setInventory(res.inventory ?? null);
+            blitzBoostRef.current = true;
+            setBlitzBoost(true);
+            spawnToast(`⏱️ +${BLITZ_BOOST_MS / 1000}s`, null);
+          }
+        })
+        .catch(() => {});
+    } else {
+      blitzBoostRef.current = false;
+      setBlitzBoost(false);
+    }
     setBlitzScore(0);
     setBlitzHearts(3);
     setBlitzOver(false);
@@ -876,6 +1185,24 @@ export function GameApp({
   }
 
   function endBlitz(finalScore: number) {
+    fireQuest("blitz_score", finalScore);
+    blitzBoostRef.current = false;
+    setBlitzBoost(false);
+    /* A run started from a duel settles it — once, server-side. */
+    if (activeDuelId) {
+      const duel = duels.find((d) => d.id === activeDuelId);
+      const id = activeDuelId;
+      setActiveDuelId(null);
+      answerChallengeAction(id, finalScore)
+        .then((res) => {
+          if (res.ok) {
+            setDuelResult({ won: !!res.won, opponent: duel?.opponentName ?? "" });
+            if (res.won) confetti.burstCenter(140, 0.5);
+          }
+          refreshFriends();
+        })
+        .catch(() => {});
+    }
     setBlitzOver(true);
     if (finalScore > blitzBest) {
       setBlitzBest(finalScore);
@@ -1009,6 +1336,16 @@ export function GameApp({
               <span>🌐 {t.menu.language}</span>
               <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
             </button>
+            <button className="menu-row" onClick={() => { setMenuOpen(false); openFriends(); }}>
+              <span>👥 {lang === "ja" ? "フレンド" : "Friends"}</span>
+              <span className="menu-row-val">
+                {friends.length}{pendingDuels > 0 ? ` · ⚔️ ${pendingDuels}` : ""}
+              </span>
+            </button>
+            <button className="menu-row" onClick={() => { setMenuOpen(false); setShopOpen(true); refreshShop(); }}>
+              <span>🛍️ {lang === "ja" ? "ショップ" : "Shop"}</span>
+              <span className="menu-row-val mono">💎 {gemBalance ?? "…"}</span>
+            </button>
             <button className="menu-row" onClick={() => setSkinsOpen((o) => !o)}>
               <span>🎨 {t.menu.skins}</span>
               <span className="menu-row-val">{skinName(activeSkin, lang === "ja")}</span>
@@ -1054,6 +1391,261 @@ export function GameApp({
             <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
               <span>⏻ {t.menu.signOut}</span>
             </button>
+          </div>
+        </>
+      )}
+
+      {friendsOpen && (
+        <>
+          <div className="menu-overlay" onClick={() => setFriendsOpen(false)} />
+          <div className="sheet-panel">
+            <div className="sheet-panel-title">
+              <span>👥 {lang === "ja" ? "フレンド" : "Friends"}</span>
+              <span className="sheet-panel-count">{friends.length}</span>
+            </div>
+
+            <div className="friend-code-box">
+              <div className="friend-code-label">
+                {lang === "ja" ? "あなたのコード" : "Your code"}
+              </div>
+              <button className="friend-code mono" onClick={copyFriendCode}>
+                {friendCode ?? "…"}
+                <span className="friend-code-copy">{codeCopied ? "✅" : "📋"}</span>
+              </button>
+              <div className="friend-code-hint">
+                {lang === "ja"
+                  ? "このコードを友だちに教えると追加してもらえます。"
+                  : "Share this code with a friend so they can add you."}
+              </div>
+            </div>
+
+            <div className="friend-add">
+              <input
+                className="friend-add-input mono"
+                value={addCode}
+                onChange={(e) => setAddCode(e.target.value)}
+                placeholder="VEDA-XXXXXX"
+                aria-label={lang === "ja" ? "フレンドコードを入力" : "Enter a friend code"}
+                autoCapitalize="characters"
+                spellCheck={false}
+              />
+              <button className="friend-add-btn" onClick={onAddFriend} disabled={!addCode.trim()}>
+                {lang === "ja" ? "追加" : "Add"}
+              </button>
+            </div>
+            {friendNote && <div className="friend-note">{friendNote}</div>}
+
+            {blitzOver && friends.length > 0 && (
+              <div className="duel-send">
+                <div className="duel-send-label">
+                  {lang === "ja"
+                    ? `${blitzScore}点で対戦を申し込む`
+                    : `Challenge someone to beat ${blitzScore}`}
+                </div>
+                {friends.map((f) => (
+                  <button key={f.id} className="duel-send-row" onClick={() => onChallenge(f.id)}>
+                    <span className="duel-send-name">{f.name}</span>
+                    <span className="duel-send-go">⚔️ {lang === "ja" ? "送る" : "Send"}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="friend-list">
+              {friends.map((f) => (
+                <div key={f.id} className="friend-row">
+                  <span className="friend-avatar">{f.name[0]?.toUpperCase() ?? "?"}</span>
+                  <div className="friend-body">
+                    <div className="friend-name">{f.name}</div>
+                    <div className="friend-sub mono">
+                      {t.share.statLevel} {f.level} · 🔥 {f.dailyStreak} · ⚔️ {f.wins}–{f.losses}
+                    </div>
+                  </div>
+                  <button
+                    className="friend-remove"
+                    aria-label={lang === "ja" ? "削除" : "Remove"}
+                    onClick={async () => {
+                      await removeFriendAction(f.id);
+                      refreshFriends();
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {friends.length === 0 && (
+                <div className="friend-empty">
+                  {lang === "ja" ? "まだフレンドがいません。" : "No friends yet — swap codes!"}
+                </div>
+              )}
+            </div>
+
+            {duels.length > 0 && (
+              <div className="duel-history">
+                <div className="duel-history-label">{lang === "ja" ? "対戦記録" : "Duels"}</div>
+                {duels.slice(0, 6).map((d) => (
+                  <div key={d.id} className="duel-row">
+                    <span className="duel-vs">{d.opponentName}</span>
+                    {d.status === "open" ? (
+                      d.incoming ? (
+                        <button className="duel-accept" onClick={() => acceptDuel(d)}>
+                          ⚔️ {lang === "ja" ? `${d.fromScore}点に挑む` : `Beat ${d.fromScore}`}
+                        </button>
+                      ) : (
+                        <span className="duel-waiting mono">
+                          {lang === "ja" ? "待機中" : "Waiting"} · {d.fromScore}
+                        </span>
+                      )
+                    ) : (
+                      <span className={`duel-result${d.won ? " won" : d.won === false ? " lost" : ""}`}>
+                        <span className="mono">
+                          {d.incoming ? d.toScore : d.fromScore}–{d.incoming ? d.fromScore : d.toScore}
+                        </span>{" "}
+                        {d.won === null ? (lang === "ja" ? "引き分け" : "Tie") : d.won ? (lang === "ja" ? "勝ち" : "Won") : (lang === "ja" ? "負け" : "Lost")}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {duelResult && (
+        <>
+          <div className="menu-overlay" onClick={() => setDuelResult(null)} />
+          <div className="duel-result-card">
+            <div className="duel-result-icon">{duelResult.won ? "🏆" : "🤝"}</div>
+            <h3>
+              {duelResult.won
+                ? lang === "ja" ? "勝ちました！" : "You won!"
+                : lang === "ja" ? "おしい！" : "So close!"}
+            </h3>
+            <p>
+              {lang === "ja"
+                ? `${duelResult.opponent} との対戦`
+                : `Duel with ${duelResult.opponent}`}
+            </p>
+            <button className="btn btn-primary" onClick={() => setDuelResult(null)}>
+              {t.practice.continueBtn}
+            </button>
+          </div>
+        </>
+      )}
+
+      {hintOpen && currentTopic && (
+        <>
+          <div className="menu-overlay" onClick={() => setHintOpen(false)} />
+          <div className="hint-sheet" role="dialog" aria-modal="true">
+            <div className="hint-sheet-head">
+              <span>💡 {currentTopic.icon} {lang === "ja" ? currentTopic.titleJa : currentTopic.title}</span>
+              <button className="share-close" onClick={() => setHintOpen(false)} aria-label={t.share.close}>✕</button>
+            </div>
+            <div className="hint-sutra">{currentTopic.sutraSa}</div>
+            <ol className="hint-steps">
+              {(lang === "ja" ? currentTopic.stepsJa : currentTopic.steps).map((step, i) => (
+                <li key={i}>{step}</li>
+              ))}
+            </ol>
+            <button className="btn btn-primary hint-close-btn" onClick={() => setHintOpen(false)}>
+              {t.practice.continueBtn}
+            </button>
+          </div>
+        </>
+      )}
+
+      {questsOpen && (
+        <>
+          <div className="menu-overlay" onClick={() => setQuestsOpen(false)} />
+          <div className="sheet-panel">
+            <div className="sheet-panel-title">
+              <span>📜 {lang === "ja" ? "今日のクエスト" : "Today's Quests"}</span>
+              <span className="sheet-panel-count">
+                {quests.filter((q) => q.claimed).length}/{quests.length}
+              </span>
+            </div>
+            <div className="quest-list">
+              {quests.map((q) => (
+                <div key={q.id} className={`quest-row${q.claimed ? " claimed" : q.done ? " ready" : ""}`}>
+                  <span className="quest-icon">{q.claimed ? "✅" : q.icon}</span>
+                  <div className="quest-body">
+                    <div className="quest-title">{lang === "ja" ? q.titleJa : q.title}</div>
+                    <div className="quest-track">
+                      <div
+                        className="quest-fill"
+                        style={{ width: `${Math.min(100, (q.count / q.target) * 100)}%` }}
+                      />
+                    </div>
+                    <div className="quest-sub mono">
+                      {Math.min(q.count, q.target)} / {q.target}
+                    </div>
+                  </div>
+                  {q.claimed ? (
+                    <span className="quest-done">{lang === "ja" ? "受取済" : "Claimed"}</span>
+                  ) : q.done ? (
+                    <button className="quest-claim" onClick={() => onClaimQuest(q.id)}>
+                      +{q.reward} 💎
+                    </button>
+                  ) : (
+                    <span className="quest-reward mono">+{q.reward} 💎</span>
+                  )}
+                </div>
+              ))}
+              {quests.length === 0 && (
+                <div className="quest-empty">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>
+              )}
+            </div>
+            {reviewCount > 0 && (
+              <button className="quest-review-cta" onClick={startReview}>
+                🩹 {lang === "ja" ? `まちがい ${reviewCount} 問をなおす` : `Fix ${reviewCount} missed question${reviewCount === 1 ? "" : "s"}`}
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      {shopOpen && (
+        <>
+          <div className="menu-overlay" onClick={() => setShopOpen(false)} />
+          <div className="sheet-panel">
+            <div className="sheet-panel-title">
+              <span>🛍️ {lang === "ja" ? "ショップ" : "Shop"}</span>
+              <span className="sheet-panel-count mono">
+                💎 {gemBalance ?? "…"}
+              </span>
+            </div>
+            {shopNote && <div className="shop-note">{shopNote}</div>}
+            <div className="shop-list">
+              {SHOP_ITEMS.map((item) => {
+                const held =
+                  item.id === "hint" ? inventory?.hintTokens
+                  : item.id === "fifty" ? inventory?.fiftyTokens
+                  : item.id === "timeBoost" ? inventory?.timeBoosts
+                  : inventory?.streakFreezes;
+                const full = (held ?? 0) >= item.max;
+                const poor = (gemBalance ?? 0) < item.cost;
+                return (
+                  <div key={item.id} className="shop-row">
+                    <span className="shop-icon">{item.icon}</span>
+                    <div className="shop-body">
+                      <div className="shop-title">
+                        {lang === "ja" ? item.titleJa : item.title}
+                        {(held ?? 0) > 0 && <span className="shop-held mono">×{held}</span>}
+                      </div>
+                      <div className="shop-blurb">{lang === "ja" ? item.blurbJa : item.blurb}</div>
+                    </div>
+                    <button
+                      className="shop-buy"
+                      disabled={full || poor || shopBusy === item.id}
+                      onClick={() => onBuy(item.id)}
+                    >
+                      {full ? (lang === "ja" ? "最大" : "Max") : `💎 ${item.cost}`}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </>
       )}
@@ -1175,6 +1767,16 @@ export function GameApp({
             dailyPlayed={!!dailyStatus?.played}
             onContinue={continueStage}
             onShare={openShare}
+            quests={quests}
+            claimable={claimableQuests}
+            reviewCount={reviewCount}
+            onOpenQuests={() => { setQuestsOpen(true); refreshQuests(); }}
+            onOpenShop={() => { setShopOpen(true); refreshShop(); }}
+            onStartReview={startReview}
+            gemBalance={gemBalance}
+            openDuels={openDuels}
+            onOpenFriends={openFriends}
+            onAcceptDuel={acceptDuel}
             lang={lang}
             t={t}
           />
@@ -1245,6 +1847,46 @@ export function GameApp({
           />
         )}
 
+        {view === "review" && (
+          <section className="view active">
+            <div className="review-meta">
+              <span>{lang === "ja" ? "なおした数" : "Fixed"} <b className="mono">{reviewFixed}</b></span>
+              <span className="mono">{reviewIdx + 1} / {reviewQueue.length}</span>
+            </div>
+            <div className="timer-bar-wrap review-progress">
+              <div
+                className="review-progress-fill"
+                style={{ width: `${((reviewIdx) / Math.max(1, reviewQueue.length)) * 100}%` }}
+              />
+            </div>
+            <div
+              ref={practiceCardRef}
+              className={`practice-card${reviewFeedback === "ok" ? " correct-glow" : reviewFeedback === "bad" ? " wrong-glow" : ""}`}
+            >
+              <div className="mode-eyebrow">🩹 {lang === "ja" ? "もう一度チャレンジ" : "Second chance"}</div>
+              <div className="question mono">{reviewQueue[reviewIdx]?.prompt} = ?</div>
+              <div className="tile-grid">
+                {reviewOptions.map((o) => (
+                  <button
+                    key={o}
+                    className={`choice-tile${
+                      reviewFeedback && o === reviewQueue[reviewIdx]?.answer ? " daily-right" : ""
+                    }`}
+                    onClick={() => onReviewAnswer(o)}
+                  >
+                    {fmt(o)}
+                  </button>
+                ))}
+              </div>
+              {reviewFeedback === "bad" && (
+                <div className="review-answer">
+                  {reviewQueue[reviewIdx]?.prompt} = {fmt(reviewQueue[reviewIdx]?.answer ?? 0)}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         {view === "daily" && (
           <DailyView
             qs={dailyQs}
@@ -1270,6 +1912,7 @@ export function GameApp({
               setTrickStep(0);
               setTrickNum(tk.sample());
               haptic(12);
+              fireQuest("trick_viewed");
             }}
             onStep={(d) => {
               setTrickStep((s) => Math.max(0, s + d));
@@ -1323,6 +1966,13 @@ export function GameApp({
               <span className="bottomnav-icon">🏠</span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
+            <button className="bottomnav-item" onClick={() => { setQuestsOpen((o) => !o); refreshQuests(); refreshReview(); }}>
+              <span className="bottomnav-icon">
+                📜
+                {(claimableQuests > 0 || reviewCount > 0) && <span className="nav-dot" aria-hidden="true" />}
+              </span>
+              <span>{lang === "ja" ? "クエスト" : "Quests"}</span>
+            </button>
             <button className="bottomnav-item" onClick={toggleLeague}>
               <span className="bottomnav-icon">🏆</span>
               <span>{lang === "ja" ? "リーグ" : "League"}</span>
@@ -1356,12 +2006,21 @@ export function GameApp({
                   {t.practice.lesson}
                 </button>
                 {(curMode === "choice" || curMode === "target" || curMode === "balloon" || curMode === "numberline" || curMode === "catch") &&
-                  fiftyLeft > 0 &&
-                  curSelection === null && (
+                  curSelection === null &&
+                  (fiftyLeft > 0 ? (
                     <button className="btn btn-ghost fifty-btn" onClick={useFiftyFifty}>
                       🎯 50/50
                     </button>
-                  )}
+                  ) : (inventory?.fiftyTokens ?? 0) > 0 && eliminated.length === 0 ? (
+                    <button className="btn btn-ghost fifty-btn" onClick={useFiftyToken}>
+                      ✂️ 50/50 <span className="token-count mono">×{inventory?.fiftyTokens}</span>
+                    </button>
+                  ) : null)}
+                {(inventory?.hintTokens ?? 0) > 0 && curSelection === null && (
+                  <button className="btn btn-ghost hint-btn" onClick={useHintToken}>
+                    💡 {t.practice.lesson} <span className="token-count mono">×{inventory?.hintTokens}</span>
+                  </button>
+                )}
                 {curMode === "type" && (
                   <button className="btn btn-primary" disabled={!checkEnabled} onClick={checkPractice}>
                     {t.practice.check}
@@ -1486,9 +2145,14 @@ export function GameApp({
               {t.blitz.scoreLabel}: {blitzScore}
               {blitzJustBeatBest ? ` ${t.blitz.newBest}` : ""}
             </p>
-            <button className="score-share-btn" onClick={() => openShare("blitz")}>
-              📤 {t.share.shareBtn}
-            </button>
+            <div className="blitz-over-actions">
+              <button className="score-share-btn" onClick={() => openShare("blitz")}>
+                📤 {t.share.shareBtn}
+              </button>
+              <button className="score-duel-btn" onClick={openFriends}>
+                ⚔️ {lang === "ja" ? "対戦を申し込む" : "Challenge a friend"}
+              </button>
+            </div>
             <div className="result-actions">
               <button className="btn btn-primary" onClick={startBlitz}>{t.blitz.playAgain}</button>
               <button className="btn btn-ghost" onClick={() => { setBlitzOver(false); goHome(); }}>{t.blitz.backHome}</button>
@@ -1538,6 +2202,16 @@ function HomeView({
   dailyPlayed,
   onContinue,
   onShare,
+  quests,
+  claimable,
+  reviewCount,
+  onOpenQuests,
+  onOpenShop,
+  onStartReview,
+  gemBalance,
+  openDuels,
+  onOpenFriends,
+  onAcceptDuel,
   lang,
   t,
 }: {
@@ -1553,6 +2227,16 @@ function HomeView({
   dailyPlayed: boolean;
   onContinue: (topicId: string, stageN: number) => void;
   onShare: (f: ShareFocus) => void;
+  quests: QuestState[];
+  claimable: number;
+  reviewCount: number;
+  onOpenQuests: () => void;
+  onOpenShop: () => void;
+  onStartReview: () => void;
+  gemBalance: number | null;
+  openDuels: ChallengeRow[];
+  onOpenFriends: () => void;
+  onAcceptDuel: (d: ChallengeRow) => void;
   lang: Lang;
   t: UIDict;
 }) {
@@ -1650,6 +2334,78 @@ function HomeView({
             </div>
           )}
         </div>
+      )}
+
+      {openDuels.length > 0 && (
+        <div className="duel-card">
+          <div className="duel-card-head">
+            ⚔️ {lang === "ja" ? "対戦の申し込み" : "Duels waiting"}
+          </div>
+          {openDuels.slice(0, 3).map((d) => (
+            <button key={d.id} className="duel-card-row" onClick={() => onAcceptDuel(d)}>
+              <span className="duel-card-avatar">{d.opponentName[0]?.toUpperCase() ?? "?"}</span>
+              <span className="duel-card-info">
+                <span className="duel-card-name">{d.opponentName}</span>
+                <span className="duel-card-sub">
+                  {lang === "ja" ? `ブリッツ ${d.fromScore}点に挑戦` : `Scored ${d.fromScore} in Blitz`}
+                </span>
+              </span>
+              <span className="duel-card-go">{lang === "ja" ? "挑む" : "Beat it"} ›</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Today's quests, on the home screen rather than buried in a menu — this
+          is the card that gives a reason to open the app tomorrow. */}
+      <div className="quest-card">
+        <button className="quest-card-head" onClick={onOpenQuests}>
+          <span className="quest-card-title">📜 {lang === "ja" ? "今日のクエスト" : "Today's Quests"}</span>
+          <span className="quest-card-right">
+            {claimable > 0 && <span className="quest-card-badge">{claimable}</span>}
+            <span className="quest-card-arrow">›</span>
+          </span>
+        </button>
+        <div className="quest-card-rows">
+          {quests.map((q) => (
+            <div key={q.id} className={`quest-mini${q.claimed ? " claimed" : ""}`}>
+              <span className="quest-mini-icon">{q.claimed ? "✅" : q.icon}</span>
+              <span className="quest-mini-title">{lang === "ja" ? q.titleJa : q.title}</span>
+              <span className="quest-mini-count mono">
+                {Math.min(q.count, q.target)}/{q.target}
+              </span>
+            </div>
+          ))}
+          {quests.length === 0 && (
+            <div className="quest-mini quest-mini-empty">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>
+          )}
+        </div>
+        <div className="quest-card-foot">
+          <button className="quest-card-shop" onClick={onOpenShop}>
+            🛍️ {lang === "ja" ? "ショップ" : "Shop"}
+            <span className="mono"> · 💎 {gemBalance ?? "…"}</span>
+          </button>
+          <button className="quest-card-shop quest-card-friends" onClick={onOpenFriends}>
+            👥 {lang === "ja" ? "フレンド" : "Friends"}
+          </button>
+        </div>
+      </div>
+
+      {reviewCount > 0 && (
+        <button className="review-cta" onClick={onStartReview}>
+          <div className="review-cta-icon">🩹</div>
+          <div className="review-cta-info">
+            <div className="review-cta-title">
+              {lang === "ja" ? "まちがいなおし" : "Fix Your Misses"}
+            </div>
+            <div className="review-cta-sub">
+              {lang === "ja"
+                ? `${reviewCount} 問が復習待ちです`
+                : `${reviewCount} question${reviewCount === 1 ? "" : "s"} waiting`}
+            </div>
+          </div>
+          <span className="review-cta-count mono">{reviewCount}</span>
+        </button>
       )}
 
       <div className="blitz-cta" onClick={onOpenBlitz}>

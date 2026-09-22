@@ -1,6 +1,6 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { topicProgress, arenaProgress, users } from "@/db/schema";
+import { topicProgress, arenaProgress, users, inventory } from "@/db/schema";
 import { TOPICS, PASS_THRESHOLD, QUESTIONS_PER_STAGE, rankFor } from "./topics";
 import { PUZZLES } from "./matchstick";
 import type { ProgressState, TopicProgressRow } from "./state";
@@ -32,6 +32,8 @@ export type DailyStreakInfo = {
   preferredLang: "en" | "ja";
   bonusGems: number;
   chestReward: number | null;
+  /* true when a Streak Freeze was just spent to cover a missed day */
+  streakFrozen: boolean;
 };
 
 // Called once per app-open (from the home page server component) — not tied
@@ -42,7 +44,7 @@ export async function touchDailyStreak(userId: string): Promise<DailyStreakInfo>
   const db = getDb();
   const rows = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   const user = rows[0];
-  if (!user) return { dailyStreak: 0, bestDailyStreak: 0, isNewDay: false, preferredLang: "en", bonusGems: 0, chestReward: null };
+  if (!user) return { dailyStreak: 0, bestDailyStreak: 0, isNewDay: false, preferredLang: "en", bonusGems: 0, chestReward: null, streakFrozen: false };
 
   const preferredLang: "en" | "ja" = user.preferredLang === "ja" ? "ja" : "en";
   const today = todayUTC();
@@ -54,11 +56,27 @@ export async function touchDailyStreak(userId: string): Promise<DailyStreakInfo>
       preferredLang,
       bonusGems: user.bonusGems,
       chestReward: null,
+      streakFrozen: false,
     };
   }
 
   const gap = user.lastActiveDate ? daysBetween(today, user.lastActiveDate) : null;
-  const nextStreak = gap === 1 ? user.dailyStreak + 1 : 1;
+
+  /* A gap of 2 means exactly one day was missed. A held Streak Freeze covers
+     it: consume one and carry the streak. Wider gaps are not coverable — a
+     freeze forgives a slip, it does not bank a holiday. The conditional UPDATE
+     is the whole guard, so two app-opens racing can only spend one freeze. */
+  let frozeOver = false;
+  if (gap === 2) {
+    const spent = await db
+      .update(inventory)
+      .set({ streakFreezes: sql`${inventory.streakFreezes} - 1`, freezeUsedOn: today, updatedAt: new Date() })
+      .where(and(eq(inventory.userId, userId), sql`${inventory.streakFreezes} > 0`))
+      .returning({ userId: inventory.userId });
+    frozeOver = spent.length > 0;
+  }
+
+  const nextStreak = gap === 1 || frozeOver ? user.dailyStreak + 1 : 1;
   const nextBest = Math.max(user.bestDailyStreak, nextStreak);
   const chestReward = rollChestReward();
   const nextBonusGems = user.bonusGems + chestReward;
@@ -75,6 +93,7 @@ export async function touchDailyStreak(userId: string): Promise<DailyStreakInfo>
     preferredLang,
     bonusGems: nextBonusGems,
     chestReward,
+    streakFrozen: frozeOver,
   };
 }
 

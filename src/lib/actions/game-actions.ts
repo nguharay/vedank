@@ -3,6 +3,15 @@
 import { auth } from "@/auth";
 import { submitStageResult, submitPuzzleSolved, getLeaderboard } from "@/lib/game/progress";
 import { getDailyStatus, submitDaily, getLeagueStanding } from "@/lib/game/league";
+import {
+  getQuests, reportQuestEvent, claimQuest, getInventory, getWallet,
+  buyItem, consumeItem, recordMistake, getMistakes, countMistakes, fixMistake,
+} from "@/lib/game/engagement";
+import type { QuestEvent } from "@/lib/game/quests";
+import {
+  ensureFriendCode, addFriendByCode, removeFriend, listFriends,
+  createChallenge, listChallenges, answerChallenge, pendingChallengeCount,
+} from "@/lib/game/friends";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -39,4 +48,90 @@ export async function leagueAction() {
 export async function leaderboardAction() {
   const userId = await requireUserId();
   return getLeaderboard(userId);
+}
+
+/* ---------- engagement loop ---------- */
+
+export async function questsAction() {
+  const userId = await requireUserId();
+  return getQuests(userId);
+}
+
+export async function reportQuestAction(event: QuestEvent, amount = 1) {
+  const userId = await requireUserId();
+  return reportQuestEvent(userId, event, amount);
+}
+
+export async function claimQuestAction(questId: string) {
+  const userId = await requireUserId();
+  return claimQuest(userId, questId);
+}
+
+export async function shopStateAction() {
+  const userId = await requireUserId();
+  const [inv, wallet] = await Promise.all([getInventory(userId), getWallet(userId)]);
+  return { inventory: inv, balance: wallet.balance };
+}
+
+export async function buyItemAction(itemId: string) {
+  const userId = await requireUserId();
+  return buyItem(userId, itemId);
+}
+
+export async function consumeItemAction(itemId: string) {
+  const userId = await requireUserId();
+  return consumeItem(userId, itemId);
+}
+
+export async function recordMistakeAction(topicId: string, prompt: string, answer: number) {
+  const userId = await requireUserId();
+  await recordMistake(userId, topicId, prompt, answer);
+}
+
+export async function reviewListAction() {
+  const userId = await requireUserId();
+  const [rows, total] = await Promise.all([getMistakes(userId), countMistakes(userId)]);
+  return { rows, total };
+}
+
+export async function fixMistakeAction(prompt: string) {
+  const userId = await requireUserId();
+  return fixMistake(userId, prompt);
+}
+
+/* ---------- friends & duels ---------- */
+
+export async function friendCodeAction() {
+  const userId = await requireUserId();
+  return { code: await ensureFriendCode(userId) };
+}
+
+export async function addFriendAction(code: string) {
+  const userId = await requireUserId();
+  return addFriendByCode(userId, code);
+}
+
+export async function removeFriendAction(friendId: string) {
+  const userId = await requireUserId();
+  await removeFriend(userId, friendId);
+}
+
+export async function friendsAction() {
+  const userId = await requireUserId();
+  const [friends, duels, pending] = await Promise.all([
+    listFriends(userId),
+    listChallenges(userId),
+    pendingChallengeCount(userId),
+  ]);
+  return { friends, duels, pending };
+}
+
+export async function challengeAction(toUserId: string, score: number) {
+  const userId = await requireUserId();
+  return createChallenge(userId, toUserId, score);
+}
+
+export async function answerChallengeAction(challengeId: string, score: number) {
+  const userId = await requireUserId();
+  return answerChallenge(userId, challengeId, score);
 }
