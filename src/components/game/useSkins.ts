@@ -5,10 +5,20 @@ const STORE_KEY = "sutraSprint.skin";
 
 export type SkinUnlockCtx = { level: number; bossClears: number; solvedCount: number };
 
+/* The buddy's outfit. Its body stays the same sprout — the character shouldn't
+   change identity — and these colour the attire layered over it. */
+export type Outfit = {
+  /* head piece: crown of flames, leaf circlet, bolt, star halo… */
+  head: "none" | "leaf" | "flame" | "bolt" | "halo" | "crown";
+  cape: string;
+  capeEdge: string;
+  scarf: string;
+  /* small floating accent particles around the buddy */
+  spark: string;
+};
+
 export type SkinDef = {
   id: string;
-  /* Named after what powers it in the Vedic canon, so the reward reads as
-     something earned rather than "colour scheme #3". */
   name: string;
   nameJa: string;
   blurb: string;
@@ -17,6 +27,7 @@ export type SkinDef = {
   unlockLabel: string;
   unlockLabelJa: string;
   unlocked: (c: SkinUnlockCtx) => boolean;
+  outfit: Outfit;
 };
 
 export const SKINS: SkinDef[] = [
@@ -30,6 +41,7 @@ export const SKINS: SkinDef[] = [
     unlockLabel: "Always yours",
     unlockLabelJa: "最初から使えます",
     unlocked: () => true,
+    outfit: { head: "none", cape: "#9B30FF", capeEdge: "#FF4D1C", scarf: "#FF4D1C", spark: "#FFCC00" },
   },
   {
     id: "inferno",
@@ -41,6 +53,7 @@ export const SKINS: SkinDef[] = [
     unlockLabel: "Beat 1 boss stage",
     unlockLabelJa: "ボスステージを1つクリア",
     unlocked: (c) => c.bossClears >= 1,
+    outfit: { head: "flame", cape: "#D81B5B", capeEdge: "#FF7A3D", scarf: "#FF7A3D", spark: "#FFB020" },
   },
   {
     id: "verdant",
@@ -52,6 +65,7 @@ export const SKINS: SkinDef[] = [
     unlockLabel: "Solve 6 matchstick puzzles",
     unlockLabelJa: "マッチ棒パズルを6問クリア",
     unlocked: (c) => c.solvedCount >= 6,
+    outfit: { head: "leaf", cape: "#0FA857", capeEdge: "#1FE07A", scarf: "#7BE23A", spark: "#B7F27A" },
   },
   {
     id: "electric",
@@ -63,6 +77,7 @@ export const SKINS: SkinDef[] = [
     unlockLabel: "Reach level 5",
     unlockLabelJa: "レベル5に到達",
     unlocked: (c) => c.level >= 5,
+    outfit: { head: "bolt", cape: "#4D6BFF", capeEdge: "#00E0FF", scarf: "#00C2FF", spark: "#00E0FF" },
   },
   {
     id: "cosmic",
@@ -74,6 +89,7 @@ export const SKINS: SkinDef[] = [
     unlockLabel: "Beat 3 boss stages",
     unlockLabelJa: "ボスステージを3つクリア",
     unlocked: (c) => c.bossClears >= 3,
+    outfit: { head: "halo", cape: "#8B5CF6", capeEdge: "#FF3DA6", scarf: "#C79BFF", spark: "#E9D4FF" },
   },
   {
     id: "gold",
@@ -85,9 +101,15 @@ export const SKINS: SkinDef[] = [
     unlockLabel: "Reach level 12",
     unlockLabelJa: "レベル12に到達",
     unlocked: (c) => c.level >= 12,
+    outfit: { head: "crown", cape: "#D89B00", capeEdge: "#FFE480", scarf: "#FFCC00", spark: "#FFE480" },
   },
 ];
 
+export const SKIN_BY_ID = new Map(SKINS.map((s) => [s.id, s]));
+
+export function skinOf(id: string): SkinDef {
+  return SKIN_BY_ID.get(id) ?? SKINS[0];
+}
 export function skinName(s: SkinDef, ja: boolean) {
   return ja ? s.nameJa : s.name;
 }
@@ -101,19 +123,33 @@ export function skinUnlockLabel(s: SkinDef, ja: boolean) {
 export function useSkins() {
   const [skinId, setSkinId] = useState("classic");
 
+  /* Stamped on <html>, not on #app, for the same reason the theme is: the body
+     background sits outside #app and would otherwise keep the default palette,
+     leaving a mismatched frame around a re-skinned app. */
+  function stamp(id: string) {
+    document.documentElement.setAttribute("data-skin", id);
+  }
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORE_KEY);
-      if (saved) setSkinId(saved);
+      if (saved && SKIN_BY_ID.has(saved)) {
+        setSkinId(saved);
+        stamp(saved);
+        return;
+      }
     } catch {}
+    stamp("classic");
   }, []);
 
   function selectSkin(id: string) {
+    if (!SKIN_BY_ID.has(id)) return;
     setSkinId(id);
+    stamp(id);
     try {
       localStorage.setItem(STORE_KEY, id);
     } catch {}
   }
 
-  return { skinId, selectSkin };
+  return { skinId, selectSkin, skin: skinOf(skinId) };
 }

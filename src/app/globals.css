@@ -310,7 +310,7 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .bd-partline{ font-family:var(--font-num); font-size:14px; font-weight:800; fill:var(--ink); }
 
 /* ---------- daily challenge + leagues ---------- */
-.daily-cta{ background:linear-gradient(135deg,#0F766E,#14B8A6) !important; }
+.daily-cta{ background:linear-gradient(135deg,var(--violet-dk),var(--sky2)) !important; }
 .daily-cta.played{ background:linear-gradient(135deg,#475569,#94A3B8) !important; }
 .daily-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
 .daily-chip{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#0F766E;
@@ -333,7 +333,7 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
   box-shadow:3px 3px 0 var(--wrong-dk); color:var(--wrong-dk); animation:shake .4s; }
 
 /* ---------- magic tricks ---------- */
-.trick-cta{ background:linear-gradient(135deg,#7C3AED,#C026D3) !important; }
+.trick-cta{ background:linear-gradient(135deg,var(--violet),var(--sun3)) !important; }
 .trick-intro{ color:var(--muted); font-size:13px; font-weight:600; line-height:1.5; margin-top:8px; }
 .trick-list{ display:flex; flex-direction:column; gap:12px; margin-top:16px; }
 .trick-card{ display:flex; align-items:center; gap:12px; text-align:left; width:100%; cursor:pointer;
@@ -626,7 +626,7 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .continue-card-label{ flex:0 0 auto; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; opacity:.85; }
 .continue-card-title{ flex:1; min-width:0; font-weight:800; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .continue-card-arrow{ flex:0 0 auto; font-size:16px; }
-.blitz-cta{ display:flex; align-items:center; gap:12px; margin-top:14px; background:linear-gradient(135deg,#00C2FF,#4D6BFF);
+.blitz-cta{ display:flex; align-items:center; gap:12px; margin-top:14px; background:linear-gradient(135deg,var(--sky1),var(--sky2));
   border:3px solid var(--ink-line); border-radius:16px; padding:12px 14px; cursor:pointer; color:#fff;
   box-shadow:4px 4px 0 var(--ink-line); animation: blitzCtaGlow 2.4s ease-in-out infinite; }
 .blitz-cta:active{ transform:translateY(3px); box-shadow:none; }
@@ -682,7 +682,7 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .puzzle-nav{ display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:13px; color:var(--ink-dim); font-weight:800; }
 .dot-row{ display:flex; gap:6px; }
 .dot{ width:8px; height:8px; border-radius:50%; background:var(--line-strong); transition:all .2s; }
-.dot.on{ background:linear-gradient(135deg,#FF9A2E,#FF5D3A); width:22px; border-radius:5px; }
+.dot.on{ background:linear-gradient(135deg,var(--sun2),var(--sun1)); width:22px; border-radius:5px; }
 .dot.solved{ background:var(--green); }
 .par-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
 .par-chip{ display:inline-flex; gap:6px; align-items:center; font-size:11.5px; font-weight:800; color:#B4560F; background:#FFE3C2;
@@ -1072,16 +1072,62 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .score-share-btn:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
 
 
-/* ---------- skins: app-wide accent themes ----------
-   Each skin overrides only the accent trio the banners, primary buttons, share
-   poster and celebration cards are built from, so one pick re-colours the whole
-   app instead of just two mini-games. Ink, surfaces and text stay on the theme
-   palette, which keeps contrast intact in both light and dark. */
-#app[data-skin="inferno"]{ --violet:#D81B5B; --sun1:#FF7A3D; --sun3:#FF1E3C; --sky1:#FFB020; --sky2:#FF7A3D; }
-#app[data-skin="verdant"]{ --violet:#0FA857; --sun1:#1FE07A; --sun3:#12B981; --sky1:#7BE23A; --sky2:#0FA857; }
-#app[data-skin="electric"]{ --violet:#4D6BFF; --sun1:#00C2FF; --sun3:#2979FF; --sky1:#00E0FF; --sky2:#4D6BFF; }
-#app[data-skin="cosmic"]{ --violet:#8B5CF6; --sun1:#FF3DA6; --sun3:#C026D3; --sky1:#E9D4FF; --sky2:#8B5CF6; }
-#app[data-skin="gold"]{ --violet:#D89B00; --sun1:#FFCC00; --sun3:#FF8A00; --sky1:#FFE480; --sky2:#D89B00; }
+/* ---------- skins: full accent retheme ----------
+   Stamped on <html> so the body background behind the app card re-skins too.
+   Each skin redefines the ENTIRE accent set, not just the banner gradient:
+   --blue is the app's dominant accent (61 uses) and --gold its highlight, so a
+   skin that left those alone read as "nothing changed". Ink, line and surface
+   tokens stay on the theme palette, which is what keeps text contrast correct
+   in both light and dark. */
+:root[data-skin="inferno"]{
+  --violet:#D81B5B; --violet-dk:#A3003C;
+  --sun1:#FF7A3D; --sun2:#FFB020; --sun3:#FF1E3C;
+  --sky1:#FF8A2B; --sky2:#E0431B;
+  --blue:#FF6A2C; --blue-dk:#C43A00;
+  --gold:#FFB020; --gold-dk:#C97400;
+  --green:#FFC24D; --green-dk:#C98A00;
+}
+:root[data-skin="verdant"]{
+  --violet:#0FA857; --violet-dk:#0A7A3F;
+  --sun1:#1FE07A; --sun2:#7BE23A; --sun3:#12B981;
+  --sky1:#2FBE6B; --sky2:#0A7A3F;
+  --blue:#12B981; --blue-dk:#0A7A52;
+  --gold:#A8E063; --gold-dk:#6A9E1B;
+}
+:root[data-skin="electric"]{
+  --violet:#4D6BFF; --violet-dk:#2438C4;
+  --sun1:#00C2FF; --sun2:#7DD9FF; --sun3:#2979FF;
+  --sky1:#00E0FF; --sky2:#4D6BFF;
+  --blue:#00A6E0; --blue-dk:#0068A8;
+  --gold:#5BE0FF; --gold-dk:#0090C4;
+}
+:root[data-skin="cosmic"]{
+  --violet:#8B5CF6; --violet-dk:#5A2FC7;
+  --sun1:#FF3DA6; --sun2:#E9A8FF; --sun3:#C026D3;
+  --sky1:#A855F7; --sky2:#6B21A8;
+  --blue:#A855F7; --blue-dk:#6B21A8;
+  --gold:#F0ABFC; --gold-dk:#A21CAF;
+}
+:root[data-skin="gold"]{
+  --violet:#D89B00; --violet-dk:#A87700;
+  --sun1:#FFCC00; --sun2:#FFE480; --sun3:#FF8A00;
+  --sky1:#E8A200; --sky2:#A86A00;
+  --blue:#E0A500; --blue-dk:#A87700;
+  --gold:#FFD84D; --gold-dk:#B98A00;
+}
+/* A whisper of the accent in the page ground, so switching skins is felt even
+   on screens with no banner on them. */
+:root[data-skin="inferno"] body{ background-color:#FFF5F0; }
+:root[data-skin="verdant"] body{ background-color:#F1FAF3; }
+:root[data-skin="electric"] body{ background-color:#F0F8FF; }
+:root[data-skin="cosmic"] body{ background-color:#FAF3FF; }
+:root[data-skin="gold"] body{ background-color:#FFFBEF; }
+/* Dark mode keeps its own ground whatever the skin — a pale tint under a dark
+   app would show as a bright frame. */
+:root[data-theme="dark"] body{ background-color:var(--bg); }
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) body{ background-color:var(--bg); }
+}
 
 /* ---------- admin: signup register ----------
    Its own full-width shell — the 480px game card would make a 14-column table
@@ -1350,3 +1396,77 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .quest-card-foot{ display:flex; gap:8px; }
 .quest-card-friends{ color:var(--violet-dk); background:color-mix(in srgb, var(--violet) 12%, var(--surface));
   border-color:color-mix(in srgb, var(--violet) 35%, var(--line)); }
+
+/* ---------- header logo is a home button ---------- */
+.header-home{ flex:0 0 auto; padding:0; border:none; background:none; cursor:pointer; line-height:0;
+  border-radius:12px; }
+.header-home:active{ transform:scale(.92); }
+.header-home:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
+@media (hover:hover){ .header-home:hover{ filter:brightness(1.06); } }
+
+/* ---------- the buddy ----------
+   Layered SVGs in one square: cape behind, mascot, attire in front, sparks on
+   top. Every layer shares the mascot's 68x68 viewBox so the crown lands on the
+   head without per-skin nudging. */
+.buddy-figure{ position:relative; width:100%; height:100%; aspect-ratio:1; }
+.buddy-body{ position:absolute; inset:0; }
+.buddy-layer{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+.buddy-cape{ z-index:0; }
+.buddy-attire{ z-index:2; }
+.buddy-sparks{ z-index:3; }
+.buddy-body{ z-index:1; }
+.buddy-spark{ animation:buddySpark 2.6s ease-in-out infinite; }
+.buddy-spark.s2{ animation-delay:.7s; }
+.buddy-spark.s3{ animation-delay:1.4s; }
+@keyframes buddySpark{
+  0%,100%{ transform:translateY(0); opacity:0; }
+  40%{ opacity:.95; }
+  70%{ transform:translateY(-7px); opacity:0; }
+}
+.buddy-flicker{ animation:buddyFlicker 1.1s ease-in-out infinite; transform-origin:34px 10px; }
+@keyframes buddyFlicker{ 0%,100%{ transform:scaleY(1) } 50%{ transform:scaleY(1.14) } }
+@media (prefers-reduced-motion: reduce){
+  .buddy-spark, .buddy-flicker{ animation:none; }
+  .buddy-spark{ opacity:.8; }
+}
+
+/* the dock: above the bottom nav, clear of the answer tiles */
+.buddy-dock{ position:fixed; z-index:40; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px));
+  width:100%; max-width:480px; transform:translateX(-50%); padding:0 12px;
+  display:flex; align-items:flex-end; gap:8px; pointer-events:none; }
+@media (min-width:1024px){ .buddy-dock{ max-width:1100px; padding:0 28px; } }
+.buddy-tap{ pointer-events:auto; flex:0 0 auto; width:58px; height:58px; padding:0; border:none; cursor:pointer;
+  background:none; animation:buddyFloat 4.5s ease-in-out infinite;
+  filter:drop-shadow(0 6px 8px rgba(20,20,50,.28)); }
+.buddy-tap:active{ transform:scale(.9); }
+.buddy-tap:focus-visible{ outline:3px solid var(--blue); outline-offset:3px; border-radius:50%; }
+@keyframes buddyFloat{
+  0%,100%{ transform:translateY(0) rotate(-2deg); }
+  50%{ transform:translateY(-9px) rotate(2deg); }
+}
+@media (prefers-reduced-motion: reduce){ .buddy-tap{ animation:none; } }
+.buddy-dock.talking .buddy-tap{ animation-duration:2.2s; }
+
+.buddy-bubble{ pointer-events:auto; flex:1 1 auto; min-width:0; text-align:left; cursor:pointer; font-family:inherit;
+  font-size:12.5px; font-weight:800; line-height:1.4; color:var(--ink);
+  background:var(--surface); border:3px solid var(--ink-line); border-radius:16px 16px 4px 16px;
+  padding:9px 12px; box-shadow:3px 3px 0 color-mix(in srgb, var(--ink-line) 22%, transparent);
+  animation:buddyBubbleIn .24s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes buddyBubbleIn{ from{ opacity:0; transform:translateY(6px) scale(.95); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce){ .buddy-bubble{ animation:none; } }
+.buddy-bubble:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
+
+/* outfit preview in the skins panel — the buddy wearing it, not a colour dot */
+.skin-row-preview{ position:relative; flex:0 0 auto; width:44px; height:44px; border-radius:12px;
+  border:2px solid var(--ink-line); overflow:hidden; padding:2px; }
+.skin-row-preview .buddy-figure{ width:100%; height:100%; }
+
+/* White text on a saturated gradient is the app's house style, but the light end
+   of those gradients only reaches ~1.6:1 against white. A shadow lifts the
+   glyph edges off the fill and helps every skin, the default included. */
+.blitz-cta, .daily-cta, .trick-cta, .review-cta, .duel-card-head, .quest-review-cta{
+  text-shadow:0 1px 2px rgba(0,0,0,.34);
+}
+.unit-banner h1, .unit-banner .eyebrow, .home-byline span, .levelrow{
+  text-shadow:0 1px 2px rgba(0,0,0,.28);
+}

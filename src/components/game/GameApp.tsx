@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { signOut } from "next-auth/react";
 import {
   TOPICS,
@@ -62,6 +62,8 @@ import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
+import { Buddy } from "./Buddy";
+import { useBuddy, line } from "./useBuddy";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI, type UIDict } from "./i18n";
 
@@ -287,6 +289,15 @@ export function GameApp({
   );
   const activeSkin = SKINS.find((s) => s.id === skin.skinId) || SKINS[0];
 
+  /* The buddy: floats over the app, speaks only when something just happened. */
+  const buddy = useBuddy();
+  const ja = lang === "ja";
+  const sayLine = useCallback(
+    (key: Parameters<typeof line>[0]) => buddy.speak(line(key, ja)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ja, buddy.speak]
+  );
+
   const rank = lang === "ja" ? RANKS_JA[li.rank] || li.rank : li.rank;
 
   /* ---------- engagement loop: quests, shop wallet, mistake review ---------- */
@@ -307,6 +318,8 @@ export function GameApp({
   /* correct answers are tallied per stage and reported once at the end rather
      than one round trip per question */
   const stageCorrectRef = useRef(0);
+  /* consecutive misses on the current question, so the buddy escalates its help */
+  const wrongRunRef = useRef(0);
 
   const claimableQuests = quests.filter((q) => q.done && !q.claimed).length;
 
@@ -502,6 +515,7 @@ export function GameApp({
       haptic(15);
       confetti.burstFromEl(practiceCardRef.current, 16);
       setReviewFixed((n) => n + 1);
+      sayLine("reviewFixed");
       fixMistakeAction(p.prompt).then(refreshReview).catch(() => {});
       fireQuest("mistake_fixed");
     } else {
@@ -513,6 +527,7 @@ export function GameApp({
       const next = reviewIdx + 1;
       if (next >= reviewQueue.length) {
         confetti.burstCenter(90, 0.45);
+        sayLine("reviewDone");
         goHome();
         return;
       }
@@ -653,6 +668,7 @@ export function GameApp({
   const [celebrate, setCelebrate] = useState<{ mood: "happy" | "excited"; title: string; body: string } | null>(null);
 
   function newStageQuestion(topic: Topic, n: number) {
+    wrongRunRef.current = 0;
     const problem = topic.gen(STAGE_DIFF[n - 1] as Difficulty);
     const mode =
       n === 1
@@ -795,6 +811,9 @@ export function GameApp({
       confetti.burstFromEl(practiceCardRef.current, 18 + tier * 8 + (speedy ? 12 : 0));
       if (tier > 0 && (nextCombo === 3 || nextCombo === 6 || nextCombo === 9)) sound.combo(tier);
       else sound.correct();
+      if (nextCombo === 3) sayLine("combo3");
+      else if (nextCombo === 6) sayLine("combo6");
+      else if (speedy && nextCombo === 1) sayLine("speedy");
       haptic(tier > 0 ? [15, 30, 15, 30, 25] : 15);
       spawnToast(
         speedy
@@ -823,6 +842,12 @@ export function GameApp({
           .then(refreshReview)
           .catch(() => {});
       }
+      /* First miss on a question gets a nudge; a second gets pointed at the
+         lesson, and once tokens exist it mentions them instead of repeating. */
+      wrongRunRef.current += 1;
+      if (wrongRunRef.current === 1) sayLine("wrongOnce");
+      else if (wrongRunRef.current === 2) sayLine("wrongTwice");
+      else if (wrongRunRef.current >= 3 && (inventory?.hintTokens ?? 0) > 0) sayLine("hintNudge");
       setHearts((h) => Math.max(0, h - 1));
       setComboStreak(0);
       sound.wrong();
@@ -927,7 +952,10 @@ export function GameApp({
         ...prev,
         topics: { ...prev.topics, [currentTopic.id]: { cleared: nextCleared, stageStars: nextStars } },
       };
-      if (levelInfo(next).level > levelBefore) setTimeout(() => sound.levelUp(), 500);
+      if (levelInfo(next).level > levelBefore) {
+        setTimeout(() => sound.levelUp(), 500);
+        setTimeout(() => sayLine("levelUp"), 900);
+      }
       return next;
     });
 
@@ -940,6 +968,11 @@ export function GameApp({
     }
 
     const wasBoss = n === STAGE_COUNT;
+    if (result.passed) {
+      if (wasBoss) sayLine("bossDown");
+      else if (correct === QUESTIONS_PER_STAGE) sayLine("stagePerfect");
+      else sayLine("stagePass");
+    }
     setStageResult({ passed: result.passed, stars: result.stars, correct, gemsGained: result.gemsGained, n, isBoss: wasBoss });
     if (result.passed) {
       confetti.burstCenter(wasBoss ? 160 : 100, wasBoss ? 0.55 : 0.4);
@@ -1065,6 +1098,7 @@ export function GameApp({
       const already = !!progress.arena.solved[p.id];
       const res = await solvePuzzleAction(p.id, moveCount + 1);
       fireQuest("puzzle_solved");
+      sayLine("puzzleSolved");
       setProgress((prev) => ({
         ...prev,
         arena: {
@@ -1158,6 +1192,7 @@ export function GameApp({
 
   function startBlitz() {
     fireQuest("blitz_played");
+    sayLine("blitzStart");
     /* Spend a Time Boost if one is held: the whole run gets a longer clock.
        Consumed server-side first, so a failed spend means no boost. */
     if ((inventory?.timeBoosts ?? 0) > 0) {
@@ -1186,6 +1221,7 @@ export function GameApp({
 
   function endBlitz(finalScore: number) {
     fireQuest("blitz_score", finalScore);
+    if (finalScore >= 10 && friends.length > 0) sayLine("blitzGood");
     blitzBoostRef.current = false;
     setBlitzBoost(false);
     /* A run started from a duel settles it — once, server-side. */
@@ -1197,6 +1233,7 @@ export function GameApp({
         .then((res) => {
           if (res.ok) {
             setDuelResult({ won: !!res.won, opponent: duel?.opponentName ?? "" });
+            sayLine(res.won ? "duelWon" : "duelLost");
             if (res.won) confetti.burstCenter(140, 0.5);
           }
           refreshFriends();
@@ -1298,7 +1335,13 @@ export function GameApp({
             {(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
           </button>
         )}
-        <img src="/brand/vedank-mark.png" alt="" className="header-mark" />
+        <button
+          className="header-home"
+          onClick={goHome}
+          aria-label={ja ? "ホームへ" : "Go to home"}
+        >
+          <img src="/brand/vedank-mark.png" alt="" className="header-mark" />
+        </button>
         <div className="header-title"><h1>{headerTitle}</h1></div>
         <div className="stats-row">
           <button className="stat stat-flame" onClick={() => openShare("streak")} aria-label={`${t.share.statBestStreak} ${bestStreakEver} — ${t.share.shareBtn}`}>
@@ -1346,9 +1389,13 @@ export function GameApp({
               <span>🛍️ {lang === "ja" ? "ショップ" : "Shop"}</span>
               <span className="menu-row-val mono">💎 {gemBalance ?? "…"}</span>
             </button>
+            <button className="menu-row" onClick={buddy.toggleHidden}>
+              <span>🧚 {ja ? "バディ" : "Buddy"}</span>
+              <span className="menu-row-val">{buddy.hidden ? t.menu.off : t.menu.on}</span>
+            </button>
             <button className="menu-row" onClick={() => setSkinsOpen((o) => !o)}>
-              <span>🎨 {t.menu.skins}</span>
-              <span className="menu-row-val">{skinName(activeSkin, lang === "ja")}</span>
+              <span>🎨 {ja ? "衣装とテーマ" : "Outfit & theme"}</span>
+              <span className="menu-row-val">{skinName(activeSkin, ja)}</span>
             </button>
             {skinsOpen && (
               <div className="skins-panel">
@@ -1362,7 +1409,9 @@ export function GameApp({
                       disabled={!unlocked}
                       onClick={() => unlocked && skin.selectSkin(s.id)}
                     >
-                      <span className="skin-row-dot" style={{ background: s.swatch }} />
+                      <span className="skin-row-preview" style={{ background: s.swatch }}>
+                        <Buddy skinId={s.id} mood="happy" animated={false} />
+                      </span>
                       <span className="skin-row-body">
                         <span className="skin-row-name">
                           {skinName(s, ja)}
@@ -2158,6 +2207,30 @@ export function GameApp({
               <button className="btn btn-ghost" onClick={() => { setBlitzOver(false); goHome(); }}>{t.blitz.backHome}</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* The companion. Fixed above the nav so it never covers an answer tile,
+          and tappable to hush it — a helper you can't silence is a nuisance. */}
+      {!buddy.hidden && (
+        <div className={`buddy-dock${buddy.say ? " talking" : ""}`}>
+          {buddy.say && (
+            <button className="buddy-bubble" onClick={buddy.quiet}>
+              {buddy.say.text}
+            </button>
+          )}
+          <button
+            className="buddy-tap"
+            onClick={() => (buddy.say ? buddy.quiet() : sayLine(
+              claimableQuests > 0 ? "questsReady"
+              : openDuels.length > 0 ? "duelWaiting"
+              : reviewCount > 0 ? "reviewWaiting"
+              : "welcome"
+            ))}
+            aria-label={ja ? "バディ" : "Buddy"}
+          >
+            <Buddy skinId={skin.skinId} mood={buddy.mood} />
+          </button>
         </div>
       )}
 
