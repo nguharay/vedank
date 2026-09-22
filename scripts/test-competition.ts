@@ -1,3 +1,4 @@
+import "./db-env";
 import { getDb } from "../src/db";
 import { users, competitionEntries } from "../src/db/schema";
 import { eq, inArray, and } from "drizzle-orm";

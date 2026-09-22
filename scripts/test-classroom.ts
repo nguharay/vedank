@@ -1,3 +1,4 @@
+import "./db-env";
 import { getDb } from "../src/db";
 import { users, classrooms, mistakes } from "../src/db/schema";
 import { eq, inArray } from "drizzle-orm";

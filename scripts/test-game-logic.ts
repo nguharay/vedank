@@ -97,3 +97,9 @@ for (const pz of PUZZLES) {
   const eq = currentEquationText(glyphs);
   console.log(pz.id, eq.text, "valid=" + eq.valid, "true=" + (eq.valid && evalEquation(eq.parts)));
 }
+
+/* Report the verdict in the exit code too. This printed "fails N" and then
+   exited 0, so a generator regression could not break a chained run. */
+if (fails.length) console.log(`\n${fails.length} FAILED`);
+else console.log("\nall generator checks passed");
+process.exit(fails.length ? 1 : 0);

@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "npm run test:logic && npm run test:db",
+    "test:logic": "tsx scripts/test-game-logic.ts",
+    "test:db": "tsx scripts/test-engagement.ts && tsx scripts/test-social.ts && tsx scripts/test-srs.ts && tsx scripts/test-classroom.ts && tsx scripts/test-competition.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -26,6 +29,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

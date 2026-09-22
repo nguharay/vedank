@@ -1,3 +1,4 @@
+import "./db-env";
 import { getDb } from "../src/db";
 import { users, mistakes } from "../src/db/schema";
 import { eq, and } from "drizzle-orm";
