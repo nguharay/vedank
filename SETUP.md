@@ -25,6 +25,12 @@ first instance, dependency-ordered and idempotent:
 psql "$DATABASE_URL" -f setup-db.sql
 ```
 
+**In a web SQL console** (Vercel's Query tab, and anything else that sends the
+whole buffer as one prepared statement) use `setup-db-single.sql` instead — the
+same schema wrapped in one PL/pgSQL block, because those consoles reject
+multi-statement input with "cannot insert multiple commands into a prepared
+statement". Turn off the console's Read-only toggle first, or the DDL is refused.
+
 No psql? `npx dotenv -e .env.local -- npx drizzle-kit push` produces the same
 schema from `src/db/schema.ts`.
 
