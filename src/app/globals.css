@@ -1765,3 +1765,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .lesson-tip-ja{ font-size:13px; font-weight:800; color:var(--ink); }
 .lesson-tip-en{ font-size:12.5px; font-weight:700; color:var(--blue-dk); }
 .lesson-tip-mascot{ flex:0 0 auto; width:58px; height:58px; }
+
+/* the book's second Example box, under the first */
+.bookexample-second{ margin-top:10px; }

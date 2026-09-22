@@ -134,9 +134,9 @@ const COLUMN_SPECS: Record<string, ColumnSpec> = {
   },
   // p.44 — tens sum to 10, units the same: 46 × 66
   specialMult2: {
-    noteL1: "(4 × 6) + 6 = 30", noteL2: "tens × tens, add the units", noteR: "6 × 6 = 36",
-    top: ["4", "6"], bot: ["6", "6"], carry: "+6",
-    leftPart: "30", rightPart: "36", answer: "3036",
+    noteL1: "(3 × 7) + 4 = 25", noteL2: "tens × tens, add the units", noteR: "4 × 4 = 16",
+    top: ["3", "4"], bot: ["7", "4"], carry: "+4",
+    leftPart: "25", rightPart: "16", answer: "2516",
   },
   // p.156 — square of a number ending in 5: 35²
   square5: {
@@ -245,17 +245,17 @@ const BASE_SPECS: Record<string, BaseSpec> = {
   },
   baseBelow100: {
     caption: "left = cross-subtract · right = product of deficiencies in 2-digit",
-    numA: "83", devA: "- 17", numB: "97", devB: "- 03",
-    leftPart: "80", rightPart: "51",
-    notes: ["Deficiencies: −17 and −03", "Left: 83 − 03 = 80", "Right: 17 × 03 = 51"],
-    answer: "8051",
+    numA: "96", devA: "- 04", numB: "98", devB: "- 02",
+    leftPart: "94", rightPart: "08",
+    notes: ["Deficiencies: −04 and −02", "Left: 96 − 02 = 94", "Right: 04 × 02 = 08"],
+    answer: "9408",
   },
   baseAbove100: {
     caption: "left = cross-add · right = product of surpluses in 2-digit",
-    numA: "112", devA: "+ 12", numB: "115", devB: "+ 15",
-    leftPart: "127", rightPart: "180",
-    notes: ["Surpluses: +12 and +15", "Left: 112 + 15 = 127", "Right: 12 × 15 = 180 (carry 1)"],
-    answer: "12880",
+    numA: "104", devA: "+ 04", numB: "107", devB: "+ 07",
+    leftPart: "111", rightPart: "28",
+    notes: ["Surpluses: +04 and +07", "Left: 104 + 07 = 111", "Right: 04 × 07 = 28"],
+    answer: "11128",
   },
 };
 
@@ -330,10 +330,10 @@ const DIV_SPECS: Record<string, DivSpec> = {
   },
   // p.195 — 3425 ÷ 43: main divisor 4, flag 3
   flagDivision: {
-    caption: ["Divisor 43 → main divisor 4, flag 3.", "divide → flag × quotient → subtract."],
-    dividend: ["3", "4", "2", "5"], quotient: ["7", "9"], remainder: "28", hop: "−3×",
-    notes: ["34 ÷ 4 = 7 remainder 6", "Flag: 3 × 7 = 21; 62 − 21 = 41, then ÷ 4"],
-    answer: "Q 79 · R 28",
+    caption: ["Divisor 72 → main divisor 7, flag 2.", "divide → flag × quotient → subtract."],
+    dividend: ["5", "3", "6", "7"], quotient: ["7", "4"], remainder: "39", hop: "−2×",
+    notes: ["53 ÷ 7 = 7 remainder 4", "Flag: 2 × 7 = 14; 46 − 14 = 32, then ÷ 7"],
+    answer: "Q 74 · R 39",
   },
   // p.196 — 3425 ÷ 73: fix the negative remainder
   flagAboveBase: {
@@ -645,11 +645,11 @@ const NIKHILAM_SPECS: Record<string, NikhilamSpec> = {
   },
   subFromPower10: {
     caption: "all from 9, the last from 10",
-    top: ["9", "9", "9", "10"],
-    minuend: ["1", "0", "0", "0", "0"],
-    subtrahend: ["0", "0", "7", "8"],
-    notes: ["Pad 78 to 0078 to match the four zeros.", "9−0=9, 9−0=9, 9−7=2, 10−8=2"],
-    answer: ["9", "9", "2", "2"],
+    top: ["9", "9", "9", "9", "10"],
+    minuend: ["1", "0", "0", "0", "0", "0"],
+    subtrahend: ["3", "5", "8", "7", "5"],
+    notes: ["Five zeros, so five digits to take.", "9−3=6, 9−5=4, 9−8=1, 9−7=2, 10−5=5"],
+    answer: ["6", "4", "1", "2", "5"],
   },
   subtractionGeneral: {
     caption: "smaller digit above? take the complement",
@@ -725,9 +725,9 @@ const PARTS_SPECS: Record<string, PartsSpec> = {
   // p.181 — 43² by duplexes
   duplexSquare: {
     caption: "D(a) = a² · D(ab) = 2ab · lay them side by side",
-    leftLabel: "D(4) then D(43)", leftWork: ["4² = 16", "2 × 4 × 3 = 24"],
-    rightLabel: "D(3)", rightWork: ["3² = 9", "balance the parts"],
-    join: "16 | 24 | 9", answer: "1849",
+    leftLabel: "D(5) then D(56)", leftWork: ["5² = 25", "2 × 5 × 6 = 60"],
+    rightLabel: "D(6)", rightWork: ["6² = 36", "balance the parts"],
+    join: "25 | 60 | 36", answer: "3136",
   },
   // p.164 — vinculating the units of 47
   vinculum: {
@@ -746,16 +746,16 @@ const PARTS_SPECS: Record<string, PartsSpec> = {
   // p.23 — 47 + 29, one more than the one before
   add9: {
     caption: "add the next ten, then give one back",
-    leftLabel: "step 1 · the ten", leftWork: ["29 → 30", "47 + 30 = 77"],
-    rightLabel: "step 2 · give back", rightWork: ["one too many", "77 − 1 = 76"],
-    join: "77 − 1", answer: "76",
+    leftLabel: "step 1 · the ten", leftWork: ["9 → 10", "36 + 10 = 46"],
+    rightLabel: "step 2 · give back", rightWork: ["one too many", "46 − 1 = 45"],
+    join: "46 − 1", answer: "45",
   },
   // p.27 — 63 − 29
   sub9: {
     caption: "take the next ten, then hand one back",
-    leftLabel: "step 1 · the ten", leftWork: ["29 → 30", "63 − 30 = 33"],
-    rightLabel: "step 2 · hand back", rightWork: ["one too many taken", "33 + 1 = 34"],
-    join: "33 + 1", answer: "34",
+    leftLabel: "step 1 · the ten", leftWork: ["9 → 10", "36 − 10 = 26"],
+    rightLabel: "step 2 · hand back", rightWork: ["one too many taken", "26 + 1 = 27"],
+    join: "26 + 1", answer: "27",
   },
   // p.31 — 73 + 8, one more in the tens and two less in the units
   add8sub8: {
@@ -836,34 +836,34 @@ export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {
   baseAbove20to90: "23 × 24",
   div9carry: "3794 ÷ 9",
   div99: "123123 ÷ 99",
-  flagDivision: "3425 ÷ 43",
+  flagDivision: "5367 ÷ 72",
   flagAboveBase: "3425 ÷ 73",
   flagBelowBase: "3425 ÷ 58",
-  duplexSquare: "43²",
+  duplexSquare: "56²",
   vinculum: "47 → 5 3\u0304",
   devinculum: "7 2\u0304 → 68",
   subVinculum: "8324 − 2348",
-  add9: "47 + 29",
-  sub9: "63 − 29",
+  add9: "36 + 9",
+  sub9: "36 − 9",
   add8sub8: "73 + 8",
   mult11: "34 × 11",
   specialMult1: "74 × 76",
-  specialMult2: "46 × 66",
+  specialMult2: "34 × 74",
   square5: "35²",
   squareStart5: "54²",
   baseBelow10: "7 × 8",
   baseAbove10: "14 × 18",
-  baseBelow100: "83 × 97",
-  baseAbove100: "112 × 115",
+  baseBelow100: "96 × 98",
+  baseAbove100: "104 × 107",
   div9: "23 ÷ 9",
   div8: "31 ÷ 8",
   mult12to19: "243 × 14",
   mult111: "4213 × 111",
-  balancing: "24 | 51 | 39",
+  balancing: "46 × 54",
   generalMult2d: "21 × 13",
-  additionGeneral: "38 + 17 + 22",
+  additionGeneral: "342 + 256",
   digitsum: "DS of 512",
-  subFromPower10: "10000 − 78",
+  subFromPower10: "100000 − 35875",
   subtractionGeneral: "624 − 347",
   subOtherThan10s: "4000 − 628",
   mult9: "32 × 9",

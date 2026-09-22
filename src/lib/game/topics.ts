@@ -22,6 +22,9 @@ export type Topic = {
   example: () => Record<string, number | string>;
   exSteps: (ex: Record<string, number | string>, lang: Lang) => ExStep[];
   gen: (diff: Difficulty) => Problem;
+  /* The book prints a second worked example on most lesson pages. Optional,
+     because a handful of pages show only one. */
+  example2?: () => Record<string, number | string>;
   /* The bilingual line the book's mascot says in a speech bubble on that page.
      Only some pages carry one, so it is optional. */
   tip?: string;
@@ -63,7 +66,8 @@ export const TOPICS: Topic[] = [
       "「一つ前より1少ない」――もう一方の数の一の位から1を引きます。",
       "新しい十の位と一の位を組み合わせると答えになります。",
     ],
-    example: () => ({ a: 47, b: 39 }),
+    example: () => ({ a: 36, b: 9 }),
+    example2: () => ({ a: 47, b: 39 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number;
       const aT = Math.floor(a / 10), bT = Math.floor(b / 10), aU = a % 10;
@@ -116,7 +120,8 @@ export const TOPICS: Topic[] = [
       "「一つ前より1多い」――引かれる数の一の位に1を足します。",
       "新しい十の位と一の位を組み合わせると答えになります。",
     ],
-    example: () => ({ a: 68, b: 29 }),
+    example: () => ({ a: 36, b: 9 }),
+    example2: () => ({ a: 68, b: 29 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number;
       const aT = Math.floor(a / 10), bT = Math.floor(b / 10), aU = a % 10;
@@ -165,7 +170,8 @@ export const TOPICS: Topic[] = [
       "引き算：十の位に1少なく、一の位に2多く。",
       "新しい十の位と一の位を組み合わせると答えになります。",
     ],
-    example: () => ({ a: 57, b: 28, op: "+" }),
+    example: () => ({ a: 73, b: 8, op: "+" }),
+    example2: () => ({ a: 57, b: 28, op: "+" }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number, op = ex.op as string;
       const aT = Math.floor(a / 10), bT = Math.floor(b / 10), aU = a % 10;
@@ -228,7 +234,7 @@ export const TOPICS: Topic[] = [
       "最後の桁を書く。",
       "真ん中の合計が10以上なら、1を最初の桁に繰り上げる。",
     ],
-    example: () => ({ n: 24 }),
+    example: () => ({ n: 34 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number, a = Math.floor(n / 10), b = n % 10;
       if (lang === "ja")
@@ -243,6 +249,7 @@ export const TOPICS: Topic[] = [
         ["slot it in the middle", `${a} ${a + b} ${b}  →  ${n * 11}`],
       ];
     },
+    example2: () => ({ n: 825 }),
     tip: "Just add neighbours!",
     tipJa: "となりの数を たすだけ！",
     gen: (diff) => {
@@ -283,7 +290,7 @@ export const TOPICS: Topic[] = [
       "2つの一の位をかける（2桁になるよう0を足す）。",
       "2つの結果を並べる――それが答え。",
     ],
-    example: () => ({ t: 2, u1: 3, u2: 7 }),
+    example: () => ({ t: 7, u1: 4, u2: 6 }),
     exSteps: (ex, lang) => {
       const t = ex.t as number, u1 = ex.u1 as number, u2 = ex.u2 as number;
       const a = 10 * t + u1, b = 10 * t + u2;
@@ -333,7 +340,8 @@ export const TOPICS: Topic[] = [
       "共通の一の位を2乗する（2桁になるよう0を足す）。",
       "2つの結果を並べる。",
     ],
-    example: () => ({ t1: 2, t2: 8, u: 3 }),
+    example: () => ({ t1: 3, t2: 7, u: 4 }),
+    example2: () => ({ t1: 2, t2: 8, u: 7 }),
     exSteps: (ex, lang) => {
       const t1 = ex.t1 as number, t2 = ex.t2 as number, u = ex.u as number;
       const a = 10 * t1 + u, b = 10 * t2 + u;
@@ -436,6 +444,7 @@ export const TOPICS: Topic[] = [
       "各結果の一の位を残し、残りを繰り上げ、先頭の0に達するまで続ける。",
     ],
     example: () => ({ n: 243, d: 4 }),
+    example2: () => ({ n: 5437, d: 5 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number, d = ex.d as number;
       const s = `0${n}0`.split("").map(Number);
@@ -531,7 +540,7 @@ export const TOPICS: Topic[] = [
       "2つの超過数をかける。",
       "2つの部分を足して答えにする。",
     ],
-    example: () => ({ a: 12, b: 13 }),
+    example: () => ({ a: 14, b: 18 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number, x = a - 10, y = b - 10;
       if (lang === "ja")
@@ -580,7 +589,7 @@ export const TOPICS: Topic[] = [
       "その結果の後ろに25を書く。",
       "それで2乗の答え全体になる。",
     ],
-    example: () => ({ n: 7 }),
+    example: () => ({ n: 3 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number;
       if (lang === "ja")
@@ -597,6 +606,7 @@ export const TOPICS: Topic[] = [
         ["append 25", `${n * (n + 1)}25  →  ${n * (n + 1) * 100 + 25}`],
       ];
     },
+    example2: () => ({ n: 11 }),
     tip: "Always ends in 25!",
     tipJa: "おわりは いつも 25！",
     gen: (diff) => {
@@ -629,7 +639,8 @@ export const TOPICS: Topic[] = [
       "最後の桁だけは10から引く。",
       "桁を並べて読む――繰り下がりなしで完成。",
     ],
-    example: () => ({ base: 1000, x: 457 }),
+    example: () => ({ base: 100000, x: 35875 }),
+    example2: () => ({ base: 10000, x: 78 }),
     exSteps: (ex, lang) => {
       const base = ex.base as number, x = ex.x as number;
       const s = String(x).padStart(String(base - 1).length, "0");
@@ -679,6 +690,7 @@ export const TOPICS: Topic[] = [
       "余りが9以上になったら、商を1増やし、余りから9を引く。",
     ],
     example: () => ({ n: 23 }),
+    example2: () => ({ n: 123101 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number;
       const t = Math.floor(n / 10), u = n % 10;
@@ -728,7 +740,7 @@ export const TOPICS: Topic[] = [
       "合計が2桁以上なら、その桁をもう一度足す。",
       "1桁になるまで続ける――それが各桁の合計。",
     ],
-    example: () => ({ n: 4859 }),
+    example: () => ({ n: 512 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number;
       const s = String(n)
@@ -803,6 +815,7 @@ export const TOPICS: Topic[] = [
         ["put together", `${left} | ${right}  →  ${n * 9}`],
       ];
     },
+    example2: () => ({ n: 423 }),
     tip: "Multiplication by 9 — but no multiplication!",
     tipJa: "9のかけ算、なのにかけ算なし！",
     gen: (diff) => {
@@ -828,7 +841,8 @@ export const TOPICS: Topic[] = [
     blurbJa: "2桁の数×111は、各桁の合計を真ん中の2か所に入れます。",
     steps: ["Write the first digit.", "Write the digit-sum twice in the middle.", "Write the last digit.", "Carry into the neighbour if a middle sum reaches 10."],
     stepsJa: ["最初の桁を書く。", "真ん中に各桁の合計を2回書く。", "最後の桁を書く。", "真ん中の合計が10以上なら隣に繰り上げる。"],
-    example: () => ({ n: 12 }),
+    example: () => ({ n: 4213 }),
+    example2: () => ({ n: 8756 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number, a = Math.floor(n / 10), b = n % 10, s = a + b;
       if (lang === "ja")
@@ -898,6 +912,7 @@ export const TOPICS: Topic[] = [
     steps: ["Find each number's deficiency from 100.", "Cross-subtract: number − other's deficiency, ×100.", "Multiply the two deficiencies together.", "Add the two parts for the answer."],
     stepsJa: ["それぞれの数の100からの不足数を求める。", "交差減算：数 −（相手の不足数）、それを×100する。", "2つの不足数をかける。", "2つの部分を足して答えにする。"],
     example: () => ({ a: 96, b: 98 }),
+    example2: () => ({ a: 83, b: 97 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number, x = 100 - a, y = 100 - b;
       if (lang === "ja")
@@ -936,7 +951,8 @@ export const TOPICS: Topic[] = [
     blurbJa: "100をわずかに超える数は、100からどれだけ超えているかで計算します。",
     steps: ["Find each number's excess over 100.", "Cross-add: number + other's excess, ×100.", "Multiply the two excesses together.", "Add the two parts for the answer."],
     stepsJa: ["それぞれの数の100からの超過数を求める。", "交差加算：数 ＋（相手の超過数）、それを×100する。", "2つの超過数をかける。", "2つの部分を足して答えにする。"],
-    example: () => ({ a: 102, b: 104 }),
+    example: () => ({ a: 104, b: 107 }),
+    example2: () => ({ a: 112, b: 115 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number, x = a - 100, y = b - 100;
       if (lang === "ja")
@@ -975,7 +991,8 @@ export const TOPICS: Topic[] = [
     blurbJa: "どんな2つの数にも使える万能の交差かけ算法――特別な形でなくても使えます。",
     steps: ["Multiply the units digits — that's the last part.", "Cross-multiply and add: (tens₁×units₂) + (units₁×tens₂) — the middle part.", "Multiply the tens digits — the first part.", "Add the three parts, shifting each one a place to the left."],
     stepsJa: ["一の位どうしをかける――これが最後の部分。", "交差してかけて足す：（十の位1×一の位2）＋（一の位1×十の位2）――真ん中の部分。", "十の位どうしをかける――最初の部分。", "3つの部分を、それぞれ桁をずらして足す。"],
-    example: () => ({ a: 34, b: 52 }),
+    example: () => ({ a: 21, b: 13 }),
+    example2: () => ({ a: 37, b: 68 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number;
       const a1 = Math.floor(a / 10), a0 = a % 10, b1 = Math.floor(b / 10), b0 = b % 10;
@@ -1058,7 +1075,7 @@ export const TOPICS: Topic[] = [
     blurbJa: "同じように左から右へ引きます――途中の合計から桁の値を1つずつ取り除きます。",
     steps: ["Start the running total at the first number.", "Take off the leftmost place value of the second number.", "Take off the next place value.", "Keep going until every digit has been subtracted."],
     stepsJa: ["最初の数を途中の合計として始める。", "2番目の数の一番左の桁の値を取り除く。", "次の桁の値を取り除く。", "すべての桁を引き終えるまで続ける。"],
-    example: () => ({ a: 583, b: 241 }),
+    example: () => ({ a: 624, b: 347 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number;
       const sb = String(b), len = sb.length;
@@ -1098,7 +1115,8 @@ export const TOPICS: Topic[] = [
     blurbJa: "どんな数を引くときも、その補数（次のべき乗までの差）を足してから、そのべき乗数を引きます。",
     steps: ["Find the complement of the number being subtracted — what completes it to the next power of ten.", "Add that complement to the first number.", "Subtract that same power of ten from the result.", "That's the answer — no borrowing needed."],
     stepsJa: ["引く数の補数を求める――次のべき乗数を完成させる数。", "その補数を最初の数に足す。", "結果からそのべき乗数を引く。", "それが答え――繰り下がり不要。"],
-    example: () => ({ a: 523, b: 278 }),
+    example: () => ({ a: 4000, b: 628 }),
+    example2: () => ({ a: 8000, b: 5732 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number;
       const k = String(b).length, base = Math.pow(10, k), comp = base - b;
@@ -1148,7 +1166,8 @@ export const TOPICS: Topic[] = [
       "次の桁 = その桁の数字 ＋ 2×（直前に求めた商の桁）。",
       "余りの部分が8以上になったら、商に1を足し、8を引く。",
     ],
-    example: () => ({ n: 243 }),
+    example: () => ({ n: 31 }),
+    example2: () => ({ n: 123123 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number;
       const digits = String(n).split("").map(Number);
@@ -1227,6 +1246,7 @@ export const TOPICS: Topic[] = [
         [`units: ${x} × ${x}`, `= ${secondPart}  →  ${num * num}`],
       ];
     },
+    example2: () => ({ k: 2, x: 12 }),
     tip: "It's the square of a number starting with 5!",
     tipJa: "5ではじまる数の 2乗だよ！",
     gen: (diff) => {
@@ -1264,6 +1284,7 @@ export const TOPICS: Topic[] = [
       "2つの不足をかける→右の部分。",
     ],
     example: () => ({ b: 20, a: 19, c: 16 }),
+    example2: () => ({ b: 80, a: 76, c: 77 }),
     exSteps: (ex, lang) => {
       const b = ex.b as number, a = ex.a as number, c = ex.c as number;
       const t = b / 10, da = a - b, dc = c - b;
@@ -1316,6 +1337,7 @@ export const TOPICS: Topic[] = [
       "2つの余りをかける→右の部分。",
     ],
     example: () => ({ b: 20, a: 23, c: 24 }),
+    example2: () => ({ b: 70, a: 72, c: 75 }),
     exSteps: (ex, lang) => {
       const b = ex.b as number, a = ex.a as number, c = ex.c as number;
       const t = b / 10, sa = a - b, sc = c - b;
@@ -1369,6 +1391,7 @@ export const TOPICS: Topic[] = [
       "最後に残った値が余り。",
     ],
     example: () => ({ n: 3794 }),
+    example2: () => ({ n: 5887 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number;
       const q = Math.floor(n / 9), r = n % 9;
@@ -1522,6 +1545,7 @@ export const TOPICS: Topic[] = [
       "それが答え——くり下がりは一度もなし。",
     ],
     example: () => ({ a: 8324, b: 2348 }),
+    example2: () => ({ a: 8459532, b: 5698763 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number;
       if (lang === "ja")
@@ -1570,7 +1594,7 @@ export const TOPICS: Topic[] = [
       "3桁の数：D(a) | D(ab) | D(abc) | D(bc) | D(c)。",
       "各部分が1桁になるように繰り上げる。",
     ],
-    example: () => ({ a: 4, b: 3 }),
+    example: () => ({ a: 5, b: 6 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number;
       const n = a * 10 + b;
@@ -1672,7 +1696,7 @@ export const TOPICS: Topic[] = [
       "旗×その商を、次の数から引く。",
       "次をおろしてくり返す。最後に残るのが余り。",
     ],
-    example: () => ({ n: 3425, d: 43 }),
+    example: () => ({ n: 5367, d: 72 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number, d = ex.d as number;
       const q = Math.floor(n / d), r = n % d;
@@ -1776,6 +1800,7 @@ export const TOPICS: Topic[] = [
       "余りがわる数より大きければ、引いて商に1を足す。",
     ],
     example: () => ({ n: 3425, d: 58 }),
+    example2: () => ({ n: 4836, d: 49 }),
     exSteps: (ex, lang) => {
       const n = ex.n as number, d = ex.d as number;
       const q = Math.floor(n / d), r = n % d;

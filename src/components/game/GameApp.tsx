@@ -3410,11 +3410,14 @@ function DigitFlowIllus({
 function BookMethodCard({
   topic,
   rows,
+  rows2,
   blurb,
   lang,
 }: {
   topic: Topic;
   rows: [string, string][];
+  /* The book's second worked example, where the page has one. */
+  rows2?: [string, string][];
   blurb: string;
   lang: Lang;
 }) {
@@ -3455,6 +3458,25 @@ function BookMethodCard({
           </div>
         )}
       </div>
+
+      {/* The second Example box. The diagram draws the first, so this one is
+          listed out — two diagrams of the same method teach less than one
+          diagram and a second set of numbers to follow. */}
+      {rows2 && rows2.length > 1 && (
+        <div className="bookexample-card bookexample-second">
+          <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
+            {lang === "ja" ? "例2：" : "Example 2: "}{rows2[0][0]}
+          </div>
+          <div className="bookexample-list">
+            {rows2.slice(1).map((r, i) => (
+              <div className="bookexample-list-row mono" key={i}>
+                <span>{r[0]}</span>
+                <b>{r[1]}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3462,6 +3484,7 @@ function BookMethodCard({
 function TopicView({ topic, lang, t }: { topic: Topic; lang: Lang; t: UIDict }) {
   const ex = topic.example();
   const rows = topic.exSteps(ex, lang);
+  const rows2 = topic.example2 ? topic.exSteps(topic.example2(), lang) : undefined;
   const title = lang === "ja" ? topic.titleJa : topic.title;
   const blurb = lang === "ja" ? topic.blurbJa : topic.blurb;
   return (
@@ -3476,7 +3499,7 @@ function TopicView({ topic, lang, t }: { topic: Topic; lang: Lang; t: UIDict }) 
         {DIGIT_FLOW_TOPICS.has(topic.id) ? (
           <DigitFlowIllus topic={topic} rows={rows} blurb={blurb} lang={lang} />
         ) : (
-          <BookMethodCard topic={topic} rows={rows} blurb={blurb} lang={lang} />
+          <BookMethodCard topic={topic} rows={rows} rows2={rows2} blurb={blurb} lang={lang} />
         )}
       </div>
 
