@@ -1773,3 +1773,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 /* the carry the book prints as a small subscript to the left of the answer */
 .bd-flagcarry{ font-family:var(--font-num); font-size:11px; font-weight:700; fill:var(--ink-dim); }
 .bd-tick{ stroke:var(--sun1); stroke-width:1.4; fill:none; }
+/* three-panel steps sit three across wherever there is room */
+.bd-flagrow-3{ grid-template-columns:repeat(3,1fr); }
+@media (min-width:560px){ .bd-flagrow-3{ grid-template-columns:repeat(3,1fr); } }

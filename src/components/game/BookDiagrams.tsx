@@ -554,46 +554,92 @@ function BalancingDiagram() {
 }
 
 // Book p.117 — Vertically and Crosswise, the "I X I" pattern, worked as 21 × 13.
-function CrosswiseDiagram({ lang }: { lang: Lang }) {
-  const a = [2, 1], b = [1, 3];
-  const left = a[0] * b[0], cross = a[0] * b[1] + a[1] * b[0], right = a[1] * b[1];
+/* Vertically and Crosswise, drawn as page 117 draws it: three panels — vertical
+   on the left pair, crosswise through the middle, vertical on the right pair —
+   with the answer growing a digit at a time beneath each. */
+function CrosswisePanel({
+  a,
+  b,
+  kind,
+  label,
+  running,
+  note,
+  uid,
+}: {
+  a: number[];
+  b: number[];
+  kind: "left" | "cross" | "right";
+  label: string;
+  running: string;
+  note?: string;
+  uid: string;
+}) {
+  const xL = 38, xR = 68, w = 104;
+  const yTop = 34, yBot = 56;
   return (
-    <svg viewBox="0 0 330 232" className="bd-svg bd-svg-wide">
-      <text x="10" y="15" className="bd-caption">the I X I pattern</text>
+    <svg viewBox={`0 0 ${w} 96`} className="bd-svg bd-flagpanel">
+      <defs>
+        <marker id={uid} markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="var(--sun1)" />
+        </marker>
+      </defs>
 
-      <text x="132" y="52" className="bd-num" textAnchor="middle">{a[0]}</text>
-      <text x="196" y="52" className="bd-num" textAnchor="middle">{a[1]}</text>
-      <text x="96" y="86" className="bd-op">×</text>
-      <text x="132" y="86" className="bd-num" textAnchor="middle">{b[0]}</text>
-      <text x="196" y="86" className="bd-num" textAnchor="middle">{b[1]}</text>
+      <text x="8" y="13" className="bd-steplabel" style={{ fontSize: 9 }}>{label}</text>
 
-      <path d="M132,60 V78" className="bd-vert" />
-      <path d="M196,60 V78" className="bd-vert" />
-      <path d="M140,60 L188,78" className="bd-cross" />
-      <path d="M188,60 L140,78" className="bd-cross" />
+      <text x={xL} y={yTop} className="bd-digit" textAnchor="middle">{a[0]}</text>
+      <text x={xR} y={yTop} className="bd-digit" textAnchor="middle">{a[1]}</text>
+      <text x="10" y={yBot} className="bd-num" textAnchor="start">×</text>
+      <text x={xL} y={yBot} className="bd-digit" textAnchor="middle">{b[0]}</text>
+      <text x={xR} y={yBot} className="bd-digit" textAnchor="middle">{b[1]}</text>
 
-      <line x1="92" y1="98" x2="228" y2="98" className="bd-rule" />
-      <text x="132" y="126" className="bd-part" textAnchor="middle">{left}</text>
-      <text x="164" y="126" className="bd-part bd-part-hi" textAnchor="middle">{cross}</text>
-      <text x="196" y="126" className="bd-part" textAnchor="middle">{right}</text>
+      {/* the pattern the step is named after */}
+      {kind === "left" && (
+        <path d={`M ${xL} ${yTop + 5} L ${xL} ${yBot - 13}`} className="bd-tick" markerEnd={`url(#${uid})`} />
+      )}
+      {kind === "right" && (
+        <path d={`M ${xR} ${yTop + 5} L ${xR} ${yBot - 13}`} className="bd-tick" markerEnd={`url(#${uid})`} />
+      )}
+      {kind === "cross" && (
+        <>
+          <path d={`M ${xL + 5} ${yTop + 5} L ${xR - 5} ${yBot - 13}`} className="bd-tick" markerEnd={`url(#${uid})`} />
+          <path d={`M ${xR - 5} ${yTop + 5} L ${xL + 5} ${yBot - 13}`} className="bd-tick" />
+        </>
+      )}
 
-      <text x="14" y="154" className="bd-note">
-        {lang === "ja" ? "1・縦" : "1 · vertically"}: {a[0]}×{b[0]} = {left}
-      </text>
-      <text x="14" y="172" className="bd-note">
-        {lang === "ja" ? "2・たすきがけ" : "2 · crosswise"}: ({a[0]}×{b[1]}) + ({a[1]}×{b[0]}) = {cross}
-      </text>
-      <text x="14" y="190" className="bd-note">
-        {lang === "ja" ? "3・縦" : "3 · vertically"}: {a[1]}×{b[1]} = {right}
-      </text>
-
-      <AnswerBox x={196} y={196} w={124} h={26} value={String(21 * 13)} />
+      <line x1="8" y1="64" x2={w - 6} y2="64" className="bd-rule" />
+      <text x={w - 6} y="82" className="bd-partline" textAnchor="end">{running}</text>
+      {note && <text x={w - 6} y="93" className="bd-caption" style={{ fontSize: 8 }} textAnchor="end">{note}</text>}
     </svg>
   );
 }
 
-// Books pp.109/136/114 — "all from 9, the last from 10" written above the minuend.
-// Every row is right-aligned to one units column so the place values line up.
+function CrosswiseDiagram({ lang }: { lang: Lang }) {
+  const a = [2, 1], b = [1, 3];
+  const left = a[0] * b[0];
+  const cross = a[0] * b[1] + a[1] * b[0];
+  const right = a[1] * b[1];
+  const total = (a[0] * 10 + a[1]) * (b[0] * 10 + b[1]);
+
+  /* Each panel shows the answer as far as it has been built. */
+  const r1 = String(left);
+  const r2 = String(left) + String(cross % 10);
+  const r3 = String(total);
+
+  return (
+    <div className="bd-flaggrid">
+      <div className="bd-flagcap">
+        {lang === "ja" ? "たて → たすきがけ → たて" : "vertically → crosswise → vertically"}
+      </div>
+      <div className="bd-flagrow bd-flagrow-3">
+        <CrosswisePanel a={a} b={b} kind="left" label={lang === "ja" ? "① たて" : "STEP 1"} running={r1} uid="cwA" />
+        <CrosswisePanel a={a} b={b} kind="cross" label={lang === "ja" ? "② たすきがけ" : "STEP 2"} running={r2} note={`(${a[0] * b[1]}+${a[1] * b[0]})`} uid="cwB" />
+        <CrosswisePanel a={a} b={b} kind="right" label={lang === "ja" ? "③ たて" : "STEP 3"} running={r3} uid="cwC" />
+      </div>
+      <div className="bd-flaganswer">{total}</div>
+    </div>
+  );
+}
+
 type NikhilamSpec = { caption: string; top: string[]; minuend: string[]; subtrahend: string[]; notes: string[]; answer: string[] };
 
 const NK_RIGHT = 232, NK_PITCH = 30;
