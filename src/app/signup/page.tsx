@@ -166,7 +166,10 @@ export default function SignupPage() {
               {c.phone} <span className="field-optional">{c.optional}</span>
             </label>
             <div className="phone-row">
-              <select name="phoneCode" aria-label="Country code" defaultValue="">
+              {/* Keyed on the dial code so choosing a country remounts this with
+                  that country's code already selected — one less thing to pick,
+                  and it makes clear the code does not belong in the field beside it. */}
+              <select name="phoneCode" key={dial} aria-label="Country code" defaultValue={dial}>
                 <option value="">+—</option>
                 {COUNTRIES.map((x) => (
                   <option key={x.code} value={x.dial}>
@@ -174,13 +177,16 @@ export default function SignupPage() {
                   </option>
                 ))}
               </select>
+              {/* The placeholder deliberately omits the dial code: the selector
+                  beside it already carries that, and showing "+91 …" here had
+                  people typing the + into the number, which validation refused. */}
               <input
                 id="phone"
                 name="phone"
                 type="tel"
                 inputMode="numeric"
                 autoComplete="tel-national"
-                placeholder={dial ? `${dial} ${c.phonePh}` : c.phonePh}
+                placeholder={c.phonePh}
               />
             </div>
             <p className="field-hint">{c.phoneHint}</p>

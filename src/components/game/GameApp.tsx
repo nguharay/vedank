@@ -2620,21 +2620,23 @@ export function GameApp({
         <div className="show" id="dailyChest">
           <div className="chest-card">
             {!chestOpened ? (
-              <>
-                <div
-                  className="chest-box"
-                  onClick={() => {
-                    setChestOpened(true);
-                    confetti.burstCenter(90, 0.5);
-                    sound.levelUp();
-                    haptic([20, 60, 20]);
-                  }}
-                >
-                  🎁
-                </div>
+              /* The card says "tap to open", so the whole card is the target.
+                 Only the 64px emoji used to be clickable, which reads as the
+                 dialog being stuck — especially with a mouse. */
+              <button
+                className="chest-open-btn"
+                onClick={() => {
+                  setChestOpened(true);
+                  confetti.burstCenter(90, 0.5);
+                  sound.levelUp();
+                  haptic([20, 60, 20]);
+                }}
+                aria-label={lang === "ja" ? "デイリーチェストを開ける" : "Open the daily chest"}
+              >
+                <span className="chest-box">🎁</span>
                 <h3>{lang === "ja" ? "デイリーチェスト！" : "Daily Chest!"}</h3>
                 <p>{lang === "ja" ? "タップして開けよう" : "Tap to open"}</p>
-              </>
+              </button>
             ) : (
               <>
                 <div className="chest-box opened">🎉</div>

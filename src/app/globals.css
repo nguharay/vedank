@@ -1705,3 +1705,11 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 @media (prefers-reduced-motion: reduce){ .buddy-hint{ animation:none; } }
 /* Big enough to read as a character rather than a dot. */
 .buddy-tap{ width:66px; height:66px; }
+
+/* The daily chest's whole card is the tap target — it says "tap to open", and a
+   64px emoji was the only thing that responded, which reads as a stuck dialog. */
+.chest-open-btn{ display:block; width:100%; background:none; border:none; padding:0; cursor:pointer;
+  font-family:inherit; color:inherit; }
+.chest-open-btn .chest-box{ display:inline-block; }
+.chest-open-btn:focus-visible{ outline:3px solid var(--blue); outline-offset:4px; border-radius:16px; }
+.chest-open-btn:active{ transform:scale(.97); }

@@ -24,7 +24,12 @@ export async function signupAction(
   const password = String(formData.get("password") || "");
   const country = String(formData.get("country") || "").trim().toUpperCase();
   const phoneCodeRaw = String(formData.get("phoneCode") || "").trim();
-  const phoneRaw = String(formData.get("phone") || "").replace(/[\s-]/g, "");
+  /* Everything non-numeric goes: the field sits next to a dial-code selector
+     whose placeholder used to show "+91 …", so people typed the + and the old
+     strip (spaces and hyphens only) left it in place — then validation rejected
+     it as "digits only", which is a confusing thing to be told about a number
+     you were shown how to type. Brackets get the same treatment. */
+  const phoneRaw = String(formData.get("phone") || "").replace(/\D/g, "");
   const langRaw = String(formData.get("lang") || "en");
   const preferredLang = langRaw === "ja" ? "ja" : "en";
 
