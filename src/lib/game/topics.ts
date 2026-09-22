@@ -1278,6 +1278,63 @@ export const TOPICS: Topic[] = [
     },
   },
   /* ---------- World 4 · sub-base multiples of 10 (p79, p89) ---------- */
+  /* p.131 — Addition, General Method: the Bar Method */
+  {
+    id: "additionBar",
+    icon: "+",
+    grad: ["#0FA857", "#7BE23A"],
+    illus: "ladder",
+    title: "Addition — The Bar Method",
+    titleJa: "たし算 — バー（棒）法",
+    sutraSa: "General method · bars",
+    sutraEn: "The Bar Method",
+    sutraEnJa: "バー（棒）法",
+    blurb:
+      "Add column by column, right to left. Each time a running total reaches 10 or more, put a bar on that digit and keep counting from what is left. At the end, each column's bars are the tens it hands to the column on its left.",
+    blurbJa:
+      "右から左へ、けたごとに足します。合計が10以上になるたびにその桁にバーを引き、残りから数え続けます。最後に、各けたのバーの数がその左のけたへ渡す10のまとまりです。",
+    steps: [
+      "Add the digits of a column, right to left.",
+      "Every time the running total passes 10, mark a bar and carry on from the remainder.",
+      "Write the digit you finish on.",
+      "Count the bars — that is what this column carries into the next.",
+    ],
+    stepsJa: [
+      "右から左へ、そのけたの数字を足していく。",
+      "合計が10をこえるたびにバーを引き、残りから続ける。",
+      "最後に残った数をそのけたに書く。",
+      "バーの数が、次のけたへの繰り上がり。",
+    ],
+    example: () => ({ a: 826, b: 758, c: 852 }),
+    exSteps: (ex, lang) => {
+      const a = ex.a as number, b = ex.b as number, c = ex.c as number;
+      const d = (n: number, p: number) => Math.floor(n / Math.pow(10, p)) % 10;
+      const u = d(a, 0) + d(b, 0) + d(c, 0);
+      const t = d(a, 1) + d(b, 1) + d(c, 1) + Math.floor(u / 10);
+      const h = d(a, 2) + d(b, 2) + d(c, 2) + Math.floor(t / 10);
+      if (lang === "ja")
+        return [
+          [`${a} + ${b} + ${c}`, ""],
+          [`一の位 ${d(a, 0)}+${d(b, 0)}+${d(c, 0)} = ${u}`, `${u % 10}（バー${Math.floor(u / 10)}）`],
+          [`十の位 …= ${t}`, `${t % 10}（バー${Math.floor(t / 10)}）`],
+          [`百の位 …= ${h}`, `${h}`],
+          ["答え", `${a + b + c}`],
+        ];
+      return [
+        [`${a} + ${b} + ${c}`, ""],
+        [`units ${d(a, 0)}+${d(b, 0)}+${d(c, 0)} = ${u}`, `${u % 10} (${Math.floor(u / 10)} bar)`],
+        [`tens …= ${t}`, `${t % 10} (${Math.floor(t / 10)} bar)`],
+        [`hundreds …= ${h}`, `${h}`],
+        ["answer", `${a + b + c}`],
+      ];
+    },
+    gen: (diff) => {
+      const lo = diff === "easy" ? 11 : diff === "medium" ? 101 : 1001;
+      const hi = diff === "easy" ? 99 : diff === "medium" ? 999 : 9999;
+      const a = ri(lo, hi), b = ri(lo, hi), c = ri(lo, hi);
+      return { prompt: `${fmt(a)} + ${fmt(b)} + ${fmt(c)}`, answer: a + b + c };
+    },
+  },
   {
     id: "baseBelow20to90",
     icon: "✕",
@@ -1967,6 +2024,7 @@ export const BLITZ_MAX_DIFF: Record<string, Difficulty | null> = {
   flagDivision: null,
   flagAboveBase: null,
   flagBelowBase: null,
+  additionBar: "medium",
   baseBelow20to90: "easy",
   baseAbove20to90: "easy",
 };

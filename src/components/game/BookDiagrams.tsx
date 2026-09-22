@@ -879,7 +879,73 @@ function DigitSumDiagram() {
   );
 }
 
+/* Page 131: the three numbers stacked, and the answer built one column at a
+   time, each panel noting the bars that column hands to the left. */
+function BarAddPanel({ nums, upto, running, note }: {
+  nums: string[]; upto: number; running: string; note?: string;
+}) {
+  const w = 92, pitch = 17, right = w - 10;
+  const cols = nums[0].length;
+  return (
+    <svg viewBox={`0 0 ${w} 112`} className="bd-svg bd-flagpanel">
+      {nums.map((n, r) =>
+        n.split("").map((d, i) => {
+          const col = cols - 1 - i;
+          return (
+            <text
+              key={`${r}-${i}`}
+              x={right - col * pitch}
+              y={22 + r * 18}
+              className="bd-num"
+              textAnchor="end"
+              opacity={col < upto ? 1 : 0.28}
+            >
+              {d}
+            </text>
+          );
+        })
+      )}
+      <text x={right - (cols - 1) * pitch - 14} y={22 + (nums.length - 1) * 18} className="bd-num" textAnchor="end">+</text>
+      <line x1="8" y1={30 + (nums.length - 1) * 18} x2={w - 6} y2={30 + (nums.length - 1) * 18} className="bd-rule" />
+      <text x={right} y={52 + (nums.length - 1) * 18} className="bd-partline" textAnchor="end">{running}</text>
+      {note && <text x={right} y={66 + (nums.length - 1) * 18} className="bd-caption" style={{ fontSize: 8 }} textAnchor="end">{note}</text>}
+    </svg>
+  );
+}
+
+function AdditionBarDiagram() {
+  const nums = ["826", "758", "852"];
+  const cols = 3;
+  const digit = (n: string, col: number) => Number(n[n.length - 1 - col]);
+  const panels: { upto: number; running: string; note?: string }[] = [];
+  let carry = 0;
+  let out = "";
+  for (let col = 0; col < cols; col++) {
+    const sum = nums.reduce((a, n) => a + digit(n, col), 0) + carry;
+    const bars = Math.floor(sum / 10);
+    out = String(sum % 10) + out;
+    carry = bars;
+    panels.push({ upto: col + 1, running: out, note: `${bars} bar${bars === 1 ? "" : "s"}` });
+  }
+  /* The book adds one last panel that brings the leading bars down, which is
+     where the 2 of 2436 comes from. */
+  if (carry > 0) panels.push({ upto: cols, running: String(carry) + out });
+  const total = nums.reduce((a, n) => a + Number(n), 0);
+  return (
+    <div className="bd-flaggrid">
+      <div className="bd-flagcap">a bar for every ten the column passes</div>
+      <div className="bd-flagrow bd-flagrow-3">
+        {panels.map((p, i) => (
+          <BarAddPanel key={i} nums={nums} upto={p.upto} running={p.running} note={p.note} />
+        ))}
+      </div>
+      <div className="bd-flaganswer">{total}</div>
+    </div>
+  );
+}
+
 export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.ReactElement>> = {
+  additionBar: AdditionBarDiagram,
   mult11: Mult11Diagram,
   mult12to19: FlagDigitDiagram,
   mult111: Mult111Diagram,
@@ -909,6 +975,7 @@ export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.
 
 // The worked example each diagram draws, shown in the card header.
 export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {
+  additionBar: "826 + 758 + 852",
   baseBelow20to90: "19 × 16",
   baseAbove20to90: "23 × 24",
   div9carry: "3794 ÷ 9",
