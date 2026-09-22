@@ -3971,7 +3971,7 @@ function ArenaView({
   }, []);
 
   const p = PUZZLES[puzIdx];
-  const cellW = 46, gap = 26, opW = 40;
+  const cellW = 46, gap = 26, opW = 44;
   let total = 0;
   for (const g of glyphs) total += (g.type === "digit" ? cellW : opW) + gap;
   total -= gap;

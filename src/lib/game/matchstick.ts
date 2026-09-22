@@ -22,15 +22,20 @@ export function segSetKeyToDigit(setArr: string[]): string | null {
   return null;
 }
 
-export const OP_ALL_SLOTS = ["h", "v", "h1", "h2"];
+/* Three horizontal slots used to be drawn in every operator cell: a centred one
+   for minus and plus, and a separate pair for equals. The pair's upper bar was
+   redundant -- equals can reuse the centre bar as its top -- so the cell now
+   offers two horizontals instead of three, and a minus becomes an equals by
+   gaining a single stick, which is how the move works on a table. */
+export const OP_ALL_SLOTS = ["h", "v", "h2"];
 export const SYMBOL_SLOTS: Record<string, string[]> = {
   "-": ["h"],
   "+": ["h", "v"],
-  "=": ["h1", "h2"],
+  "=": ["h", "h2"],
 };
 export function segSetKeyToOp(setArr: string[]): string | null {
   const key = [...setArr].sort().join(",");
-  const map: Record<string, string> = { h: "-", "h,v": "+", "h1,h2": "=" };
+  const map: Record<string, string> = { h: "-", "h,v": "+", "h,h2": "=" };
   return map[key] || null;
 }
 
@@ -131,16 +136,16 @@ export const SEG_TIP: Record<string, "start" | "end"> = {
   lr: "end",
   bot: "start",
 };
+/* Longer than the old 36 so the operators read at the same weight as the digits
+   beside them; the vertical is centred on the horizontal so a plus crosses true. */
 export const OP_GEO: Record<string, [number, number, number, number]> = {
-  h: [2, 46, 38, 46],
-  v: [20, 20, 20, 72],
-  h1: [2, 28, 38, 28],
-  h2: [2, 64, 38, 64],
+  h: [2, 40, 42, 40],
+  v: [22, 20, 22, 60],
+  h2: [2, 60, 42, 60],
 };
 export const OP_TIP: Record<string, "start" | "end"> = {
   h: "end",
   v: "start",
-  h1: "end",
   h2: "start",
 };
 
