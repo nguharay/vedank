@@ -1739,3 +1739,27 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   .auth-lockup-name{ font-size:17px; }
   .auth-lockup-tag{ font-size:9.5px; }
 }
+
+/* ---------- share: the real card, and where it goes ---------- */
+.share-poster-img{ display:block; width:100%; height:auto; aspect-ratio:1200/630; border-radius:16px;
+  border:3px solid var(--ink-line); box-shadow:4px 4px 0 var(--ink-line); background:var(--surface-2); }
+/* With the generated image above it, the CSS poster becomes a compact caption. */
+.share-poster-compact{ margin-top:10px; padding:12px 14px; }
+.share-poster-compact .share-poster-num{ font-size:34px; }
+.share-poster-compact .share-poster-icon{ font-size:20px; }
+.share-poster-compact .share-poster-brand{ display:none; }
+.share-save{ width:100%; margin-top:8px; font-family:inherit; font-size:12.5px; font-weight:800;
+  cursor:pointer; color:var(--ink-dim); background:var(--surface-2); border:2px solid var(--line);
+  border-radius:12px; padding:9px; }
+.share-save:active{ transform:scale(.98); }
+.share-save:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
+
+/* ---------- the landing page a shared link opens ---------- */
+.share-landing{ max-width:520px; text-align:center; }
+.share-landing-card{ display:block; width:100%; height:auto; aspect-ratio:1200/630; border-radius:16px;
+  border:3px solid var(--ink-line); box-shadow:5px 5px 0 color-mix(in srgb, var(--ink-line) 22%, transparent);
+  margin:4px 0 16px; }
+.share-landing-title{ font-family:"Baloo 2",system-ui,sans-serif; font-size:22px; margin-bottom:6px; }
+.share-landing-cta{ width:100%; margin-top:14px; }
+.share-landing-alt{ font-size:12.5px; font-weight:700; color:var(--muted); margin-top:12px; }
+.share-landing-alt a{ color:var(--blue-dk); font-weight:800; }

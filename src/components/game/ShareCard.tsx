@@ -84,12 +84,25 @@ export function ShareSheet({
   /* remembering which stat was copied lets "Copied!" clear itself when the
      focus changes, with no effect syncing a second piece of state */
   const [copiedFor, setCopiedFor] = useState<ShareFocus | null>(null);
+  const [sharing, setSharing] = useState(false);
   const closeRef = useRef<HTMLButtonElement | null>(null);
 
   const tiles = useMemo(() => tilesFor(stats, t), [stats, t]);
   const active = tiles.find((x) => x.key === focus) || tiles[0];
   const blurb = blurbFor(focus, stats, t, lang);
-  const shareUrl = typeof window === "undefined" ? "" : window.location.origin;
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+
+  /* The link carries the stats, so /s renders the matching Open Graph card and
+     every platform unfurls a picture rather than a bare URL. */
+  const cardParams = useMemo(() => {
+    const p = new URLSearchParams();
+    p.set("f", focus);
+    p.set("v", (tiles.find((x) => x.key === focus) ?? tiles[0]).value);
+    if (stats.rank) p.set("s", `${t.share.statLevel} ${stats.level} · ${stats.rank}`);
+    return p.toString();
+  }, [focus, tiles, stats.level, stats.rank, t.share.statLevel]);
+
+  const shareUrl = origin ? `${origin}/s?${cardParams}` : "";
   const shareText = `${blurb}`;
   const copied = copiedFor === focus;
 
@@ -105,18 +118,52 @@ export function ShareSheet({
 
   if (!open) return null;
 
+  /* Try to send the actual picture, not just a sentence. Where files are
+     supported the recipient sees the card inline; where they are not, the link
+     still unfurls into the same image via /s. */
   async function nativeShare() {
-    const payload = { title: t.share.title, text: shareText, url: shareUrl };
-    // Web Share API is the good path on phones — it opens the real OS sheet.
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share(payload);
-        return;
-      } catch {
-        /* user dismissed the sheet, or the browser refused — fall through to copy */
-      }
+    if (typeof navigator === "undefined" || !navigator.share) {
+      copy();
+      return;
     }
-    copy();
+    setSharing(true);
+    try {
+      let file: File | null = null;
+      try {
+        const res = await fetch(`/api/share-card?${cardParams}`);
+        if (res.ok) {
+          const blob = await res.blob();
+          file = new File([blob], "sutra-sprint.png", { type: blob.type || "image/png" });
+        }
+      } catch {
+        /* no card, no problem — the text-and-link share below still works */
+      }
+
+      if (file && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ title: t.share.title, text: shareText, files: [file] });
+      } else {
+        await navigator.share({ title: t.share.title, text: shareText, url: shareUrl });
+      }
+    } catch {
+      /* dismissed, or refused — leave the sheet as it was */
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  /* Downloading it is the fallback that always works: save the card, then post
+     it wherever you like. */
+  async function saveCard() {
+    try {
+      const res = await fetch(`/api/share-card?${cardParams}`);
+      if (!res.ok) return;
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "sutra-sprint.png";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
   }
 
   async function copy() {
@@ -153,8 +200,19 @@ export function ShareSheet({
           </button>
         </div>
 
+        {/* The generated card itself, so what you see is exactly what gets sent. */}
+        {origin && (
+          <img
+            className="share-poster-img"
+            src={`/api/share-card?${cardParams}`}
+            alt={shareText}
+            width={1200}
+            height={630}
+          />
+        )}
+
         {/* the poster: big focused number, then the rest of the run */}
-        <div className="share-poster">
+        <div className="share-poster share-poster-compact">
           <div className="share-poster-brand">
             <img src="/brand/vedank-mark.png" alt="" />
             <span>{t.home.brand}</span>
@@ -187,13 +245,16 @@ export function ShareSheet({
         <p className="share-blurb">{shareText}</p>
 
         <div className="share-actions">
-          <button className="btn btn-primary share-primary" onClick={nativeShare}>
-            📤 {t.share.shareBtn}
+          <button className="btn btn-primary share-primary" onClick={nativeShare} disabled={sharing}>
+            {sharing ? "…" : `📤 ${t.share.shareBtn}`}
           </button>
           <button className="btn btn-ghost share-copy" onClick={copy}>
             {copied ? `✅ ${t.share.copied}` : `📋 ${t.share.copy}`}
           </button>
         </div>
+        <button className="share-save" onClick={saveCard}>
+          🖼️ {lang === "ja" ? "画像を保存" : "Save the image"}
+        </button>
 
         <div className="share-networks">
           {networks.map((n) => (
