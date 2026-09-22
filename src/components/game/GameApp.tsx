@@ -3479,6 +3479,19 @@ function TopicView({ topic, lang, t }: { topic: Topic; lang: Lang; t: UIDict }) 
           <BookMethodCard topic={topic} rows={rows} blurb={blurb} lang={lang} />
         )}
       </div>
+
+      {/* The line the book's mascot says on this page, in its speech bubble. */}
+      {topic.tip && (
+        <div className="lesson-tip">
+          <div className="lesson-tip-bubble">
+            <span className="lesson-tip-ja">{topic.tipJa}</span>
+            <span className="lesson-tip-en">{topic.tip}</span>
+          </div>
+          <div className="lesson-tip-mascot">
+            <Mascot mood="excited" />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -22,6 +22,10 @@ export type Topic = {
   example: () => Record<string, number | string>;
   exSteps: (ex: Record<string, number | string>, lang: Lang) => ExStep[];
   gen: (diff: Difficulty) => Problem;
+  /* The bilingual line the book's mascot says in a speech bubble on that page.
+     Only some pages carry one, so it is optional. */
+  tip?: string;
+  tipJa?: string;
 };
 
 function ri(a: number, b: number) {
@@ -239,6 +243,8 @@ export const TOPICS: Topic[] = [
         ["slot it in the middle", `${a} ${a + b} ${b}  →  ${n * 11}`],
       ];
     },
+    tip: "Just add neighbours!",
+    tipJa: "となりの数を たすだけ！",
     gen: (diff) => {
       let n: number;
       if (diff === "easy") {
@@ -591,6 +597,8 @@ export const TOPICS: Topic[] = [
         ["append 25", `${n * (n + 1)}25  →  ${n * (n + 1) * 100 + 25}`],
       ];
     },
+    tip: "Always ends in 25!",
+    tipJa: "おわりは いつも 25！",
     gen: (diff) => {
       const n = diff === "easy" ? ri(1, 9) : diff === "medium" ? ri(1, 19) : ri(1, 49);
       const num = n * 10 + 5;
@@ -744,6 +752,8 @@ export const TOPICS: Topic[] = [
         ],
       ];
     },
+    tip: "Work out every Digit Sum in your head!",
+    tipJa: "桁の和は 頭の中で！",
     gen: (diff) => {
       const n = diff === "easy" ? ri(10, 99) : diff === "medium" ? ri(100, 9999) : ri(1000, 999999);
       const ds = n === 0 ? 0 : 1 + ((n - 1) % 9);
@@ -793,6 +803,8 @@ export const TOPICS: Topic[] = [
         ["put together", `${left} | ${right}  →  ${n * 9}`],
       ];
     },
+    tip: "Multiplication by 9 — but no multiplication!",
+    tipJa: "9のかけ算、なのにかけ算なし！",
     gen: (diff) => {
       // a units digit of 0 has no single-digit 10's complement, so the book's rule needs one
       let n: number;
@@ -1215,6 +1227,8 @@ export const TOPICS: Topic[] = [
         [`units: ${x} × ${x}`, `= ${secondPart}  →  ${num * num}`],
       ];
     },
+    tip: "It's the square of a number starting with 5!",
+    tipJa: "5ではじまる数の 2乗だよ！",
     gen: (diff) => {
       const k = diff === "easy" ? 1 : diff === "medium" ? 2 : 3;
       const x = ri(0, Math.pow(10, k) - 1);
@@ -1832,12 +1846,21 @@ export const STAGE_DIFF: Difficulty[] = ["easy", "easy", "medium", "medium", "ha
 export const QUESTIONS_PER_STAGE = 5;
 export const PASS_THRESHOLD = 3;
 
+/* The ladder has to reach as far as the content does. With 36 topics a full
+   clear is worth about 22,800 gems — level 153 — so stopping at 12 left everyone
+   a Grandmaster for the whole of Worlds 4 to 8. The upper names follow the
+   book's own worlds. */
 export const RANKS: [number, string][] = [
   [1, "Newcomer"],
   [3, "Apprentice"],
   [5, "Ganitin"],
   [8, "Sutra Sādhaka"],
   [12, "Vedic Scholar"],
+  [20, "Base Master"],
+  [32, "Crosswise Adept"],
+  [48, "Vinculum Keeper"],
+  [70, "Flag Bearer"],
+  [100, "Dhvajāṅka"],
   [999, "Grandmaster"],
 ];
 export function rankFor(level: number) {
@@ -1853,6 +1876,11 @@ export const RANKS_JA: Record<string, string> = {
   Ganitin: "ガニティン",
   "Sutra Sādhaka": "スートラ修行者",
   "Vedic Scholar": "ヴェーダ学者",
+  "Base Master": "基準法の達人",
+  "Crosswise Adept": "たすきがけの達人",
+  "Vinculum Keeper": "ヴィンキュラムの守り手",
+  "Flag Bearer": "旗の使い手",
+  "Dhvajāṅka": "ドゥヴァジャンカ",
   Grandmaster: "グランドマスター",
 };
 
