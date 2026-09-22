@@ -864,37 +864,58 @@ export const TOPICS: Topic[] = [
     illus: "ladder",
     title: "The Balancing Method",
     titleJa: "バランス法",
-    sutraSa: "Corollary · Yavadunam",
+    sutraSa: "Corollary · balancing",
     sutraEn: "Balancing Method – Thumb Rule",
     sutraEnJa: "バランス法",
-    blurb: "When two numbers sit the same distance above and below a round middle, their product is just a difference of squares.",
-    blurbJa: "2つの数がちょうど真ん中の数から同じ距離にあるとき、その積は2乗の差だけで求まります。",
-    steps: ["Find the round number exactly between the two.", "Find how far each one is from that middle — the same distance both ways.", "Square the middle number.", "Subtract the distance squared."],
-    stepsJa: ["2つの数のちょうど真ん中にある丸い数を見つける。", "それぞれが真ん中からどれだけ離れているか求める（両方向とも同じ距離）。", "真ん中の数を2乗する。", "その距離の2乗を引く。"],
-    example: () => ({ base: 50, d: 4 }),
+    blurb:
+      "Several methods leave an answer in segments, some holding more than one digit. Start from the right: keep only the units digit of each segment and carry the rest into the segment on its left. Every segment but the leftmost ends up holding exactly one digit.",
+    blurbJa:
+      "多くの方法は答えを「区切り」で出し、2桁以上になる区切りもあります。右から始めて、各区切りは一の位だけ残し、残りを左の区切りへ繰り上げます。いちばん左以外は、すべて1桁になります。",
+    steps: [
+      "Write the answer in its segments, right to left.",
+      "Keep the units digit of the rightmost segment.",
+      "Carry everything above it into the segment on its left.",
+      "Repeat until only the leftmost segment may hold more than one digit.",
+    ],
+    stepsJa: [
+      "答えを区切りのまま、右から左に並べる。",
+      "いちばん右の区切りは一の位だけ残す。",
+      "それより上の位を左の区切りへ繰り上げる。",
+      "いちばん左以外がすべて1桁になるまでくり返す。",
+    ],
+    example: () => ({ segs: "24|51|39" }),
+    example2: () => ({ segs: "20|76|8|35|143|46" }),
     exSteps: (ex, lang) => {
-      const base = ex.base as number, d = ex.d as number;
+      const segs = String(ex.segs).split("|").map(Number);
+      const val = segs.reduce((acc, v, i) => acc + v * Math.pow(10, segs.length - 1 - i), 0);
+      /* Walk right to left exactly as the page does, showing what each segment
+         keeps and what it hands on. */
+      const kept: number[] = [];
+      let carry = 0;
+      for (let i = segs.length - 1; i >= 0; i--) {
+        const v = segs[i] + carry;
+        kept.unshift(i === 0 ? v : v % 10);
+        carry = i === 0 ? 0 : Math.floor(v / 10);
+      }
+      const label = segs.join(" | ");
       if (lang === "ja")
         return [
-          [`${base - d} × ${base + d}`, "="],
-          [`${base - d} と ${base + d} の真ん中`, `${base}`],
-          [`${base}²`, `= ${base * base}`],
-          [`${d}²`, `= ${d * d}`],
-          ["引く", `${base * base} − ${d * d} = ${base * base - d * d}`],
+          [label, ""],
+          ["右から繰り上げる", kept.join(" | ")],
+          ["読むと", `${val}`],
         ];
       return [
-        [`${base - d} × ${base + d}`, "="],
-        [`middle of ${base - d} and ${base + d}`, `${base}`],
-        [`${base}²`, `= ${base * base}`],
-        [`${d}²`, `= ${d * d}`],
-        ["subtract", `${base * base} − ${d * d} = ${base * base - d * d}`],
+        [label, ""],
+        ["carry from the right", kept.join(" | ")],
+        ["read it off", `${val}`],
       ];
     },
     gen: (diff) => {
-      const base = 10 * (diff === "easy" ? ri(3, 9) : diff === "medium" ? ri(10, 60) : ri(20, 90));
-      const d = diff === "easy" ? ri(1, 4) : diff === "medium" ? ri(1, 9) : ri(1, Math.min(20, base - 1));
-      const a = base - d, b = base + d;
-      return { prompt: `${a} × ${b}`, answer: base * base - d * d };
+      const n = diff === "easy" ? 3 : diff === "medium" ? 4 : 5;
+      const segs: number[] = [ri(1, 9)];
+      for (let i = 1; i < n; i++) segs.push(ri(10, 99));
+      const val = segs.reduce((acc, v, k) => acc + v * Math.pow(10, segs.length - 1 - k), 0);
+      return { prompt: segs.join(" | "), answer: val };
     },
   },
   {
@@ -1930,7 +1951,7 @@ export const BLITZ_MAX_DIFF: Record<string, Difficulty | null> = {
   mult12to19: null,
   mult111: null,
   generalMult2d: null,
-  balancing: null,
+  balancing: "easy",
   squareStart5: null,
   baseAbove100: null,
   square5: "easy",

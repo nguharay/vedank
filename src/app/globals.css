@@ -1776,3 +1776,5 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 /* three-panel steps sit three across wherever there is room */
 .bd-flagrow-3{ grid-template-columns:repeat(3,1fr); }
 @media (min-width:560px){ .bd-flagrow-3{ grid-template-columns:repeat(3,1fr); } }
+/* the three-digit window slid across a 111 multiplication */
+.bd-window{ fill:color-mix(in srgb, var(--sun2) 30%, transparent); stroke:var(--sun1); stroke-width:1.2; }

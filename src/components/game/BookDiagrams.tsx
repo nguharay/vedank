@@ -474,89 +474,115 @@ function FlagDigitDiagram() {
   );
 }
 
-function Mult111Diagram() {
-  const digits = "004213 00".replace(" ", "").split("");
-  const nums = digits.map(Number);
-  const sums: number[] = [];
-  for (let i = 0; i + 2 < nums.length; i++) sums.push(nums[i] + nums[i + 1] + nums[i + 2]);
+/* Page 59: two zeros either side, then a three-digit window slid right to left,
+   each panel adding one digit to the answer. */
+function Mult111Panel({ digits, at, answer, carry, uid }: {
+  digits: string[]; at: number; answer: string; carry: number; uid: string;
+}) {
+  const x0 = 9, pitch = 13;
+  const w = x0 + digits.length * pitch + 4;
+  const wl = x0 + at * pitch - 7;
+  const wr = x0 + (at + 2) * pitch + 7;
   return (
-    <svg viewBox="0 0 330 226" className="bd-svg bd-svg-wide">
-      <text x="10" y="15" className="bd-caption">two zeros each side · slide a 3-digit window</text>
-
-      {digits.map((d, i) => (
-        <text
-          key={i}
-          x={40 + i * 32}
-          y="50"
-          className={`bd-num${i < 2 || i > digits.length - 3 ? " bd-sandwich" : ""}`}
-          textAnchor="middle"
-        >
-          {d}
-        </text>
-      ))}
-      <rect x="24" y="30" width="96" height="28" rx="7" className="bd-window" />
-
-      {sums.map((v, i) => (
-        <g key={i}>
-          <text x={40 + (i + 1) * 32} y="92" className="bd-part bd-part-hi" textAnchor="middle">{v}</text>
-          <path d={`M${40 + (i + 1) * 32},62 V78`} className="bd-hop" markerEnd="url(#bdWinTip)" />
-        </g>
-      ))}
-      <text x="14" y="128" className="bd-note">Each window of three digits adds to one answer digit.</text>
-      <text x="14" y="146" className="bd-note">Sums: {sums.join(" | ")}</text>
-
-      <AnswerBox x={100} y={168} w={140} h={40} value={String(4213 * 111)} />
+    <svg viewBox={`0 0 ${w} 70`} className="bd-svg bd-flagpanel">
       <defs>
-        <marker id="bdWinTip" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
-          <path d="M0,0 L7,3.5 L0,7 Z" className="bd-hopHead" />
+        <marker id={uid} markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="var(--sun1)" />
         </marker>
       </defs>
+      {/* the three-digit window */}
+      <rect x={wl} y="12" width={wr - wl} height="24" rx="5" className="bd-window" />
+      {digits.map((d, i) => (
+        <text key={i} x={x0 + i * pitch} y="30" className="bd-num" textAnchor="middle">{d}</text>
+      ))}
+      {carry > 0 && <text x={wl - 2} y="46" className="bd-carry" textAnchor="end">{carry}</text>}
+      <text x={w - 5} y="60" className="bd-partline" textAnchor="end">{answer}</text>
     </svg>
   );
 }
 
-// Book p.47 — the Balancing Method, worked as 24 | 51 | 39 → 2949.
+function Mult111Diagram() {
+  const n = "4213";
+  const digits = `00${n}00`.split("");
+  /* Sum each group of three, right to left, carrying as the book does. */
+  const panels: { at: number; answer: string; carry: number }[] = [];
+  let carry = 0;
+  let out = "";
+  for (let at = digits.length - 3; at >= 0; at--) {
+    const sum = Number(digits[at]) + Number(digits[at + 1]) + Number(digits[at + 2]) + carry;
+    out = String(sum % 10) + out;
+    carry = Math.floor(sum / 10);
+    /* A carry off the left end belongs in the answer — without this, 999 x 111
+       reads 10889 instead of 110889. */
+    panels.push({ at, answer: (at === 0 && carry > 0 ? String(carry) : "") + out, carry: at === 0 ? 0 : carry });
+  }
+  const total = Number(n) * 111;
+  return (
+    <div className="bd-flaggrid">
+      <div className="bd-flagcap">two zeros either side · slide a 3-digit window right → left</div>
+      <div className="bd-flagrow bd-flagrow-3">
+        {panels.map((p, i) => (
+          <Mult111Panel key={i} digits={digits} at={p.at} answer={p.answer} carry={p.carry} uid={`m111${i}`} />
+        ))}
+      </div>
+      <div className="bd-flaganswer">{total}</div>
+    </div>
+  );
+}
+
 function BalancingDiagram() {
   const segs = [24, 51, 39];
-  const out = [29, 4, 9];
+  const kept: number[] = [];
+  const carries: number[] = [];
+  let carry = 0;
+  for (let i = segs.length - 1; i >= 0; i--) {
+    const v = segs[i] + carry;
+    kept.unshift(i === 0 ? v : v % 10);
+    carry = i === 0 ? 0 : Math.floor(v / 10);
+    if (i > 0) carries.unshift(carry);
+  }
+  const value = segs.reduce((a, v, i) => a + v * Math.pow(10, segs.length - 1 - i), 0);
+  const x = [70, 150, 230];
+
   return (
-    <svg viewBox="0 0 330 230" className="bd-svg bd-svg-wide">
-      <text x="10" y="15" className="bd-caption">carry right → left, keep one digit per segment</text>
-
-      {segs.map((v, i) => (
-        <g key={i}>
-          <text x={80 + i * 80} y="58" className="bd-num" textAnchor="middle">{v}</text>
-          <line x1={44 + i * 80} y1="34" x2={44 + i * 80} y2="68" className="bd-seg" />
-        </g>
-      ))}
-      <line x1={44 + segs.length * 80} y1="34" x2={44 + segs.length * 80} y2="68" className="bd-seg" />
-
-      <path d="M216,76 Q188,100 150,84" className="bd-hop" markerEnd="url(#bdBalTip)" />
-      <text x="188" y="108" className="bd-hoplabel" textAnchor="middle">+3</text>
-      <path d="M136,76 Q108,100 70,84" className="bd-hop" markerEnd="url(#bdBalTip)" />
-      <text x="108" y="108" className="bd-hoplabel" textAnchor="middle">+5</text>
-
-      {out.map((v, i) => (
-        <text key={i} x={80 + i * 80} y="140" className="bd-part bd-part-hi" textAnchor="middle">{v}</text>
-      ))}
-
-      <text x="14" y="164" className="bd-note">39 → keep 9, carry 3.  51+3=54 → keep 4, carry 5.</text>
-      <text x="14" y="180" className="bd-note">24+5 = 29 (leftmost segment keeps both digits).</text>
-
-      <AnswerBox x={100} y={188} w={130} h={34} value={String(out.join(""))} />
+    <svg viewBox="0 0 320 190" className="bd-svg bd-svg-wide">
       <defs>
-        <marker id="bdBalTip" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
-          <path d="M0,0 L7,3.5 L0,7 Z" className="bd-hopHead" />
+        <marker id="balTip" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--sun1)" />
         </marker>
       </defs>
+
+      <text x="10" y="16" className="bd-caption">keep the units, carry the rest to the left</text>
+
+      {segs.map((v, i) => (
+        <text key={i} x={x[i]} y="52" className="bd-digit-lg" textAnchor="middle">{v}</text>
+      ))}
+      {[0, 1].map((i) => (
+        <text key={i} x={(x[i] + x[i + 1]) / 2} y="52" className="bd-op" textAnchor="middle">|</text>
+      ))}
+
+      {/* each carry hops back into the segment on its left */}
+      {carries.map((c, i) =>
+        c > 0 ? (
+          <g key={i}>
+            <path d={`M ${x[i + 1] - 16} 60 Q ${(x[i] + x[i + 1]) / 2} 84 ${x[i] + 14} 62`} className="bd-tick" markerEnd="url(#balTip)" />
+            <text x={(x[i] + x[i + 1]) / 2} y="82" className="bd-carry" textAnchor="middle">{c}</text>
+          </g>
+        ) : null
+      )}
+
+      {kept.map((v, i) => (
+        <text key={i} x={x[i]} y="122" className="bd-digit-lg" textAnchor="middle">{v}</text>
+      ))}
+      {[0, 1].map((i) => (
+        <text key={i} x={(x[i] + x[i + 1]) / 2} y="122" className="bd-op" textAnchor="middle">|</text>
+      ))}
+
+      <AnswerBox x={104} y={142} w={112} h={34} value={String(value)} />
     </svg>
   );
 }
 
-// Book p.117 — Vertically and Crosswise, the "I X I" pattern, worked as 21 × 13.
-/* Vertically and Crosswise, drawn as page 117 draws it: three panels — vertical
-   on the left pair, crosswise through the middle, vertical on the right pair —
-   with the answer growing a digit at a time beneath each. */
 function CrosswisePanel({
   a,
   b,
@@ -910,7 +936,7 @@ export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {
   div8: "31 ÷ 8",
   mult12to19: "243 × 14",
   mult111: "4213 × 111",
-  balancing: "46 × 54",
+  balancing: "24 | 51 | 39",
   generalMult2d: "21 × 13",
   additionGeneral: "342 + 256",
   digitsum: "DS of 512",
