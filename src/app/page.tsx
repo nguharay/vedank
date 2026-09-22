@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { loadProgress, touchDailyStreak } from "@/lib/game/progress";
 import { GameApp } from "@/components/game/GameApp";
+import { isAdminEmail } from "@/lib/admin";
 
 export default async function HomePage() {
   const session = await auth();
@@ -20,6 +21,7 @@ export default async function HomePage() {
       initialBonusGems={daily.bonusGems}
       dailyChestReward={daily.chestReward}
       user={{ name: session?.user?.name ?? null, email: session?.user?.email ?? null }}
+      isAdmin={isAdminEmail(session?.user?.email)}
     />
   );
 }

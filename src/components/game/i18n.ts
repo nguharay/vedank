@@ -62,6 +62,14 @@ export type UIDict = {
     alreadySolved: string; hintText: string; tapFirst: string; shapeInProgress: string; solvedPrefix: string;
     solvedSuffix: string; notTrueYet: string;
   };
+  share: {
+    title: string; subtitle: string; tapHint: string; close: string;
+    shareBtn: string; copy: string; copied: string;
+    statLevel: string; statGems: string; statStreak: string; statBestStreak: string;
+    statHearts: string; statBlitz: string; statBosses: string; statPuzzles: string;
+    blurb: (level: number, rank: string) => string;
+    blitzBlurb: (score: number) => string;
+  };
 };
 
 export const UI: Record<LangCode, UIDict> = {
@@ -173,6 +181,25 @@ export const UI: Record<LangCode, UIDict> = {
       solvedSuffix: " is true.",
       notTrueYet: " — not true yet.",
     },
+    share: {
+      title: "Your Sutra Card",
+      subtitle: "Tap any stat to share it",
+      tapHint: "Tap a stat above to share your run",
+      close: "Close",
+      shareBtn: "Share",
+      copy: "Copy text",
+      copied: "Copied!",
+      statLevel: "Level",
+      statGems: "Gems",
+      statStreak: "Day streak",
+      statBestStreak: "Best streak",
+      statHearts: "Hearts",
+      statBlitz: "Blitz best",
+      statBosses: "Bosses beaten",
+      statPuzzles: "Puzzles solved",
+      blurb: (level, rank) => `I'm level ${level} — ${rank} — at VedAnk Academy's Sutra Sprint! 🪔`,
+      blitzBlurb: (score) => `I scored ${score} in Number Blitz on Sutra Sprint! ⚡ Can you beat it?`,
+    },
   },
   ja: {
     appName: "スートラ・スプリント",
@@ -194,7 +221,7 @@ export const UI: Record<LangCode, UIDict> = {
     home: {
       eyebrow: "スートラデッキ",
       title: "スートラで遊ぼう",
-      brand: "VedAnk Academy",
+      brand: "ヴェダンク・アカデミー",
       level: "レベル",
       dojo: "マッチ棒道場",
       streakSuffix: "日連続",
@@ -281,6 +308,25 @@ export const UI: Record<LangCode, UIDict> = {
       solvedPrefix: "🎉 解けました！ ",
       solvedSuffix: " は正しい式です。",
       notTrueYet: " ――まだ正しくありません。",
+    },
+    share: {
+      title: "スートラ・カード",
+      subtitle: "タップしてシェア",
+      tapHint: "上の記録をタップしてシェアできます",
+      close: "閉じる",
+      shareBtn: "シェア",
+      copy: "テキストをコピー",
+      copied: "コピーしました！",
+      statLevel: "レベル",
+      statGems: "ジェム",
+      statStreak: "連続日数",
+      statBestStreak: "最高連続",
+      statHearts: "ハート",
+      statBlitz: "ブリッツ最高",
+      statBosses: "ボス撃破",
+      statPuzzles: "パズル達成",
+      blurb: (level, rank) => `ヴェダンク・アカデミーのスートラ・スプリントでレベル${level}「${rank}」になりました！🪔`,
+      blitzBlurb: (score) => `ナンバーブリッツで${score}点を取りました！⚡ 挑戦してみませんか？`,
     },
   },
 };

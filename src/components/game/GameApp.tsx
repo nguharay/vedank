@@ -50,7 +50,8 @@ import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
 import { useTheme } from "./useTheme";
-import { useSkins, SKINS } from "./useSkins";
+import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
+import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI, type UIDict } from "./i18n";
 
 type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily";
@@ -99,6 +100,13 @@ function haptic(pattern: number | number[]) {
 const PATH_POS = ["c", "l", "r", "c", "l", "r", "c", "l", "r", "c", "l", "r", "c"];
 const STAGE_POS = ["c", "l", "r", "l", "c"];
 
+/* Blitz stays gentler than the stage ladder: three easy tiers before it bites,
+   one step every 8 answers instead of every 5, and a roomier clock. */
+const BLITZ_DIFF: Difficulty[] = ["easy", "easy", "easy", "medium", "hard"];
+const BLITZ_TIME_MS = 9000;
+const BLITZ_TIME_MIN_MS = 4500;
+const BLITZ_TIME_STEP_MS = 120;
+
 export function GameApp({
   initialProgress,
   dailyStreak,
@@ -106,6 +114,7 @@ export function GameApp({
   initialBonusGems,
   dailyChestReward,
   user,
+  isAdmin = false,
 }: {
   initialProgress: ProgressState;
   dailyStreak: number;
@@ -113,6 +122,9 @@ export function GameApp({
   initialBonusGems?: number;
   dailyChestReward?: number | null;
   user: { name: string | null; email: string | null };
+  /* Server-resolved; the /admin page re-checks it, so this only decides
+     whether the menu row is drawn. */
+  isAdmin?: boolean;
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
@@ -260,6 +272,16 @@ export function GameApp({
     [progress]
   );
   const activeSkin = SKINS.find((s) => s.id === skin.skinId) || SKINS[0];
+
+  const rank = lang === "ja" ? RANKS_JA[li.rank] || li.rank : li.rank;
+
+  /* share sheet: every header stat and the blitz result open it focused on that number */
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareFocus, setShareFocus] = useState<ShareFocus>("level");
+  function openShare(f: ShareFocus) {
+    setShareFocus(f);
+    setShareOpen(true);
+  }
   const achievementCtx = useMemo(
     () => ({ progress, level: li.level, gems, dailyStreak, bestStreakEver, solvedCount, totalPuzzles: PUZZLES.length, bossClears }),
     [progress, li.level, gems, dailyStreak, bestStreakEver, solvedCount, bossClears]
@@ -816,7 +838,7 @@ export function GameApp({
   const [blitzScore, setBlitzScore] = useState(0);
   const [blitzHearts, setBlitzHearts] = useState(3);
   const [blitzBest, setBlitzBest] = useState(0);
-  const [blitzTimerMs, setBlitzTimerMs] = useState(6000);
+  const [blitzTimerMs, setBlitzTimerMs] = useState(BLITZ_TIME_MS);
   const [blitzTimerKey, setBlitzTimerKey] = useState(0);
   const [blitzFeedback, setBlitzFeedback] = useState<"ok" | "bad" | null>(null);
   const [blitzOver, setBlitzOver] = useState(false);
@@ -834,11 +856,11 @@ export function GameApp({
 
   function newBlitzQuestion(score: number) {
     const topic = TOPICS[ri(0, TOPICS.length - 1)];
-    const diffIdx = Math.min(STAGE_DIFF.length - 1, Math.floor(score / 5));
-    const problem = topic.gen(STAGE_DIFF[diffIdx] as Difficulty);
+    const diffIdx = Math.min(BLITZ_DIFF.length - 1, Math.floor(score / 8));
+    const problem = topic.gen(BLITZ_DIFF[diffIdx]);
     setBlitzProblem(problem);
     setBlitzOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
-    setBlitzTimerMs(Math.max(3000, 6000 - score * 150));
+    setBlitzTimerMs(Math.max(BLITZ_TIME_MIN_MS, BLITZ_TIME_MS - score * BLITZ_TIME_STEP_MS));
     setBlitzTimerKey((k) => k + 1);
     blitzAnsweredRef.current = false;
   }
@@ -914,7 +936,7 @@ export function GameApp({
 
   /* ================= RENDER ================= */
   return (
-    <div id="app">
+    <div id="app" data-skin={skin.skinId}>
       <div className="sparkle-field">
         {sparkles.map((s, i) => (
           <span
@@ -952,9 +974,15 @@ export function GameApp({
         <img src="/brand/vedank-mark.png" alt="" className="header-mark" />
         <div className="header-title"><h1>{headerTitle}</h1></div>
         <div className="stats-row">
-          <span className="stat stat-flame">🔥 {bestStreakEver}</span>
-          <span className={`stat stat-gem${gemPop ? " pop" : ""}`}>💎 {gems}</span>
-          <span className="stat stat-heart">❤️ {hearts}</span>
+          <button className="stat stat-flame" onClick={() => openShare("streak")} aria-label={`${t.share.statBestStreak} ${bestStreakEver} — ${t.share.shareBtn}`}>
+            <span aria-hidden="true">🔥</span> {bestStreakEver}
+          </button>
+          <button className={`stat stat-gem${gemPop ? " pop" : ""}`} onClick={() => openShare("gems")} aria-label={`${t.share.statGems} ${gems} — ${t.share.shareBtn}`}>
+            <span aria-hidden="true">💎</span> {gems}
+          </button>
+          <button className="stat stat-heart" onClick={() => openShare("hearts")} aria-label={`${t.share.statHearts} ${hearts} — ${t.share.shareBtn}`}>
+            <span aria-hidden="true">❤️</span> {hearts}
+          </button>
         </div>
       </header>
 
@@ -983,26 +1011,44 @@ export function GameApp({
             </button>
             <button className="menu-row" onClick={() => setSkinsOpen((o) => !o)}>
               <span>🎨 {t.menu.skins}</span>
-              <span className="menu-row-val">{activeSkin.name}</span>
+              <span className="menu-row-val">{skinName(activeSkin, lang === "ja")}</span>
             </button>
             {skinsOpen && (
               <div className="skins-panel">
                 {SKINS.map((s) => {
-                  const unlocked = s.unlocked(li.level, bossClears);
+                  const ja = lang === "ja";
+                  const unlocked = s.unlocked({ level: li.level, bossClears, solvedCount });
                   return (
                     <button
                       key={s.id}
-                      className={`skin-swatch${skin.skinId === s.id ? " active" : ""}${unlocked ? "" : " locked"}`}
+                      className={`skin-row${skin.skinId === s.id ? " active" : ""}${unlocked ? "" : " locked"}`}
                       disabled={!unlocked}
-                      title={unlocked ? s.name : s.unlockLabel}
                       onClick={() => unlocked && skin.selectSkin(s.id)}
                     >
-                      <span className="skin-swatch-dot" style={{ background: s.swatch }} />
-                      <span className="skin-swatch-name">{unlocked ? s.name : "🔒"}</span>
+                      <span className="skin-row-dot" style={{ background: s.swatch }} />
+                      <span className="skin-row-body">
+                        <span className="skin-row-name">
+                          {skinName(s, ja)}
+                          {!unlocked && <span className="skin-row-lock" aria-hidden="true"> 🔒</span>}
+                        </span>
+                        <span className="skin-row-note">
+                          {unlocked ? skinBlurb(s, ja) : skinUnlockLabel(s, ja)}
+                        </span>
+                      </span>
+                      {skin.skinId === s.id && <span className="skin-row-check" aria-hidden="true">✓</span>}
                     </button>
                   );
                 })}
               </div>
+            )}
+            {isAdmin && (
+              <>
+                <div className="menu-divider" />
+                <a className="menu-row menu-row-link" href="/admin">
+                  <span>🛡️ Admin · Signups</span>
+                  <span className="menu-row-val">→</span>
+                </a>
+              </>
             )}
             <div className="menu-divider" />
             <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
@@ -1128,6 +1174,7 @@ export function GameApp({
             onOpenDaily={startDaily}
             dailyPlayed={!!dailyStatus?.played}
             onContinue={continueStage}
+            onShare={openShare}
             lang={lang}
             t={t}
           />
@@ -1439,6 +1486,9 @@ export function GameApp({
               {t.blitz.scoreLabel}: {blitzScore}
               {blitzJustBeatBest ? ` ${t.blitz.newBest}` : ""}
             </p>
+            <button className="score-share-btn" onClick={() => openShare("blitz")}>
+              📤 {t.share.shareBtn}
+            </button>
             <div className="result-actions">
               <button className="btn btn-primary" onClick={startBlitz}>{t.blitz.playAgain}</button>
               <button className="btn btn-ghost" onClick={() => { setBlitzOver(false); goHome(); }}>{t.blitz.backHome}</button>
@@ -1446,6 +1496,27 @@ export function GameApp({
           </div>
         </div>
       )}
+
+      <ShareSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        focus={shareFocus}
+        onFocus={setShareFocus}
+        lang={lang}
+        t={t}
+        stats={{
+          level: li.level,
+          rank,
+          gems,
+          dailyStreak,
+          bestStreakEver,
+          hearts,
+          blitzBest,
+          bossClears,
+          solvedCount,
+          totalPuzzles: PUZZLES.length,
+        }}
+      />
 
       <canvas ref={confetti.canvasRef} id="confettiCanvas" style={{ position: "fixed", inset: 0, zIndex: 60, pointerEvents: "none" }} />
     </div>
@@ -1466,6 +1537,7 @@ function HomeView({
   onOpenDaily,
   dailyPlayed,
   onContinue,
+  onShare,
   lang,
   t,
 }: {
@@ -1480,6 +1552,7 @@ function HomeView({
   onOpenDaily: () => void;
   dailyPlayed: boolean;
   onContinue: (topicId: string, stageN: number) => void;
+  onShare: (f: ShareFocus) => void;
   lang: Lang;
   t: UIDict;
 }) {
@@ -1546,10 +1619,10 @@ function HomeView({
           <img src="/brand/vedank-mark.png" alt="" />
           <span>{t.home.brand}</span>
         </div>
-        <div className="levelrow">
+        <button className="levelrow levelrow-share" onClick={() => onShare("level")} aria-label={`${t.share.statLevel} ${li.level} — ${t.share.shareBtn}`}>
           <span>{t.home.level} {li.level} · {rank}</span>
-          <span>{li.into} / 150</span>
-        </div>
+          <span className="levelrow-right">{li.into} / 150 <span className="levelrow-share-ico" aria-hidden="true">📤</span></span>
+        </button>
         <div className="bar-track"><div className="bar-fill" style={{ width: `${li.pct}%` }} /></div>
       </div>
 
@@ -2115,7 +2188,8 @@ function StageMapView({
   );
 }
 
-function CountdownTimer({ timerKey, timerMs, paused }: { timerKey: number; timerMs: number; paused: boolean }) {
+function CountdownTimer({ timerKey, timerMs, paused, midMs = 10000, lowMs = 5000 }:
+  { timerKey: number; timerMs: number; paused: boolean; midMs?: number; lowMs?: number }) {
   const [left, setLeft] = useState(timerMs);
   const startRef = useRef(Date.now());
   const pausedAtRef = useRef<number | null>(null);
@@ -2145,8 +2219,8 @@ function CountdownTimer({ timerKey, timerMs, paused }: { timerKey: number; timer
   const secs = Math.ceil(left / 1000);
   const label = secs >= 60 ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}` : `${secs}`;
   return (
-    <div className={`timer-count${left <= 5000 ? " low" : left <= 10000 ? " mid" : ""}`}>
-      <span className="timer-count-icon">⏱</span>
+    <div className={`timer-count${left <= lowMs ? " low" : left <= midMs ? " mid" : ""}`} aria-live="off">
+      <span className="timer-count-icon" aria-hidden="true">⏱</span>
       <span className="timer-count-num mono">{label}</span>
     </div>
   );
@@ -2636,17 +2710,42 @@ function BlitzView({
 }) {
   return (
     <section className="view active">
-      <div className="blitz-header">
-        <div className="blitz-stat">⚡ {t.blitz.score} <b>{score}</b></div>
-        <div className="blitz-hearts">
-          {Array.from({ length: 3 }, (_, i) => (
-            <span key={i} className={i < hearts ? "on" : "off"}>❤️</span>
-          ))}
+      <div className="blitz-hud">
+        <div className="blitz-header">
+          <div className="blitz-stat">
+            <span className="blitz-stat-ico" aria-hidden="true">⚡</span>
+            {t.blitz.score} <b>{score}</b>
+          </div>
+          <div
+            className="blitz-hearts"
+            role="img"
+            aria-label={lang === "ja" ? `残りライフ ${hearts}` : `${hearts} lives left`}
+          >
+            {Array.from({ length: 3 }, (_, i) => (
+              <span key={i} className={i < hearts ? "on" : "off"} aria-hidden="true">❤️</span>
+            ))}
+          </div>
+          <div className="blitz-stat">
+            <span className="blitz-stat-ico" aria-hidden="true">🏆</span>
+            {t.blitz.best} <b>{best}</b>
+          </div>
         </div>
-        <div className="blitz-stat">🏆 {t.blitz.best} <b>{best}</b></div>
-      </div>
-      <div className="timer-bar-wrap">
-        <div key={timerKey} className="timer-bar-fill" style={{ animationDuration: `${timerMs}ms` }} />
+        <div className="blitz-timer-row">
+          <CountdownTimer
+            timerKey={timerKey}
+            timerMs={timerMs}
+            paused={feedback !== null}
+            midMs={timerMs * 0.6}
+            lowMs={timerMs * 0.3}
+          />
+          <div className="timer-bar-wrap">
+            <div
+              key={timerKey}
+              className={`timer-bar-fill${feedback !== null ? " paused" : ""}`}
+              style={{ animationDuration: `${timerMs}ms` }}
+            />
+          </div>
+        </div>
       </div>
       <div
         key={problem.prompt}

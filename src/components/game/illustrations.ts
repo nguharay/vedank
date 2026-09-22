@@ -14,7 +14,7 @@ export const ILLUS: Record<string, (c1: string, c2: string) => string> = {
       })
       .join("") +
     `<circle class="illus-runner" cx="20" cy="45" r="9" fill="#fff"/>` +
-    `<text x="150" y="30" font-family="JetBrains Mono" font-size="13" fill="#fff" text-anchor="middle" opacity=".9">…+1 −1…</text>` +
+    `<text x="150" y="30" font-family="Cambria, Caladea, Georgia, serif" font-size="13" fill="#fff" text-anchor="middle" opacity=".9">…+1 −1…</text>` +
     `</svg>`,
 
   grid: (c1, c2) => {

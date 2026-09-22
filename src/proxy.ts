@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
 const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password"];
+// /admin is deliberately NOT public: it falls through to the signed-in check
+// below, and the page itself then verifies the email is on the admin list.
 // Signed-in visitors get bounced home from these — but not from
 // forgot/reset-password, since resetting while logged in is reasonable.
 const AUTH_ONLY_PATHS = ["/login", "/signup"];
@@ -28,5 +30,5 @@ export const proxy = auth((req) => {
 // Keep this list explicit rather than a negative-lookahead pattern —
 // simpler to reason about, and avoids the whole app matching by accident.
 export const config = {
-  matcher: ["/", "/login", "/signup", "/forgot-password", "/reset-password/:token*"],
+  matcher: ["/", "/admin", "/login", "/signup", "/forgot-password", "/reset-password/:token*"],
 };
