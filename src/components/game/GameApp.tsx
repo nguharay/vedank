@@ -322,8 +322,12 @@ export function GameApp({
      (combos, cleared stages) still interrupt on their own. */
   const nextQuote = useRef(makeQuoteCycle());
   const [quoteBy, setQuoteBy] = useState<string | null>(null);
+  /* Until it has been tapped once, the buddy wears a hint badge — a character
+     in the corner with no affordance is a feature nobody finds. */
+  const [buddyTapped, setBuddyTapped] = useState(false);
 
   function tapBuddy() {
+    setBuddyTapped(true);
     if (buddy.say) {
       buddy.quiet();
       setQuoteBy(null);
@@ -392,6 +396,19 @@ export function GameApp({
       setReviewStats(r.stats);
     } catch {}
   }
+
+  /* A quote once, a beat after the app settles, so a first-time player sees what
+     the buddy does instead of having to guess that it is tappable. */
+  useEffect(() => {
+    if (buddy.hidden) return;
+    const id = setTimeout(() => {
+      const q = nextQuote.current();
+      setQuoteBy(q.by ?? null);
+      buddy.speak({ text: quoteText(q, lang === "ja"), mood: "happy", hold: 11000 });
+    }, 1600);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* One parallel load on mount; each value is also refreshed by the action that
      changes it, so the panels never show a stale number. The alive flag keeps a
@@ -2675,6 +2692,9 @@ export function GameApp({
             aria-label={ja ? "バディ（タップで名言）" : "Buddy — tap for a quote"}
           >
             <Buddy skinId={skin.skinId} mood={buddy.mood} />
+            {!buddyTapped && !buddy.say && (
+              <span className="buddy-hint" aria-hidden="true">💬</span>
+            )}
           </button>
         </div>
       )}
