@@ -1182,35 +1182,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .admin-empty{ padding:34px 12px; text-align:center; color:var(--muted); font-weight:700; white-space:normal; }
 
 /* ---------- daily quests ---------- */
-.quest-card{ margin-top:14px; background:var(--surface); border:3px solid var(--ink-line); border-radius:18px;
-  box-shadow:4px 4px 0 color-mix(in srgb, var(--ink-line) 20%, transparent); overflow:hidden; }
-.quest-card-head{ width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px;
-  font-family:inherit; background:var(--surface-2); border:none; border-bottom:2px solid var(--line);
-  padding:11px 13px; cursor:pointer; color:var(--ink); }
-.quest-card-head:focus-visible{ outline:3px solid var(--blue); outline-offset:-3px; }
-.quest-card-title{ font-size:13.5px; font-weight:800; }
-.quest-card-right{ display:inline-flex; align-items:center; gap:7px; }
-.quest-card-badge{ min-width:20px; height:20px; padding:0 5px; border-radius:999px; background:var(--red); color:#fff;
-  font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; justify-content:center;
-  font-variant-numeric:lining-nums tabular-nums; animation:questBadge 1.6s ease-in-out infinite; }
-@keyframes questBadge{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.14); } }
-@media (prefers-reduced-motion: reduce){ .quest-card-badge{ animation:none; } }
-.quest-card-arrow{ font-size:17px; font-weight:800; color:var(--muted); }
-.quest-card-rows{ padding:4px 13px 8px; }
-.quest-mini{ display:flex; align-items:center; gap:9px; padding:7px 0; border-bottom:2px solid var(--line); font-size:12.5px; }
-.quest-mini:last-child{ border-bottom:none; }
-.quest-mini.claimed .quest-mini-title{ color:var(--muted); text-decoration:line-through; }
-.quest-mini-icon{ flex:0 0 auto; font-size:15px; }
-.quest-mini-title{ flex:1; min-width:0; font-weight:700; color:var(--ink-dim); }
-.quest-mini-count{ flex:0 0 auto; font-weight:700; color:var(--ink); font-variant-numeric:lining-nums tabular-nums; }
-.quest-mini-empty{ color:var(--muted); font-weight:700; }
-.quest-card-foot{ padding:0 13px 11px; }
-.quest-card-shop{ width:100%; font-family:inherit; font-size:12.5px; font-weight:800; cursor:pointer;
-  color:var(--blue-dk); background:color-mix(in srgb, var(--blue) 12%, var(--surface));
-  border:2px solid color-mix(in srgb, var(--blue) 35%, var(--line)); border-radius:12px; padding:9px; }
-.quest-card-shop:active{ transform:scale(.97); }
-.quest-card-shop:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
-
 .quest-list{ display:flex; flex-direction:column; gap:8px; padding:6px 8px 10px; }
 .quest-row{ display:flex; align-items:center; gap:10px; background:var(--surface-2); border:2px solid var(--line);
   border-radius:14px; padding:10px 11px; }
@@ -1393,9 +1364,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   background:color-mix(in srgb, var(--violet) 12%, var(--surface));
   border:2px solid color-mix(in srgb, var(--violet) 40%, var(--line)); border-radius:999px; padding:7px 16px; }
 .score-duel-btn:active{ transform:scale(.95); }
-.quest-card-foot{ display:flex; gap:8px; }
-.quest-card-friends{ color:var(--violet-dk); background:color-mix(in srgb, var(--violet) 12%, var(--surface));
-  border-color:color-mix(in srgb, var(--violet) 35%, var(--line)); }
 
 /* ---------- header logo is a home button ---------- */
 .header-home{ flex:0 0 auto; padding:0; border:none; background:none; cursor:pointer; line-height:0;
@@ -1664,7 +1632,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 
   /* Right: today's business, kept in view while the path scrolls. */
   .home-view.active > .streak-calendar,
-  .home-view.active > .quest-card,
+  .home-view.active > .home-quick,
   .home-view.active > .review-cta,
   .home-view.active > .review-rest,
   .home-view.active > .duel-card,
@@ -1763,3 +1731,15 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .share-landing-cta{ width:100%; margin-top:14px; }
 .share-landing-alt{ font-size:12.5px; font-weight:700; color:var(--muted); margin-top:12px; }
 .share-landing-alt a{ color:var(--blue-dk); font-weight:800; }
+
+/* Shop and Friends kept a slim row of their own once the quests card left home —
+   they are the two things here with no nav tab behind them. */
+.home-quick{ display:flex; gap:10px; margin-top:14px; }
+.home-quick-btn{ flex:1; min-width:0; font-family:inherit; font-size:13px; font-weight:800; cursor:pointer;
+  color:var(--blue-dk); background:color-mix(in srgb, var(--blue) 12%, var(--surface));
+  border:2px solid color-mix(in srgb, var(--blue) 35%, var(--line)); border-radius:14px; padding:12px 10px;
+  font-variant-numeric:lining-nums tabular-nums; }
+.home-quick-btn:active{ transform:scale(.97); }
+.home-quick-btn:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
+.home-quick-friends{ color:var(--violet-dk); background:color-mix(in srgb, var(--violet) 12%, var(--surface));
+  border-color:color-mix(in srgb, var(--violet) 35%, var(--line)); }

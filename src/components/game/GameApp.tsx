@@ -2216,8 +2216,6 @@ export function GameApp({
             dailyPlayed={!!dailyStatus?.played}
             onContinue={continueStage}
             onShare={openShare}
-            quests={quests}
-            claimable={claimableQuests}
             reviewCount={reviewCount}
             reviewStats={reviewStats}
             onOpenQuests={() => { setQuestsOpen(true); refreshQuests(); }}
@@ -2759,8 +2757,6 @@ function HomeView({
   dailyPlayed,
   onContinue,
   onShare,
-  quests,
-  claimable,
   reviewCount,
   reviewStats,
   onOpenQuests,
@@ -2789,8 +2785,6 @@ function HomeView({
   dailyPlayed: boolean;
   onContinue: (topicId: string, stageN: number) => void;
   onShare: (f: ShareFocus) => void;
-  quests: QuestState[];
-  claimable: number;
   reviewCount: number;
   reviewStats: ReviewStats | null;
   onOpenQuests: () => void;
@@ -2962,39 +2956,17 @@ function HomeView({
         </div>
       )}
 
-      {/* Today's quests, on the home screen rather than buried in a menu — this
-          is the card that gives a reason to open the app tomorrow. */}
-      <div className="quest-card">
-        <button className="quest-card-head" onClick={onOpenQuests}>
-          <span className="quest-card-title">📜 {lang === "ja" ? "今日のクエスト" : "Today's Quests"}</span>
-          <span className="quest-card-right">
-            {claimable > 0 && <span className="quest-card-badge">{claimable}</span>}
-            <span className="quest-card-arrow">›</span>
-          </span>
+      {/* Quests used to have a full card here, but they already have their own
+          nav tab with a badge — the same list twice was just scroll. Shop and
+          Friends are not in the nav, so they keep a slim row of their own. */}
+      <div className="home-quick">
+        <button className="home-quick-btn" onClick={onOpenShop}>
+          🛍️ {lang === "ja" ? "ショップ" : "Shop"}
+          <span className="mono"> · 💎 {gemBalance ?? "…"}</span>
         </button>
-        <div className="quest-card-rows">
-          {quests.map((q) => (
-            <div key={q.id} className={`quest-mini${q.claimed ? " claimed" : ""}`}>
-              <span className="quest-mini-icon">{q.claimed ? "✅" : q.icon}</span>
-              <span className="quest-mini-title">{lang === "ja" ? q.titleJa : q.title}</span>
-              <span className="quest-mini-count mono">
-                {Math.min(q.count, q.target)}/{q.target}
-              </span>
-            </div>
-          ))}
-          {quests.length === 0 && (
-            <div className="quest-mini quest-mini-empty">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>
-          )}
-        </div>
-        <div className="quest-card-foot">
-          <button className="quest-card-shop" onClick={onOpenShop}>
-            🛍️ {lang === "ja" ? "ショップ" : "Shop"}
-            <span className="mono"> · 💎 {gemBalance ?? "…"}</span>
-          </button>
-          <button className="quest-card-shop quest-card-friends" onClick={onOpenFriends}>
-            👥 {lang === "ja" ? "フレンド" : "Friends"}
-          </button>
-        </div>
+        <button className="home-quick-btn home-quick-friends" onClick={onOpenFriends}>
+          👥 {lang === "ja" ? "フレンド" : "Friends"}
+        </button>
       </div>
 
       {reviewCount > 0 ? (
