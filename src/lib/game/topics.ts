@@ -1222,6 +1222,572 @@ export const TOPICS: Topic[] = [
       return { prompt: `${num}²`, answer: num * num };
     },
   },
+  /* ---------- World 4 · sub-base multiples of 10 (p79, p89) ---------- */
+  {
+    id: "baseBelow20to90",
+    icon: "✕",
+    grad: ["#1FA8C9", "#2F6BE0"],
+    illus: "grid",
+    title: "Base Method — Below Base 20–90",
+    titleJa: "基準法 — 20〜90より下",
+    sutraSa: "Nikhilam · sub-base",
+    sutraEn: "Sub-base multiples of 10",
+    sutraEnJa: "10の倍数のサブベース",
+    blurb:
+      "Sub-base = the tens digit × 10 (e.g. 20, 30 … 90). Cross-subtract, then multiply by the sub-base tens → left part. Multiply the deficiencies → right part.",
+    blurbJa:
+      "サブベース＝十の位×10（20、30…90）。斜めに引いてからサブベースの十の位をかける→左。不足どうしをかける→右。",
+    steps: [
+      "Pick the sub-base: the tens digit × 10.",
+      "Find each number's deficiency from the sub-base.",
+      "Cross-subtract, then multiply by the sub-base's tens digit → left part.",
+      "Multiply the two deficiencies → right part.",
+    ],
+    stepsJa: [
+      "サブベースを決める：十の位×10。",
+      "サブベースからの不足を求める。",
+      "斜めに引き、サブベースの十の位をかける→左の部分。",
+      "2つの不足をかける→右の部分。",
+    ],
+    example: () => ({ b: 20, a: 19, c: 16 }),
+    exSteps: (ex, lang) => {
+      const b = ex.b as number, a = ex.a as number, c = ex.c as number;
+      const t = b / 10, da = a - b, dc = c - b;
+      const left = (a + dc) * t;
+      if (lang === "ja")
+        return [
+          [`${a} × ${c}`, `基準 ${b}`],
+          [`不足: ${da} と ${dc}`, `斜め: ${a} ${dc} = ${a + dc}`],
+          [`左: ${a + dc} × ${t}`, `= ${left}`],
+          [`右: ${da} × ${dc}`, `= ${da * dc}  →  ${a * c}`],
+        ];
+      return [
+        [`${a} × ${c}`, `base ${b}`],
+        [`deficiencies: ${da} and ${dc}`, `cross: ${a} ${dc} = ${a + dc}`],
+        [`left: ${a + dc} × ${t}`, `= ${left}`],
+        [`right: ${da} × ${dc}`, `= ${da * dc}  →  ${a * c}`],
+      ];
+    },
+    gen: (diff) => {
+      const t = diff === "easy" ? 2 : ri(2, diff === "medium" ? 5 : 9);
+      const b = t * 10;
+      const a = b - ri(1, 4), c = b - ri(1, 4);
+      return { prompt: `${a} × ${c}`, answer: a * c };
+    },
+  },
+  {
+    id: "baseAbove20to90",
+    icon: "✕",
+    grad: ["#2FA8E0", "#5A4BFF"],
+    illus: "grid",
+    title: "Base Method — Above Base 20–90",
+    titleJa: "基準法 — 20〜90より上",
+    sutraSa: "Nikhilam · sub-base",
+    sutraEn: "Sub-base multiples of 10",
+    sutraEnJa: "10の倍数のサブベース",
+    blurb:
+      "Sub-base = the tens digit × 10. Find each surplus over it. Cross-add, then multiply by the sub-base tens → left part. Multiply the surpluses → right part.",
+    blurbJa:
+      "サブベース＝十の位×10。それぞれの余りを求める。斜めに足してからサブベースの十の位をかける→左。余りどうしをかける→右。",
+    steps: [
+      "Pick the sub-base: the tens digit × 10.",
+      "Find each number's surplus over the sub-base.",
+      "Cross-add, then multiply by the sub-base's tens digit → left part.",
+      "Multiply the two surpluses → right part.",
+    ],
+    stepsJa: [
+      "サブベースを決める：十の位×10。",
+      "サブベースからの余りを求める。",
+      "斜めに足し、サブベースの十の位をかける→左の部分。",
+      "2つの余りをかける→右の部分。",
+    ],
+    example: () => ({ b: 20, a: 23, c: 24 }),
+    exSteps: (ex, lang) => {
+      const b = ex.b as number, a = ex.a as number, c = ex.c as number;
+      const t = b / 10, sa = a - b, sc = c - b;
+      const left = (a + sc) * t;
+      if (lang === "ja")
+        return [
+          [`${a} × ${c}`, `基準 ${b}`],
+          [`余り: +${sa} と +${sc}`, `斜め: ${a} + ${sc} = ${a + sc}`],
+          [`左: ${a + sc} × ${t}`, `= ${left}`],
+          [`右: ${sa} × ${sc}`, `= ${sa * sc}  →  ${a * c}`],
+        ];
+      return [
+        [`${a} × ${c}`, `base ${b}`],
+        [`surpluses: +${sa} and +${sc}`, `cross: ${a} + ${sc} = ${a + sc}`],
+        [`left: ${a + sc} × ${t}`, `= ${left}`],
+        [`right: ${sa} × ${sc}`, `= ${sa * sc}  →  ${a * c}`],
+      ];
+    },
+    gen: (diff) => {
+      const t = diff === "easy" ? 2 : ri(2, diff === "medium" ? 5 : 9);
+      const b = t * 10;
+      const a = b + ri(1, 4), c = b + ri(1, 4);
+      return { prompt: `${a} × ${c}`, answer: a * c };
+    },
+  },
+  /* ---------- World 6 · division by 9 with carry (p144) ---------- */
+  {
+    id: "div9carry",
+    icon: "÷",
+    grad: ["#0FA857", "#12B981"],
+    illus: "ladder",
+    title: "Dividing by 9 — with carry",
+    titleJa: "9でわる — 繰り上がりあり",
+    sutraSa: "Nikhilam · carry",
+    sutraEn: "when the running sum reaches 9",
+    sutraEnJa: "合計が9以上になるとき",
+    blurb:
+      "Same sweep as dividing by 9, but when a quotient digit plus the next dividend digit reaches 9 or more, divide that sum by 9: its quotient carries into the running quotient and its remainder continues the sweep.",
+    blurbJa:
+      "9でわるのと同じ流れですが、商の桁と次の桁の合計が9以上になったら、その合計を9でわります。商は繰り上げ、余りをそのまま次へ送ります。",
+    steps: [
+      "Bring the first digit down as the first quotient digit.",
+      "Add each quotient digit to the next dividend digit.",
+      "If that sum is 9 or more, divide it by 9 — carry its quotient left, keep its remainder.",
+      "The final running value is the remainder.",
+    ],
+    stepsJa: [
+      "最初の桁をそのまま商の最初の桁にする。",
+      "商の桁を次の桁に足す。",
+      "合計が9以上なら9でわり、商は左へ繰り上げ、余りを残す。",
+      "最後に残った値が余り。",
+    ],
+    example: () => ({ n: 3794 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number;
+      const q = Math.floor(n / 9), r = n % 9;
+      if (lang === "ja")
+        return [
+          [`${fmt(n)} ÷ 9`, ""],
+          ["左から流していく", "合計が9以上なら9でわる"],
+          ["商", `${fmt(q)}`],
+          ["余り", `${r}`],
+        ];
+      return [
+        [`${fmt(n)} ÷ 9`, ""],
+        ["sweep from the left", "sum ≥ 9 → divide it by 9"],
+        ["quotient", `${fmt(q)}`],
+        ["remainder", `${r}`],
+      ];
+    },
+    gen: (diff) => {
+      const lo = diff === "easy" ? 200 : diff === "medium" ? 1000 : 3000;
+      const hi = diff === "easy" ? 999 : diff === "medium" ? 5999 : 9999;
+      const n = ri(lo, hi);
+      return { prompt: `${fmt(n)} ÷ 9  (quotient, rounded down)`, answer: Math.floor(n / 9) };
+    },
+  },
+  /* ---------- World 7 · vinculum (p164, p170, p175) ---------- */
+  {
+    id: "vinculum",
+    icon: "‾",
+    grad: ["#8B5CF6", "#C026D3"],
+    illus: "numberline",
+    title: "Vinculum — the bar digit",
+    titleJa: "ヴィンキュラム — バーの数字",
+    sutraSa: "Vinculum",
+    sutraEn: "a bar turns a digit negative",
+    sutraEnJa: "バーは数字をマイナスにする",
+    blurb:
+      "A bar over a digit means it is negative, so a number can be written with small digits instead of big ones. To vinculate the units: subtract them from 10 and add 1 to the digit on its left — 47 becomes 5 3̄, because 47 = 50 − 3.",
+    blurbJa:
+      "数字の上のバーはマイナスを表し、大きい数字を小さい数字で書けます。一の位をバーにするには、10から引いて左の桁に1を足します。47 は 5 3̄（47 = 50 − 3）。",
+    steps: [
+      "Look at the units digit you want to make small.",
+      "Subtract it from 10 — that is the bar digit.",
+      "Add 1 to the digit on its left.",
+      "Check it: 47 = 50 − 3.",
+    ],
+    stepsJa: [
+      "小さくしたい一の位を見る。",
+      "10から引く——それがバーの数字。",
+      "左の桁に1を足す。",
+      "確かめ：47 = 50 − 3。",
+    ],
+    example: () => ({ n: 47 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number, u = n % 10, up = Math.floor(n / 10) + 1;
+      if (lang === "ja")
+        return [
+          [`${n} をバーにする`, ""],
+          [`一の位 ${u} → ${10 - u}`, "バーをつける"],
+          ["左を1つ増やす", `${up}`],
+          ["確かめ", `${up * 10} − ${10 - u} = ${n}`],
+        ];
+      return [
+        [`vinculate ${n}`, ""],
+        [`units ${u} → ${10 - u}`, "with a bar"],
+        ["one more on the left", `${up}`],
+        ["check", `${up * 10} − ${10 - u} = ${n}`],
+      ];
+    },
+    gen: (diff) => {
+      const lo = diff === "easy" ? 6 : 5, hi = 9;
+      const tens = diff === "easy" ? ri(1, 4) : diff === "medium" ? ri(1, 8) : ri(1, 9);
+      const u = ri(lo, hi);
+      const n = tens * 10 + u;
+      return { prompt: `${n} = ${(tens + 1) * 10} − ?`, answer: 10 - u };
+    },
+  },
+  {
+    id: "devinculum",
+    icon: "‾",
+    grad: ["#6A15C4", "#9B30FF"],
+    illus: "numberline",
+    title: "Devinculum — taking the bars off",
+    titleJa: "デヴィンキュラム — バーをはずす",
+    sutraSa: "Devinculum",
+    sutraEn: "removing the bars",
+    sutraEnJa: "バーをはずす",
+    blurb:
+      "Apply All from 9 and the Last from 10 to the barred group, then reduce the digit to the left of that group by one. 7 2̄ becomes 68: the 2 turns into 8, and the 7 drops to 6.",
+    blurbJa:
+      "バーのついた並びに「すべて9から、最後は10から」を使い、その左の桁を1減らします。7 2̄ は 68：2 は 8 に、7 は 6 に。",
+    steps: [
+      "Find the barred group.",
+      "All from 9 and the last from 10, across that group.",
+      "Reduce the digit to its left by one.",
+      "Read the ordinary number that is left.",
+    ],
+    stepsJa: [
+      "バーのついた並びを見つける。",
+      "その並びに「すべて9から、最後は10から」を使う。",
+      "左の桁を1減らす。",
+      "残ったふつうの数を読む。",
+    ],
+    example: () => ({ t: 7, u: 2 }),
+    exSteps: (ex, lang) => {
+      const t = ex.t as number, u = ex.u as number;
+      const val = t * 10 - u;
+      if (lang === "ja")
+        return [
+          [`${t} ${u}̄ をもどす`, ""],
+          [`${u} → ${10 - u}`, "10から引く"],
+          [`${t} → ${t - 1}`, "1つ少なく"],
+          ["答え", `${val}`],
+        ];
+      return [
+        [`devinculate ${t} ${u}̄`, ""],
+        [`${u} → ${10 - u}`, "from 10"],
+        [`${t} → ${t - 1}`, "one less"],
+        ["answer", `${val}`],
+      ];
+    },
+    gen: (diff) => {
+      const t = diff === "easy" ? ri(2, 5) : diff === "medium" ? ri(2, 9) : ri(3, 9);
+      const u = ri(1, 9);
+      return { prompt: `${t} ${u}̄  (bar number)`, answer: t * 10 - u };
+    },
+  },
+  {
+    id: "subVinculum",
+    icon: "−",
+    grad: ["#C4001F", "#FF1E3C"],
+    illus: "numberline",
+    title: "Subtraction using Vinculum",
+    titleJa: "ヴィンキュラムで引き算",
+    sutraSa: "Vinculum · subtraction",
+    sutraEn: "no borrowing needed!",
+    sutraEnJa: "くり下がりなし！",
+    blurb:
+      "Subtract each column straight down. Where the top digit is smaller, write a bar-digit instead of borrowing. Then devinculate the barred answer to get the ordinary number.",
+    blurbJa:
+      "各けたをそのまま上から下へ引きます。上が小さいときは、くり下がらずにバーの数字を書きます。最後にバーをはずせば答えです。",
+    steps: [
+      "Subtract column by column, top minus bottom.",
+      "Where the top is smaller, write the difference as a bar-digit.",
+      "Devinculate the barred result.",
+      "That is the answer — no borrowing anywhere.",
+    ],
+    stepsJa: [
+      "けたごとに、上から下を引く。",
+      "上が小さいところは、差をバーの数字で書く。",
+      "バーをはずす。",
+      "それが答え——くり下がりは一度もなし。",
+    ],
+    example: () => ({ a: 8324, b: 2348 }),
+    exSteps: (ex, lang) => {
+      const a = ex.a as number, b = ex.b as number;
+      if (lang === "ja")
+        return [
+          [`${fmt(a)} − ${fmt(b)}`, ""],
+          ["けたごとに引く", "上が小さければバー"],
+          ["バーをはずす", `${fmt(a - b)}`],
+        ];
+      return [
+        [`${fmt(a)} − ${fmt(b)}`, ""],
+        ["column by column", "top smaller → bar it"],
+        ["devinculate", `${fmt(a - b)}`],
+      ];
+    },
+    gen: (diff) => {
+      const digits = diff === "easy" ? 3 : diff === "medium" ? 4 : 5;
+      const lo = Math.pow(10, digits - 1), hi = Math.pow(10, digits) - 1;
+      const a = ri(Math.floor(hi / 2), hi);
+      const b = ri(lo, a - 1);
+      return { prompt: `${fmt(a)} − ${fmt(b)}`, answer: a - b };
+    },
+  },
+  {
+    id: "duplexSquare",
+    icon: "²",
+    grad: ["#D89B00", "#FFCC00"],
+    illus: "squaregrid",
+    title: "Square by the Duplex Method",
+    titleJa: "デュープレックス法の2乗",
+    sutraSa: "Dvandva Yoga · duplex",
+    sutraEn: "(ab)² = D(a) | D(ab) | D(b)",
+    sutraEnJa: "(ab)² = D(a) | D(ab) | D(b)",
+    blurb:
+      "The duplex of one digit is its square, of two digits is twice their product, and of three is 2ac + b². Lay the duplexes side by side and balance any part with two or more digits.",
+    blurbJa:
+      "デュープレックスは、1桁ならその2乗、2桁なら積の2倍、3桁なら 2ac + b²。それらを並べ、2桁以上になった部分は繰り上げて整えます。",
+    steps: [
+      "D(a) = a², D(ab) = 2ab, D(abc) = 2ac + b².",
+      "For a 2-digit number: D(a) | D(ab) | D(b).",
+      "For a 3-digit number: D(a) | D(ab) | D(abc) | D(bc) | D(c).",
+      "Balance: keep one digit per part, carrying the rest left.",
+    ],
+    stepsJa: [
+      "D(a) = a²、D(ab) = 2ab、D(abc) = 2ac + b²。",
+      "2桁の数：D(a) | D(ab) | D(b)。",
+      "3桁の数：D(a) | D(ab) | D(abc) | D(bc) | D(c)。",
+      "各部分が1桁になるように繰り上げる。",
+    ],
+    example: () => ({ a: 4, b: 3 }),
+    exSteps: (ex, lang) => {
+      const a = ex.a as number, b = ex.b as number;
+      const n = a * 10 + b;
+      if (lang === "ja")
+        return [
+          [`${n}²`, ""],
+          [`D(${a}) = ${a * a}`, `D(${a}${b}) = 2×${a}×${b} = ${2 * a * b}`],
+          [`D(${b}) = ${b * b}`, "並べる"],
+          ["整える", `${n * n}`],
+        ];
+      return [
+        [`${n}²`, ""],
+        [`D(${a}) = ${a * a}`, `D(${a}${b}) = 2×${a}×${b} = ${2 * a * b}`],
+        [`D(${b}) = ${b * b}`, "lay side by side"],
+        ["balance", `${n * n}`],
+      ];
+    },
+    gen: (diff) => {
+      const n = diff === "easy" ? ri(11, 49) : diff === "medium" ? ri(21, 99) : ri(101, 399);
+      return { prompt: `${n}²`, answer: n * n };
+    },
+  },
+  /* ---------- World 8 · division masters (p188, p195, p196, p199) ---------- */
+  {
+    id: "div99",
+    icon: "÷",
+    grad: ["#0A7A3F", "#1FE07A"],
+    illus: "ladder",
+    title: "Dividing by 99, 98, 97",
+    titleJa: "99・98・97でわる",
+    sutraSa: "Nikhilam · base 100",
+    sutraEn: "All from 9, the Last from 10",
+    sutraEnJa: "すべて9から、最後は10から",
+    blurb:
+      "Base 100, so the last two digits are the remainder zone. The multiplier is the divisor's deficiency from 100: 99 → 01, 98 → 02, 97 → 03. Cross-add it with the dividend's digits.",
+    blurbJa:
+      "基準は100なので、下2桁が余りの場所です。かける数は100からの不足：99→01、98→02、97→03。それを割られる数の桁と斜めに足していきます。",
+    steps: [
+      "Split off the last two digits — that is the remainder zone.",
+      "Multiplier = 100 − divisor (99 → 1, 98 → 2, 97 → 3).",
+      "Bring the first digit down, then cross-add the multiplier as you sweep right.",
+      "If the remainder is at least the divisor, divide again and add to the quotient.",
+    ],
+    stepsJa: [
+      "下2桁を分ける——そこが余りの場所。",
+      "かける数＝100−わる数（99→1、98→2、97→3）。",
+      "最初の桁をおろし、右へ流しながら斜めに足す。",
+      "余りがわる数以上なら、もう一度わって商に足す。",
+    ],
+    example: () => ({ n: 123123, d: 99 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number, d = ex.d as number;
+      const q = Math.floor(n / d), r = n % d;
+      if (lang === "ja")
+        return [
+          [`${fmt(n)} ÷ ${d}`, `かける数 ${100 - d}`],
+          ["下2桁は余りの場所", "斜めに足していく"],
+          ["商", `${fmt(q)}`],
+          ["余り", `${r}`],
+        ];
+      return [
+        [`${fmt(n)} ÷ ${d}`, `multiplier ${100 - d}`],
+        ["last two digits are the remainder zone", "cross-add as you sweep"],
+        ["quotient", `${fmt(q)}`],
+        ["remainder", `${r}`],
+      ];
+    },
+    gen: (diff) => {
+      const d = [99, 98, 97][ri(0, diff === "easy" ? 0 : 2)];
+      const lo = diff === "easy" ? 1000 : diff === "medium" ? 10000 : 100000;
+      const hi = diff === "easy" ? 9999 : diff === "medium" ? 99999 : 999999;
+      const n = ri(lo, hi);
+      return { prompt: `${fmt(n)} ÷ ${d}  (quotient, rounded down)`, answer: Math.floor(n / d) };
+    },
+  },
+  {
+    id: "flagDivision",
+    icon: "÷",
+    grad: ["#1450C4", "#2979FF"],
+    illus: "ladder",
+    title: "General Division — Flag Method",
+    titleJa: "一般の割り算 — フラッグ法",
+    sutraSa: "Dhvajāṅka · the crowning gem",
+    sutraEn: "The Crowning Gem · Dhvajanka",
+    sutraEnJa: "ドゥヴァジャンカ（頂きの宝石）",
+    blurb:
+      "The tens digit of the divisor is the main divisor; the units digit is the flag, raised on top. Then repeat: divide, multiply the flag by that quotient digit, subtract, bring down.",
+    blurbJa:
+      "わる数の十の位が本体、一の位が「旗」として上に立ちます。あとはくり返し：わる→旗×商をかける→引く→next をおろす。",
+    steps: [
+      "Split the divisor: tens = main divisor, units = the flag.",
+      "Divide the leading part by the main divisor → first quotient digit.",
+      "Multiply the flag by that quotient digit and subtract from the next figure.",
+      "Bring down and repeat; what is left at the end is the remainder.",
+    ],
+    stepsJa: [
+      "わる数を分ける：十の位が本体、一の位が旗。",
+      "先頭を本体でわる→商の最初の桁。",
+      "旗×その商を、次の数から引く。",
+      "次をおろしてくり返す。最後に残るのが余り。",
+    ],
+    example: () => ({ n: 3425, d: 43 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number, d = ex.d as number;
+      const q = Math.floor(n / d), r = n % d;
+      if (lang === "ja")
+        return [
+          [`${fmt(n)} ÷ ${d}`, `本体 ${Math.floor(d / 10)}・旗 ${d % 10}`],
+          ["わる → 旗×商 → 引く", "をくり返す"],
+          ["商", `${fmt(q)}`],
+          ["余り", `${r}`],
+        ];
+      return [
+        [`${fmt(n)} ÷ ${d}`, `divisor ${Math.floor(d / 10)}, flag ${d % 10}`],
+        ["divide → flag × quotient → subtract", "and repeat"],
+        ["quotient", `${fmt(q)}`],
+        ["remainder", `${r}`],
+      ];
+    },
+    gen: (diff) => {
+      const d = diff === "easy" ? ri(21, 49) : diff === "medium" ? ri(21, 89) : ri(31, 97);
+      const q = diff === "easy" ? ri(11, 60) : diff === "medium" ? ri(20, 150) : ri(50, 400);
+      const n = d * q + ri(0, d - 1);
+      return { prompt: `${fmt(n)} ÷ ${d}  (quotient, rounded down)`, answer: Math.floor(n / d) };
+    },
+  },
+  {
+    id: "flagAboveBase",
+    icon: "÷",
+    grad: ["#0068A8", "#00C2FF"],
+    illus: "ladder",
+    title: "Flag Method — divisors above the base",
+    titleJa: "フラッグ法 — 基準より上のわる数",
+    sutraSa: "Dhvajāṅka · above base",
+    sutraEn: "handling the remainder",
+    sutraEnJa: "余りの直し方",
+    blurb:
+      "For a divisor just above its base — 32, 43, 72, 73 — use the tens digit as the divisor and the units as the flag. If a remainder comes out negative, add the divisor back and drop the quotient by one.",
+    blurbJa:
+      "32・43・72・73 のように基準より少し上のわる数では、十の位を本体、一の位を旗にします。余りがマイナスになったら、わる数を足して商を1減らします。",
+    steps: [
+      "Divisor just above its base: tens = divisor, units = flag.",
+      "Run the flag method as usual.",
+      "If a remainder turns negative, add the divisor to it.",
+      "For each time you add, reduce the quotient by one.",
+    ],
+    stepsJa: [
+      "基準より少し上のわる数：十の位が本体、一の位が旗。",
+      "いつも通りフラッグ法を進める。",
+      "余りがマイナスになったら、わる数を足す。",
+      "足した回数だけ商を1ずつ減らす。",
+    ],
+    example: () => ({ n: 3425, d: 73 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number, d = ex.d as number;
+      const q = Math.floor(n / d), r = n % d;
+      if (lang === "ja")
+        return [
+          [`${fmt(n)} ÷ ${d}`, `本体 ${Math.floor(d / 10)}・旗 ${d % 10}`],
+          ["余りがマイナスなら", `+${d}、商は −1`],
+          ["商", `${fmt(q)}`],
+          ["余り", `${r}`],
+        ];
+      return [
+        [`${fmt(n)} ÷ ${d}`, `divisor ${Math.floor(d / 10)}, flag ${d % 10}`],
+        ["remainder negative?", `add ${d}, quotient −1`],
+        ["quotient", `${fmt(q)}`],
+        ["remainder", `${r}`],
+      ];
+    },
+    gen: (diff) => {
+      const tens = diff === "easy" ? ri(3, 5) : ri(3, 9);
+      const d = tens * 10 + ri(1, 3);
+      const q = diff === "easy" ? ri(11, 60) : diff === "medium" ? ri(20, 150) : ri(50, 400);
+      const n = d * q + ri(0, d - 1);
+      return { prompt: `${fmt(n)} ÷ ${d}  (quotient, rounded down)`, answer: Math.floor(n / d) };
+    },
+  },
+  {
+    id: "flagBelowBase",
+    icon: "÷",
+    grad: ["#6A15C4", "#8B5CF6"],
+    illus: "ladder",
+    title: "Flag Method — divisors below the base",
+    titleJa: "フラッグ法 — 基準より下のわる数",
+    sutraSa: "Dhvajāṅka · bar flag",
+    sutraEn: "flag becomes a bar-digit",
+    sutraEnJa: "旗がバーの数字になる",
+    blurb:
+      "For a divisor just below its base — 39, 49, 58, 67, 88 — round the tens up and let the flag be a bar digit: 49 becomes 5 with flag 1̄, 58 becomes 6 with flag 2̄. If the remainder ends up bigger than the divisor, divide once more.",
+    blurbJa:
+      "39・49・58・67・88 のように基準より少し下のわる数では、十の位を1つ上げ、旗をバーの数字にします。49 は 5 と旗 1̄、58 は 6 と旗 2̄。余りがわる数より大きければ、もう一度わります。",
+    steps: [
+      "Round the tens digit up by one.",
+      "The flag is the bar digit: 10 minus the units.",
+      "Run the flag method with that bar flag.",
+      "If the remainder exceeds the divisor, subtract it and add one to the quotient.",
+    ],
+    stepsJa: [
+      "十の位を1つ上げる。",
+      "旗はバーの数字：10から一の位を引く。",
+      "そのバーの旗でフラッグ法を進める。",
+      "余りがわる数より大きければ、引いて商に1を足す。",
+    ],
+    example: () => ({ n: 3425, d: 58 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number, d = ex.d as number;
+      const q = Math.floor(n / d), r = n % d;
+      const up = Math.floor(d / 10) + 1, bar = 10 - (d % 10);
+      if (lang === "ja")
+        return [
+          [`${fmt(n)} ÷ ${d}`, `本体 ${up}・旗 ${bar}̄`],
+          ["余りが大きすぎたら", `−${d}、商は +1`],
+          ["商", `${fmt(q)}`],
+          ["余り", `${r}`],
+        ];
+      return [
+        [`${fmt(n)} ÷ ${d}`, `divisor ${up}, flag ${bar}̄`],
+        ["remainder too big?", `subtract ${d}, quotient +1`],
+        ["quotient", `${fmt(q)}`],
+        ["remainder", `${r}`],
+      ];
+    },
+    gen: (diff) => {
+      const tens = diff === "easy" ? ri(3, 5) : ri(3, 8);
+      const d = tens * 10 + ri(7, 9);
+      const q = diff === "easy" ? ri(11, 60) : diff === "medium" ? ri(20, 150) : ri(50, 400);
+      const n = d * q + ri(0, d - 1);
+      return { prompt: `${fmt(n)} ÷ ${d}  (quotient, rounded down)`, answer: Math.floor(n / d) };
+    },
+  },
 ];
 
 export const TOPIC_BY_ID: Record<string, Topic> = Object.fromEntries(
@@ -1316,6 +1882,19 @@ export const BLITZ_MAX_DIFF: Record<string, Difficulty | null> = {
   baseAbove100: null,
   square5: "easy",
   specialMult1: "easy",
+
+  /* World 7 and 8 additions. The flag methods and duplex squares are multi-step
+     long-division and long-multiplication — real work on paper, not something to
+     do against a five-second clock — and div99 runs to six figures. The sub-base
+     multiplications stay in at their easy form, where 19 x 16 is a genuine
+     one-step sutra, and are capped above that. */
+  duplexSquare: null,
+  div99: null,
+  flagDivision: null,
+  flagAboveBase: null,
+  flagBelowBase: null,
+  baseBelow20to90: "easy",
+  baseAbove20to90: "easy",
 };
 
 export const BLITZ_TOPICS: Topic[] = TOPICS.filter((t) => BLITZ_MAX_DIFF[t.id] !== null);
