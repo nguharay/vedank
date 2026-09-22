@@ -1289,3 +1289,121 @@ export const RANKS_JA: Record<string, string> = {
   "Vedic Scholar": "ヴェーダ学者",
   Grandmaster: "グランドマスター",
 };
+
+/* ---------- Number Blitz eligibility ----------
+   Blitz is mental arithmetic against a clock with four options to compare, so a
+   question has to be answerable in a few seconds and its answer small enough to
+   hold in your head. Measured across 40 samples per difficulty:
+
+     mult12to19, mult111, generalMult2d  — excluded by request
+     balancing        348084  at medium — several steps, not mental
+     squareStart5     357604  at medium — 3-digit squares
+     baseAbove100      12320  at medium — one step, but 5-digit answers to compare
+
+   Two are capped rather than dropped, because their easy form is the classic
+   mental trick and only the larger variants run away:
+
+     square5           95² = 9025   mental  |  115² = 13225   not
+     specialMult1      96×94 = 9024 mental  |  238×232 = 55216 not
+
+   A topic absent from this map is allowed at every difficulty. */
+export const BLITZ_MAX_DIFF: Record<string, Difficulty | null> = {
+  mult12to19: null,
+  mult111: null,
+  generalMult2d: null,
+  balancing: null,
+  squareStart5: null,
+  baseAbove100: null,
+  square5: "easy",
+  specialMult1: "easy",
+};
+
+export const BLITZ_TOPICS: Topic[] = TOPICS.filter((t) => BLITZ_MAX_DIFF[t.id] !== null);
+
+const DIFF_ORDER: Difficulty[] = ["easy", "medium", "hard"];
+
+/* Clamps a requested difficulty to what this topic may show in Blitz. */
+export function blitzDiff(topicId: string, want: Difficulty): Difficulty {
+  const cap = BLITZ_MAX_DIFF[topicId];
+  if (cap === undefined || cap === null) return want;
+  return DIFF_ORDER.indexOf(want) <= DIFF_ORDER.indexOf(cap) ? want : cap;
+}
+
+/* ---------- Blitz levels ----------
+   Chosen rather than ramped-into, so a child can practise at a pace that suits
+   them instead of having to survive the easy tiers every run. Each level keeps
+   its own best score. */
+export type BlitzLevel = {
+  id: number;
+  icon: string;
+  name: string;
+  nameJa: string;
+  blurb: string;
+  blurbJa: string;
+  /* difficulties this level draws from, cycled as the score climbs */
+  ladder: Difficulty[];
+  /* answers per step up the ladder; 0 means it never climbs */
+  step: number;
+  startMs: number;
+  minMs: number;
+  decayMs: number;
+};
+
+export const BLITZ_LEVELS: BlitzLevel[] = [
+  {
+    id: 1,
+    icon: "🌱",
+    name: "Warm-up",
+    nameJa: "ウォームアップ",
+    blurb: "Easy questions, generous clock.",
+    blurbJa: "やさしい問題、たっぷり時間。",
+    ladder: ["easy"],
+    step: 0,
+    startMs: 11000,
+    minMs: 7000,
+    decayMs: 80,
+  },
+  {
+    id: 2,
+    icon: "⚡",
+    name: "Steady",
+    nameJa: "スタンダード",
+    blurb: "Easy, then medium once you're going.",
+    blurbJa: "やさしい問題から、だんだん中級へ。",
+    ladder: ["easy", "easy", "medium"],
+    step: 8,
+    startMs: 9000,
+    minMs: 4500,
+    decayMs: 120,
+  },
+  {
+    id: 3,
+    icon: "🔥",
+    name: "Quick",
+    nameJa: "クイック",
+    blurb: "Medium from the first question.",
+    blurbJa: "最初から中級。",
+    ladder: ["medium"],
+    step: 0,
+    startMs: 7500,
+    minMs: 4000,
+    decayMs: 140,
+  },
+  {
+    id: 4,
+    icon: "👹",
+    name: "Sharp",
+    nameJa: "エキスパート",
+    blurb: "Medium into hard, and a fast clock.",
+    blurbJa: "中級から上級へ、時間も短め。",
+    ladder: ["medium", "hard"],
+    step: 6,
+    startMs: 6500,
+    minMs: 3500,
+    decayMs: 160,
+  },
+];
+
+export function blitzLevel(id: number): BlitzLevel {
+  return BLITZ_LEVELS.find((l) => l.id === id) ?? BLITZ_LEVELS[1];
+}

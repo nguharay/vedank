@@ -17,6 +17,7 @@ export type Friend = {
 export type ChallengeRow = {
   id: string;
   kind: string;
+  level: number;
   fromScore: number;
   toScore: number | null;
   status: string;
@@ -163,9 +164,11 @@ export async function listFriends(userId: string): Promise<Friend[]> {
 export async function createChallenge(
   userId: string,
   toUserId: string,
-  score: number
+  score: number,
+  level = 2
 ): Promise<{ ok: boolean; error?: string }> {
   if (!Number.isFinite(score) || score < 0) return { ok: false, error: "Odd score." };
+  if (!Number.isInteger(level) || level < 1 || level > 4) return { ok: false, error: "Unknown level." };
   const db = getDb();
 
   /* Only to an actual friend — the id comes from the client, so membership is
@@ -181,6 +184,7 @@ export async function createChallenge(
     fromUserId: userId,
     toUserId,
     kind: "blitz",
+    level,
     fromScore: Math.floor(score),
   });
   return { ok: true };
@@ -192,6 +196,7 @@ export async function listChallenges(userId: string): Promise<ChallengeRow[]> {
     .select({
       id: challenges.id,
       kind: challenges.kind,
+      level: challenges.level,
       fromUserId: challenges.fromUserId,
       toUserId: challenges.toUserId,
       fromScore: challenges.fromScore,
@@ -229,6 +234,7 @@ export async function listChallenges(userId: string): Promise<ChallengeRow[]> {
     return {
       id: r.id,
       kind: r.kind,
+      level: r.level,
       fromScore: r.fromScore,
       toScore: r.toScore,
       status: r.status,

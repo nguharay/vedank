@@ -7,6 +7,10 @@ import {
   TOPIC_BY_ID,
   STAGE_COUNT,
   STAGE_DIFF,
+  BLITZ_TOPICS,
+  BLITZ_LEVELS,
+  blitzDiff,
+  blitzLevel,
   QUESTIONS_PER_STAGE,
   gradCss,
   makeDistractors,
@@ -114,12 +118,9 @@ function haptic(pattern: number | number[]) {
 const PATH_POS = ["c", "l", "r", "c", "l", "r", "c", "l", "r", "c", "l", "r", "c"];
 const STAGE_POS = ["c", "l", "r", "l", "c"];
 
-/* Blitz stays gentler than the stage ladder: three easy tiers before it bites,
-   one step every 8 answers instead of every 5, and a roomier clock. */
-const BLITZ_DIFF: Difficulty[] = ["easy", "easy", "easy", "medium", "hard"];
-const BLITZ_TIME_MS = 9000;
-const BLITZ_TIME_MIN_MS = 4500;
-const BLITZ_TIME_STEP_MS = 120;
+/* Blitz pacing now comes from the chosen level (see BLITZ_LEVELS in topics.ts)
+   rather than one fixed ramp. */
+const BLITZ_DEFAULT_LEVEL = 2;
 /* one bought Time Boost is worth this much extra clock, for one run */
 const BLITZ_BOOST_MS = 4000;
 
@@ -514,7 +515,7 @@ export function GameApp({
 
   /* Sending your just-finished Blitz score as a duel. */
   async function onChallenge(friendId: string) {
-    const res = await challengeAction(friendId, blitzScore);
+    const res = await challengeAction(friendId, blitzScore, blitzLevelRef.current);
     if (res.ok) {
       spawnToast(lang === "ja" ? "対戦を送りました！" : "Duel sent!", null);
       sound.correct();
@@ -532,7 +533,8 @@ export function GameApp({
     setActiveDuelId(d.id);
     setDuelResult(null);
     setFriendsOpen(false);
-    startBlitz();
+    /* Same level the challenger played, so the two scores mean the same thing. */
+    startBlitz(d.level);
   }
 
   /* ---------- mistake review ----------
@@ -1210,8 +1212,12 @@ export function GameApp({
   const [blitzOptions, setBlitzOptions] = useState<number[]>([]);
   const [blitzScore, setBlitzScore] = useState(0);
   const [blitzHearts, setBlitzHearts] = useState(3);
-  const [blitzBest, setBlitzBest] = useState(0);
-  const [blitzTimerMs, setBlitzTimerMs] = useState(BLITZ_TIME_MS);
+  const [blitzLevelId, setBlitzLevelId] = useState(BLITZ_DEFAULT_LEVEL);
+  const [blitzPicker, setBlitzPicker] = useState(false);
+  /* best per level: a Warm-up record and a Sharp record are different things */
+  const [blitzBests, setBlitzBests] = useState<Record<number, number>>({});
+  const blitzLevelRef = useRef(BLITZ_DEFAULT_LEVEL);
+  const [blitzTimerMs, setBlitzTimerMs] = useState(blitzLevel(BLITZ_DEFAULT_LEVEL).startMs);
   const [blitzBoost, setBlitzBoost] = useState(false);
   /* read inside newBlitzQuestion, which runs from timers outside render */
   const blitzBoostRef = useRef(false);
@@ -1225,24 +1231,46 @@ export function GameApp({
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("sutraSprint.blitzBest");
-      if (saved) setBlitzBest(Number(saved) || 0);
+      const next: Record<number, number> = {};
+      for (const l of BLITZ_LEVELS) {
+        const v = localStorage.getItem(`sutraSprint.blitzBest.${l.id}`);
+        if (v) next[l.id] = Number(v) || 0;
+      }
+      /* One unlabelled record predates levels; it was set under the old ramp,
+         which is what level 2 now reproduces, so it lands there. */
+      const legacy = localStorage.getItem("sutraSprint.blitzBest");
+      if (legacy && next[BLITZ_DEFAULT_LEVEL] === undefined) {
+        next[BLITZ_DEFAULT_LEVEL] = Number(legacy) || 0;
+      }
+      setBlitzBests(next);
     } catch {}
   }, []);
 
   function newBlitzQuestion(score: number) {
-    const topic = TOPICS[ri(0, TOPICS.length - 1)];
-    const diffIdx = Math.min(BLITZ_DIFF.length - 1, Math.floor(score / 8));
-    const problem = topic.gen(BLITZ_DIFF[diffIdx]);
+    const L = blitzLevel(blitzLevelRef.current);
+    /* Only the mental topics, and each capped to the difficulty it stays
+       mental at — see BLITZ_MAX_DIFF. */
+    const topic = BLITZ_TOPICS[ri(0, BLITZ_TOPICS.length - 1)];
+    const rung = L.step > 0 ? Math.min(L.ladder.length - 1, Math.floor(score / L.step)) : 0;
+    const problem = topic.gen(blitzDiff(topic.id, L.ladder[rung]));
     setBlitzProblem(problem);
     setBlitzOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
     const boost = blitzBoostRef.current ? BLITZ_BOOST_MS : 0;
-    setBlitzTimerMs(Math.max(BLITZ_TIME_MIN_MS + boost, BLITZ_TIME_MS + boost - score * BLITZ_TIME_STEP_MS));
+    setBlitzTimerMs(Math.max(L.minMs + boost, L.startMs + boost - score * L.decayMs));
     setBlitzTimerKey((k) => k + 1);
     blitzAnsweredRef.current = false;
   }
 
-  function startBlitz() {
+  /* Tapping Blitz opens the level chooser; a duel skips it, because the duel
+     already fixes the level both players fight at. */
+  function openBlitzPicker() {
+    setBlitzPicker(true);
+  }
+
+  function startBlitz(levelId: number = blitzLevelRef.current) {
+    blitzLevelRef.current = levelId;
+    setBlitzLevelId(levelId);
+    setBlitzPicker(false);
     fireQuest("blitz_played");
     sayLine("blitzStart");
     /* Spend a Time Boost if one is held: the whole run gets a longer clock.
@@ -1272,6 +1300,7 @@ export function GameApp({
   }
 
   function endBlitz(finalScore: number) {
+    const lvl = blitzLevelRef.current;
     fireQuest("blitz_score", finalScore);
     if (finalScore >= 10 && friends.length > 0) sayLine("blitzGood");
     blitzBoostRef.current = false;
@@ -1293,11 +1322,11 @@ export function GameApp({
         .catch(() => {});
     }
     setBlitzOver(true);
-    if (finalScore > blitzBest) {
-      setBlitzBest(finalScore);
+    if (finalScore > (blitzBests[lvl] ?? 0)) {
+      setBlitzBests((b) => ({ ...b, [lvl]: finalScore }));
       setBlitzJustBeatBest(true);
       try {
-        localStorage.setItem("sutraSprint.blitzBest", String(finalScore));
+        localStorage.setItem(`sutraSprint.blitzBest.${lvl}`, String(finalScore));
       } catch {}
     }
     sound.stageClear();
@@ -1498,6 +1527,47 @@ export function GameApp({
             <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
               <span>⏻ {t.menu.signOut}</span>
             </button>
+          </div>
+        </>
+      )}
+
+      {blitzPicker && (
+        <>
+          <div className="menu-overlay" onClick={() => setBlitzPicker(false)} />
+          <div className="sheet-panel">
+            <div className="sheet-panel-title">
+              <span>⚡ {ja ? "ブリッツのレベル" : "Choose your Blitz"}</span>
+              <button className="share-close" onClick={() => setBlitzPicker(false)} aria-label={t.share.close}>✕</button>
+            </div>
+            <div className="lvl-list">
+              {BLITZ_LEVELS.map((L) => (
+                <button key={L.id} className="lvl-row" onClick={() => startBlitz(L.id)}>
+                  <span className="lvl-icon">{L.icon}</span>
+                  <span className="lvl-body">
+                    <span className="lvl-name">
+                      {ja ? L.nameJa : L.name}
+                      <span className="lvl-clock mono">{(L.startMs / 1000).toFixed(0)}s</span>
+                    </span>
+                    <span className="lvl-blurb">{ja ? L.blurbJa : L.blurb}</span>
+                  </span>
+                  <span className="lvl-best">
+                    {blitzBests[L.id] ? (
+                      <>
+                        <span className="lvl-best-num mono">{blitzBests[L.id]}</span>
+                        <span className="lvl-best-lab">{t.blitz.best}</span>
+                      </>
+                    ) : (
+                      <span className="lvl-best-new">{ja ? "はじめて" : "new"}</span>
+                    )}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="lvl-foot">
+              {ja
+                ? "暗算でとける問題だけが出ます。"
+                : "Only questions you can do in your head."}
+            </div>
           </div>
         </>
       )}
@@ -1930,7 +2000,7 @@ export function GameApp({
             dailyStreak={dailyStreak}
             onOpenTopic={openTopic}
             onOpenArena={() => { loadPuzzle(puzIdx); setView("arena"); }}
-            onOpenBlitz={startBlitz}
+            onOpenBlitz={openBlitzPicker}
             onOpenTricks={() => { setTrickId(null); setView("tricks"); }}
             onOpenDaily={startDaily}
             dailyPlayed={!!dailyStatus?.played}
@@ -2103,7 +2173,9 @@ export function GameApp({
             problem={blitzProblem}
             options={blitzOptions}
             score={blitzScore}
-            best={blitzBest}
+            best={blitzBests[blitzLevelId] ?? 0}
+            levelName={ja ? blitzLevel(blitzLevelId).nameJa : blitzLevel(blitzLevelId).name}
+            levelIcon={blitzLevel(blitzLevelId).icon}
             hearts={blitzHearts}
             timerKey={blitzTimerKey}
             timerMs={blitzTimerMs}
@@ -2326,7 +2398,7 @@ export function GameApp({
               </button>
             </div>
             <div className="result-actions">
-              <button className="btn btn-primary" onClick={startBlitz}>{t.blitz.playAgain}</button>
+              <button className="btn btn-primary" onClick={() => startBlitz()}>{t.blitz.playAgain}</button>
               <button className="btn btn-ghost" onClick={() => { setBlitzOver(false); goHome(); }}>{t.blitz.backHome}</button>
             </div>
           </div>
@@ -2371,7 +2443,7 @@ export function GameApp({
           dailyStreak,
           bestStreakEver,
           hearts,
-          blitzBest,
+          blitzBest: Math.max(0, ...Object.values(blitzBests)),
           bossClears,
           solvedCount,
           totalPuzzles: PUZZLES.length,
@@ -3687,6 +3759,8 @@ function BlitzView({
   options,
   score,
   best,
+  levelName,
+  levelIcon,
   hearts,
   timerKey,
   timerMs,
@@ -3700,6 +3774,8 @@ function BlitzView({
   options: number[];
   score: number;
   best: number;
+  levelName: string;
+  levelIcon: string;
   hearts: number;
   timerKey: number;
   timerMs: number;
@@ -3730,6 +3806,9 @@ function BlitzView({
             <span className="blitz-stat-ico" aria-hidden="true">🏆</span>
             {t.blitz.best} <b>{best}</b>
           </div>
+        </div>
+        <div className="blitz-level-tag">
+          <span aria-hidden="true">{levelIcon}</span> {levelName}
         </div>
         <div className="blitz-timer-row">
           <CountdownTimer

@@ -207,6 +207,9 @@ export const challenges = pgTable("challenges", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   kind: text("kind").notNull().default("blitz"),
+  /* Which Blitz level the duel is fought at. Without it a score from Warm-up
+     would be compared against one from Sharp, which is not a contest. */
+  level: integer("level").notNull().default(2),
   fromScore: integer("from_score").notNull(),
   toScore: integer("to_score"),
   status: text("status").notNull().default("open"),

@@ -1540,3 +1540,30 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .assign-card-title{ font-size:14.5px; font-weight:800; }
 .assign-card-note{ font-size:11.5px; font-weight:700; opacity:.92; }
 .assign-card-go{ flex:0 0 auto; font-size:20px; font-weight:800; opacity:.9; }
+
+/* ---------- Blitz level chooser ---------- */
+.lvl-list{ display:flex; flex-direction:column; gap:8px; padding:6px 8px 4px; }
+.lvl-row{ display:flex; align-items:center; gap:11px; width:100%; text-align:left; cursor:pointer;
+  font-family:inherit; color:var(--ink); background:var(--surface-2); border:2px solid var(--line);
+  border-radius:14px; padding:11px 12px; transition:border-color .15s, background .15s, transform .1s; }
+.lvl-row:active{ transform:scale(.98); }
+.lvl-row:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
+@media (hover:hover){ .lvl-row:hover{ border-color:var(--blue); background:color-mix(in srgb, var(--blue) 8%, var(--surface-2)); } }
+.lvl-icon{ flex:0 0 auto; width:36px; height:36px; border-radius:11px; display:flex; align-items:center;
+  justify-content:center; font-size:19px; background:var(--surface); border:2px solid var(--ink-line); }
+.lvl-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.lvl-name{ display:flex; align-items:center; gap:7px; font-size:13.5px; font-weight:800; }
+.lvl-clock{ font-size:11px; font-weight:700; color:var(--muted); background:var(--surface);
+  border:1px solid var(--line); border-radius:999px; padding:1px 7px;
+  font-variant-numeric:lining-nums tabular-nums; }
+.lvl-blurb{ font-size:11px; font-weight:700; color:var(--muted); line-height:1.35; }
+.lvl-best{ flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; }
+.lvl-best-num{ font-size:19px; font-weight:700; color:var(--gold-dk);
+  font-variant-numeric:lining-nums tabular-nums; }
+.lvl-best-lab{ font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+.lvl-best-new{ font-size:10.5px; font-weight:800; color:var(--muted); }
+.lvl-foot{ padding:4px 12px 10px; font-size:11px; font-weight:700; color:var(--muted); text-align:center; }
+
+/* which level the current run is at, under the HUD stats */
+.blitz-level-tag{ display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:9px;
+  font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-dim); }

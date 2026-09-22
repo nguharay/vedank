@@ -134,9 +134,9 @@ export async function friendsAction() {
   return { friends, duels, pending };
 }
 
-export async function challengeAction(toUserId: string, score: number) {
+export async function challengeAction(toUserId: string, score: number, level: number) {
   const userId = await requireUserId();
-  return createChallenge(userId, toUserId, score);
+  return createChallenge(userId, toUserId, score, level);
 }
 
 export async function answerChallengeAction(challengeId: string, score: number) {
