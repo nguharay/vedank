@@ -73,6 +73,7 @@ import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
 import { useBuddy, line } from "./useBuddy";
+import { makeQuoteCycle, quoteText } from "@/lib/game/quotes";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI, type UIDict } from "./i18n";
 
@@ -316,9 +317,32 @@ export function GameApp({
 
   /* The buddy: floats over the app, speaks only when something just happened. */
   const buddy = useBuddy();
+  /* Tapping the buddy shows a quote from the books — maths, encouragement, or a
+     line about India and the sutras — a different one each time. Event lines
+     (combos, cleared stages) still interrupt on their own. */
+  const nextQuote = useRef(makeQuoteCycle());
+  const [quoteBy, setQuoteBy] = useState<string | null>(null);
+
+  function tapBuddy() {
+    if (buddy.say) {
+      buddy.quiet();
+      setQuoteBy(null);
+      return;
+    }
+    const q = nextQuote.current();
+    setQuoteBy(q.by ?? null);
+    buddy.speak({
+      text: quoteText(q, lang === "ja"),
+      mood: q.kind === "hope" ? "excited" : "happy",
+      hold: 9000,
+    });
+  }
   const ja = lang === "ja";
   const sayLine = useCallback(
-    (key: Parameters<typeof line>[0]) => buddy.speak(line(key, ja)),
+    (key: Parameters<typeof line>[0]) => {
+      setQuoteBy(null);
+      buddy.speak(line(key, ja));
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [ja, buddy.speak]
   );
@@ -2637,19 +2661,18 @@ export function GameApp({
       {!buddy.hidden && (
         <div className={`buddy-dock${buddy.say ? " talking" : ""}`}>
           {buddy.say && (
-            <button className="buddy-bubble" onClick={buddy.quiet}>
+            <button
+              className={`buddy-bubble${quoteBy ? " quoting" : ""}`}
+              onClick={() => { buddy.quiet(); setQuoteBy(null); }}
+            >
               {buddy.say.text}
+              {quoteBy && <span className="buddy-cite">— {quoteBy}</span>}
             </button>
           )}
           <button
             className="buddy-tap"
-            onClick={() => (buddy.say ? buddy.quiet() : sayLine(
-              claimableQuests > 0 ? "questsReady"
-              : openDuels.length > 0 ? "duelWaiting"
-              : reviewCount > 0 ? "reviewWaiting"
-              : "welcome"
-            ))}
-            aria-label={ja ? "バディ" : "Buddy"}
+            onClick={tapBuddy}
+            aria-label={ja ? "バディ（タップで名言）" : "Buddy — tap for a quote"}
           >
             <Buddy skinId={skin.skinId} mood={buddy.mood} />
           </button>
@@ -2798,7 +2821,7 @@ function HomeView({
   }, [progress, lang]);
 
   return (
-    <section className="view active">
+    <section className="view active home-view">
       <div className="unit-banner">
         <svg className="mandala" viewBox="0 0 100 100"><Mandala stroke="#fff" /></svg>
         <div className="mascot"><Mascot mood="happy" /></div>

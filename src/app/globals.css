@@ -1634,3 +1634,60 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .comp-done-stats b{ font-family:var(--font-num); font-size:26px; font-weight:700; color:var(--ink);
   font-variant-numeric:lining-nums tabular-nums; }
 .comp-card .duel-card-head{ background:linear-gradient(135deg,var(--gold-dk),var(--sun1)); }
+
+/* ---------- home: two columns on a wide screen ----------
+   The home screen was a phone layout stretched to 1100px: ten full-width bands
+   stacked, so a desktop visitor scrolled past the same content a phone shows,
+   with half the window empty either side. At desktop widths it becomes a grid —
+   the journey on the left, the day's business in a column beside it — which
+   removes most of the scrolling without changing the markup order, so the phone
+   layout (and its reading order for screen readers) is untouched. */
+@media (min-width:1024px){
+  .view.active.home-view{
+    display:grid;
+    grid-template-columns:minmax(0,1.3fr) minmax(320px,0.85fr);
+    /* Dense, because the path is last in the markup (which is the right order
+       on a phone) and default sparse placement would drop it below the whole
+       right-hand column instead of backfilling the empty left one. */
+    grid-auto-flow:row dense;
+    align-items:start;
+    column-gap:22px;
+    row-gap:0;
+  }
+  /* The hero spans both columns. */
+  .home-view.active > .unit-banner{ grid-column:1 / -1; margin-bottom:16px; }
+
+  /* Left: what you are working through. */
+  .home-view.active > .continue-card,
+  .home-view.active > .assign-card,
+  .home-view.active > .path-wrap{ grid-column:1; }
+
+  /* Right: today's business, kept in view while the path scrolls. */
+  .home-view.active > .streak-calendar,
+  .home-view.active > .quest-card,
+  .home-view.active > .review-cta,
+  .home-view.active > .review-rest,
+  .home-view.active > .duel-card,
+  .home-view.active > .blitz-cta{ grid-column:2; }
+
+  /* Cards already carry their own top margin; the grid supplies the rhythm, so
+     collapse the doubled gap and keep both columns starting at the same line. */
+  .home-view.active > *{ margin-top:0; margin-bottom:12px; }
+  .home-view.active > .path-wrap{ margin-bottom:0; }
+
+  /* The path is far taller than any one row. Spanning it keeps the right-hand
+     column's rhythm intact instead of one enormous row stretching both. */
+  .home-view.active > .path-wrap{ grid-row:span 10; align-self:start; }
+}
+
+/* Wider still: the column cap grows rather than leaving ever more empty gutter. */
+@media (min-width:1500px){
+  header, .footerbar{ padding-inline:max(28px, calc((100% - 1320px) / 2 + 28px)); }
+  main > .view{ max-width:1320px; }
+  .buddy-dock{ max-width:1320px; }
+}
+
+/* the attribution under a quote, and a roomier bubble for the longer ones */
+.buddy-bubble.quoting{ font-weight:700; font-size:12px; max-width:none; }
+.buddy-cite{ display:block; margin-top:5px; font-size:10.5px; font-weight:800; color:var(--muted);
+  font-style:italic; }
