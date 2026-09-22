@@ -333,7 +333,14 @@ export async function getMistakes(userId: string, limit = 10): Promise<MistakeRo
         raw`${mistakes.dueAt} <= now()`
       )
     )
-    .orderBy(raw`${mistakes.dueAt} asc, ${mistakes.misses} desc`)
+    /* By the DAY a row fell due, then by how often it has been missed.
+       Ordering on the raw dueAt put a question you had just got wrong again at
+       the back of the queue, because re-missing resets dueAt to now, which
+       sorts after anything that fell due a moment earlier. Comparing whole days
+       keeps a genuinely overdue row in front while letting everything due today
+       be led by the one missed most -- and the ladder already snaps dueAt to the
+       start of the day for every box above 0, so the day is the real unit. */
+    .orderBy(raw`date_trunc('day', ${mistakes.dueAt}) asc, ${mistakes.misses} desc`)
     .limit(limit);
 }
 

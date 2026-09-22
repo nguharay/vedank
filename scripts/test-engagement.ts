@@ -121,10 +121,12 @@ function ok(label: string, cond: boolean, extra = "") {
        `misses=${ms[0].misses}`);
     ok("most-missed surfaces first", ms[0].prompt === "75 - 38");
 
+    /* Retiring is the Leitner ladder's job and test-srs covers it end to end.
+       What matters here is that a fix promotes the row and takes it out of
+       today's queue without retiring it. */
     const f1 = await fixMistake(uid, "75 - 38");
-    ok("one fix does not retire", !f1.retired && (await countMistakes(uid)) === 2);
-    const f2 = await fixMistake(uid, "75 - 38");
-    ok("two fixes retire it", f2.retired && (await countMistakes(uid)) === 1);
+    ok("a fix promotes without retiring", !f1.retired && f1.box === 1, `box=${f1.box}`);
+    ok("a promoted row leaves today's queue", (await countMistakes(uid)) === 1);
     await recordMistake(uid, "nikhilam", "75 - 38", 37);
     ok("missing again un-retires", (await countMistakes(uid)) === 2);
   } finally {
