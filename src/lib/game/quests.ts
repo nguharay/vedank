@@ -113,7 +113,7 @@ export const SHOP_ITEMS: ShopItem[] = [
   },
   {
     id: "fifty",
-    icon: "✂️",
+    icon: "🧹",
     cost: 80,
     max: 9,
     title: "50/50",

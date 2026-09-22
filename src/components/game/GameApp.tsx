@@ -2013,7 +2013,7 @@ export function GameApp({
                     </button>
                   ) : (inventory?.fiftyTokens ?? 0) > 0 && eliminated.length === 0 ? (
                     <button className="btn btn-ghost fifty-btn" onClick={useFiftyToken}>
-                      ✂️ 50/50 <span className="token-count mono">×{inventory?.fiftyTokens}</span>
+                      🧹 50/50 <span className="token-count mono">×{inventory?.fiftyTokens}</span>
                     </button>
                   ) : null)}
                 {(inventory?.hintTokens ?? 0) > 0 && curSelection === null && (
