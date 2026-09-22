@@ -50,7 +50,8 @@ import {
   challengeAction, answerChallengeAction,
 } from "@/lib/actions/game-actions";
 import type { Friend, ChallengeRow } from "@/lib/game/friends";
-import type { QuestState, InventoryState } from "@/lib/game/engagement";
+import { myClassesAction, joinClassAction, leaveClassAction } from "@/lib/actions/game-actions";
+import type { QuestState, InventoryState, ReviewStats } from "@/lib/game/engagement";
 import type { LeaderboardEntry } from "@/lib/game/progress";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { Mascot, Mandala } from "./Mascot";
@@ -121,6 +122,18 @@ const BLITZ_TIME_MIN_MS = 4500;
 const BLITZ_TIME_STEP_MS = 120;
 /* one bought Time Boost is worth this much extra clock, for one run */
 const BLITZ_BOOST_MS = 4000;
+
+/* "tomorrow" / "in 3 days" — a date stamp would mean nothing to a child, and
+   the exact hour is noise when reviews land at the start of a day. */
+function fmtDue(iso: string, ja: boolean): string {
+  const day = 864e5;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const days = Math.max(0, Math.round((new Date(iso).getTime() - start.getTime()) / day));
+  if (days <= 0) return ja ? "きょう" : "today";
+  if (days === 1) return ja ? "あした" : "tomorrow";
+  return ja ? `${days}日後` : `in ${days} days`;
+}
 
 export function GameApp({
   initialProgress,
@@ -309,6 +322,7 @@ export function GameApp({
   const [shopBusy, setShopBusy] = useState<string | null>(null);
   const [shopNote, setShopNote] = useState<string | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
+  const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [reviewQueue, setReviewQueue] = useState<Problem[]>([]);
   const [reviewIdx, setReviewIdx] = useState(0);
   const [reviewOptions, setReviewOptions] = useState<number[]>([]);
@@ -337,7 +351,9 @@ export function GameApp({
   }
   async function refreshReview() {
     try {
-      setReviewCount((await reviewListAction()).total);
+      const r = await reviewListAction();
+      setReviewCount(r.total);
+      setReviewStats(r.stats);
     } catch {}
   }
 
@@ -356,9 +372,11 @@ export function GameApp({
         setInventory(sh.inventory);
         setGemBalance(sh.balance);
         setReviewCount(rv.total);
+        setReviewStats(rv.stats);
         setFriends(fr.friends);
         setDuels(fr.duels);
         setPendingDuels(fr.pending);
+        refreshClasses();
       } catch {}
     })();
     return () => {
@@ -400,6 +418,40 @@ export function GameApp({
     }
     setShopBusy(null);
   }
+
+  /* ---------- classroom (the child's side) ---------- */
+  type Enrolled = { id: string; name: string; teacherName: string; assignedTopicId: string | null; assignedNote: string | null };
+  const [classOpen, setClassOpen] = useState(false);
+  const [enrolled, setEnrolled] = useState<Enrolled[]>([]);
+  const [teachingCount, setTeachingCount] = useState(0);
+  const [classCode, setClassCode] = useState("");
+  const [classNote, setClassNote] = useState<string | null>(null);
+
+  async function refreshClasses() {
+    try {
+      const r = await myClassesAction();
+      setEnrolled(r.enrolled);
+      setTeachingCount(r.teaching.length);
+    } catch {}
+  }
+
+  async function onJoinClass() {
+    if (!classCode.trim()) return;
+    const res = await joinClassAction(classCode);
+    if (res.ok) {
+      setClassCode("");
+      setClassNote(ja ? `${res.name} に参加しました！` : `Joined ${res.name}!`);
+      sound.correct();
+      refreshClasses();
+    } else {
+      setClassNote(res.error ?? null);
+      sound.wrong();
+    }
+  }
+
+  /* The assignment the child should see, if a teacher has set one. */
+  const assignment = enrolled.find((e) => e.assignedTopicId);
+  const assignedTopic = assignment ? TOPIC_BY_ID[assignment.assignedTopicId!] : undefined;
 
   /* ---------- friends & duels ---------- */
   const [friendsOpen, setFriendsOpen] = useState(false);
@@ -1379,6 +1431,12 @@ export function GameApp({
               <span>🌐 {t.menu.language}</span>
               <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
             </button>
+            <button className="menu-row" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
+              <span>🏫 {ja ? "クラス" : "Class"}</span>
+              <span className="menu-row-val">
+                {enrolled.length ? enrolled[0].name : ja ? "未参加" : "Not joined"}
+              </span>
+            </button>
             <button className="menu-row" onClick={() => { setMenuOpen(false); openFriends(); }}>
               <span>👥 {lang === "ja" ? "フレンド" : "Friends"}</span>
               <span className="menu-row-val">
@@ -1440,6 +1498,68 @@ export function GameApp({
             <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
               <span>⏻ {t.menu.signOut}</span>
             </button>
+          </div>
+        </>
+      )}
+
+      {classOpen && (
+        <>
+          <div className="menu-overlay" onClick={() => setClassOpen(false)} />
+          <div className="sheet-panel">
+            <div className="sheet-panel-title">
+              <span>🏫 {ja ? "クラス" : "Class"}</span>
+              <span className="sheet-panel-count">{enrolled.length}</span>
+            </div>
+
+            <div className="friend-add">
+              <input
+                className="friend-add-input mono"
+                value={classCode}
+                onChange={(e) => setClassCode(e.target.value)}
+                placeholder={ja ? "クラスコード" : "Class code"}
+                aria-label={ja ? "クラスコードを入力" : "Enter a class code"}
+                autoCapitalize="characters"
+                spellCheck={false}
+                maxLength={5}
+              />
+              <button className="friend-add-btn" onClick={onJoinClass} disabled={!classCode.trim()}>
+                {ja ? "参加" : "Join"}
+              </button>
+            </div>
+            {classNote && <div className="friend-note">{classNote}</div>}
+
+            <div className="friend-list">
+              {enrolled.map((e) => (
+                <div key={e.id} className="friend-row">
+                  <span className="friend-avatar">🏫</span>
+                  <div className="friend-body">
+                    <div className="friend-name">{e.name}</div>
+                    <div className="friend-sub">{e.teacherName}</div>
+                  </div>
+                  <button
+                    className="friend-remove"
+                    aria-label={ja ? "退出" : "Leave"}
+                    onClick={async () => {
+                      await leaveClassAction(e.id);
+                      refreshClasses();
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {enrolled.length === 0 && (
+                <div className="friend-empty">
+                  {ja
+                    ? "先生からもらったコードを入れてください。"
+                    : "Enter the code your teacher gave you."}
+                </div>
+              )}
+            </div>
+
+            <a className="quest-review-cta cls-teach-link" href="/classroom">
+              🧑‍🏫 {ja ? "先生用：クラスを作る" : teachingCount > 0 ? `Teaching ${teachingCount} class${teachingCount === 1 ? "" : "es"}` : "I'm a teacher — make a class"}
+            </a>
           </div>
         </>
       )}
@@ -1819,11 +1939,14 @@ export function GameApp({
             quests={quests}
             claimable={claimableQuests}
             reviewCount={reviewCount}
+            reviewStats={reviewStats}
             onOpenQuests={() => { setQuestsOpen(true); refreshQuests(); }}
             onOpenShop={() => { setShopOpen(true); refreshShop(); }}
             onStartReview={startReview}
             gemBalance={gemBalance}
             openDuels={openDuels}
+            assignment={assignment}
+            assignedTopic={assignedTopic}
             onOpenFriends={openFriends}
             onAcceptDuel={acceptDuel}
             lang={lang}
@@ -2278,11 +2401,14 @@ function HomeView({
   quests,
   claimable,
   reviewCount,
+  reviewStats,
   onOpenQuests,
   onOpenShop,
   onStartReview,
   gemBalance,
   openDuels,
+  assignment,
+  assignedTopic,
   onOpenFriends,
   onAcceptDuel,
   lang,
@@ -2303,11 +2429,14 @@ function HomeView({
   quests: QuestState[];
   claimable: number;
   reviewCount: number;
+  reviewStats: ReviewStats | null;
   onOpenQuests: () => void;
   onOpenShop: () => void;
   onStartReview: () => void;
   gemBalance: number | null;
   openDuels: ChallengeRow[];
+  assignment: { name: string; teacherName: string; assignedNote: string | null } | undefined;
+  assignedTopic: Topic | undefined;
   onOpenFriends: () => void;
   onAcceptDuel: (d: ChallengeRow) => void;
   lang: Lang;
@@ -2409,6 +2538,24 @@ function HomeView({
         </div>
       )}
 
+      {assignment && assignedTopic && (
+        <button className="assign-card" onClick={() => onOpenTopic(assignedTopic.id)}>
+          <span className="assign-card-icon">{assignedTopic.icon}</span>
+          <span className="assign-card-info">
+            <span className="assign-card-label">
+              🏫 {lang === "ja" ? `${assignment.teacherName} 先生から` : `From ${assignment.teacherName}`}
+            </span>
+            <span className="assign-card-title">
+              {lang === "ja" ? assignedTopic.titleJa : assignedTopic.title}
+            </span>
+            {assignment.assignedNote && (
+              <span className="assign-card-note">{assignment.assignedNote}</span>
+            )}
+          </span>
+          <span className="assign-card-go">›</span>
+        </button>
+      )}
+
       {openDuels.length > 0 && (
         <div className="duel-card">
           <div className="duel-card-head">
@@ -2464,7 +2611,7 @@ function HomeView({
         </div>
       </div>
 
-      {reviewCount > 0 && (
+      {reviewCount > 0 ? (
         <button className="review-cta" onClick={onStartReview}>
           <div className="review-cta-icon">🩹</div>
           <div className="review-cta-info">
@@ -2473,13 +2620,38 @@ function HomeView({
             </div>
             <div className="review-cta-sub">
               {lang === "ja"
-                ? `${reviewCount} 問が復習待ちです`
-                : `${reviewCount} question${reviewCount === 1 ? "" : "s"} waiting`}
+                ? `${reviewCount} 問が復習どき`
+                : `${reviewCount} question${reviewCount === 1 ? "" : "s"} due now`}
+              {reviewStats && reviewStats.learning > reviewCount
+                ? lang === "ja"
+                  ? ` · ${reviewStats.learning - reviewCount} 問おやすみ中`
+                  : ` · ${reviewStats.learning - reviewCount} resting`
+                : ""}
             </div>
           </div>
           <span className="review-cta-count mono">{reviewCount}</span>
         </button>
-      )}
+      ) : reviewStats && reviewStats.learning > 0 ? (
+        /* Nothing due: say when it comes back rather than hiding the card, so
+           the schedule is visible instead of feeling arbitrary. */
+        <div className="review-rest">
+          <span className="review-rest-icon">🌱</span>
+          <span className="review-rest-text">
+            {lang === "ja"
+              ? `${reviewStats.learning} 問を覚えているところ。${
+                  reviewStats.nextDueAt ? `次の復習は ${fmtDue(reviewStats.nextDueAt, true)}` : ""
+                }`
+              : `${reviewStats.learning} question${reviewStats.learning === 1 ? "" : "s"} settling in.${
+                  reviewStats.nextDueAt ? ` Next review ${fmtDue(reviewStats.nextDueAt, false)}.` : ""
+                }`}
+          </span>
+          {reviewStats.retired > 0 && (
+            <span className="review-rest-badge mono">
+              {reviewStats.retired} {lang === "ja" ? "習得" : "learned"}
+            </span>
+          )}
+        </div>
+      ) : null}
 
       <div className="blitz-cta" onClick={onOpenBlitz}>
         <div className="blitz-cta-icon">⚡</div>

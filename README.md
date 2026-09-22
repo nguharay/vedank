@@ -1,6 +1,6 @@
 # Sutra Sprint
 
-A Vedic Math game built from the book's techniques — 14 sutras as stage-based
+A Vedic Math game built from the book's techniques — 25 sutra topics as stage-based
 lessons (5 stages each, escalating difficulty, star ratings), an interactive
 matchstick puzzle dojo, and mixed question formats (typed, multiple choice,
 tap-target, true/false).
@@ -49,11 +49,26 @@ for a player by name or email, and a friend sees only display name, level and
 streak. Duels are asynchronous — send your Blitz score, they get one run to beat
 it, and the result settles once.
 
+**Spaced repetition** — a missed question enters a Leitner ladder
+(0/1/3/7/16/35 days). A correct answer promotes it one box and pushes the due
+date out; a miss sends it back to box 0, due now. Graduating the last box
+retires it. Only what is *due* surfaces, so the review badge never nags about
+work that cannot usefully be done yet.
+
+**Classroom** — a teacher creates a class at `/classroom` and reads the 5-character
+code to the room; children join under Class in the app menu. The roster shows
+level, streak, last active, assignment progress and — the useful column — the
+prompts each child keeps missing. Ownership is re-checked on every teacher read
+and write, a child can always leave (which immediately ends the teacher's view),
+and the roster carries no email addresses.
+
 Run the suites against a real database:
 
 ```bash
 npx dotenv -e .env.local -- npx tsx scripts/test-engagement.ts
 npx dotenv -e .env.local -- npx tsx scripts/test-social.ts
+npx dotenv -e .env.local -- npx tsx scripts/test-srs.ts
+npx dotenv -e .env.local -- npx tsx scripts/test-classroom.ts
 ```
 
 Both create throwaway `@test.local` users and delete them afterwards.

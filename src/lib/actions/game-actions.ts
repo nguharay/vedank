@@ -5,13 +5,17 @@ import { submitStageResult, submitPuzzleSolved, getLeaderboard } from "@/lib/gam
 import { getDailyStatus, submitDaily, getLeagueStanding } from "@/lib/game/league";
 import {
   getQuests, reportQuestEvent, claimQuest, getInventory, getWallet,
-  buyItem, consumeItem, recordMistake, getMistakes, countMistakes, fixMistake,
+  buyItem, consumeItem, recordMistake, getMistakes, countMistakes, fixMistake, reviewStats,
 } from "@/lib/game/engagement";
 import type { QuestEvent } from "@/lib/game/quests";
 import {
   ensureFriendCode, addFriendByCode, removeFriend, listFriends,
   createChallenge, listChallenges, answerChallenge, pendingChallengeCount,
 } from "@/lib/game/friends";
+import {
+  createClassroom, myClassrooms, joinClassroom, leaveClassroom, myClassMemberships,
+  classRoster, setAssignment, setClassOpen, removeStudent,
+} from "@/lib/game/classroom";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -90,8 +94,12 @@ export async function recordMistakeAction(topicId: string, prompt: string, answe
 
 export async function reviewListAction() {
   const userId = await requireUserId();
-  const [rows, total] = await Promise.all([getMistakes(userId), countMistakes(userId)]);
-  return { rows, total };
+  const [rows, total, stats] = await Promise.all([
+    getMistakes(userId),
+    countMistakes(userId),
+    reviewStats(userId),
+  ]);
+  return { rows, total, stats };
 }
 
 export async function fixMistakeAction(prompt: string) {
@@ -134,4 +142,50 @@ export async function challengeAction(toUserId: string, score: number) {
 export async function answerChallengeAction(challengeId: string, score: number) {
   const userId = await requireUserId();
   return answerChallenge(userId, challengeId, score);
+}
+
+/* ---------- classroom ---------- */
+
+export async function createClassAction(name: string) {
+  const userId = await requireUserId();
+  return createClassroom(userId, name);
+}
+
+export async function myClassesAction() {
+  const userId = await requireUserId();
+  const [teaching, enrolled] = await Promise.all([
+    myClassrooms(userId),
+    myClassMemberships(userId),
+  ]);
+  return { teaching, enrolled };
+}
+
+export async function joinClassAction(code: string) {
+  const userId = await requireUserId();
+  return joinClassroom(userId, code);
+}
+
+export async function leaveClassAction(classId: string) {
+  const userId = await requireUserId();
+  await leaveClassroom(userId, classId);
+}
+
+export async function rosterAction(classId: string) {
+  const userId = await requireUserId();
+  return classRoster(userId, classId);
+}
+
+export async function setAssignmentAction(classId: string, topicId: string | null, note: string | null) {
+  const userId = await requireUserId();
+  return setAssignment(userId, classId, topicId, note);
+}
+
+export async function setClassOpenAction(classId: string, open: boolean) {
+  const userId = await requireUserId();
+  return setClassOpen(userId, classId, open);
+}
+
+export async function removeStudentAction(classId: string, studentId: string) {
+  const userId = await requireUserId();
+  return removeStudent(userId, classId, studentId);
 }

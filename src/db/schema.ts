@@ -162,9 +162,16 @@ export const mistakes = pgTable(
     answer: integer("answer").notNull(),
     misses: integer("misses").notNull().default(1),
     fixes: integer("fixes").notNull().default(0),
-    // retired once fixed twice running — it stops surfacing but the row remains
+    // retired once it graduates the last box — it stops surfacing but the row remains
     retired: boolean("retired").notNull().default(false),
     lastMissedAt: timestamp("last_missed_at", { withTimezone: true }).defaultNow().notNull(),
+
+    /* Leitner box (0-5). Each correct answer promotes, each miss demotes to 0.
+       The box sets the interval; dueAt is when it may surface again, so a
+       question answered right today is not re-asked five minutes later. */
+    box: integer("box").notNull().default(0),
+    dueAt: timestamp("due_at", { withTimezone: true }).defaultNow().notNull(),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   },
   (t) => [primaryKey({ columns: [t.userId, t.prompt] })]
 );
@@ -206,3 +213,37 @@ export const challenges = pgTable("challenges", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   respondedAt: timestamp("responded_at", { withTimezone: true }),
 });
+
+/* ---------- classroom ----------
+   A teacher owns a class; children join with a code. Membership is the only
+   thing that lets a teacher see a child's progress, and a child can leave.
+   Deliberately no child-to-child visibility beyond first name and progress
+   within their own class. */
+export const classrooms = pgTable("classrooms", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  teacherId: uuid("teacher_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  joinCode: text("join_code").notNull().unique(),
+  // a closed class refuses new joiners but keeps its roster
+  open: boolean("open").notNull().default(true),
+  // the topic the teacher wants the class working on, if any
+  assignedTopicId: text("assigned_topic_id"),
+  assignedNote: text("assigned_note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const classMembers = pgTable(
+  "class_members",
+  {
+    classId: uuid("class_id")
+      .notNull()
+      .references(() => classrooms.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.classId, t.userId] })]
+);

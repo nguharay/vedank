@@ -1470,3 +1470,73 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .unit-banner h1, .unit-banner .eyebrow, .home-byline span, .levelrow{
   text-shadow:0 1px 2px rgba(0,0,0,.28);
 }
+
+/* ---------- review: nothing due ----------
+   Shown instead of hiding the card, so the spacing schedule reads as a plan
+   rather than as the feature having disappeared. */
+.review-rest{ display:flex; align-items:center; gap:10px; margin-top:14px; padding:11px 13px;
+  background:var(--surface); border:3px dashed var(--line-strong); border-radius:16px; }
+.review-rest-icon{ flex:0 0 auto; font-size:18px; }
+.review-rest-text{ flex:1; min-width:0; font-size:12px; font-weight:700; color:var(--muted); line-height:1.4; }
+.review-rest-badge{ flex:0 0 auto; font-size:11px; font-weight:800; color:var(--green-dk);
+  background:color-mix(in srgb, var(--green) 16%, var(--surface)); border-radius:999px; padding:3px 9px;
+  font-variant-numeric:lining-nums tabular-nums; }
+
+/* ---------- classroom: teacher board ---------- */
+.cls-note{ margin:0 0 12px; }
+.cls-create{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+.cls-create .admin-search{ min-width:240px; }
+.cls-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; }
+.cls-card{ text-align:left; cursor:pointer; font-family:inherit; color:var(--ink);
+  background:var(--surface); border:3px solid var(--ink-line); border-radius:16px; padding:14px;
+  box-shadow:4px 4px 0 color-mix(in srgb, var(--ink-line) 18%, transparent); }
+.cls-card:active{ transform:translateY(3px); box-shadow:none; }
+.cls-card:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
+.cls-card-top{ display:flex; align-items:center; gap:8px; justify-content:space-between; }
+.cls-card-name{ font-size:14.5px; font-weight:800; }
+.cls-card-code{ font-size:26px; font-weight:700; letter-spacing:.14em; color:var(--blue-dk); margin:6px 0 2px;
+  font-variant-numeric:lining-nums tabular-nums; }
+.cls-card-meta{ font-size:11.5px; font-weight:700; color:var(--muted); }
+
+.cls-head{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.cls-head-main{ flex:1; min-width:0; }
+.cls-head-name{ font-size:17px; font-weight:800; color:var(--ink); }
+.cls-head-sub{ font-size:12px; font-weight:700; color:var(--muted); }
+.cls-head-sub b{ color:var(--blue-dk); letter-spacing:.1em; }
+.cls-toggle{ flex:0 0 auto; font-size:12.5px; padding:9px 14px; }
+
+.cls-assign{ background:var(--surface); border:3px solid var(--ink-line); border-radius:16px; padding:13px;
+  margin-bottom:14px; box-shadow:3px 3px 0 color-mix(in srgb, var(--ink-line) 16%, transparent); }
+.cls-assign-label{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--muted); margin-bottom:7px; }
+.cls-assign-row{ display:flex; gap:10px; flex-wrap:wrap; }
+.cls-select, .cls-assign-note{ font-family:inherit; font-size:13.5px; font-weight:700; padding:10px 12px;
+  border-radius:12px; border:3px solid var(--ink-line); background:var(--surface-2); color:var(--ink); }
+.cls-select{ flex:0 0 auto; min-width:200px; cursor:pointer; }
+.cls-assign-note{ flex:1; min-width:220px; }
+.cls-select:focus, .cls-assign-note:focus{ outline:none; border-color:var(--blue); }
+.cls-assign-hint{ margin-top:8px; font-size:11.5px; font-weight:700; color:var(--muted); }
+
+.cls-due{ display:inline-block; min-width:22px; padding:2px 7px; border-radius:999px; font-weight:800;
+  background:color-mix(in srgb, var(--wrong) 16%, var(--surface)); color:var(--wrong-dk); }
+.cls-weak{ white-space:normal; max-width:260px; }
+.cls-weak-chip{ display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; margin:1px 3px 1px 0;
+  border-radius:8px; background:var(--surface-3); color:var(--ink-dim);
+  font-variant-numeric:lining-nums tabular-nums; }
+.cls-teach-link{ display:block; text-align:center; text-decoration:none; }
+
+/* ---------- the child's assignment banner ---------- */
+.assign-card{ width:100%; display:flex; align-items:center; gap:12px; margin-top:14px; cursor:pointer;
+  font-family:inherit; text-align:left; color:#fff;
+  background:linear-gradient(135deg,var(--violet-dk),var(--sky2));
+  border:3px solid var(--ink-line); border-radius:16px; padding:12px 14px; box-shadow:4px 4px 0 var(--ink-line);
+  text-shadow:0 1px 2px rgba(0,0,0,.34); }
+.assign-card:active{ transform:translateY(3px); box-shadow:none; }
+.assign-card:focus-visible{ outline:3px solid #fff; outline-offset:2px; }
+.assign-card-icon{ flex:0 0 auto; width:42px; height:42px; border-radius:12px; background:rgba(255,255,255,.2);
+  display:flex; align-items:center; justify-content:center; font-size:22px; }
+.assign-card-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.assign-card-label{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; opacity:.92; }
+.assign-card-title{ font-size:14.5px; font-weight:800; }
+.assign-card-note{ font-size:11.5px; font-weight:700; opacity:.92; }
+.assign-card-go{ flex:0 0 auto; font-size:20px; font-weight:800; opacity:.9; }

@@ -1,10 +1,34 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { BuddyMood } from "./Buddy";
 
 export type BuddySay = { text: string; mood: BuddyMood; /* ms; 0 keeps it up */ hold?: number };
 
 const HIDE_KEY = "sutraSprint.buddyHidden";
+
+/* localStorage read through useSyncExternalStore rather than hydrated in an
+   effect: the server snapshot is "visible", the client reads the real value on
+   its first render, and a change notifies every subscriber without a second
+   render pass. */
+const hideListeners = new Set<() => void>();
+
+function subscribeHidden(fn: () => void) {
+  hideListeners.add(fn);
+  return () => hideListeners.delete(fn);
+}
+function readHidden(): boolean {
+  try {
+    return localStorage.getItem(HIDE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeHidden(next: boolean) {
+  try {
+    localStorage.setItem(HIDE_KEY, next ? "1" : "0");
+  } catch {}
+  hideListeners.forEach((fn) => fn());
+}
 
 /* The buddy speaks when something just happened, and otherwise keeps quiet.
    Deliberately not a constant stream: a companion that talks over every question
@@ -12,14 +36,8 @@ const HIDE_KEY = "sutraSprint.buddyHidden";
 export function useBuddy() {
   const [say, setSay] = useState<BuddySay | null>(null);
   const [mood, setMood] = useState<BuddyMood>("happy");
-  const [hidden, setHidden] = useState(false);
+  const hidden = useSyncExternalStore(subscribeHidden, readHidden, () => false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    try {
-      setHidden(localStorage.getItem(HIDE_KEY) === "1");
-    } catch {}
-  }, []);
 
   useEffect(
     () => () => {
@@ -49,10 +67,7 @@ export function useBuddy() {
 
   function toggleHidden() {
     const next = !hidden;
-    setHidden(next);
-    try {
-      localStorage.setItem(HIDE_KEY, next ? "1" : "0");
-    } catch {}
+    writeHidden(next);
     if (next) quiet();
   }
 

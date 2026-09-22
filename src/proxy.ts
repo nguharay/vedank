@@ -30,5 +30,5 @@ export const proxy = auth((req) => {
 // Keep this list explicit rather than a negative-lookahead pattern —
 // simpler to reason about, and avoids the whole app matching by accident.
 export const config = {
-  matcher: ["/", "/admin", "/login", "/signup", "/forgot-password", "/reset-password/:token*"],
+  matcher: ["/", "/admin", "/classroom", "/login", "/signup", "/forgot-password", "/reset-password/:token*"],
 };

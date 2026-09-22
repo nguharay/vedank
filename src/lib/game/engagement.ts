@@ -257,9 +257,33 @@ export async function consumeItem(userId: string, itemId: string): Promise<{ ok:
   return { ok: true, inventory: await getInventory(userId) };
 }
 
-/* ---------- mistake bank ---------- */
+/* ---------- mistake bank: Leitner spaced repetition ----------
+   Boxes, in days. A question answered right moves up a box and is not asked
+   again until its interval elapses; a miss sends it straight back to box 0 and
+   due immediately. Graduating the last box retires it.
 
-export type MistakeRow = { prompt: string; topicId: string; answer: number; misses: number };
+   The intervals are the classic expanding schedule, kept short at the start
+   because a child's practice session is today, not next month. */
+export const LEITNER_DAYS = [0, 1, 3, 7, 16, 35];
+export const LAST_BOX = LEITNER_DAYS.length - 1;
+
+export function dueDateFor(box: number, from = new Date()): Date {
+  const days = LEITNER_DAYS[Math.min(Math.max(box, 0), LAST_BOX)];
+  /* Due at the start of the target day rather than the exact clock time, so a
+     question learned at 9pm is available the next morning, not at 9pm sharp. */
+  const d = new Date(from);
+  d.setDate(d.getDate() + days);
+  if (days > 0) d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export type MistakeRow = {
+  prompt: string;
+  topicId: string;
+  answer: number;
+  misses: number;
+  box: number;
+};
 
 export async function recordMistake(
   userId: string,
@@ -282,37 +306,113 @@ export async function recordMistake(
         answer,
         topicId,
         lastMissedAt: new Date(),
+        /* Straight back to the bottom of the ladder, due now. */
+        box: 0,
+        dueAt: new Date(),
       },
     });
 }
 
+/* Only what is due, soonest-due first, then most-missed. A question in a high
+   box is not in the way of one the player keeps getting wrong. */
 export async function getMistakes(userId: string, limit = 10): Promise<MistakeRow[]> {
   const db = getDb();
-  const rows = await db
-    .select({ prompt: mistakes.prompt, topicId: mistakes.topicId, answer: mistakes.answer, misses: mistakes.misses })
+  return db
+    .select({
+      prompt: mistakes.prompt,
+      topicId: mistakes.topicId,
+      answer: mistakes.answer,
+      misses: mistakes.misses,
+      box: mistakes.box,
+    })
     .from(mistakes)
-    .where(and(eq(mistakes.userId, userId), eq(mistakes.retired, false)))
-    .orderBy(raw`${mistakes.misses} desc, ${mistakes.lastMissedAt} asc`)
+    .where(
+      and(
+        eq(mistakes.userId, userId),
+        eq(mistakes.retired, false),
+        raw`${mistakes.dueAt} <= now()`
+      )
+    )
+    .orderBy(raw`${mistakes.dueAt} asc, ${mistakes.misses} desc`)
     .limit(limit);
-  return rows;
 }
 
+/* The badge counts what is due now — a count including future reviews would
+   nag about work the player cannot usefully do yet. */
 export async function countMistakes(userId: string): Promise<number> {
   const db = getDb();
   const rows = await db
     .select({ n: raw<number>`count(*)::int` })
     .from(mistakes)
-    .where(and(eq(mistakes.userId, userId), eq(mistakes.retired, false)));
+    .where(
+      and(
+        eq(mistakes.userId, userId),
+        eq(mistakes.retired, false),
+        raw`${mistakes.dueAt} <= now()`
+      )
+    );
   return rows[0]?.n ?? 0;
 }
 
-/* Two clean fixes retires a question from review. One is luck; two is learning. */
-export async function fixMistake(userId: string, prompt: string): Promise<{ retired: boolean }> {
+export type ReviewStats = { due: number; learning: number; retired: number; nextDueAt: string | null };
+
+/* What the review card shows when nothing is due: how much is resting, and when
+   the next question comes back. */
+export async function reviewStats(userId: string): Promise<ReviewStats> {
   const db = getDb();
   const rows = await db
-    .update(mistakes)
-    .set({ fixes: raw`${mistakes.fixes} + 1`, retired: raw`${mistakes.fixes} + 1 >= 2` })
+    .select({
+      due: raw<number>`count(*) filter (where not ${mistakes.retired} and ${mistakes.dueAt} <= now())::int`,
+      learning: raw<number>`count(*) filter (where not ${mistakes.retired})::int`,
+      retired: raw<number>`count(*) filter (where ${mistakes.retired})::int`,
+      nextDueAt: raw<string | null>`min(${mistakes.dueAt}) filter (where not ${mistakes.retired} and ${mistakes.dueAt} > now())`,
+    })
+    .from(mistakes)
+    .where(eq(mistakes.userId, userId));
+  const r = rows[0];
+  return {
+    due: r?.due ?? 0,
+    learning: r?.learning ?? 0,
+    retired: r?.retired ?? 0,
+    nextDueAt: r?.nextDueAt ? new Date(r.nextDueAt).toISOString() : null,
+  };
+}
+
+/* A correct answer promotes one box and pushes the due date out by that box's
+   interval. Graduating the last box retires the question. Computed here rather
+   than in SQL so the ladder lives in one readable place. */
+export async function fixMistake(
+  userId: string,
+  prompt: string
+): Promise<{ retired: boolean; box: number; dueAt: string | null }> {
+  const db = getDb();
+  const cur = await db
+    .select({ box: mistakes.box })
+    .from(mistakes)
     .where(and(eq(mistakes.userId, userId), eq(mistakes.prompt, prompt)))
-    .returning({ retired: mistakes.retired });
-  return { retired: rows[0]?.retired ?? false };
+    .limit(1);
+  if (!cur.length) return { retired: false, box: 0, dueAt: null };
+
+  const nextBox = Math.min(cur[0].box + 1, LAST_BOX);
+  const graduated = cur[0].box >= LAST_BOX;
+  const due = dueDateFor(nextBox);
+
+  const rows = await db
+    .update(mistakes)
+    .set({
+      fixes: raw`${mistakes.fixes} + 1`,
+      box: nextBox,
+      dueAt: due,
+      reviewedAt: new Date(),
+      retired: graduated,
+    })
+    .where(and(eq(mistakes.userId, userId), eq(mistakes.prompt, prompt)))
+    .returning({ retired: mistakes.retired, box: mistakes.box, dueAt: mistakes.dueAt });
+
+  const row = rows[0];
+  return {
+    retired: row?.retired ?? false,
+    box: row?.box ?? nextBox,
+    dueAt: row?.dueAt ? new Date(row.dueAt).toISOString() : null,
+  };
 }
