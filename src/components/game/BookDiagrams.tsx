@@ -804,7 +804,7 @@ const PARTS_SPECS: Record<string, PartsSpec> = {
     caption: "a bar digit is negative, so 47 = 50 − 3",
     leftLabel: "the left digit", leftWork: ["4 → 5", "one more"],
     rightLabel: "the units", rightWork: ["7 → 3\u0304", "10 − 7, barred"],
-    join: "5 3\u0304", answer: "47",
+    join: "47  =  50 − 3", answer: "5 3\u0304",
   },
   // p.170 — devinculating 7 2̄
   devinculum: {
@@ -1050,9 +1050,112 @@ function SubGenDiagram() {
   );
 }
 
+/* Pages 188 and 195-199 all draw division the same way: the dividend with its
+   remainder zone fenced off, the quotient growing underneath, and one panel per
+   divide-then-flag step. One component, four lessons. */
+type FlagStep = { note: string; work?: string; quotient: string; rem: string };
+type FlagDivSpec = {
+  caption: string;
+  dividend: string;
+  /* how many digits at the right belong to the remainder zone */
+  zone: number;
+  steps: FlagStep[];
+  answer: string;
+};
+
+function FlagDivPanel({ dividend, zone, step }: { dividend: string; zone: number; step: FlagStep }) {
+  const pitch = 17, x0 = 10;
+  const w = x0 + dividend.length * pitch + 16;
+  const fenceX = x0 + (dividend.length - zone) * pitch - pitch / 2;
+  return (
+    <svg viewBox={`0 0 ${w} 104`} className="bd-svg bd-flagpanel">
+      {dividend.split("").map((d, i) => (
+        <text key={i} x={x0 + i * pitch} y="26" className="bd-num" textAnchor="middle">{d}</text>
+      ))}
+      {/* the fence between the quotient side and the remainder zone */}
+      <line x1={fenceX} y1="10" x2={fenceX} y2="74" className="bd-rule" />
+      <line x1="6" y1="40" x2={w - 6} y2="40" className="bd-rule" />
+
+      {step.work && <text x={fenceX - 6} y="58" className="bd-dev" textAnchor="end">{step.work}</text>}
+      <text x={x0} y="58" className="bd-caption" style={{ fontSize: 8 }} textAnchor="start">{step.note}</text>
+
+      <text x={fenceX - 6} y="90" className="bd-partline" textAnchor="end">{step.quotient}</text>
+      <text x={w - 8} y="90" className="bd-dev" textAnchor="end">{step.rem}</text>
+    </svg>
+  );
+}
+
+function FlagDivDiagram({ spec }: { spec: FlagDivSpec }) {
+  return (
+    <div className="bd-flaggrid">
+      <div className="bd-flagcap">{spec.caption}</div>
+      <div className="bd-flagrow bd-flagrow-2">
+        {spec.steps.map((st, i) => (
+          <FlagDivPanel key={i} dividend={spec.dividend} zone={spec.zone} step={st} />
+        ))}
+      </div>
+      <div className="bd-flaganswer">{spec.answer}</div>
+    </div>
+  );
+}
+
+const FLAGDIV_SPECS: Record<string, FlagDivSpec> = {
+  // p.195 — 5367 ÷ 72, divisor 7 with flag 2
+  flagDivision: {
+    caption: "divisor 7 · flag 2 · divide → flag × quotient → subtract",
+    dividend: "5367", zone: 1,
+    steps: [
+      { note: "53 ÷ 7", quotient: "7", rem: "4" },
+      { note: "flag 2 × 7 = 14", work: "46 − 14", quotient: "7", rem: "32" },
+      { note: "32 ÷ 7", quotient: "74", rem: "4" },
+      { note: "flag 2 × 4 = 8", work: "47 − 8", quotient: "74", rem: "39" },
+    ],
+    answer: "Q 74 · R 39",
+  },
+  // p.196 — 3425 ÷ 73, where a remainder goes negative
+  flagAboveBase: {
+    caption: "divisor 7 · flag 3 · a negative remainder takes the divisor back",
+    dividend: "3425", zone: 1,
+    steps: [
+      { note: "34 ÷ 7", quotient: "4", rem: "6" },
+      { note: "flag 3 × 4 = 12", work: "62 − 12", quotient: "4", rem: "50" },
+      { note: "50 ÷ 7", quotient: "46", rem: "1" },
+      { note: "flag 3 × 6 = 18", work: "15 − 18 → +73", quotient: "46", rem: "67" },
+    ],
+    answer: "Q 46 · R 67",
+  },
+  // p.199 — 3425 ÷ 58, the flag is a bar so it adds
+  flagBelowBase: {
+    caption: "from 58: divisor 6, bar flag 2 — a bar flag adds",
+    dividend: "3425", zone: 1,
+    steps: [
+      { note: "34 ÷ 6", quotient: "5", rem: "4" },
+      { note: "bar flag 2 × 5 = 10", work: "42 + 10", quotient: "5", rem: "52" },
+      { note: "52 ÷ 6", quotient: "58", rem: "4" },
+      { note: "bar flag 2 × 8 = 16", work: "45 + 16 = 61", quotient: "58 → 59", rem: "3" },
+    ],
+    answer: "Q 59 · R 3",
+  },
+  // p.188 — 123123 ÷ 99, base 100 so two digits are the remainder zone
+  div99: {
+    caption: "base 100 · multiplier 01 · last two digits are the remainder",
+    dividend: "123123", zone: 2,
+    steps: [
+      { note: "bring down 1", quotient: "1", rem: "" },
+      { note: "+01 → 2", quotient: "12", rem: "" },
+      { note: "+01 → 4", quotient: "124", rem: "" },
+      { note: "+01 → 3, then the zone", quotient: "1243", rem: "66" },
+    ],
+    answer: "Q 1243 · R 66",
+  },
+};
+
 export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.ReactElement>> = {
   additionBar: AdditionBarDiagram,
   mult1x: Mult1xDiagram,
+  ...Object.fromEntries(
+    Object.entries(FLAGDIV_SPECS).map(([id, spec]) => [id, () => <FlagDivDiagram spec={spec} />])
+  ),
   subtractionGeneral: SubGenDiagram,
   mult11: Mult11Diagram,
   mult12to19: FlagDigitDiagram,
