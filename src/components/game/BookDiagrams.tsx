@@ -389,45 +389,50 @@ function FlagPanel({
   /* marker ids must be unique per panel — four panels share one document */
   uid: string;
 }) {
-  const x0 = 12;
-  const step = 21;
-  const w = x0 + digits.length * step + 10;
-  const rx = x0 + (at + 1) * step;
-  const lx = x0 + at * step;
+  /* Tight digit pitch, as the book sets them: 02430, not 0 2 4 3 0. */
+  const x0 = 10;
+  const pitch = 15;
+  const w = x0 + digits.length * pitch + 6;
+  const rx = x0 + (at + 1) * pitch;
+  const lx = x0 + at * pitch;
   return (
-    <svg viewBox={`0 0 ${w} 96`} className="bd-svg bd-flagpanel">
+    <svg viewBox={`0 0 ${w} 100`} className="bd-svg bd-flagpanel">
       <defs>
-        <marker id={uid} markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-          <path d="M0,0 L8,4 L0,8 Z" fill="var(--blue)" />
+        <marker id={uid} markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="#5B7BB4" />
+        </marker>
+        <marker id={`${uid}t`} markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="var(--sun1)" />
         </marker>
       </defs>
+
+      {/* Every digit the same weight — the book does not dim the others. */}
       {digits.map((d, i) => (
-        <text
-          key={i}
-          x={x0 + i * step}
-          y="26"
-          className={i === at || i === at + 1 ? "bd-digit-lg" : "bd-digit"}
-          textAnchor="middle"
-          opacity={i === at || i === at + 1 ? 1 : 0.45}
-        >
+        <text key={i} x={x0 + i * pitch} y="38" className="bd-digit-lg" textAnchor="middle">
           {d}
         </text>
       ))}
 
-      {/* the pair: + above the right digit, x on the diagonal to the left one */}
-      <text x={rx} y="10" className="bd-plus" textAnchor="middle">+</text>
-      <path d={`M ${rx - 5} 32 L ${lx + 5} 44`} className="bd-hop" markerEnd={`url(#${uid})`} />
-      <text x={(rx + lx) / 2 + 7} y="43" className="bd-dev" textAnchor="middle">×</text>
+      {/* orange + above the pair, with its little arrow */}
+      <text x={rx - 4} y="12" className="bd-plus" textAnchor="middle">+</text>
+      <path d={`M ${rx + 1} 9 L ${rx + 9} 9`} className="bd-tick" markerEnd={`url(#${uid}t)`} />
 
-      <text x={w - 14} y="62" className="bd-num" textAnchor="end">{mult}</text>
-      <line x1={x0 - 6} y1="68" x2={w - 10} y2="68" className="bd-rule" />
+      {/* blue arrow up-left from the right digit to the left one, orange x beside it */}
+      <path d={`M ${rx - 2} 50 L ${lx + 4} 42`} className="bd-hop" markerEnd={`url(#${uid})`} />
+      <text x={rx + 5} y="52" className="bd-dev" textAnchor="middle">×</text>
 
+      {/* x on the far left, the multiplier on the right, rule beneath */}
+      <text x={x0 - 4} y="70" className="bd-num" textAnchor="start">×</text>
+      <text x={w - 8} y="70" className="bd-num" textAnchor="end">{mult}</text>
+      <line x1={x0 - 6} y1="76" x2={w - 6} y2="76" className="bd-rule" />
+
+      {/* the carry rides as a small subscript at the left of the answer */}
       {carry > 0 && (
-        <text x={w - 16 - answer.length * 12} y="88" className="bd-carry" textAnchor="end">
+        <text x={w - 8 - answer.length * 11} y="96" className="bd-flagcarry" textAnchor="end">
           {carry}
         </text>
       )}
-      <text x={w - 14} y="88" className="bd-partline" textAnchor="end">{answer}</text>
+      <text x={w - 8} y="95" className="bd-partline" textAnchor="end">{answer}</text>
     </svg>
   );
 }
@@ -456,7 +461,7 @@ function FlagDigitDiagram() {
           <FlagPanel
             key={i}
             digits={digits}
-            mult={`× 1${flag}`}
+            mult={`1${flag}`}
             at={p.at}
             answer={p.answer}
             carry={p.carry}
