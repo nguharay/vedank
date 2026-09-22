@@ -213,6 +213,22 @@ function BaseMethodDiagram({ spec }: { spec: BaseSpec }) {
 }
 
 const BASE_SPECS: Record<string, BaseSpec> = {
+  // p.79 — 19 × 16, sub-base 20
+  baseBelow20to90: {
+    caption: "sub-base 20 · left = cross-subtract, then × 2",
+    numA: "19", devA: "- 1", numB: "16", devB: "- 4",
+    leftPart: "15", baseMult: "× 2", rightPart: "04",
+    notes: ["Sub-base = 2 × 10 = 20.", "Cross: 19 − 4 = 15, then 15 × 2 = 30", "Right: -1 × -4 = 4 → 04"],
+    answer: "304",
+  },
+  // p.89 — 23 × 24, sub-base 20
+  baseAbove20to90: {
+    caption: "sub-base 20 · left = cross-add, then × 2",
+    numA: "23", devA: "+ 3", numB: "24", devB: "+ 4",
+    leftPart: "27", baseMult: "× 2", rightPart: "12",
+    notes: ["Sub-base = 2 × 10 = 20.", "Cross: 23 + 4 = 27, then 27 × 2 = 54", "Right: 3 × 4 = 12 (carry 1)"],
+    answer: "552",
+  },
   baseBelow10: {
     caption: "left = cross-subtract · right = product of deficiencies",
     numA: "7", devA: "- 3", numB: "8", devB: "- 2",
@@ -298,6 +314,41 @@ function DivisionDiagram({ spec }: { spec: DivSpec }) {
 }
 
 const DIV_SPECS: Record<string, DivSpec> = {
+  // p.144 — 3794 ÷ 9, where a running sum reaches 9 and carries
+  div9carry: {
+    caption: ["When a sum reaches 9 or more,", "divide it by 9 and carry its quotient left."],
+    dividend: ["3", "7", "9", "4"], quotient: ["4", "2", "1"], remainder: "5", hop: "+",
+    notes: ["3 down; 3 + 7 = 10 → carry 1, keep 1", "1 + 9 = 10 → carry again, keep 1"],
+    answer: "Q 421 · R 5",
+  },
+  // p.188 — 123123 ÷ 99, base 100 so the last two digits are the remainder zone
+  div99: {
+    caption: ["Base 100 · multiplier = 100 − 99 = 1;", "the last two digits are the remainder."],
+    dividend: ["1", "2", "3", "1"], quotient: ["1", "2", "4", "3"], remainder: "66", hop: "+1",
+    notes: ["Multiplier 01 for 99 · 02 for 98 · 03 for 97", "The last two digits are the remainder zone"],
+    answer: "Q 1243 · R 66",
+  },
+  // p.195 — 3425 ÷ 43: main divisor 4, flag 3
+  flagDivision: {
+    caption: ["Divisor 43 → main divisor 4, flag 3.", "divide → flag × quotient → subtract."],
+    dividend: ["3", "4", "2", "5"], quotient: ["7", "9"], remainder: "28", hop: "−3×",
+    notes: ["34 ÷ 4 = 7 remainder 6", "Flag: 3 × 7 = 21; 62 − 21 = 41, then ÷ 4"],
+    answer: "Q 79 · R 28",
+  },
+  // p.196 — 3425 ÷ 73: fix the negative remainder
+  flagAboveBase: {
+    caption: ["Divisor 73 → main 7, flag 3.", "A negative remainder: add 73, quotient − 1."],
+    dividend: ["3", "4", "2", "5"], quotient: ["4", "6"], remainder: "67", hop: "−3×",
+    notes: ["34 ÷ 7 = 4 remainder 6", "Flag 3 × 4 = 12; add 73 back if it goes negative"],
+    answer: "Q 46 · R 67",
+  },
+  // p.199 — 3425 ÷ 58: round 5 up to 6, flag becomes a bar digit
+  flagBelowBase: {
+    caption: ["Divisor 58 → main 6, flag 2\u0304 (a bar).", "If the remainder exceeds 58, divide once more."],
+    dividend: ["3", "4", "2", "5"], quotient: ["5", "9"], remainder: "3", hop: "+2×",
+    notes: ["From 58: main 6, bar flag 2 — a bar flag adds", "Remainder 61 > 58 → − 58 and quotient + 1"],
+    answer: "Q 59 · R 3",
+  },
   // p.143 — 23 ÷ 9
   div9: {
     caption: ["Quotient (Q) builds left → right;", "the last sum is the Remainder (R)."],
@@ -583,6 +634,15 @@ function AllFrom9Diagram({ spec }: { spec: NikhilamSpec }) {
 }
 
 const NIKHILAM_SPECS: Record<string, NikhilamSpec> = {
+  // p.175 — 8324 − 2348 without borrowing; bar the columns that go negative
+  subVinculum: {
+    caption: "subtract straight down; bar a column instead of borrowing",
+    top: ["", "", "", ""],
+    minuend: ["8", "3", "2", "4"],
+    subtrahend: ["2", "3", "4", "8"],
+    notes: ["Column differences: 6, 0, 2\u0304, 4\u0304", "Devinculate 6 0 2\u0304 4\u0304 → 5976", "No borrowing anywhere"],
+    answer: ["5", "9", "7", "6"],
+  },
   subFromPower10: {
     caption: "all from 9, the last from 10",
     top: ["9", "9", "9", "10"],
@@ -662,6 +722,48 @@ function TwoPartsDiagram({ spec }: { spec: PartsSpec }) {
 }
 
 const PARTS_SPECS: Record<string, PartsSpec> = {
+  // p.181 — 43² by duplexes
+  duplexSquare: {
+    caption: "D(a) = a² · D(ab) = 2ab · lay them side by side",
+    leftLabel: "D(4) then D(43)", leftWork: ["4² = 16", "2 × 4 × 3 = 24"],
+    rightLabel: "D(3)", rightWork: ["3² = 9", "balance the parts"],
+    join: "16 | 24 | 9", answer: "1849",
+  },
+  // p.164 — vinculating the units of 47
+  vinculum: {
+    caption: "a bar digit is negative, so 47 = 50 − 3",
+    leftLabel: "the left digit", leftWork: ["4 → 5", "one more"],
+    rightLabel: "the units", rightWork: ["7 → 3\u0304", "10 − 7, barred"],
+    join: "5 3\u0304", answer: "47",
+  },
+  // p.170 — devinculating 7 2̄
+  devinculum: {
+    caption: "all from 9 and the last from 10, then one less on the left",
+    leftLabel: "the left digit", leftWork: ["7 → 6", "one less"],
+    rightLabel: "the barred digit", rightWork: ["2\u0304 → 8", "10 − 2"],
+    join: "6 | 8", answer: "68",
+  },
+  // p.23 — 47 + 29, one more than the one before
+  add9: {
+    caption: "add the next ten, then give one back",
+    leftLabel: "step 1 · the ten", leftWork: ["29 → 30", "47 + 30 = 77"],
+    rightLabel: "step 2 · give back", rightWork: ["one too many", "77 − 1 = 76"],
+    join: "77 − 1", answer: "76",
+  },
+  // p.27 — 63 − 29
+  sub9: {
+    caption: "take the next ten, then hand one back",
+    leftLabel: "step 1 · the ten", leftWork: ["29 → 30", "63 − 30 = 33"],
+    rightLabel: "step 2 · hand back", rightWork: ["one too many taken", "33 + 1 = 34"],
+    join: "33 + 1", answer: "34",
+  },
+  // p.31 — 73 + 8, one more in the tens and two less in the units
+  add8sub8: {
+    caption: "a number ending in 8 is 2 less than the next ten",
+    leftLabel: "1 More · tens", leftWork: ["73 + 10", "= 83"],
+    rightLabel: "2 Less · units", rightWork: ["83 − 2", "= 81"],
+    join: "83 − 2", answer: "81",
+  },
   mult9: {
     caption: "answer in two parts — no multiplication!",
     leftLabel: "left part", leftWork: ["(32 − 1) − 3", "= 28"],
@@ -730,6 +832,20 @@ export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.
 
 // The worked example each diagram draws, shown in the card header.
 export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {
+  baseBelow20to90: "19 × 16",
+  baseAbove20to90: "23 × 24",
+  div9carry: "3794 ÷ 9",
+  div99: "123123 ÷ 99",
+  flagDivision: "3425 ÷ 43",
+  flagAboveBase: "3425 ÷ 73",
+  flagBelowBase: "3425 ÷ 58",
+  duplexSquare: "43²",
+  vinculum: "47 → 5 3\u0304",
+  devinculum: "7 2\u0304 → 68",
+  subVinculum: "8324 − 2348",
+  add9: "47 + 29",
+  sub9: "63 − 29",
+  add8sub8: "73 + 8",
   mult11: "34 × 11",
   specialMult1: "74 × 76",
   specialMult2: "46 × 66",
