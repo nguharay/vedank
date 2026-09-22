@@ -1567,3 +1567,70 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 /* which level the current run is at, under the HUD stats */
 .blitz-level-tag{ display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:9px;
   font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-dim); }
+
+/* ---------- competitions: teacher controls ---------- */
+.comp-block .cls-assign-row{ align-items:center; }
+.comp-mins{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:800; color:var(--ink-dim); }
+.comp-mins input{ width:64px; font-family:var(--font-num); font-size:14px; font-weight:700; padding:9px 10px;
+  border-radius:12px; border:3px solid var(--ink-line); background:var(--surface-2); color:var(--ink);
+  font-variant-numeric:lining-nums tabular-nums; }
+.comp-mins input:focus{ outline:none; border-color:var(--blue); }
+.comp-start{ flex:0 0 auto; font-size:13px; padding:10px 16px; }
+.comp-list{ margin-top:12px; display:flex; flex-direction:column; gap:7px; }
+.comp-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--surface-2);
+  border:2px solid var(--line); border-radius:12px; padding:9px 11px; }
+.comp-row.ended{ opacity:.65; }
+.comp-row-name{ flex:1; min-width:140px; display:flex; flex-direction:column; font-size:13px; font-weight:800; color:var(--ink); }
+.comp-row-meta{ font-size:11px; font-weight:700; color:var(--muted); }
+.comp-row-count{ flex:0 0 auto; font-size:12px; font-weight:800; color:var(--ink-dim);
+  font-variant-numeric:lining-nums tabular-nums; }
+.comp-row-btn{ flex:0 0 auto; font-family:inherit; font-size:11.5px; font-weight:800; cursor:pointer;
+  color:var(--ink); background:var(--surface); border:2px solid var(--ink-line); border-radius:999px; padding:5px 12px; }
+.comp-row-btn:active{ transform:scale(.95); }
+.comp-row-btn.danger{ color:var(--red-dk); border-color:color-mix(in srgb, var(--red) 45%, var(--line)); }
+
+/* ---------- the results board (shared by both sides) ---------- */
+.comp-board{ position:fixed; z-index:72; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:calc(100% - 32px); max-width:420px; max-height:82vh; overflow-y:auto;
+  background:var(--surface); border:4px solid var(--ink-line); border-radius:22px; padding:16px;
+  box-shadow:6px 6px 0 color-mix(in srgb, var(--ink-line) 25%, transparent); }
+.comp-board-head{ display:flex; align-items:center; justify-content:space-between; gap:10px;
+  font-size:15px; font-weight:800; color:var(--ink); margin-bottom:10px; }
+.comp-board-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.comp-board-row{ display:flex; align-items:center; gap:10px; background:var(--surface-2);
+  border:2px solid var(--line); border-radius:12px; padding:9px 11px; }
+.comp-board-row.rank-1{ border-color:var(--gold-dk); background:color-mix(in srgb, var(--gold) 20%, var(--surface-2)); }
+.comp-board-row.rank-2{ border-color:var(--line-strong); }
+.comp-board-row.rank-3{ border-color:color-mix(in srgb, var(--sun1) 45%, var(--line)); }
+.comp-board-row.me{ box-shadow:0 0 0 3px var(--blue) inset; }
+.comp-rank{ flex:0 0 auto; width:26px; text-align:center; font-size:16px; font-weight:700; color:var(--ink-dim);
+  font-variant-numeric:lining-nums tabular-nums; }
+.comp-who{ flex:1; min-width:0; font-size:13px; font-weight:800; color:var(--ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.comp-detail{ flex:0 0 auto; font-size:11px; font-weight:700; color:var(--muted); }
+.comp-score{ flex:0 0 auto; min-width:44px; text-align:right; font-size:15px; font-weight:700; color:var(--gold-dk);
+  font-variant-numeric:lining-nums tabular-nums; }
+
+/* ---------- the student's run ---------- */
+.comp-hud{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; }
+.comp-hud-name{ font-size:13px; font-weight:800; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.comp-hud-clock{ flex:0 0 auto; font-size:16px; font-weight:700; color:var(--ink);
+  background:var(--surface-2); border:2px solid var(--line); border-radius:999px; padding:4px 12px;
+  font-variant-numeric:lining-nums tabular-nums; }
+.comp-hud-clock.low{ color:var(--wrong-dk); border-color:var(--wrong);
+  background:color-mix(in srgb, var(--wrong) 14%, var(--surface-2)); animation:timerPulse .9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce){ .comp-hud-clock.low{ animation:none; } }
+.comp-progress{ margin-bottom:14px; }
+.comp-skip{ margin-top:14px; font-family:inherit; font-size:12px; font-weight:800; cursor:pointer;
+  color:var(--muted); background:none; border:none; padding:6px 10px; border-radius:10px; }
+.comp-skip:hover{ color:var(--ink); background:var(--surface-2); }
+.comp-done{ text-align:center; }
+.comp-done-medal{ font-size:60px; line-height:1; }
+.comp-done-title{ font-family:"Baloo 2",system-ui,sans-serif; font-size:17px; margin-top:8px; color:var(--ink-dim); }
+.comp-done-rank{ font-family:"Rubik Mono One",sans-serif; font-size:34px; color:var(--gold-dk); margin:4px 0 10px; }
+.comp-done-stats{ display:flex; justify-content:center; gap:22px; margin-bottom:16px; }
+.comp-done-stats span{ display:flex; flex-direction:column; font-size:11px; font-weight:800;
+  text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+.comp-done-stats b{ font-family:var(--font-num); font-size:26px; font-weight:700; color:var(--ink);
+  font-variant-numeric:lining-nums tabular-nums; }
+.comp-card .duel-card-head{ background:linear-gradient(135deg,var(--gold-dk),var(--sun1)); }

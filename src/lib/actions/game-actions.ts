@@ -16,6 +16,10 @@ import {
   createClassroom, myClassrooms, joinClassroom, leaveClassroom, myClassMemberships,
   classRoster, setAssignment, setClassOpen, removeStudent,
 } from "@/lib/game/classroom";
+import {
+  createCompetition, endCompetition, visibleCompetitions, competitionsForClass,
+  startCompetition, submitCompetition, leaderboard,
+} from "@/lib/game/competition";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -188,4 +192,43 @@ export async function setClassOpenAction(classId: string, open: boolean) {
 export async function removeStudentAction(classId: string, studentId: string) {
   const userId = await requireUserId();
   return removeStudent(userId, classId, studentId);
+}
+
+/* ---------- competitions ---------- */
+
+export async function createCompetitionAction(
+  classId: string, name: string, level: string, durationSec: number, questionCount?: number
+) {
+  const userId = await requireUserId();
+  return createCompetition(userId, classId, name, level, durationSec, questionCount);
+}
+
+export async function endCompetitionAction(competitionId: string) {
+  const userId = await requireUserId();
+  return endCompetition(userId, competitionId);
+}
+
+export async function competitionsAction() {
+  const userId = await requireUserId();
+  return { rows: await visibleCompetitions(userId) };
+}
+
+export async function classCompetitionsAction(classId: string) {
+  const userId = await requireUserId();
+  return competitionsForClass(userId, classId);
+}
+
+export async function startCompetitionAction(competitionId: string) {
+  const userId = await requireUserId();
+  return startCompetition(userId, competitionId);
+}
+
+export async function submitCompetitionAction(competitionId: string, answers: (number | null)[]) {
+  const userId = await requireUserId();
+  return submitCompetition(userId, competitionId, answers);
+}
+
+export async function competitionBoardAction(competitionId: string) {
+  const userId = await requireUserId();
+  return leaderboard(userId, competitionId);
 }

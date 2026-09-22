@@ -4,7 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   createClassAction, rosterAction, setAssignmentAction, setClassOpenAction, removeStudentAction,
+  createCompetitionAction, classCompetitionsAction, endCompetitionAction, competitionBoardAction,
 } from "@/lib/actions/game-actions";
+import { COMP_LEVELS, type CompetitionSummary, type CompRow } from "@/lib/game/competition";
 import type { ClassSummary, ClassStudent } from "@/lib/game/classroom";
 import { TOPICS } from "@/lib/game/topics";
 
@@ -37,6 +39,13 @@ export function ClassroomBoard({
   const [assignNote, setAssignNote] = useState("");
   const [busy, setBusy] = useState(false);
 
+  /* competitions for the open class */
+  const [comps, setComps] = useState<CompetitionSummary[]>([]);
+  const [compName, setCompName] = useState("");
+  const [compLevelId, setCompLevelId] = useState(COMP_LEVELS[1].id as string);
+  const [compMins, setCompMins] = useState(5);
+  const [board, setBoard] = useState<{ name: string; rows: CompRow[] } | null>(null);
+
   async function onCreate() {
     if (!newName.trim()) return;
     setBusy(true);
@@ -55,7 +64,8 @@ export function ClassroomBoard({
     setOpen(c);
     setStudents(null);
     setNote(null);
-    const res = await rosterAction(c.id);
+    const [res, cr] = await Promise.all([rosterAction(c.id), classCompetitionsAction(c.id)]);
+    if (cr.ok) setComps(cr.rows ?? []);
     if (res.ok) {
       setStudents(res.students ?? []);
       setAssignedTopicId(res.assignedTopicId ?? null);
@@ -97,6 +107,36 @@ export function ClassroomBoard({
       setStudents((s) => (s ? s.filter((x) => x.id !== studentId) : s));
       setClasses((cs) => cs.map((c) => (c.id === open.id ? { ...c, memberCount: Math.max(0, c.memberCount - 1) } : c)));
     } else setNote(res.error ?? null);
+  }
+
+  async function refreshComps() {
+    if (!open) return;
+    const cr = await classCompetitionsAction(open.id);
+    if (cr.ok) setComps(cr.rows ?? []);
+  }
+
+  async function onCreateComp() {
+    if (!open || !compName.trim()) return;
+    setBusy(true);
+    const res = await createCompetitionAction(open.id, compName, compLevelId, compMins * 60);
+    setBusy(false);
+    if (res.ok) {
+      setCompName("");
+      setNote(null);
+      refreshComps();
+    } else setNote(res.error ?? null);
+  }
+
+  async function onEndComp(id: string) {
+    const res = await endCompetitionAction(id);
+    if (res.ok) refreshComps();
+    else setNote(res.error ?? null);
+  }
+
+  async function onViewBoard(id: string) {
+    const res = await competitionBoardAction(id);
+    if (res.ok) setBoard({ name: res.name ?? "", rows: res.rows ?? [] });
+    else setNote(res.error ?? null);
   }
 
   const assignedTopic = TOPICS.find((t) => t.id === assignedTopicId);
@@ -203,6 +243,73 @@ export function ClassroomBoard({
               )}
             </div>
 
+            <div className="cls-assign comp-block">
+              <div className="cls-assign-label">Competition</div>
+              <div className="cls-assign-row">
+                <input
+                  className="cls-assign-note"
+                  value={compName}
+                  onChange={(e) => setCompName(e.target.value)}
+                  placeholder="Competition name, e.g. Friday Sprint"
+                  maxLength={60}
+                  aria-label="Competition name"
+                />
+                <select
+                  className="cls-select"
+                  value={compLevelId}
+                  onChange={(e) => setCompLevelId(e.target.value)}
+                  aria-label="Competition level"
+                >
+                  {COMP_LEVELS.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name} · {l.questions} questions
+                    </option>
+                  ))}
+                </select>
+                <label className="comp-mins">
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={compMins}
+                    onChange={(e) => setCompMins(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
+                    aria-label="Duration in minutes"
+                  />
+                  <span>min</span>
+                </label>
+                <button className="btn btn-primary comp-start" onClick={onCreateComp} disabled={busy || !compName.trim()}>
+                  Start competition
+                </button>
+              </div>
+              <div className="cls-assign-hint">
+                Everyone sits the same paper, generated from the level you pick. Students see it on
+                their home screen and get one attempt each; answers are marked here, not on their device.
+              </div>
+
+              {comps.length > 0 && (
+                <div className="comp-list">
+                  {comps.map((c) => (
+                    <div key={c.id} className={`comp-row${c.status === "ended" ? " ended" : ""}`}>
+                      <span className="comp-row-name">
+                        {c.name}
+                        <span className="comp-row-meta">
+                          {c.levelName} · {c.questionCount} Qs · {Math.round(c.durationSec / 60)} min
+                          {c.status === "ended" ? " · ended" : ""}
+                        </span>
+                      </span>
+                      <span className="comp-row-count mono">
+                        {c.finished}/{c.entrants} done
+                      </span>
+                      <button className="comp-row-btn" onClick={() => onViewBoard(c.id)}>Results</button>
+                      {c.status === "live" && (
+                        <button className="comp-row-btn danger" onClick={() => onEndComp(c.id)}>End</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
@@ -279,6 +386,34 @@ export function ClassroomBoard({
           </>
         )}
       </main>
+
+      {board && (
+        <>
+          <div className="menu-overlay" onClick={() => setBoard(null)} />
+          <div className="comp-board">
+            <div className="comp-board-head">
+              <span>🏅 {board.name}</span>
+              <button className="share-close" onClick={() => setBoard(null)} aria-label="Close">✕</button>
+            </div>
+            {board.rows.length === 0 ? (
+              <div className="admin-empty">Nobody has finished yet.</div>
+            ) : (
+              <ol className="comp-board-list">
+                {board.rows.map((r) => (
+                  <li key={r.userId} className={`comp-board-row rank-${r.rank <= 3 ? r.rank : "n"}`}>
+                    <span className="comp-rank mono">{r.rank}</span>
+                    <span className="comp-who">{r.name}</span>
+                    <span className="comp-detail mono">
+                      {r.correct}/{r.answered || r.correct} · {(r.elapsedMs / 1000).toFixed(0)}s
+                    </span>
+                    <span className="comp-score mono">{r.score}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

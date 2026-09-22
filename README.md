@@ -62,6 +62,13 @@ prompts each child keeps missing. Ownership is re-checked on every teacher read
 and write, a child can always leave (which immediately ends the teacher's view),
 and the roster carries no email addresses.
 
+**Competitions** — a teacher runs a timed quiz for one class: name it, pick a
+level (Very easy → Expert) and a duration. The paper is derived from a stored
+seed, so every entrant sits an identical one and the server can rebuild it to
+mark the answers — the client sends what it chose, never how well it did.
+One attempt each, results ranked by score with time as the tiebreak, and
+results stay hidden from anyone who has not yet sat it.
+
 Run the suites against a real database:
 
 ```bash
@@ -69,6 +76,7 @@ npx dotenv -e .env.local -- npx tsx scripts/test-engagement.ts
 npx dotenv -e .env.local -- npx tsx scripts/test-social.ts
 npx dotenv -e .env.local -- npx tsx scripts/test-srs.ts
 npx dotenv -e .env.local -- npx tsx scripts/test-classroom.ts
+npx dotenv -e .env.local -- npx tsx scripts/test-competition.ts
 ```
 
 Both create throwaway `@test.local` users and delete them afterwards.

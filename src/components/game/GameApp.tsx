@@ -55,6 +55,10 @@ import {
 } from "@/lib/actions/game-actions";
 import type { Friend, ChallengeRow } from "@/lib/game/friends";
 import { myClassesAction, joinClassAction, leaveClassAction } from "@/lib/actions/game-actions";
+import {
+  competitionsAction, startCompetitionAction, submitCompetitionAction, competitionBoardAction,
+} from "@/lib/actions/game-actions";
+import type { CompetitionSummary, CompQuestion, CompRow } from "@/lib/game/competition";
 import type { QuestState, InventoryState, ReviewStats } from "@/lib/game/engagement";
 import type { LeaderboardEntry } from "@/lib/game/progress";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
@@ -72,7 +76,7 @@ import { useBuddy, line } from "./useBuddy";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI, type UIDict } from "./i18n";
 
-type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review";
+type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
@@ -121,6 +125,13 @@ const STAGE_POS = ["c", "l", "r", "l", "c"];
 /* Blitz pacing now comes from the chosen level (see BLITZ_LEVELS in topics.ts)
    rather than one fixed ramp. */
 const BLITZ_DEFAULT_LEVEL = 2;
+
+/* 1st / 2nd / 3rd / 4th — spelled out because "#4" reads as a quantity. */
+function rankLabel(n: number): string {
+  if (n <= 0) return "—";
+  const s = ["th", "st", "nd", "rd"][n % 100 > 10 && n % 100 < 14 ? 0 : Math.min(n % 10, 4) % 4] ?? "th";
+  return `${n}${s}`;
+}
 /* one bought Time Boost is worth this much extra clock, for one run */
 const BLITZ_BOOST_MS = 4000;
 
@@ -378,6 +389,7 @@ export function GameApp({
         setDuels(fr.duels);
         setPendingDuels(fr.pending);
         refreshClasses();
+        refreshComps();
       } catch {}
     })();
     return () => {
@@ -453,6 +465,97 @@ export function GameApp({
   /* The assignment the child should see, if a teacher has set one. */
   const assignment = enrolled.find((e) => e.assignedTopicId);
   const assignedTopic = assignment ? TOPIC_BY_ID[assignment.assignedTopicId!] : undefined;
+
+  /* ---------- competitions (the student's side) ---------- */
+  const [comps, setComps] = useState<CompetitionSummary[]>([]);
+  const [compQs, setCompQs] = useState<CompQuestion[]>([]);
+  const [compAnswers, setCompAnswers] = useState<(number | null)[]>([]);
+  const [compIdx, setCompIdx] = useState(0);
+  const [compId, setCompId] = useState<string | null>(null);
+  const [compName, setCompName] = useState("");
+  const [compEndsAt, setCompEndsAt] = useState<number | null>(null);
+  const [compLeft, setCompLeft] = useState(0);
+  const [compResult, setCompResult] = useState<{ correct: number; total: number; score: number; rank: number } | null>(null);
+  const [compBoard, setCompBoard] = useState<{ name: string; rows: CompRow[] } | null>(null);
+  const compSubmittedRef = useRef(false);
+
+  const liveComps = comps.filter((c) => c.status === "live" && c.myScore === null);
+
+  async function refreshComps() {
+    try {
+      setComps((await competitionsAction()).rows);
+    } catch {}
+  }
+
+  async function beginCompetition(c: CompetitionSummary) {
+    const res = await startCompetitionAction(c.id);
+    if (!res.ok) {
+      setClassNote(res.error);
+      return;
+    }
+    compSubmittedRef.current = false;
+    setCompId(c.id);
+    setCompName(res.name);
+    setCompQs(res.questions);
+    setCompAnswers(new Array(res.questions.length).fill(null));
+    setCompIdx(0);
+    setCompResult(null);
+    setCompEndsAt(Date.now() + res.durationSec * 1000);
+    setCompLeft(res.durationSec * 1000);
+    setClassOpen(false);
+    setView("comp");
+  }
+
+  /* One submit per attempt, whether it comes from the last question or the
+     clock running out. */
+  const finishCompetition = useCallback(
+    async (answers: (number | null)[]) => {
+      if (!compId || compSubmittedRef.current) return;
+      compSubmittedRef.current = true;
+      setCompEndsAt(null);
+      const res = await submitCompetitionAction(compId, answers);
+      if (res.ok) {
+        setCompResult({
+          correct: res.correct ?? 0,
+          total: answers.length,
+          score: res.score ?? 0,
+          rank: res.rank ?? 0,
+        });
+        confetti.burstCenter(120, 0.5);
+        sound.levelUp();
+      }
+      refreshComps();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [compId]
+  );
+
+  /* The clock. Server-side elapsed is what actually counts; this is the display
+     and the auto-submit. */
+  useEffect(() => {
+    if (view !== "comp" || compEndsAt === null) return;
+    const id = setInterval(() => {
+      const left = compEndsAt - Date.now();
+      setCompLeft(Math.max(0, left));
+      if (left <= 0) finishCompetition(compAnswers);
+    }, 200);
+    return () => clearInterval(id);
+  }, [view, compEndsAt, compAnswers, finishCompetition]);
+
+  function onCompPick(value: number) {
+    const next = [...compAnswers];
+    next[compIdx] = value;
+    setCompAnswers(next);
+    sound.click();
+    if (compIdx + 1 >= compQs.length) finishCompetition(next);
+    else setCompIdx(compIdx + 1);
+  }
+
+  async function openCompBoard(id: string) {
+    const res = await competitionBoardAction(id);
+    if (res.ok) setCompBoard({ name: res.name ?? "", rows: res.rows ?? [] });
+    else setClassNote(res.error ?? null);
+  }
 
   /* ---------- friends & duels ---------- */
   const [friendsOpen, setFriendsOpen] = useState(false);
@@ -1531,6 +1634,37 @@ export function GameApp({
         </>
       )}
 
+      {compBoard && (
+        <>
+          <div className="menu-overlay" onClick={() => setCompBoard(null)} />
+          <div className="comp-board">
+            <div className="comp-board-head">
+              <span>🏅 {compBoard.name}</span>
+              <button className="share-close" onClick={() => setCompBoard(null)} aria-label={t.share.close}>✕</button>
+            </div>
+            {compBoard.rows.length === 0 ? (
+              <div className="friend-empty">{ja ? "まだ結果がありません。" : "No results yet."}</div>
+            ) : (
+              <ol className="comp-board-list">
+                {compBoard.rows.map((r) => (
+                  <li
+                    key={r.userId}
+                    className={`comp-board-row rank-${r.rank <= 3 ? r.rank : "n"}${r.name === (user.name ?? "") ? " me" : ""}`}
+                  >
+                    <span className="comp-rank mono">{r.rank}</span>
+                    <span className="comp-who">{r.name}</span>
+                    <span className="comp-detail mono">
+                      {r.correct} · {(r.elapsedMs / 1000).toFixed(0)}s
+                    </span>
+                    <span className="comp-score mono">{r.score}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </>
+      )}
+
       {blitzPicker && (
         <>
           <div className="menu-overlay" onClick={() => setBlitzPicker(false)} />
@@ -1626,6 +1760,28 @@ export function GameApp({
                 </div>
               )}
             </div>
+
+            {comps.length > 0 && (
+              <div className="duel-history">
+                <div className="duel-history-label">{ja ? "コンペティション" : "Competitions"}</div>
+                {comps.slice(0, 6).map((c) => (
+                  <div key={c.id} className="duel-row">
+                    <span className="duel-vs">{c.name}</span>
+                    {c.myScore !== null ? (
+                      <button className="duel-accept" onClick={() => openCompBoard(c.id)}>
+                        🏅 {ja ? `${c.myRank} 位` : `#${c.myRank}`} · {c.myScore}
+                      </button>
+                    ) : c.status === "live" ? (
+                      <button className="duel-accept" onClick={() => beginCompetition(c)}>
+                        ▶ {ja ? "参加する" : "Enter"}
+                      </button>
+                    ) : (
+                      <span className="duel-waiting">{ja ? "終了" : "ended"}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <a className="quest-review-cta cls-teach-link" href="/classroom">
               🧑‍🏫 {ja ? "先生用：クラスを作る" : teachingCount > 0 ? `Teaching ${teachingCount} class${teachingCount === 1 ? "" : "es"}` : "I'm a teacher — make a class"}
@@ -2015,6 +2171,8 @@ export function GameApp({
             onStartReview={startReview}
             gemBalance={gemBalance}
             openDuels={openDuels}
+            liveComps={liveComps}
+            onEnterComp={beginCompetition}
             assignment={assignment}
             assignedTopic={assignedTopic}
             onOpenFriends={openFriends}
@@ -2087,6 +2245,75 @@ export function GameApp({
             onReset={() => loadPuzzle(puzIdx)}
             onNext={() => loadPuzzle(puzIdx + 1)}
           />
+        )}
+
+        {view === "comp" && (
+          <section className="view active">
+            {compResult ? (
+              <div className="practice-card comp-done">
+                <div className="comp-done-medal">
+                  {compResult.rank === 1 ? "🥇" : compResult.rank === 2 ? "🥈" : compResult.rank === 3 ? "🥉" : "🏅"}
+                </div>
+                <h3 className="comp-done-title">{compName}</h3>
+                <div className="comp-done-rank">
+                  {ja ? `${compResult.rank} 位` : rankLabel(compResult.rank)}
+                </div>
+                <div className="comp-done-stats">
+                  <span>
+                    <b className="mono">{compResult.correct}/{compResult.total}</b>
+                    {ja ? "正解" : "correct"}
+                  </span>
+                  <span>
+                    <b className="mono">{compResult.score}</b>
+                    {ja ? "スコア" : "points"}
+                  </span>
+                </div>
+                <div className="result-actions">
+                  <button className="btn btn-primary" onClick={() => compId && openCompBoard(compId)}>
+                    🏅 {ja ? "順位表" : "Leaderboard"}
+                  </button>
+                  <button className="btn btn-ghost" onClick={goHome}>{t.blitz.backHome}</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="comp-hud">
+                  <span className="comp-hud-name">{compName}</span>
+                  <span className={`comp-hud-clock mono${compLeft < 30000 ? " low" : ""}`}>
+                    ⏱ {Math.floor(compLeft / 60000)}:{String(Math.floor((compLeft % 60000) / 1000)).padStart(2, "0")}
+                  </span>
+                </div>
+                <div className="timer-bar-wrap comp-progress">
+                  <div
+                    className="review-progress-fill"
+                    style={{ width: `${(compIdx / Math.max(1, compQs.length)) * 100}%` }}
+                  />
+                </div>
+                <div className="practice-card">
+                  <div className="mode-eyebrow">
+                    {ja ? `第 ${compIdx + 1} 問 / ${compQs.length}` : `Question ${compIdx + 1} of ${compQs.length}`}
+                  </div>
+                  <div className="question mono">{compQs[compIdx]?.problem.prompt} = ?</div>
+                  <div className="tile-grid">
+                    {(compQs[compIdx]?.options ?? []).map((o) => (
+                      <button key={o} className="choice-tile" onClick={() => onCompPick(o)}>
+                        {fmt(o)}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    className="comp-skip"
+                    onClick={() => {
+                      if (compIdx + 1 >= compQs.length) finishCompetition(compAnswers);
+                      else setCompIdx(compIdx + 1);
+                    }}
+                  >
+                    {ja ? "スキップ →" : "Skip →"}
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
         )}
 
         {view === "review" && (
@@ -2479,6 +2706,8 @@ function HomeView({
   onStartReview,
   gemBalance,
   openDuels,
+  liveComps,
+  onEnterComp,
   assignment,
   assignedTopic,
   onOpenFriends,
@@ -2507,6 +2736,8 @@ function HomeView({
   onStartReview: () => void;
   gemBalance: number | null;
   openDuels: ChallengeRow[];
+  liveComps: CompetitionSummary[];
+  onEnterComp: (c: CompetitionSummary) => void;
   assignment: { name: string; teacherName: string; assignedNote: string | null } | undefined;
   assignedTopic: Topic | undefined;
   onOpenFriends: () => void;
@@ -2607,6 +2838,27 @@ function HomeView({
               ⏳ {lang === "ja" ? `あと${resetHours}時間${resetMins}分でリセット！` : `Resets in ${resetHours}h ${resetMins}m — play today!`}
             </div>
           )}
+        </div>
+      )}
+
+      {liveComps.length > 0 && (
+        <div className="duel-card comp-card">
+          <div className="duel-card-head">
+            🏅 {lang === "ja" ? "コンペティション開催中" : "Competition open"}
+          </div>
+          {liveComps.slice(0, 2).map((c) => (
+            <button key={c.id} className="duel-card-row" onClick={() => onEnterComp(c)}>
+              <span className="duel-card-avatar">🏅</span>
+              <span className="duel-card-info">
+                <span className="duel-card-name">{c.name}</span>
+                <span className="duel-card-sub">
+                  {c.levelName} · {c.questionCount} {lang === "ja" ? "問" : "Qs"} ·{" "}
+                  {Math.round(c.durationSec / 60)} {lang === "ja" ? "分" : "min"}
+                </span>
+              </span>
+              <span className="duel-card-go">{lang === "ja" ? "参加" : "Enter"} ›</span>
+            </button>
+          ))}
         </div>
       )}
 

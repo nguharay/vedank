@@ -250,3 +250,45 @@ export const classMembers = pgTable(
   },
   (t) => [primaryKey({ columns: [t.classId, t.userId] })]
 );
+
+/* ---------- classroom competitions ----------
+   A timed quiz a teacher runs for one class. The question set is derived from
+   `seed` rather than stored, so every entrant gets an identical paper and the
+   server can re-derive it to grade — the client never reports its own score. */
+export const competitions = pgTable("competitions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  classId: uuid("class_id")
+    .notNull()
+    .references(() => classrooms.id, { onDelete: "cascade" }),
+  teacherId: uuid("teacher_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  level: text("level").notNull().default("easy"),
+  durationSec: integer("duration_sec").notNull().default(300),
+  questionCount: integer("question_count").notNull().default(12),
+  seed: integer("seed").notNull(),
+  // live | ended
+  status: text("status").notNull().default("live"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+});
+
+export const competitionEntries = pgTable(
+  "competition_entries",
+  {
+    competitionId: uuid("competition_id")
+      .notNull()
+      .references(() => competitions.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    correct: integer("correct").notNull().default(0),
+    answered: integer("answered").notNull().default(0),
+    elapsedMs: integer("elapsed_ms").notNull().default(0),
+    score: integer("score").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.competitionId, t.userId] })]
+);
