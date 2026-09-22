@@ -847,12 +847,6 @@ const PARTS_SPECS: Record<string, PartsSpec> = {
     rightLabel: "right part", rightWork: ["10 − 2", "= 8"],
     join: "28 | 8", answer: "288",
   },
-  mult1x: {
-    caption: "units × units, then the cross-total",
-    leftLabel: "step 2 · left", leftWork: ["19 + 6 = 25", "+ carry 5 = 30"],
-    rightLabel: "step 1 · units", rightWork: ["9 × 6 = 54", "write 4, carry 5"],
-    join: "30 | 4", answer: "304",
-  },
 };
 
 // Book p.122 — Digit Sum, casting out 9.
@@ -944,8 +938,74 @@ function AdditionBarDiagram() {
   );
 }
 
+/* Page 64: two column panels — units by units first, then the cross-total on the
+   left with the carry folded in. */
+function Mult1xPanel({ a, b, label, arrow, result, note, uid }: {
+  a: number; b: number; label: string; arrow: "units" | "cross"; result: string; note?: string; uid: string;
+}) {
+  const w = 104, xT = 46, xU = 74;
+  return (
+    <svg viewBox={`0 0 ${w} 104`} className="bd-svg bd-flagpanel">
+      <defs>
+        <marker id={uid} markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="var(--sun1)" />
+        </marker>
+      </defs>
+      <text x="8" y="13" className="bd-steplabel" style={{ fontSize: 9 }}>{label}</text>
+
+      <text x={xT} y="38" className="bd-digit" textAnchor="middle">{Math.floor(a / 10)}</text>
+      <text x={xU} y="38" className="bd-digit" textAnchor="middle">{a % 10}</text>
+      <text x="12" y="60" className="bd-num" textAnchor="start">×</text>
+      <text x={xT} y="60" className="bd-digit" textAnchor="middle">{Math.floor(b / 10)}</text>
+      <text x={xU} y="60" className="bd-digit" textAnchor="middle">{b % 10}</text>
+
+      {arrow === "units" ? (
+        <path d={`M ${xU} 44 L ${xU} 50`} className="bd-tick" markerEnd={`url(#${uid})`} />
+      ) : (
+        <path d={`M ${xU - 6} 52 Q ${xT} 46 ${xT - 10} 34`} className="bd-tick" markerEnd={`url(#${uid})`} />
+      )}
+
+      <line x1="10" y1="68" x2={w - 6} y2="68" className="bd-rule" />
+      <text x={w - 6} y="88" className="bd-partline" textAnchor="end">{result}</text>
+      {note && <text x={w - 6} y="100" className="bd-caption" style={{ fontSize: 8 }} textAnchor="end">{note}</text>}
+    </svg>
+  );
+}
+
+function Mult1xDiagram({ lang }: { lang: Lang }) {
+  const a = 19, b = 16;
+  const ua = a % 10, ub = b % 10;
+  const units = ua * ub;
+  const carry = Math.floor(units / 10);
+  const leftTotal = a + ub + carry;
+  const total = a * b;
+  return (
+    <div className="bd-flaggrid">
+      <div className="bd-flagcap">
+        {lang === "ja" ? "一の位どうし → それから左" : "units × units, then the left part"}
+      </div>
+      <div className="bd-flagrow bd-flagrow-2">
+        <Mult1xPanel
+          a={a} b={b} arrow="units" uid="m1xA"
+          label={lang === "ja" ? "① 一の位×一の位" : "STEP 1 · units × units"}
+          result={String(units)}
+          note={`write ${units % 10}${carry ? `, carry ${carry}` : ""}`}
+        />
+        <Mult1xPanel
+          a={a} b={b} arrow="cross" uid="m1xB"
+          label={lang === "ja" ? `② ${a} + ${ub}` : `STEP 2 · ${a} + ${ub}`}
+          result={`${leftTotal} | ${units % 10}`}
+          note={carry ? `(${a}+${ub}) + ${carry}` : `(${a}+${ub})`}
+        />
+      </div>
+      <div className="bd-flaganswer">{total}</div>
+    </div>
+  );
+}
+
 export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.ReactElement>> = {
   additionBar: AdditionBarDiagram,
+  mult1x: Mult1xDiagram,
   mult11: Mult11Diagram,
   mult12to19: FlagDigitDiagram,
   mult111: Mult111Diagram,
