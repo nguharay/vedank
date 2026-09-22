@@ -728,14 +728,7 @@ const NIKHILAM_SPECS: Record<string, NikhilamSpec> = {
     notes: ["Five zeros, so five digits to take.", "9−3=6, 9−5=4, 9−8=1, 9−7=2, 10−5=5"],
     answer: ["6", "4", "1", "2", "5"],
   },
-  subtractionGeneral: {
-    caption: "smaller digit above? take the complement",
-    top: ["", "9", "10"],
-    minuend: ["6", "2", "4"],
-    subtrahend: ["3", "4", "7"],
-    notes: ["Left: 6−3=3 → reduce to 2", "Middle: 4−2=2 → (9−2)=7", "Last: 7−4=3 → (10−3)=7"],
-    answer: ["2", "7", "7"],
-  },
+
   subOtherThan10s: {
     caption: "drop the leading digit by 1, then Nikhilam",
     top: ["9", "9", "10"],
@@ -1003,9 +996,64 @@ function Mult1xDiagram({ lang }: { lang: Lang }) {
   );
 }
 
+/* Page 136: the column subtraction revealed a column at a time, with the ones
+   that needed a complement marked. */
+function SubGenPanel({ A, B, upto, digits, comps }: {
+  A: number[]; B: number[]; upto: number; digits: number[]; comps: boolean[];
+}) {
+  const pitch = 19, right = 8 + A.length * pitch, w = right + 10;
+  return (
+    <svg viewBox={`0 0 ${w} 104`} className="bd-svg bd-flagpanel">
+      {A.map((d, i) => (
+        <text key={`a${i}`} x={right - (A.length - 1 - i) * pitch} y="26" className="bd-num"
+          textAnchor="end" opacity={i < upto ? 1 : 0.3}>{d}</text>
+      ))}
+      <text x={right - (A.length - 1) * pitch - 15} y="50" className="bd-num" textAnchor="end">−</text>
+      {B.map((d, i) => (
+        <text key={`b${i}`} x={right - (B.length - 1 - i) * pitch} y="50" className="bd-num"
+          textAnchor="end" opacity={i < upto ? 1 : 0.3}>{d}</text>
+      ))}
+      <line x1="6" y1="58" x2={w - 6} y2="58" className="bd-rule" />
+      {digits.slice(0, upto).map((d, i) => (
+        <text key={`r${i}`} x={right - (A.length - 1 - i) * pitch} y="82"
+          className={comps[i] ? "bd-dev" : "bd-partline"} textAnchor="end">{d}</text>
+      ))}
+      {comps[upto - 1] && (
+        <text x={right} y="98" className="bd-caption" style={{ fontSize: 8 }} textAnchor="end">complement</text>
+      )}
+    </svg>
+  );
+}
+
+function SubGenDiagram() {
+  const a = 624, b = 347;
+  const A = String(a).split("").map(Number);
+  const B = String(b).padStart(A.length, "0").split("").map(Number);
+  const digits: number[] = new Array(A.length);
+  const comps: boolean[] = new Array(A.length).fill(false);
+  let take = 0;
+  for (let i = A.length - 1; i >= 0; i--) {
+    const up = A[i] - take;
+    if (up < B[i]) { digits[i] = 10 - (B[i] - up); comps[i] = true; take = 1; }
+    else { digits[i] = up - B[i]; take = 0; }
+  }
+  return (
+    <div className="bd-flaggrid">
+      <div className="bd-flagcap">a column at a time · complement where the top is smaller</div>
+      <div className="bd-flagrow bd-flagrow-3">
+        {A.map((_, i) => (
+          <SubGenPanel key={i} A={A} B={B} upto={i + 1} digits={digits} comps={comps} />
+        ))}
+      </div>
+      <div className="bd-flaganswer">{a - b}</div>
+    </div>
+  );
+}
+
 export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.ReactElement>> = {
   additionBar: AdditionBarDiagram,
   mult1x: Mult1xDiagram,
+  subtractionGeneral: SubGenDiagram,
   mult11: Mult11Diagram,
   mult12to19: FlagDigitDiagram,
   mult111: Mult111Diagram,

@@ -1084,44 +1084,78 @@ export const TOPICS: Topic[] = [
   },
   {
     id: "subtractionGeneral",
-    icon: "➖",
-    grad: ["#EF6C00", "#FFB74D"],
+    icon: "−",
+    grad: ["#C4001F", "#FF6B6B"],
     illus: "numberline",
-    title: "Mental Subtraction — General Method",
-    titleJa: "暗算での引き算 — 一般法",
-    sutraSa: "Sankalana-Vyavakalanabhyām",
+    title: "Subtraction — General Method",
+    titleJa: "引き算 — 一般の方法",
+    sutraSa: "Nikhilam Navatáścaramam Daśataḥ",
     sutraEn: "All from 9, Last from 10",
     sutraEnJa: "すべて9から、最後は10から",
-    blurb: "Subtract left to right the same way — take each place value off a running total.",
-    blurbJa: "同じように左から右へ引きます――途中の合計から桁の値を1つずつ取り除きます。",
-    steps: ["Start the running total at the first number.", "Take off the leftmost place value of the second number.", "Take off the next place value.", "Keep going until every digit has been subtracted."],
-    stepsJa: ["最初の数を途中の合計として始める。", "2番目の数の一番左の桁の値を取り除く。", "次の桁の値を取り除く。", "すべての桁を引き終えるまで続ける。"],
+    blurb:
+      "Work left to right. Where the upper digit is the larger, just subtract. Where it is smaller, subtract the other way round and take the complement of what you get — from 10 in the last column, from 9 in the others — and drop the digit to its left by one.",
+    blurbJa:
+      "左から右へ進みます。上の数字が大きければそのまま引きます。小さければ逆向きに引いて、その補数をとります——最後のけたは10から、ほかは9から——そして左どなりのけたを1減らします。",
+    steps: [
+      "Go column by column, left to right.",
+      "Upper digit larger? Subtract it straight.",
+      "Upper digit smaller? Subtract the other way, then take the complement — 10 for the last column, 9 for the rest.",
+      "Each time you do that, reduce the digit on its left by one.",
+    ],
+    stepsJa: [
+      "左から右へ、けたごとに進む。",
+      "上の数字が大きければ、そのまま引く。",
+      "小さければ逆に引き、補数をとる——最後のけたは10から、ほかは9から。",
+      "そのたびに、左どなりのけたを1減らす。",
+    ],
     example: () => ({ a: 624, b: 347 }),
+    example2: () => ({ a: 62535, b: 26756 }),
     exSteps: (ex, lang) => {
       const a = ex.a as number, b = ex.b as number;
-      const sb = String(b), len = sb.length;
-      const pb = sb.padStart(len, "0");
-      let running = a;
-      const rows: ExStep[] = [
-        [`${a} − ${b}`, "="],
-        lang === "ja" ? [`${a} から始める`, `途中の合計 = ${a}`] : [`start at ${a}`, `running total = ${a}`],
-      ];
-      for (let i = 0; i < len; i++) {
-        const place = Math.pow(10, len - 1 - i);
-        const db = +pb[i];
-        running -= db * place;
-        const right = lang === "ja" ? `途中の合計 = ${running}` : `running total = ${running}`;
-        rows.push([`−${db * place || db}`, right]);
+      const A = String(a).split("").map(Number);
+      const B = String(b).padStart(A.length, "0").split("").map(Number);
+
+      /* Decide the columns right to left, carrying the reduction leftwards, then
+         read them back in page order. Each column's shown digit is the answer's
+         digit — an earlier version displayed the complement of the raw upper
+         digit, which contradicted the total it printed underneath. */
+      const cols: { up: number; comp: boolean; digit: number }[] = new Array(A.length);
+      let take = 0;
+      for (let i = A.length - 1; i >= 0; i--) {
+        const up = A[i] - take;
+        if (up < B[i]) {
+          cols[i] = { up, comp: true, digit: 10 - (B[i] - up) };
+          take = 1;
+        } else {
+          cols[i] = { up, comp: false, digit: up - B[i] };
+          take = 0;
+        }
       }
+      const rows: [string, string][] = [[`${fmt(a)} − ${fmt(b)}`, ""]];
+      for (let i = 0; i < A.length; i++) {
+        const { up, comp, digit } = cols[i];
+        const last = i === A.length - 1;
+        const place = lang === "ja"
+          ? (i === 0 ? "左" : last ? "最後" : "中")
+          : (i === 0 ? "left" : last ? "last" : "middle");
+        rows.push(
+          comp
+            ? [`${place}: ${B[i]} − ${up} = ${B[i] - up}`, `(10−${B[i] - up}) = ${digit}`]
+            : [`${place}: ${up} − ${B[i]}`, `= ${digit}`]
+        );
+      }
+      rows.push([lang === "ja" ? "答え" : "answer", `${fmt(a - b)}`]);
       return rows;
     },
     gen: (diff) => {
       const digits = diff === "easy" ? 2 : diff === "medium" ? 3 : 4;
-      const lo = Math.pow(10, digits - 1), hi = Math.pow(10, digits) - 1;
-      const b = ri(lo, hi), a = ri(b + 1, hi + Math.floor(hi / 2));
-      return { prompt: `${a} − ${b}`, answer: a - b };
+      const hi = Math.pow(10, digits) - 1, lo = Math.pow(10, digits - 1);
+      const a = ri(Math.floor(hi / 2), hi);
+      const b = ri(lo, a - 1);
+      return { prompt: `${fmt(a)} − ${fmt(b)}`, answer: a - b };
     },
   },
+
   {
     id: "subOtherThan10s",
     icon: "−",
