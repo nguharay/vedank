@@ -314,41 +314,6 @@ function DivisionDiagram({ spec }: { spec: DivSpec }) {
 }
 
 const DIV_SPECS: Record<string, DivSpec> = {
-  // p.144 — 3794 ÷ 9, where a running sum reaches 9 and carries
-  div9carry: {
-    caption: ["When a sum reaches 9 or more,", "divide it by 9 and carry its quotient left."],
-    dividend: ["3", "7", "9", "4"], quotient: ["4", "2", "1"], remainder: "5", hop: "+",
-    notes: ["3 down; 3 + 7 = 10 → carry 1, keep 1", "1 + 9 = 10 → carry again, keep 1"],
-    answer: "Q 421 · R 5",
-  },
-  // p.188 — 123123 ÷ 99, base 100 so the last two digits are the remainder zone
-  div99: {
-    caption: ["Base 100 · multiplier = 100 − 99 = 1;", "the last two digits are the remainder."],
-    dividend: ["1", "2", "3", "1"], quotient: ["1", "2", "4", "3"], remainder: "66", hop: "+1",
-    notes: ["Multiplier 01 for 99 · 02 for 98 · 03 for 97", "The last two digits are the remainder zone"],
-    answer: "Q 1243 · R 66",
-  },
-  // p.195 — 3425 ÷ 43: main divisor 4, flag 3
-  flagDivision: {
-    caption: ["Divisor 72 → main divisor 7, flag 2.", "divide → flag × quotient → subtract."],
-    dividend: ["5", "3", "6", "7"], quotient: ["7", "4"], remainder: "39", hop: "−2×",
-    notes: ["53 ÷ 7 = 7 remainder 4", "Flag: 2 × 7 = 14; 46 − 14 = 32, then ÷ 7"],
-    answer: "Q 74 · R 39",
-  },
-  // p.196 — 3425 ÷ 73: fix the negative remainder
-  flagAboveBase: {
-    caption: ["Divisor 73 → main 7, flag 3.", "A negative remainder: add 73, quotient − 1."],
-    dividend: ["3", "4", "2", "5"], quotient: ["4", "6"], remainder: "67", hop: "−3×",
-    notes: ["34 ÷ 7 = 4 remainder 6", "Flag 3 × 4 = 12; add 73 back if it goes negative"],
-    answer: "Q 46 · R 67",
-  },
-  // p.199 — 3425 ÷ 58: round 5 up to 6, flag becomes a bar digit
-  flagBelowBase: {
-    caption: ["Divisor 58 → main 6, flag 2\u0304 (a bar).", "If the remainder exceeds 58, divide once more."],
-    dividend: ["3", "4", "2", "5"], quotient: ["5", "9"], remainder: "3", hop: "+2×",
-    notes: ["From 58: main 6, bar flag 2 — a bar flag adds", "Remainder 61 > 58 → − 58 and quotient + 1"],
-    answer: "Q 59 · R 3",
-  },
   // p.143 — 23 ÷ 9
   div9: {
     caption: ["Quotient (Q) builds left → right;", "the last sum is the Remainder (R)."],
@@ -731,7 +696,7 @@ const NIKHILAM_SPECS: Record<string, NikhilamSpec> = {
 
   subOtherThan10s: {
     caption: "drop the leading digit by 1, then Nikhilam",
-    top: ["9", "9", "10"],
+    top: ["3", "9", "9", "10"],
     minuend: ["4", "0", "0", "0"],
     subtrahend: ["6", "2", "8"],
     notes: ["4 becomes 'one less' → 3", "then 1000 − 628 = 372"],
@@ -792,7 +757,7 @@ function TwoPartsDiagram({ spec }: { spec: PartsSpec }) {
 }
 
 const PARTS_SPECS: Record<string, PartsSpec> = {
-  // p.181 — 43² by duplexes
+  // p.181 — 56² by duplexes
   duplexSquare: {
     caption: "D(a) = a² · D(ab) = 2ab · lay them side by side",
     leftLabel: "D(5) then D(56)", leftWork: ["5² = 25", "2 × 5 × 6 = 60"],
@@ -938,7 +903,7 @@ function Mult1xPanel({ a, b, label, arrow, result, note, uid }: {
 }) {
   const w = 104, xT = 46, xU = 74;
   return (
-    <svg viewBox={`0 0 ${w} 104`} className="bd-svg bd-flagpanel">
+    <svg viewBox={`0 0 ${w} 112`} className="bd-svg bd-flagpanel">
       <defs>
         <marker id={uid} markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
           <path d="M0,0 L6,3 L0,6 Z" fill="var(--sun1)" />
@@ -1073,14 +1038,33 @@ function FlagDivPanel({ dividend, zone, step }: { dividend: string; zone: number
         <text key={i} x={x0 + i * pitch} y="26" className="bd-num" textAnchor="middle">{d}</text>
       ))}
       {/* the fence between the quotient side and the remainder zone */}
-      <line x1={fenceX} y1="10" x2={fenceX} y2="74" className="bd-rule" />
+      <line x1={fenceX} y1="10" x2={fenceX} y2="70" className="bd-rule" />
       <line x1="6" y1="40" x2={w - 6} y2="40" className="bd-rule" />
 
-      {step.work && <text x={fenceX - 6} y="58" className="bd-dev" textAnchor="end">{step.work}</text>}
-      <text x={x0} y="58" className="bd-caption" style={{ fontSize: 8 }} textAnchor="start">{step.note}</text>
+      {/* Quotient and remainder sit under the rule and inside the fence, as the
+          book sets them; the prose goes below the whole figure so neither the
+          fence nor a long note has to cut across the other. */}
+      <text x={fenceX - 6} y="62" className="bd-partline" textAnchor="end">{step.quotient}</text>
+      <text x={w - 8} y="62" className="bd-dev" style={{ fontSize: 13 }} textAnchor="end">{step.rem}</text>
 
-      <text x={fenceX - 6} y="90" className="bd-partline" textAnchor="end">{step.quotient}</text>
-      <text x={w - 8} y="90" className="bd-dev" textAnchor="end">{step.rem}</text>
+      {/* textLength keeps a long note inside its panel rather than letting it
+          run into the neighbouring one. */}
+      <text
+        x={x0 - 4} y="88" className="bd-caption" textAnchor="start"
+        style={{ fontSize: 8 }} lengthAdjust="spacingAndGlyphs"
+        textLength={step.note.length * 4.2 > w - 12 ? w - 12 : undefined}
+      >
+        {step.note}
+      </text>
+      {step.work && (
+        <text
+          x={x0 - 4} y="102" className="bd-dev" textAnchor="start"
+          style={{ fontSize: 9 }} lengthAdjust="spacingAndGlyphs"
+          textLength={step.work.length * 4.8 > w - 12 ? w - 12 : undefined}
+        >
+          {step.work}
+        </text>
+      )}
     </svg>
   );
 }
@@ -1100,6 +1084,18 @@ function FlagDivDiagram({ spec }: { spec: FlagDivSpec }) {
 }
 
 const FLAGDIV_SPECS: Record<string, FlagDivSpec> = {
+  // p.144 — 3794 ÷ 9, drawn as the book draws it: one panel per carry
+  div9carry: {
+    caption: "a sum of 9 or more is divided by 9 and its quotient carried left",
+    dividend: "3794", zone: 1,
+    steps: [
+      { note: "bring down 3", quotient: "3", rem: "" },
+      { note: "3 + 7 = 10 → 1 r 1", work: "carry 1 left", quotient: "4 1", rem: "" },
+      { note: "1 + 9 = 10 → 1 r 1", work: "carry 1 left", quotient: "4 2 1", rem: "" },
+      { note: "1 + 4 = 5", quotient: "421", rem: "5" },
+    ],
+    answer: "Q 421 · R 5",
+  },
   // p.195 — 5367 ÷ 72, divisor 7 with flag 2
   flagDivision: {
     caption: "divisor 7 · flag 2 · divide → flag × quotient → subtract",
@@ -1132,7 +1128,7 @@ const FLAGDIV_SPECS: Record<string, FlagDivSpec> = {
       { note: "34 ÷ 6", quotient: "5", rem: "4" },
       { note: "bar flag 2 × 5 = 10", work: "42 + 10", quotient: "5", rem: "52" },
       { note: "52 ÷ 6", quotient: "58", rem: "4" },
-      { note: "bar flag 2 × 8 = 16", work: "45 + 16 = 61", quotient: "58 → 59", rem: "3" },
+      { note: "bar flag 2 × 8 = 16", work: "45 + 16 = 61 → 61 − 58", quotient: "59", rem: "3" },
     ],
     answer: "Q 59 · R 3",
   },
