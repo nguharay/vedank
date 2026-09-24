@@ -118,6 +118,30 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+/* A reward that snaps into place reads as a label. One that climbs reads as
+   something you earned — the whole difference is ~600ms. */
+function RollUp({ to, ms = 650, prefix = "" }: { to: number; ms?: number; prefix?: string }) {
+  const [n, setN] = useState(0);
+  const reduce = useRef(false);
+  useEffect(() => {
+    reduce.current =
+      typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce.current || to <= 0) return setN(to);
+    let raf = 0;
+    const started = performance.now();
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - started) / ms);
+      /* ease-out: fast at first, then settles — a counter that decelerates
+         feels like it is arriving somewhere. */
+      setN(Math.round(to * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to, ms]);
+  return <span className="rollup">{prefix}{n.toLocaleString("en-IN")}</span>;
+}
+
 function fmt(n: number) {
   return n.toLocaleString("en-IN");
 }
@@ -906,6 +930,9 @@ export function GameApp({
 
   /* ================= PRACTICE ================= */
   const [curStage, setCurStage] = useState({ n: 1, qIndex: 0, correct: 0 });
+  /* How each question of the current stage went, so the run can be read at a
+     glance while it is still happening rather than only in the result. */
+  const [stageMarks, setStageMarks] = useState<(boolean | null)[]>([]);
   const [curProblem, setCurProblem] = useState<Problem | null>(null);
   const [curMode, setCurMode] = useState<Mode>("type");
   const [tileOptions, setTileOptions] = useState<number[]>([]);
@@ -1000,6 +1027,7 @@ export function GameApp({
     if (!currentTopic) return;
     if (!stageUnlocked(progress, currentTopic.id, n)) return;
     setCurStage({ n, qIndex: 0, correct: 0 });
+    setStageMarks([]);
     setHearts(5);
     setRuns(0);
     setComboStreak(0);
@@ -1018,6 +1046,7 @@ export function GameApp({
     if (!stageUnlocked(progress, topicId, n)) return;
     setCurrentTopicId(topicId);
     setCurStage({ n, qIndex: 0, correct: 0 });
+    setStageMarks([]);
     setHearts(5);
     setRuns(0);
     setComboStreak(0);
@@ -1086,6 +1115,11 @@ export function GameApp({
     }
     const elapsed = Date.now() - questionStartRef.current;
     const speedy = ok && !timedOut && elapsed <= timerMs * 0.45;
+    setStageMarks((m) => {
+      const next = [...m];
+      next[curStage.qIndex] = ok;
+      return next;
+    });
 
     if (ok) {
       stageCorrectRef.current += 1;
@@ -2772,6 +2806,7 @@ export function GameApp({
             curSelection={curSelection}
             tfShown={tfShown}
             checkEnabled={checkEnabled}
+            marks={stageMarks}
             shakeQuestion={shakeQuestion}
             wrongFlash={wrongFlash}
             shakeTile={shakeTile}
@@ -3125,7 +3160,7 @@ export function GameApp({
               ))}
             </div>
             <div className="result-sub">{t.result.correctOf(stageResult.correct, QUESTIONS_PER_STAGE)}</div>
-            <div className="result-gems">+{stageResult.gemsGained} 💎</div>
+            <div className="result-gems"><RollUp to={stageResult.gemsGained} prefix="+" /> 💎</div>
             <div className="result-actions">
               {stageResult.passed ? (
                 stageResult.n < STAGE_COUNT ? (
@@ -4166,6 +4201,7 @@ function PracticeView({
   curSelection,
   tfShown,
   checkEnabled,
+  marks,
   shakeQuestion,
   wrongFlash,
   shakeTile,
@@ -4200,6 +4236,7 @@ function PracticeView({
   curSelection: number | boolean | null;
   tfShown: number;
   checkEnabled: boolean;
+  marks: (boolean | null)[];
   shakeQuestion: boolean;
   wrongFlash: boolean;
   shakeTile: boolean;
@@ -4234,8 +4271,14 @@ function PracticeView({
           its options are taller than the viewport, and a timer you have to
           scroll back up to find is a timer you cannot play against. */}
       <div className="practice-hud">
-        <div className="progress-top">
-          <div className="progress-top-fill" style={{ width: `${Math.round((qIndex / QUESTIONS_PER_STAGE) * 100)}%` }} />
+        {/* A bar says how far in you are; these say how it is going. Five
+            questions is few enough to show each one. */}
+        <div className="stage-pips" aria-hidden="true">
+          {Array.from({ length: QUESTIONS_PER_STAGE }, (_, i) => {
+            const mark = marks[i];
+            const state = i === qIndex ? "now" : mark === true ? "hit" : mark === false ? "miss" : "todo";
+            return <span key={i} className={`stage-pip ${state}`} />;
+          })}
         </div>
         <CountdownTimer timerKey={timerKey} timerMs={timerMs} paused={timerPaused} />
       </div>
