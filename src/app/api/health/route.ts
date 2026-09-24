@@ -22,11 +22,15 @@ const EXPECTED: { table: string; column: string; feature: string }[] = [
 export async function GET() {
   try {
     const db = getDb();
+    /* One placeholder per name. Neon's HTTP driver does not bind a JS array
+       to `= any($1)`, and the table list is a constant in this file anyway. */
+    const tables = [...new Set(EXPECTED.map((e) => e.table))];
+    const list = raw.join(tables.map((t) => raw`${t}`), raw`, `);
     const rows = await db.execute<{ table_name: string; column_name: string }>(raw`
       select table_name, column_name
       from information_schema.columns
       where table_schema = 'public'
-        and table_name = any(${EXPECTED.map((e) => e.table)})
+        and table_name in (${list})
     `);
     const have = new Set(
       (rows.rows ?? []).map((r) => `${r.table_name}.${r.column_name}`)
