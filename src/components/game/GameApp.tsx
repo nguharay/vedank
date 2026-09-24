@@ -2901,6 +2901,9 @@ export function GameApp({
             <a className="btn btn-primary auth-submit" href="/signup?from=%2F">
               {lang === "ja" ? "無料でアカウントを作る" : "Create a free account"}
             </a>
+            <a className="btn btn-ghost auth-submit lock-sheet-signin" href="/login?from=%2F">
+              {lang === "ja" ? "アカウントがある人はサインイン" : "Already have an account? Sign in"}
+            </a>
             <button className="btn btn-ghost lock-sheet-later" onClick={() => setLockOpen(null)}>
               {lang === "ja" ? "あとで" : "Not now"}
             </button>
