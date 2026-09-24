@@ -1,17 +1,17 @@
 import { auth } from "@/auth";
 import { loadProgress, touchDailyStreak } from "@/lib/game/progress";
 import { GameApp } from "@/components/game/GameApp";
+import { GuestGame } from "./try/GuestGame";
 import { isAdminEmail } from "@/lib/admin";
 
 export default async function HomePage() {
   const session = await auth();
   const userId = (session?.user as { id?: string } | undefined)?.id;
-  const [progress, daily] = userId
-    ? await Promise.all([loadProgress(userId), touchDailyStreak(userId)])
-    : [
-        { topics: {}, arena: { solved: {}, bestMoves: {} } },
-        { dailyStreak: 0, bestDailyStreak: 0, isNewDay: false, preferredLang: "en" as const, bonusGems: 0, chestReward: null },
-      ];
+
+  /* No session: play. Asking someone to make an account before they have
+     seen a question is how a shared link gets closed. */
+  if (!userId) return <GuestGame />;
+  const [progress, daily] = await Promise.all([loadProgress(userId), touchDailyStreak(userId)]);
 
   return (
     <GameApp

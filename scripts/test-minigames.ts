@@ -1,4 +1,4 @@
-import { buildMatchRound, isPair, matchScore } from "../src/lib/game/match";
+import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore } from "../src/lib/game/minigames";
 
 const fails: string[] = [];
 const ok = (l: string, c: boolean) => { if (!c) fails.push(l); };
@@ -27,6 +27,10 @@ for (let r = 0; r < 300; r++) {
                   tiles.find((t) => t.pairId === 1 && t.kind === "ans")!];
   ok("different problems do not pair", !isPair(x, y));
   ok("tiles stay readable", tiles.every((t) => t.text.length <= 16));
+  /* A tile is shown with no lesson beside it, so the prompt has to stand
+     alone — no bar notation, no pipe-separated lists. */
+  ok("every prompt stands on its own",
+    tiles.filter((t) => t.kind === "expr").every((t) => !/[|\u0304\u0305]/.test(t.text)));
 }
 
 /* Scoring: mistakes cost more than seconds, and it never goes negative. */
@@ -34,8 +38,24 @@ ok("a clean fast round beats a sloppy one", matchScore(6, 20, 0) > matchScore(6,
 ok("faster wins a tie", matchScore(6, 10, 1) > matchScore(6, 40, 1));
 ok("score never goes negative", matchScore(1, 9999, 9999) === 0);
 
+/* ---------- Which is Bigger ---------- */
+for (let r = 0; r < 400; r++) {
+  const { left, right } = buildBiggerPair();
+  ok("the two sides never tie", left.answer !== right.answer);
+  ok("both sides are real numbers", Number.isFinite(left.answer) && Number.isFinite(right.answer));
+  ok("both prompts fit a card", left.prompt.length <= 20 && right.prompt.length <= 20);
+  /* A round you win by glancing at the digit count is not arithmetic. */
+  const hi = Math.max(Math.abs(left.answer), Math.abs(right.answer));
+  const lo = Math.min(Math.abs(left.answer), Math.abs(right.answer));
+  ok("the sides stay comparable", hi <= lo * 12 + 10);
+  ok("both prompts stand on their own",
+    !/[|\u0304\u0305]/.test(left.prompt) && !/[|\u0304\u0305]/.test(right.prompt));
+}
+ok("a longer streak scores more", biggerScore(7) > biggerScore(3));
+ok("no streak scores nothing", biggerScore(0) === 0);
+
 if (fails.length) {
-  console.error("match game FAILED:\n  " + [...new Set(fails)].join("\n  "));
+  console.error("mini-games FAILED:\n  " + [...new Set(fails)].join("\n  "));
   process.exit(1);
 }
-console.log("match rounds are always solvable and unambiguous (300 rounds)");
+console.log("mini-games hold up (300 match rounds, 400 bigger pairs)");

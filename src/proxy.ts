@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/try"];
+/* "/" is public: a shared link has to open the game, not a password form.
+   The page itself decides what to render — the real app for a session, the
+   guest game for anyone else. /try stays as a guaranteed-public entry that
+   the service worker can cache for offline without ever risking a signed-in
+   page being served back after a sign-out. */
+const PUBLIC_PATHS = ["/", "/login", "/signup", "/forgot-password", "/try"];
 // /admin is deliberately NOT public: it falls through to the signed-in check
 // below, and the page itself then verifies the email is on the admin list.
 // Signed-in visitors get bounced home from these — but not from
