@@ -1,5 +1,7 @@
 import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
-  buildOddRound, digitSum, buildSortRound, sortedIds } from "../src/lib/game/minigames";
+  buildOddRound, digitSum, buildSortRound, sortedIds,
+  dailySeed, dailyGameId } from "../src/lib/game/minigames";
+import { seededRandom, withSeededRandom } from "../src/lib/game/daily";
 
 const fails: string[] = [];
 const ok = (l: string, c: boolean) => { if (!c) fails.push(l); };
@@ -88,8 +90,25 @@ for (let r = 0; r < 300; r++) {
   ok("prompts stand on their own", round.cards.every((c) => !/[|\u0304\u0305]/.test(c.prompt)));
 }
 
+/* ---------- Game of the Day ---------- */
+{
+  /* The same day must give the same board, or comparing scores is nonsense. */
+  const boardFor = (key: string) =>
+    withSeededRandom(seededRandom(dailySeed(key)), () => buildMatchRound(6))
+      .tiles.map((t) => t.text).join("|");
+  ok("the same day gives the same board", boardFor("2026-03-09") === boardFor("2026-03-09"));
+  ok("a different day gives a different board", boardFor("2026-03-09") !== boardFor("2026-03-10"));
+  ok("the seed is stable", dailySeed("2026-03-09") === dailySeed("2026-03-09"));
+  ok("different dates seed differently", dailySeed("2026-03-09") !== dailySeed("2026-03-10"));
+  /* Over a month it should not stick on one game. */
+  const ids = new Set(
+    Array.from({ length: 30 }, (_, i) => dailyGameId(`2026-04-${String(i + 1).padStart(2, "0")}`))
+  );
+  ok("the daily game rotates", ids.size === 2);
+}
+
 if (fails.length) {
   console.error("mini-games FAILED:\n  " + [...new Set(fails)].join("\n  "));
   process.exit(1);
 }
-console.log("mini-games hold up (300 match, 400 bigger, 400 odd-one-out, 300 sort)");
+console.log("mini-games hold up (300 match, 400 bigger, 400 odd-one-out, 300 sort, daily board stable)");

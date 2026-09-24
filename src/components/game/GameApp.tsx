@@ -70,9 +70,10 @@ import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { Mascot, Mandala } from "./Mascot";
 import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ } from "./BookDiagrams";
 import { TRICKS, TRICK_BY_ID } from "@/lib/game/tricks";
-import { dailyQuestions, todayKey, DAILY_QUESTIONS, type DailyQuestion } from "@/lib/game/daily";
+import { dailyQuestions, todayKey, seededRandom, withSeededRandom, DAILY_QUESTIONS, type DailyQuestion } from "@/lib/game/daily";
 import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
   buildOddRound, digitSum, buildSortRound, sortedIds,
+  dailySeed, dailyGameId, dailyGameKey,
   type MatchTile, type BiggerPair, type OddRound, type SortRound } from "@/lib/game/minigames";
 import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
@@ -1613,14 +1614,49 @@ export function GameApp({
   const [matchResult, setMatchResult] = useState<{ secs: number; score: number; best: boolean } | null>(null);
   const [matchBest, setMatchBest] = useState(0);
 
-  function startMatch() {
+  /* Game of the Day: the same board for everyone until midnight, so a score
+     is worth telling someone. Only the fixed-board games qualify — the
+     streak games have no shared thing to compare. */
+  const [dailyGameDone, setDailyGameDone] = useState<number | null>(null);
+  const isDailyRef = useRef(false);
+
+  function readDailyGame() {
+    try {
+      const v = localStorage.getItem(dailyGameKey(todayKey()));
+      setDailyGameDone(v === null ? null : Number(v));
+    } catch {}
+  }
+
+  function recordDailyGame(value: number) {
+    if (!isDailyRef.current) return;
+    isDailyRef.current = false;
+    try {
+      const key = dailyGameKey(todayKey());
+      const prev = localStorage.getItem(key);
+      /* Match scores high, Memory scores low — the caller passes whichever
+         direction is better, having already compared. */
+      if (prev === null) localStorage.setItem(key, String(value));
+      setDailyGameDone(prev === null ? value : Number(prev));
+    } catch {}
+  }
+
+  function startDailyGame() {
+    const key = todayKey();
+    isDailyRef.current = true;
+    if (dailyGameId(key) === "memory") startMemory(dailySeed(key));
+    else startMatch(dailySeed(key));
+  }
+
+  function startMatch(seed?: number) {
     /* Read the best here rather than in a mount effect: it is only ever
        needed once the game opens, and an event handler is the honest place
        to touch localStorage. */
     try {
       setMatchBest(Number(localStorage.getItem("sutraSprint.matchBest") || 0));
     } catch {}
-    const round = buildMatchRound(6, "easy");
+    const round = seed === undefined
+      ? buildMatchRound(6, "easy")
+      : withSeededRandom(seededRandom(seed), () => buildMatchRound(6, "easy"));
     setMatchTiles(round.tiles);
     setMatchPicked([]);
     setMatchDone([]);
@@ -1661,6 +1697,7 @@ export function GameApp({
           } catch {}
         }
         setMatchResult({ secs, score, best });
+        recordDailyGame(score);
         confetti.burstCenter(140, 0.5);
         sound.levelUp();
         if (!guest) fireQuest("correct_answer", matchTiles.length / 2);
@@ -1742,42 +1779,45 @@ export function GameApp({
         sortg: Number(localStorage.getItem("sutraSprint.sortBest") || 0),
       });
     } catch {}
+    readDailyGame();
     setView("games");
   }
+  /* Tapping a shelf card is a free play, never the day's board. */
+  const shelf = (fn: () => void) => () => { isDailyRef.current = false; fn(); };
   const GAMES = [
     {
       id: "match", icon: "🃏", tint: "var(--sky2)",
       name: "Number Match", nameJa: "ナンバーマッチ",
       blurb: "Pair each sum with its answer.", blurbJa: "式と答えをペアにしよう。",
-      best: gameBests.match ?? 0, start: startMatch,
+      best: gameBests.match ?? 0, start: shelf(() => startMatch()),
     },
     {
       id: "bigger", icon: "⚖️", tint: "var(--violet)",
       name: "Which is Bigger?", nameJa: "どっちが大きい？",
       blurb: "Tap the larger of two sums. One slip ends the run.",
       blurbJa: "大きいほうをタップ。まちがえたら終わり。",
-      best: gameBests.bigger ?? 0, start: startBigger,
+      best: gameBests.bigger ?? 0, start: shelf(startBigger),
     },
     {
       id: "memory", icon: "🧠", tint: "var(--sun1)",
       name: "Memory Pairs", nameJa: "神経衰弱",
       blurb: "Same pairs, face down. Fewest turns wins.",
       blurbJa: "ふせたカードでペア探し。少ない回数でクリア。",
-      best: gameBests.memory ?? 0, start: startMemory,
+      best: gameBests.memory ?? 0, start: shelf(() => startMemory()),
     },
     {
       id: "odd", icon: "🔍", tint: "var(--green-dk)",
       name: "Odd One Out", nameJa: "仲間はずれ",
       blurb: "Three share a digit sum. Spot the one that doesn't.",
       blurbJa: "3つは digit sum が同じ。ちがう1つを見つけよう。",
-      best: gameBests.odd ?? 0, start: startOdd,
+      best: gameBests.odd ?? 0, start: shelf(startOdd),
     },
     {
       id: "sortg", icon: "📊", tint: "var(--pink)",
       name: "Smallest First", nameJa: "小さい順",
       blurb: "Put four answers in order without working them all out.",
       blurbJa: "4つの答えを小さい順に並べよう。",
-      best: gameBests.sortg ?? 0, start: startSort,
+      best: gameBests.sortg ?? 0, start: shelf(startSort),
     },
   ];
 
@@ -1864,9 +1904,14 @@ export function GameApp({
   const [memOver, setMemOver] = useState<{ turns: number; best: boolean } | null>(null);
   const memBusy = useRef(false);
 
-  function startMemory() {
+  function startMemory(seed?: number) {
     try { setMemBest(Number(localStorage.getItem("sutraSprint.memBest") || 0)); } catch {}
-    setMemTiles(buildMatchRound(6, "easy").tiles);
+    setMemTiles(
+      (seed === undefined
+        ? buildMatchRound(6, "easy")
+        : withSeededRandom(seededRandom(seed), () => buildMatchRound(6, "easy"))
+      ).tiles
+    );
     setMemUp([]); setMemDone([]); setMemTurns(0); setMemOver(null);
     memBusy.current = false;
     setView("memory");
@@ -1892,6 +1937,7 @@ export function GameApp({
           try { localStorage.setItem("sutraSprint.memBest", String(turns)); } catch {}
         }
         setMemOver({ turns, best });
+        recordDailyGame(turns);
         confetti.burstCenter(140, 0.5); sound.levelUp();
       }
     } else {
@@ -3283,7 +3329,7 @@ export function GameApp({
               <div className="match-done">
                 <div className="match-done-title">{memOver.best ? (lang === "ja" ? "最少記録！" : "Fewest yet!") : (lang === "ja" ? "クリア！" : "Cleared!")}</div>
                 <div className="match-done-line mono"><RollUp to={memOver.turns} /> {lang === "ja" ? "回でクリア" : "turns"}</div>
-                <button className="btn btn-primary match-again" onClick={startMemory}>{lang === "ja" ? "もう一回" : "Play again"}</button>
+                <button className="btn btn-primary match-again" onClick={() => startMemory()}>{lang === "ja" ? "もう一回" : "Play again"}</button>
               </div>
             )}
           </section>
@@ -3296,6 +3342,26 @@ export function GameApp({
                 ? "計算を使ったミニゲーム。アカウントがなくても、オフラインでも遊べます。"
                 : "Quick games built on the same maths. No account needed, and they work offline."}
             </p>
+            {/* One board a day, the same for everyone — the bit worth telling
+                a friend about. */}
+            <button className="daily-game" onClick={startDailyGame}>
+              <span className="daily-game-tag">{lang === "ja" ? "今日のゲーム" : "GAME OF THE DAY"}</span>
+              <span className="daily-game-name">
+                {dailyGameId(todayKey()) === "memory"
+                  ? (lang === "ja" ? "🧠 神経衰弱" : "🧠 Memory Pairs")
+                  : (lang === "ja" ? "🃏 ナンバーマッチ" : "🃏 Number Match")}
+              </span>
+              <span className="daily-game-sub">
+                {dailyGameDone !== null
+                  ? lang === "ja"
+                    ? `今日の記録 ${dailyGameDone}・もう一度あそぶ`
+                    : `Today: ${dailyGameDone} — play it again`
+                  : lang === "ja"
+                    ? "みんな同じ問題。毎日0時に変わります。"
+                    : "Everyone gets this same board today."}
+              </span>
+            </button>
+
             <div className="games-grid">
               {GAMES.map((g) => (
                 <button key={g.id} className="game-card" onClick={g.start} style={{ ["--g" as string]: g.tint }}>
@@ -3423,7 +3489,7 @@ export function GameApp({
                   {matchResult.secs}s · {lang === "ja" ? "ミス" : "misses"} {matchMistakes} ·{" "}
                   <RollUp to={matchResult.score} /> {lang === "ja" ? "点" : "pts"}
                 </div>
-                <button className="btn btn-primary match-again" onClick={startMatch}>
+                <button className="btn btn-primary match-again" onClick={() => startMatch()}>
                   {lang === "ja" ? "もう一回" : "Play again"}
                 </button>
               </div>
