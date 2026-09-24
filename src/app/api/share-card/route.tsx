@@ -58,6 +58,7 @@ export async function GET(req: Request) {
   const value = clean(q.get("v"), 12) || "0";
   const who = clean(q.get("n"), 24);
   const sub = clean(q.get("s"), 48);
+  const ja = q.get("l") === "ja";
   const logo = await logoDataUri();
 
   return new ImageResponse(
@@ -120,7 +121,7 @@ export async function GET(req: Request) {
             )}
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "0.02em" }}>VedAnk Academy</div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "0.02em" }}>{ja ? "VedAnk Academy" : "Sutra Sprint"}</div>
             <div style={{ fontSize: 17, fontWeight: 700, opacity: 0.85, letterSpacing: "0.14em" }}>
               SUTRA SPRINT · VEDIC MATH
             </div>

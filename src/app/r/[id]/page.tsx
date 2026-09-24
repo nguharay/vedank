@@ -91,7 +91,7 @@ function Shell({
   return (
     <div className="auth-shell">
       <div className="auth-card">
-        <img src="/brand/vedank-logo.png" alt="VedAnk Academy" className="auth-logo" />
+        <img src="/brand/vedank-logo.png" alt="" className="auth-logo" />
         <div className="auth-mascot"><Mascot mood="excited" /></div>
         <h1>{title}</h1>
         <p className="sub">{titleEn}</p>

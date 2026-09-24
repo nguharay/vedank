@@ -3,7 +3,7 @@ import { getAdminSession } from "@/lib/admin";
 import { listSignups } from "@/lib/actions/admin-actions";
 import { AdminTable } from "./AdminTable";
 
-export const metadata = { title: "Signups · VedAnk Admin" };
+export const metadata = { title: "Signups · Sutra Sprint Admin" };
 
 /* Rendered per request — a cached signup register would be worse than useless. */
 export const dynamic = "force-dynamic";

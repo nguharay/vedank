@@ -5,10 +5,10 @@ import type { Metadata } from "next";
    Graph tags so X, LINE, WhatsApp and Facebook unfurl the card image instead of
    showing a bare URL — and then to give whoever clicked somewhere to go. */
 
-type Q = { f?: string; v?: string; n?: string; s?: string };
+type Q = { f?: string; v?: string; n?: string; s?: string; l?: string };
 
 const TITLES: Record<string, (v: string) => string> = {
-  level: (v) => `Level ${v} at VedAnk Academy`,
+  level: (v) => `Level ${v} in Sutra Sprint`,
   gems: (v) => `${v} gems earned doing Vedic maths`,
   streak: (v) => `${v}-day streak on Sutra Sprint`,
   hearts: (v) => `Still on ${v} hearts`,
@@ -27,6 +27,7 @@ function cardUrl(q: Q) {
   p.set("v", clean(q.v, 12) || "0");
   if (q.n) p.set("n", clean(q.n, 24));
   if (q.s) p.set("s", clean(q.s, 48));
+  if (q.l === "ja") p.set("l", "ja");
   return `/api/share-card?${p.toString()}`;
 }
 
@@ -71,8 +72,17 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
         <div className="auth-lockup">
           <img src="/brand/vedank-mark.png" alt="" className="auth-lockup-tree" />
           <div className="auth-lockup-words">
-            <span className="auth-lockup-name">VedAnk Academy</span>
-            <span className="auth-lockup-tag">Unleashing Brainpower &amp; Creativity</span>
+            {q.l === "ja" ? (
+              <>
+                <span className="auth-lockup-name">VedAnk Academy</span>
+                <span className="auth-lockup-tag">Unleashing Brainpower &amp; Creativity</span>
+              </>
+            ) : (
+              <>
+                <span className="auth-lockup-name">Sutra Sprint</span>
+                <span className="auth-lockup-tag">Indian-style mental maths, as a game</span>
+              </>
+            )}
           </div>
         </div>
 

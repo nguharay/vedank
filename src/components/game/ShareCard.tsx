@@ -99,8 +99,9 @@ export function ShareSheet({
     p.set("f", focus);
     p.set("v", (tiles.find((x) => x.key === focus) ?? tiles[0]).value);
     if (stats.rank) p.set("s", `${t.share.statLevel} ${stats.level} · ${stats.rank}`);
+    if (lang === "ja") p.set("l", "ja");
     return p.toString();
-  }, [focus, tiles, stats.level, stats.rank, t.share.statLevel]);
+  }, [focus, tiles, stats.level, stats.rank, t.share.statLevel, lang]);
 
   const shareUrl = origin ? `${origin}/s?${cardParams}` : "";
   const shareText = `${blurb}`;

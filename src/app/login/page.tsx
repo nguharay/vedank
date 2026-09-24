@@ -11,7 +11,7 @@ import { useLang } from "@/components/game/i18n";
    who the link is being shared with — with English kept alongside. */
 const COPY = {
   en: {
-    kicker: "VEDANK ACADEMY",
+    kicker: "SUTRA SPRINT",
     hero: "Indian-style mental maths, as a game",
     pitch:
       "A game that doesn't just teach Indian calculation methods — it teaches you to see mathematics differently.",
@@ -71,7 +71,7 @@ export default function LoginPage() {
   return (
     <div className="auth-shell">
       <div className="auth-card">
-        <img src="/brand/vedank-logo.png" alt="VedAnk Academy" className="auth-logo" />
+        <img src="/brand/vedank-logo.png" alt="" className="auth-logo" />
 
         <div className="auth-hero">
           <div className="auth-kicker">{c.kicker}</div>
