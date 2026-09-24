@@ -384,3 +384,59 @@ export const QUICK_GAMES: QuickGame[] = [
 export function quickGame(id: string): QuickGame | undefined {
   return QUICK_GAMES.find((g) => g.id === id);
 }
+
+
+/* ---------- Number Pop — balloons with sums ----------
+   One sum at the top, nine pads below. Three balloons float up: the answer
+   and two near-misses. Pop the answer before they drift off. The near-misses are
+   deliberately close (±1, ±10, a swapped digit) so a glance is not enough. */
+export type PopRound = { prompt: string; answer: number; holes: (number | null)[] };
+
+/* How long the balloons stay up, in ms: brisk from the start, quick by the end. */
+export function popUpMs(streak: number): number {
+  return Math.max(1100, 2400 - streak * 70);
+}
+/* Pop sums are meant to be read and answered in a second or two — this is a
+   reflex game, so the arithmetic stays small. It ramps gently: single digits,
+   then teens and the small tables, then the book's easiest tricks. */
+function popSum(streak: number): { prompt: string; answer: number } {
+  const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const tier = streak < 6 ? 0 : streak < 14 ? 1 : 2;
+  const k = ri(0, 3);
+  if (tier === 0) {
+    if (k === 0) { const a = ri(2, 9), b = ri(2, 9); return { prompt: `${a} + ${b}`, answer: a + b }; }
+    if (k === 1) { const a = ri(6, 15), b = ri(1, a - 1); return { prompt: `${a} − ${b}`, answer: a - b }; }
+    if (k === 2) { const a = ri(2, 5), b = ri(2, 6); return { prompt: `${a} × ${b}`, answer: a * b }; }
+    const a = ri(1, 9); return { prompt: `${a} + 10`, answer: a + 10 };
+  }
+  if (tier === 1) {
+    if (k === 0) { const a = ri(11, 29), b = ri(2, 9); return { prompt: `${a} + ${b}`, answer: a + b }; }
+    if (k === 1) { const a = ri(11, 30), b = ri(2, 9); return { prompt: `${a} − ${b}`, answer: a - b }; }
+    if (k === 2) { const a = ri(2, 9), b = ri(2, 9); return { prompt: `${a} × ${b}`, answer: a * b }; }
+    const a = ri(1, 9) * 10, b = ri(1, 9) * 10; return { prompt: `${a} + ${b}`, answer: a + b };
+  }
+  if (k === 0) { const a = ri(12, 25); return { prompt: `${a} × 11`, answer: a * 11 }; }
+  if (k === 1) { const a = ri(11, 89); return { prompt: `100 − ${a}`, answer: 100 - a }; }
+  if (k === 2) { const a = ri(1, 2) * 10 + 5; return { prompt: `${a}²`, answer: a * a }; }
+  const a = ri(12, 40), b = ri(1, 2) * 10 + 9; return { prompt: `${a} + ${b}`, answer: a + b };
+}
+
+export function buildPopRound(streak: number): PopRound {
+  const p = popSum(streak);
+  const decoys = new Set<number>();
+  const swapped = Number(String(Math.abs(p.answer)).split("").reverse().join(""));
+  const cands = [p.answer + 1, p.answer - 1, p.answer + 10, p.answer - 10, swapped, p.answer + 2, p.answer - 2, p.answer + 100];
+  for (const c of shuffle(cands)) {
+    if (decoys.size >= 2) break;
+    if (c !== p.answer && c > 0 && Number.isFinite(c)) decoys.add(c);
+  }
+  while (decoys.size < 2) decoys.add(p.answer + 3 + decoys.size);
+  const holes: (number | null)[] = Array(9).fill(null);
+  const spots = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8]).slice(0, 3);
+  [p.answer, ...decoys].forEach((v, i) => { holes[spots[i]] = v; });
+  return { prompt: p.prompt, answer: p.answer, holes };
+}
+/* Combos pay: the fifth hit in a row is worth more than the first. */
+export function popPoints(combo: number): number {
+  return 10 + Math.min(combo, 10) * 5;
+}

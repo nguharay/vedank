@@ -67,6 +67,7 @@ import { dailyQuestions, todayKey, seededRandom, withSeededRandom, type DailyQue
 import { applyOverride, type OverrideMap, type TopicOverride } from "@/lib/game/overrides";
 import { newGame as tttNewGame, play as tttPlay, pass as tttPass, cpuMove as tttCpu, turnSeconds as tttTurnSeconds, normaliseRoomCode, type TTTState, type TTTLevel, type Mark } from "@/lib/game/ttt";
 import type { RoomView } from "@/lib/game/tttOnline";
+import { buildPopRound, popUpMs, popPoints, type PopRound } from "@/lib/game/minigames";
 import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
   buildOddRound, digitSum, buildSortRound, sortedIds,
   dailySeed, dailyGameId, dailyGameKey, QUICK_GAMES, quickGame,
@@ -125,7 +126,7 @@ export function GameApp({
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt"];
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
@@ -806,7 +807,7 @@ export function GameApp({
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
   const GUEST_TOPICS = 2;
-  const GUEST_GAMES = new Set(["match", "bigger", "memory"]);
+  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   function guestLocked(kind: string): boolean {
     if (!guest) return false;
@@ -1753,6 +1754,7 @@ export function GameApp({
         odd: Number(localStorage.getItem("sutraSprint.oddBest") || 0),
         sortg: Number(localStorage.getItem("sutraSprint.sortBest") || 0),
         sprint: Number(localStorage.getItem("sutraSprint.sprintBest") || 0),
+        pop: Number(localStorage.getItem("sutraSprint.popBest") || 0),
         ...Object.fromEntries(QUICK_GAMES.map((g) => [g.id, Number(localStorage.getItem(`sutraSprint.quick.${g.id}`) || 0)])),
       });
     } catch {}
@@ -1772,6 +1774,13 @@ export function GameApp({
       name: "Number Match", nameJa: "ナンバーマッチ",
       blurb: "Pair each sum with its answer.", blurbJa: "式と答えをペアにしよう。",
       best: gameBests.match ?? 0, start: shelf(() => startMatch(), "match"),
+    },
+    {
+      id: "pop", icon: "🎈", tint: "var(--sky2)",
+      name: "Number Pop", nameJa: "かずの風船ポップ",
+      blurb: "Balloons float up with numbers. Pop the one that equals the sum!",
+      blurbJa: "数をつけた風船がうかんでくる。答えの風船をポップ！",
+      best: gameBests.pop ?? 0, start: shelf(startPop, "pop"),
     },
     {
       id: "bigger", icon: "⚖️", tint: "var(--violet)",
@@ -1814,6 +1823,72 @@ export function GameApp({
       best: gameBests[g.id] ?? 0, start: shelf(() => startQuick(g.id), g.id),
     })),
   ];
+
+  /* ---------- Number Pop ----------
+     A round is: balloons hidden → up for popUpMs → popped, popped-wrong, or
+     they float off (a miss). Three lives. Timers live in a ref so a fast tap cannot be
+     followed by a stale "they ducked". */
+  const [popRound, setPopRound] = useState<PopRound | null>(null);
+  const [popPhase, setPopPhase] = useState<"hidden" | "up" | "hit" | "miss">("hidden");
+  const [popHit, setPopHit] = useState<number | null>(null);
+  const [popScore, setPopScore] = useState(0);
+  const [popCombo, setPopCombo] = useState(0);
+  const [popStreak, setPopStreak] = useState(0);
+  const [popLives, setPopLives] = useState(3);
+  const [popBest, setPopBest] = useState(0);
+  const [popOver, setPopOver] = useState<{ score: number; best: boolean } | null>(null);
+  const popTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const popLivesRef = useRef(3);
+
+  function popClear() { if (popTimer.current) { clearTimeout(popTimer.current); popTimer.current = null; } }
+  function startPop() {
+    try { setPopBest(Number(localStorage.getItem("sutraSprint.popBest") || 0)); } catch {}
+    popClear();
+    setPopScore(0); setPopCombo(0); setPopStreak(0); setPopLives(3); popLivesRef.current = 3;
+    setPopOver(null); setPopHit(null);
+    setPopRound(null); setPopPhase("hidden");
+    setView("pop");
+    popNext(0, 380);
+  }
+  function popNext(streak: number, delay: number) {
+    popClear();
+    popTimer.current = setTimeout(() => {
+      setPopRound(buildPopRound(streak)); setPopHit(null); setPopPhase("up");
+      popTimer.current = setTimeout(() => popMiss(streak, null), popUpMs(streak));
+    }, delay);
+  }
+  function popMiss(streak: number, hole: number | null) {
+    popClear();
+    setPopPhase("miss"); setPopHit(hole); setPopCombo(0);
+    sound.wrong(); haptic(34);
+    const lives = popLivesRef.current - 1;
+    popLivesRef.current = lives; setPopLives(lives);
+    if (lives <= 0) { popTimer.current = setTimeout(() => popEnd(), 650); return; }
+    popNext(streak, 750);
+  }
+  function popWhack(hole: number) {
+    if (!popRound || popPhase !== "up" || popRound.holes[hole] === null) return;
+    if (popRound.holes[hole] !== popRound.answer) { popMiss(popStreak, hole); return; }
+    popClear();
+    const combo = popCombo + 1, streak = popStreak + 1;
+    setPopPhase("hit"); setPopHit(hole); setPopCombo(combo); setPopStreak(streak);
+    setPopScore((sc) => sc + popPoints(combo));
+    sound.correct(); haptic(14);
+    if (combo % 5 === 0) confetti.burstCenter(40, 0.4);
+    popNext(streak, 420);
+  }
+  function popEnd() {
+    popClear();
+    setPopScore((sc) => {
+      const best = sc > popBest;
+      if (best) { setPopBest(sc); try { localStorage.setItem("sutraSprint.popBest", String(sc)); } catch {} }
+      setPopOver({ score: sc, best });
+      return sc;
+    });
+    if (!guest && popStreak > 0) fireQuest("correct_answer", popStreak);
+  }
+  /* Leaving the view mid-round must not leave a balloon timer running. */
+  useEffect(() => { if (view !== "pop") popClear(); }, [view]);
 
   /* ---------- Odd One Out ---------- */
   const [oddRound, setOddRound] = useState<OddRound | null>(null);
@@ -3793,6 +3868,57 @@ export function GameApp({
             <div className="games-more">
               {lang === "ja" ? "新しいゲームを準備中！" : "More games on the way."}
             </div>
+          </section>
+        )}
+
+        {view === "pop" && (
+          <section className="view active">
+            <div className="match-head">
+              <div className="match-stat">
+                <span className="match-stat-k">{lang === "ja" ? "スコア" : "Score"}</span>
+                <span className="match-stat-v mono">{popScore}</span>
+              </div>
+              <div className="match-stat">
+                <span className="match-stat-k">{lang === "ja" ? "コンボ" : "Combo"}</span>
+                <span className="match-stat-v mono">{popCombo > 1 ? `×${popCombo}` : "–"}</span>
+              </div>
+              <div className="match-stat">
+                <span className="match-stat-k">{lang === "ja" ? "ライフ" : "Lives"}</span>
+                <span className="match-stat-v">{"❤️".repeat(popLives)}{"🖤".repeat(3 - popLives)}</span>
+              </div>
+            </div>
+
+            {!popOver && (
+              <>
+                <div className="pop-prompt mono">{popRound ? `${popRound.prompt} = ?` : "…"}</div>
+                <div className={`pop-grid ${popPhase}`}>
+                  {Array.from({ length: 9 }, (_, i) => {
+                    const v = popRound?.holes[i] ?? null;
+                    const up = v !== null && popPhase !== "hidden";
+                    const isAns = popRound && v === popRound.answer;
+                    const cls = `pop-balloon${up ? " up" : ""}${popPhase === "hit" && popHit === i ? " hit" : ""}${popPhase === "miss" && popHit === i ? " wrong" : ""}${popPhase === "miss" && popHit === null && isAns ? " reveal" : ""}`;
+                    return (
+                      <button key={i} className="pop-hole" onClick={() => popWhack(i)} aria-label={v === null ? "" : String(v)}>
+                        <span className={cls}><span className="pop-face" aria-hidden="true">🎈</span><span className="pop-num mono">{v === null ? "" : fmt(v)}</span></span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="match-hint">{lang === "ja" ? "答えの風船をポップ！はやく！" : "Pop the balloon with the answer. Quick!"}</p>
+              </>
+            )}
+
+            {popOver && (
+              <div className="match-done">
+                <div className="match-done-title">
+                  {popOver.best && popOver.score > 0 ? (lang === "ja" ? "自己ベスト更新！" : "New best!") : (lang === "ja" ? "風船がにげた！" : "The balloons got away!")}
+                </div>
+                <div className="match-done-line mono">
+                  <RollUp to={popOver.score} /> {lang === "ja" ? "点" : "pts"} · {lang === "ja" ? "ベスト" : "best"} {popBest}
+                </div>
+                <button className="btn btn-primary match-again" onClick={startPop}>{lang === "ja" ? "もう一回" : "Play again"}</button>
+              </div>
+            )}
           </section>
         )}
 

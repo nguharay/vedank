@@ -1,4 +1,4 @@
-import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
+import { buildPopRound, popUpMs, popPoints, buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
   buildOddRound, digitSum, buildSortRound, sortedIds,
   dailySeed, dailyGameId, QUICK_GAMES } from "../src/lib/game/minigames";
 import { seededRandom, withSeededRandom } from "../src/lib/game/daily";
@@ -144,6 +144,18 @@ for (const g of QUICK_GAMES) {
 }
 ok("eight quick games", QUICK_GAMES.length === 8);
 ok("quick game ids unique", new Set(QUICK_GAMES.map((g) => g.id)).size === QUICK_GAMES.length);
+
+
+/* Number Pop */
+for (let r = 0; r < 300; r++) {
+  const pr = buildPopRound(r % 20);
+  const up = pr.holes.filter((h) => h !== null) as number[];
+  ok("pop: three balloons, answer among them once", up.length === 3 && up.filter((v) => v === pr.answer).length === 1 && new Set(up).size === 3);
+  ok("pop: decoys are positive", up.every((v) => v > 0));
+  ok("pop: sums stay small (reflex game)", pr.answer <= 700);
+}
+ok("pop: balloons stay up less as you go, never under 1.1s", popUpMs(0) > popUpMs(10) && popUpMs(100) === 1100);
+ok("pop: combo pays more, capped", popPoints(0) < popPoints(5) && popPoints(10) === popPoints(30));
 
 if (fails.length) {
   console.error("mini-games FAILED:\n  " + [...new Set(fails)].join("\n  "));
