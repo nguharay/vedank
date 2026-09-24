@@ -1,4 +1,4 @@
-import { TOPICS, STAGE_COUNT, rankFor } from "./topics";
+import { TOPICS, STAGE_COUNT, PASS_THRESHOLD, rankFor } from "./topics";
 
 export type TopicProgressRow = { cleared: number; stageStars: Record<string, number> };
 export type ProgressState = {
@@ -64,4 +64,23 @@ export function levelInfo(state: ProgressState) {
   const level = Math.floor(xp / 150) + 1;
   const into = xp % 150;
   return { xp, level, into, pct: Math.round((into / 150) * 100), rank: rankFor(level) };
+}
+
+/* ---------- what a finished stage is worth ----------
+   Pure, and here rather than in progress.ts, because two callers need it: the
+   server when it writes a signed-in player's row, and the browser when a guest
+   is playing and there is no row to write. Same numbers either way — a guest
+   who signs up must not see their stars change. */
+export type StageOutcome = {
+  stars: number;
+  passed: boolean;
+  justUnlocked: boolean;
+  gemsGained: number;
+};
+
+export function stageOutcome(correct: number, stageN: number, prevCleared: number): StageOutcome {
+  const stars = correct >= 5 ? 3 : correct >= 4 ? 2 : correct >= 3 ? 1 : 0;
+  const passed = correct >= PASS_THRESHOLD;
+  const justUnlocked = passed && stageN > prevCleared;
+  return { stars, passed, justUnlocked, gemsGained: correct * 10 + (justUnlocked ? 50 : 0) };
 }

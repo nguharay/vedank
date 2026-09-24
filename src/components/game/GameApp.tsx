@@ -41,11 +41,13 @@ import {
   topicUnlocked,
   totalGems,
   levelInfo,
+  stageOutcome,
   type ProgressState,
 } from "@/lib/game/state";
 import { finishStageAction, solvePuzzleAction, leaderboardAction, dailyStatusAction, submitDailyAction, leagueAction } from "@/lib/actions/game-actions";
 import {
   questsAction, reportQuestAction, claimQuestAction, shopStateAction, buyItemAction,
+  importGuestProgressAction,
   consumeItemAction, recordMistakeAction, reviewListAction, fixMistakeAction,
 } from "@/lib/actions/game-actions";
 import { SHOP_ITEMS, type QuestEvent } from "@/lib/game/quests";
@@ -159,6 +161,7 @@ export function GameApp({
   dailyChestReward,
   user,
   isAdmin = false,
+  guest = false,
 }: {
   initialProgress: ProgressState;
   dailyStreak: number;
@@ -169,6 +172,10 @@ export function GameApp({
   /* Server-resolved; the /admin page re-checks it, so this only decides
      whether the menu row is drawn. */
   isAdmin?: boolean;
+  /* Playing without an account. Nothing is written to the server — progress
+     lives in localStorage until they sign up — and the parts that are
+     meaningless alone (friends, classes, leagues, the shop) stay hidden. */
+  guest?: boolean;
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
@@ -423,6 +430,7 @@ export function GameApp({
      changes it, so the panels never show a stale number. The alive flag keeps a
      slow response from setting state on an unmounted component. */
   useEffect(() => {
+    if (guest) return;            /* nothing of this exists without an account */
     let alive = true;
     (async () => {
       try {
@@ -445,10 +453,11 @@ export function GameApp({
     return () => {
       alive = false;
     };
-  }, []);
+  }, [guest]);
 
   /* Fire-and-forget: a quest that fails to record must never break gameplay. */
   function fireQuest(event: QuestEvent, amount = 1) {
+    if (guest) return;
     reportQuestAction(event, amount)
       .then((r) => setQuests(r.quests))
       .catch(() => {});
@@ -1107,7 +1116,7 @@ export function GameApp({
       /* Bank the miss for review. Silent on failure — a dropped mistake is a
          smaller problem than an interrupted question. */
       if (currentTopic) {
-        recordMistakeAction(currentTopic.id, curProblem.prompt, curProblem.answer)
+        if (!guest) recordMistakeAction(currentTopic.id, curProblem.prompt, curProblem.answer)
           .then(refreshReview)
           .catch(() => {});
       }
@@ -1209,7 +1218,11 @@ export function GameApp({
     if (!currentTopic) return;
     const correct = curStage.correct;
     const n = curStage.n;
-    const result = await finishStageAction(currentTopic.id, n, correct);
+    /* Same numbers either way: the server and the browser both call
+       stageOutcome, so a guest's stars do not change when they sign up. */
+    const result = guest
+      ? stageOutcome(correct, n, topicProgressOf(progress, currentTopic.id).cleared)
+      : await finishStageAction(currentTopic.id, n, correct);
     const levelBefore = li.level;
 
     setProgress((prev) => {
@@ -1636,6 +1649,60 @@ export function GameApp({
       beginCompetition(c);
     })();
   }, []);
+
+  /* The other half of guest play: someone who just signed up arrives here with
+     their guest run still in localStorage. Hand it to the server once, merge
+     the result into what is on screen, and clear the key so it cannot be
+     re-imported into a second account later. */
+  const adoptedRef = useRef(false);
+  useEffect(() => {
+    if (guest || adoptedRef.current) return;
+    adoptedRef.current = true;
+    let raw: string | null = null;
+    try {
+      raw = localStorage.getItem("sutraSprint.guestProgress");
+    } catch {}
+    if (!raw) return;
+    (async () => {
+      try {
+        const saved = JSON.parse(raw) as ProgressState;
+        if (!saved?.topics || !Object.keys(saved.topics).length) return;
+        const res = await importGuestProgressAction(saved);
+        if (!res.ok) return;
+        setProgress((prev) => {
+          const topics = { ...prev.topics };
+          for (const [id, row] of Object.entries(saved.topics)) {
+            const cur = topics[id] ?? { cleared: 0, stageStars: {} };
+            const stars = { ...cur.stageStars };
+            for (const [k, v] of Object.entries(row.stageStars ?? {})) {
+              stars[k] = Math.max(stars[k] || 0, Number(v) || 0);
+            }
+            topics[id] = { cleared: Math.max(cur.cleared, row.cleared || 0), stageStars: stars };
+          }
+          return { ...prev, topics };
+        });
+        spawnToast(
+          lang === "ja" ? "おためしの記録を引き継ぎました！" : "Your guest progress was saved!",
+          null
+        );
+      } catch {}
+      try {
+        localStorage.removeItem("sutraSprint.guestProgress");
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guest]);
+
+  /* A guest's progress lives in the browser until they make an account.
+     Written on every change rather than on unload: a phone tab can be killed
+     without ever firing one. */
+  const GUEST_KEY = "sutraSprint.guestProgress";
+  useEffect(() => {
+    if (!guest) return;
+    try {
+      localStorage.setItem(GUEST_KEY, JSON.stringify(progress));
+    } catch {}
+  }, [guest, progress]);
 
   /* ---------- add to home screen ----------
      Chrome and Edge fire beforeinstallprompt and suppress their own banner if
@@ -2556,8 +2623,27 @@ export function GameApp({
       ))}
 
       <main>
+        {/* Says what a guest is and what they stand to lose, without a modal in
+            front of the thing they came to try. */}
+        {guest && (
+          <div className="guest-banner">
+            <span className="guest-banner-dot" aria-hidden="true">●</span>
+            <div className="guest-banner-body">
+              <strong>{lang === "ja" ? "おためしプレイ中" : "Playing as a guest"}</strong>
+              <span>
+                {lang === "ja"
+                  ? "このブラウザにだけ記録されます。アカウントを作ると、どの端末でも続きから遊べます。"
+                  : "Saved in this browser only. Make an account to keep it on any device."}
+              </span>
+            </div>
+            <a className="guest-banner-cta" href="/signup?from=%2F">
+              {lang === "ja" ? "保存" : "Save"}
+            </a>
+          </div>
+        )}
         {view === "home" && (
           <HomeView
+            guest={guest}
             progress={progress}
             li={li}
             solvedCount={solvedCount}
@@ -2837,7 +2923,17 @@ export function GameApp({
       )}
 
       <footer ref={footerRef} className="footerbar active" style={{ display: "flex" }}>
-        {view === "home" ? (
+        {view === "home" && guest ? (
+          <>
+            <button className="bottomnav-item active" onClick={goHome}>
+              <span className="bottomnav-icon">🏠</span>
+              <span>{lang === "ja" ? "ホーム" : "Home"}</span>
+            </button>
+            <a className="btn btn-primary guest-save-btn" href="/signup?from=%2F">
+              {lang === "ja" ? "進捗を保存する" : "Save my progress"}
+            </a>
+          </>
+        ) : view === "home" ? (
           <>
             <button className="bottomnav-item active" onClick={goHome}>
               <span className="bottomnav-icon">🏠</span>
@@ -3115,6 +3211,7 @@ function HomeView({
   reviewStats,
   onOpenQuests,
   onOpenShop,
+  guest = false,
   onStartReview,
   gemBalance,
   openDuels,
@@ -3143,6 +3240,7 @@ function HomeView({
   reviewStats: ReviewStats | null;
   onOpenQuests: () => void;
   onOpenShop: () => void;
+  guest?: boolean;
   onStartReview: () => void;
   gemBalance: number | null;
   openDuels: ChallengeRow[];
@@ -3312,16 +3410,20 @@ function HomeView({
 
       {/* Quests used to have a full card here, but they already have their own
           nav tab with a badge — the same list twice was just scroll. Shop and
-          Friends are not in the nav, so they keep a slim row of their own. */}
-      <div className="home-quick">
-        <button className="home-quick-btn" onClick={onOpenShop}>
-          🛍️ {lang === "ja" ? "ショップ" : "Shop"}
-          <span className="mono"> · 💎 {gemBalance ?? "…"}</span>
-        </button>
-        <button className="home-quick-btn home-quick-friends" onClick={onOpenFriends}>
-          👥 {lang === "ja" ? "フレンド" : "Friends"}
-        </button>
-      </div>
+          Friends are not in the nav, so they keep a slim row of their own.
+          A guest has neither a gem balance nor friends, so the row would be
+          two buttons that open empty drawers. */}
+      {!guest && (
+        <div className="home-quick">
+          <button className="home-quick-btn" onClick={onOpenShop}>
+            🛍️ {lang === "ja" ? "ショップ" : "Shop"}
+            <span className="mono"> · 💎 {gemBalance ?? "…"}</span>
+          </button>
+          <button className="home-quick-btn home-quick-friends" onClick={onOpenFriends}>
+            👥 {lang === "ja" ? "フレンド" : "Friends"}
+          </button>
+        </div>
+      )}
 
       {reviewCount > 0 ? (
         <button className="review-cta" onClick={onStartReview}>
