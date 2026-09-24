@@ -2170,7 +2170,8 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .lock-sheet h3{ font-size:18px; margin-bottom:8px; }
 .lock-sheet p{ font-size:13px; color:var(--muted); line-height:1.7; margin:0 0 16px; }
 .lock-sheet .auth-submit{ display:block; text-decoration:none; text-align:center; }
-.lock-sheet-later{ width:100%; margin-top:8px; }
+.lock-sheet-signin{ margin-top:8px; }
+.lock-sheet-later{ width:100%; margin-top:8px; font-weight:700; color:var(--muted); border-color:transparent; box-shadow:none; }
 
 /* ---------- Math Tic-Tac-Toe ---------- */
 .ttt-card{ display:flex; align-items:center; gap:14px; width:100%; cursor:pointer; text-align:left; font-family:inherit;
