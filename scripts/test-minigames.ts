@@ -1,4 +1,5 @@
-import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore } from "../src/lib/game/minigames";
+import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
+  buildOddRound, digitSum, buildSortRound, sortedIds } from "../src/lib/game/minigames";
 
 const fails: string[] = [];
 const ok = (l: string, c: boolean) => { if (!c) fails.push(l); };
@@ -54,8 +55,41 @@ for (let r = 0; r < 400; r++) {
 ok("a longer streak scores more", biggerScore(7) > biggerScore(3));
 ok("no streak scores nothing", biggerScore(0) === 0);
 
+/* ---------- Odd One Out ---------- */
+for (let r = 0; r < 400; r++) {
+  const { tiles, oddId, sum } = buildOddRound();
+  ok("four tiles", tiles.length === 4);
+  ok("no number appears twice", new Set(tiles.map((t) => t.n)).size === 4);
+  const odd = tiles.find((t) => t.id === oddId)!;
+  const rest = tiles.filter((t) => t.id !== oddId);
+  ok("exactly one tile is the odd one", !!odd && rest.length === 3);
+  ok("the other three agree", rest.every((t) => digitSum(t.n) === sum));
+  ok("and the odd one does not", digitSum(odd.n) !== sum);
+  /* Only one answer can be right, or the player is guessing. */
+  const counts = new Map<number, number>();
+  tiles.forEach((t) => counts.set(digitSum(t.n), (counts.get(digitSum(t.n)) ?? 0) + 1));
+  ok("the round has a single solution", counts.get(sum) === 3 && counts.size === 2);
+}
+
+/* digitSum is the rule the round is built on, so pin it directly. */
+ok("digit sum folds to one figure", digitSum(1192) === 4);
+ok("multiples of nine fold to nine", digitSum(99) === 9 && digitSum(81) === 9);
+ok("single figures are themselves", digitSum(7) === 7);
+
+/* ---------- Sort ---------- */
+for (let r = 0; r < 300; r++) {
+  const round = buildSortRound(4);
+  ok("four cards", round.cards.length === 4);
+  ok("values are distinct", new Set(round.cards.map((c) => c.value)).size === 4);
+  const order = sortedIds(round);
+  ok("the solution names every card once", new Set(order).size === 4);
+  const vals = order.map((id) => round.cards.find((c) => c.id === id)!.value);
+  ok("the solution really ascends", vals.every((v, i) => i === 0 || vals[i - 1] < v));
+  ok("prompts stand on their own", round.cards.every((c) => !/[|\u0304\u0305]/.test(c.prompt)));
+}
+
 if (fails.length) {
   console.error("mini-games FAILED:\n  " + [...new Set(fails)].join("\n  "));
   process.exit(1);
 }
-console.log("mini-games hold up (300 match rounds, 400 bigger pairs)");
+console.log("mini-games hold up (300 match, 400 bigger, 400 odd-one-out, 300 sort)");

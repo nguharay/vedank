@@ -2049,3 +2049,39 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .big-vs{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2;
   font-family:var(--font-num); font-size:12px; font-weight:900; color:var(--ink);
   background:var(--gold); border:2px solid var(--ink-line); border-radius:999px; padding:4px 9px; }
+
+/* ---------- odd one out ---------- */
+.odd-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.odd-tile{ aspect-ratio:1/0.8; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:5px; cursor:pointer; font-family:inherit; padding:8px;
+  background:var(--surface); border:3px solid var(--ink-line); border-radius:18px;
+  box-shadow:4px 4px 0 color-mix(in srgb, var(--ink-line) 22%, transparent);
+  transition:transform .12s, background .2s, border-color .2s; }
+.odd-tile:active{ transform:scale(.96); }
+.odd-n{ font-size:27px; font-weight:900; color:var(--ink); }
+.odd-ds{ font-size:12px; font-weight:800; color:var(--muted); }
+.odd-tile.right{ border-color:var(--green-dk); background:color-mix(in srgb, var(--green) 20%, var(--surface)); }
+.odd-tile.wrong{ border-color:var(--wrong); background:color-mix(in srgb, var(--wrong) 16%, var(--surface)); animation:shake .4s; }
+.odd-tile.reveal{ border-color:var(--green-dk); }
+
+/* ---------- smallest first ---------- */
+.sort-list{ display:flex; flex-direction:column; gap:10px; }
+.sort-card{ display:flex; align-items:center; gap:12px; cursor:pointer; text-align:left;
+  padding:14px; font-family:inherit; background:var(--surface);
+  border:3px solid var(--ink-line); border-radius:16px;
+  box-shadow:4px 4px 0 color-mix(in srgb, var(--ink-line) 22%, transparent);
+  transition:transform .12s, opacity .2s, background .2s; }
+.sort-card:active{ transform:scale(.98); }
+.sort-order{ flex:none; width:28px; height:28px; border-radius:50%; display:grid; place-items:center;
+  font-size:13px; font-weight:900; color:var(--muted); background:var(--surface-3); }
+.sort-card.taken .sort-order{ background:var(--green-dk); color:#fff; }
+.sort-card.taken{ opacity:.55; }
+.sort-q{ flex:1; font-size:18px; font-weight:800; color:var(--ink); }
+.sort-v{ flex:none; font-size:13px; font-weight:800; color:var(--muted); }
+.sort-card.wrong{ border-color:var(--wrong); background:color-mix(in srgb, var(--wrong) 16%, var(--surface)); animation:shake .4s; }
+
+/* ---------- memory ---------- */
+.mem-tile{ background:linear-gradient(140deg,var(--violet),var(--violet-dk)); color:#fff;
+  border-color:var(--ink-line); font-size:22px; }
+.mem-tile.up{ background:var(--surface); color:var(--ink); font-size:15px; }
+.mem-tile.up.ans{ background:color-mix(in srgb, var(--sky1) 13%, var(--surface)); }
