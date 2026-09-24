@@ -933,6 +933,10 @@ export function GameApp({
   /* How each question of the current stage went, so the run can be read at a
      glance while it is still happening rather than only in the result. */
   const [stageMarks, setStageMarks] = useState<(boolean | null)[]>([]);
+  /* And what actually happened, so the result screen can show the questions
+     back. Stars tell you how you did; this tells you what to fix. */
+  type RunEntry = { prompt: string; answer: number; given: string; ok: boolean; timedOut: boolean };
+  const [stageLog, setStageLog] = useState<RunEntry[]>([]);
   const [curProblem, setCurProblem] = useState<Problem | null>(null);
   const [curMode, setCurMode] = useState<Mode>("type");
   const [tileOptions, setTileOptions] = useState<number[]>([]);
@@ -1028,6 +1032,7 @@ export function GameApp({
     if (!stageUnlocked(progress, currentTopic.id, n)) return;
     setCurStage({ n, qIndex: 0, correct: 0 });
     setStageMarks([]);
+    setStageLog([]);
     setHearts(5);
     setRuns(0);
     setComboStreak(0);
@@ -1047,6 +1052,7 @@ export function GameApp({
     setCurrentTopicId(topicId);
     setCurStage({ n, qIndex: 0, correct: 0 });
     setStageMarks([]);
+    setStageLog([]);
     setHearts(5);
     setRuns(0);
     setComboStreak(0);
@@ -1107,7 +1113,7 @@ export function GameApp({
     }
   }, [curMode, curProblem, view]);
 
-  function resolveAnswer(ok: boolean, timedOut: boolean) {
+  function resolveAnswer(ok: boolean, timedOut: boolean, given = "") {
     if (!curProblem) return;
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -1120,6 +1126,10 @@ export function GameApp({
       next[curStage.qIndex] = ok;
       return next;
     });
+    setStageLog((l) => [
+      ...l,
+      { prompt: curProblem.prompt, answer: curProblem.answer, given, ok, timedOut },
+    ]);
 
     if (ok) {
       stageCorrectRef.current += 1;
@@ -1205,33 +1215,43 @@ export function GameApp({
     setCheckEnabled(true);
     sound.click();
     const ok = curMode === "truefalse" ? v === tfIsTrue : v === curProblem.answer;
-    setTimeout(() => resolveAnswer(ok, false), 220);
+    const given =
+      curMode === "truefalse"
+        ? v
+          ? (lang === "ja" ? "正しい" : "True")
+          : (lang === "ja" ? "誤り" : "False")
+        : fmt(Number(v));
+    setTimeout(() => resolveAnswer(ok, false, given), 220);
   }
 
   function checkPractice() {
     if (!curProblem || answeredRef.current) return;
     let ok: boolean;
+    let given = "";
     if (curMode === "type") {
       const val = (typeInputRef.current?.value || "").trim().replace(/,/g, "");
       if (val === "") return;
       ok = Number(val) === curProblem.answer;
+      given = fmt(Number(val));
       typeInputRef.current?.blur();
     } else if (curMode === "truefalse") {
       if (curSelection === null) return;
       ok = curSelection === tfIsTrue;
+      given = curSelection ? (lang === "ja" ? "正しい" : "True") : (lang === "ja" ? "誤り" : "False");
     } else {
       if (curSelection === null) return;
       ok = curSelection === curProblem.answer;
+      given = fmt(Number(curSelection));
     }
     answeredRef.current = true;
-    resolveAnswer(ok, false);
+    resolveAnswer(ok, false, given);
   }
 
   function handleTimeout() {
     if (!curProblem || answeredRef.current) return;
     answeredRef.current = true;
     if (curMode === "type") typeInputRef.current?.blur();
-    resolveAnswer(false, true);
+    resolveAnswer(false, true, lang === "ja" ? "時間切れ" : "out of time");
   }
 
   function addRun() {
@@ -2737,7 +2757,7 @@ export function GameApp({
       <main>
         {/* Says what a guest is and what they stand to lose, without a modal in
             front of the thing they came to try. */}
-        {guest && (
+        {guest && view === "home" && (
           <div className="guest-banner">
             <span className="guest-banner-dot" aria-hidden="true">●</span>
             <div className="guest-banner-body">
@@ -3168,6 +3188,34 @@ export function GameApp({
             )}
             <div className="result-sub">{t.result.correctOf(stageResult.correct, QUESTIONS_PER_STAGE)}</div>
             <div className="result-gems"><RollUp to={stageResult.gemsGained} prefix="+" /> 💎</div>
+
+            {/* Stars say how you did; this says what to fix. Missed questions
+                lead, because those are the ones worth a second look. */}
+            {stageLog.length > 0 && (
+              <div className="run-recap">
+                <div className="run-recap-head">
+                  {lang === "ja" ? "このステージのふりかえり" : "How it went"}
+                </div>
+                {[...stageLog]
+                  .map((e, i) => ({ ...e, i }))
+                  .sort((a, b) => Number(a.ok) - Number(b.ok) || a.i - b.i)
+                  .map((e) => (
+                    <div key={e.i} className={`run-row${e.ok ? " ok" : ""}`}>
+                      <span className="run-mark">{e.ok ? "✓" : "✗"}</span>
+                      <span className="run-q mono">{e.prompt}</span>
+                      <span className="run-a mono">
+                        {e.ok ? (
+                          fmt(e.answer)
+                        ) : (
+                          <>
+                            <s>{e.given}</s> <strong>{fmt(e.answer)}</strong>
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
             <div className="result-actions">
               {stageResult.passed ? (
                 stageResult.n < STAGE_COUNT ? (
