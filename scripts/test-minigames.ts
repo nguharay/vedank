@@ -115,7 +115,7 @@ const evalP = (t: string) => {
 };
 for (const g of QUICK_GAMES) {
   for (let r = 0; r < 200; r++) {
-    const q = g.next(r % 12);
+    const q = g.next(r % 12, r % 2 ? "ja" : "en");
     ok(`${g.id}: has options`, q.options.length >= 2 && q.options.length <= 4);
     ok(`${g.id}: answer index in range`, q.answer >= 0 && q.answer < q.options.length);
     ok(`${g.id}: options distinct`, new Set(q.options).size === q.options.length);

@@ -232,7 +232,7 @@ export type QuickGame = {
   id: string; icon: string; tint: string;
   name: string; nameJa: string; blurb: string; blurbJa: string;
   hintJa: string; hintEn: string;
-  next: (streak: number) => QuickRound;
+  next: (streak: number, lang: "en" | "ja") => QuickRound;
 };
 
 const ri = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
@@ -301,11 +301,11 @@ export const QUICK_GAMES: QuickGame[] = [
     name: "Last Digit", nameJa: "一の位だけ",
     blurb: "Only the last digit of the product matters.", blurbJa: "かけ算の一の位だけ当てよう。",
     hintJa: "一の位どうしをかければ、答えの一の位がわかる", hintEn: "Multiply just the last digits",
-    next: () => {
+    next: (_streak, lang) => {
       const a = ri(12, 99), b = ri(12, 99);
       const last = (a * b) % 10;
       const o = numericOptions(last, 4, (x) => [0,1,2,3,4,5,6,7,8,9].filter((d) => d !== x));
-      return { prompt: `${a} × ${b} の一の位は？`, ...o,
+      return { prompt: lang === "ja" ? `${a} × ${b} の一の位は？` : `Last digit of ${a} × ${b}?`, ...o,
         noteJa: `${a % 10} × ${b % 10} = ${(a % 10) * (b % 10)} → 一の位は ${last}`,
         noteEn: `${a % 10} × ${b % 10} = ${(a % 10) * (b % 10)} → last digit ${last}` };
     },
@@ -330,11 +330,12 @@ export const QUICK_GAMES: QuickGame[] = [
     name: "Divisible by 9?", nameJa: "9で割れる？",
     blurb: "Yes or no — without dividing.", blurbJa: "割らずに判定できるかな？",
     hintJa: "数字の合計が9なら、9で割れる", hintEn: "Digit sum 9 means divisible by 9",
-    next: () => {
+    next: (_streak, lang) => {
       const yes = Math.random() < 0.5;
       let n = ri(100, 9999);
       if (yes) n = n - (n % 9) || 9; else if (n % 9 === 0) n += ri(1, 8);
-      return { prompt: `${fmtN(n)}`, options: ["○ 割れる", "× 割れない"], answer: yes ? 0 : 1,
+      return { prompt: `${fmtN(n)}`,
+        options: lang === "ja" ? ["○ 割れる", "× 割れない"] : ["○ Yes", "× No"], answer: yes ? 0 : 1,
         noteJa: `数字の合計 → ${digitSum(n)} → ${yes ? "9で割れる" : "割れない"}`,
         noteEn: `digit sum → ${digitSum(n)} → ${yes ? "divisible" : "not divisible"}` };
     },

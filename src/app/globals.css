@@ -2148,3 +2148,26 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   border-radius:10px; border:2px solid var(--line); background:var(--surface-2); resize:vertical; }
 .lesson-editor-actions{ display:flex; gap:8px; justify-content:flex-end; }
 .lesson-editor-actions .btn{ padding:10px 16px; font-size:13px; }
+
+
+/* ---------- tile text scales with the tile ----------
+   The circles and balloons are the right size on a wide screen; the numbers
+   inside them were not — a 450px circle carried 19px type. Container units
+   let the type follow the tile, clamped so a phone is unchanged. */
+.target-tile, .balloon-tile, .choice-tile, .catch-tile{ container-type:inline-size; }
+.target-tile{ font-size:clamp(19px, 15cqi, 52px); }
+.balloon-body{ font-size:clamp(17px, 15cqi, 46px); }
+.choice-tile{ font-size:clamp(24px, 12cqi, 40px); }
+.catch-tile{ font-size:clamp(15px, 16cqi, 34px); }
+
+
+/* ---------- guest locks ---------- */
+.game-card.locked{ opacity:.72; }
+.game-card.locked .game-card-icon{ filter:grayscale(.6); }
+.game-card-lock{ flex:none; font-size:16px; }
+.lock-sheet{ text-align:center; }
+.lock-sheet-icon{ font-size:40px; margin-bottom:6px; }
+.lock-sheet h3{ font-size:18px; margin-bottom:8px; }
+.lock-sheet p{ font-size:13px; color:var(--muted); line-height:1.7; margin:0 0 16px; }
+.lock-sheet .auth-submit{ display:block; text-decoration:none; text-align:center; }
+.lock-sheet-later{ width:100%; margin-top:8px; }
