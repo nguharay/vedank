@@ -3696,10 +3696,15 @@ function PracticeView({
 
   return (
     <section className="view active">
-      <div className="progress-top">
-        <div className="progress-top-fill" style={{ width: `${Math.round((qIndex / QUESTIONS_PER_STAGE) * 100)}%` }} />
+      {/* Progress and the countdown stay pinned: on a phone the question and
+          its options are taller than the viewport, and a timer you have to
+          scroll back up to find is a timer you cannot play against. */}
+      <div className="practice-hud">
+        <div className="progress-top">
+          <div className="progress-top-fill" style={{ width: `${Math.round((qIndex / QUESTIONS_PER_STAGE) * 100)}%` }} />
+        </div>
+        <CountdownTimer timerKey={timerKey} timerMs={timerMs} paused={timerPaused} />
       </div>
-      <CountdownTimer timerKey={timerKey} timerMs={timerMs} paused={timerPaused} />
       <div className="topic-head" style={{ marginTop: 2 }}>
         <div className={`eyebrow-tag${isBoss ? " boss-tag" : ""}`}>{isBoss ? t.practice.bossStage : t.practice.stageOf(stageN, STAGE_COUNT)}</div>
         <h1>{title}</h1>

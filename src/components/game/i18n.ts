@@ -10,7 +10,10 @@ export function useLang(initialLang: LangCode = "en") {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORE_KEY) as LangCode | null;
-      if (saved === "en" || saved === "ja") setLangState(saved);
+      if (saved === "en" || saved === "ja") return setLangState(saved);
+      /* Nothing stored yet: follow the browser. A link shared into a Japanese
+         chat should open in Japanese without anyone hunting for a toggle. */
+      if (navigator.language.toLowerCase().startsWith("ja")) setLangState("ja");
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

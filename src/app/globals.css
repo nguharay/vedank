@@ -433,6 +433,18 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 
 /* ---------- practice (stage-scoped) ---------- */
 .eyebrow-tag{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:800; color:var(--muted); margin-bottom:6px; }
+/* ---------- sticky practice HUD (progress + countdown) ----------
+   `main` is the scroll container, so top:0 pins this just under the header.
+   The bleed + background keep the question from showing through as it
+   scrolls beneath. */
+.practice-hud{ position:sticky; top:0; z-index:5; background:var(--bg);
+  padding:10px 14px 8px; margin:-10px -14px 4px;
+  box-shadow:0 8px 12px -10px rgba(20,20,50,.45); }
+.practice-hud .progress-top{ margin-bottom:10px; }
+.practice-hud .timer-count{ margin-bottom:0; }
+.practice-hud .timer-bar-wrap{ margin-bottom:0; }
+@media (min-width:760px){ .practice-hud{ padding-inline:28px; margin-inline:-28px; } }
+
 .progress-top{ height:16px; border-radius:999px; background:var(--surface-2); border:2px solid var(--line); overflow:hidden; margin-bottom:18px; padding:2px; }
 .progress-top-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg,var(--green),#7BE23A); transition:width .4s ease; }
 
@@ -522,15 +534,20 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .shake-tile{ animation:shake .4s; }
 
 /* ---------- balloon pop mode ---------- */
-.balloon-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding-top:4px; }
-.balloon-tile{ position:relative; border:none; background:none; cursor:pointer; padding:0; aspect-ratio:3/4; transition:transform .15s; }
+/* Two rows of 3/4-ratio tiles pushed the bottom row under the fold, which read
+   as "the answer isn't one of the options". Shorter tiles keep all six in view. */
+.balloon-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding-top:4px;
+  max-width:420px; margin-inline:auto; }
+.balloon-tile{ position:relative; border:none; background:none; cursor:pointer; padding:0; aspect-ratio:1/1.12; transition:transform .15s; }
 .balloon-tile:active{ transform:scale(.92); }
 .balloon-body{ width:100%; height:76%; border-radius:50% 50% 46% 46% / 58% 58% 42% 42%; display:flex; align-items:center; justify-content:center;
-  font-weight:800; font-size:15px; color:#fff; font-family:var(--font-num);
+  font-weight:800; font-size:17px; color:#fff; font-family:var(--font-num);
+  padding:0 8px; line-height:1.1; overflow-wrap:anywhere;
+  text-shadow:0 1px 2px rgba(0,0,0,.42);
   box-shadow:0 6px 14px -6px rgba(0,0,0,.35), inset -6px -6px 10px rgba(0,0,0,.12), inset 6px 6px 10px rgba(255,255,255,.22);
-  animation: balloonFloat 3.2s ease-in-out infinite; background:linear-gradient(160deg,var(--sun2),var(--sun1)); border:3px solid transparent; }
-.balloon-tile:nth-child(3n+2) .balloon-body{ animation-delay:.5s; background:linear-gradient(160deg,#7BE2C9,#1FA8C9); }
-.balloon-tile:nth-child(3n) .balloon-body{ animation-delay:1s; background:linear-gradient(160deg,#D9B8FF,#8B5CF6); }
+  animation: balloonFloat 3.2s ease-in-out infinite; background:linear-gradient(160deg,#FF8A2B,#E23C0C); border:3px solid transparent; }
+.balloon-tile:nth-child(3n+2) .balloon-body{ animation-delay:.5s; background:linear-gradient(160deg,#35C2A8,#0E7FA0); }
+.balloon-tile:nth-child(3n) .balloon-body{ animation-delay:1s; background:linear-gradient(160deg,#B189F5,#6D34E0); }
 .balloon-string{ position:absolute; left:50%; bottom:0; width:2px; height:16%; background:var(--muted); transform:translateX(-50%); }
 @keyframes balloonFloat{ 0%,100%{ transform:translateY(0) rotate(-2deg); } 50%{ transform:translateY(-7px) rotate(2deg); } }
 .balloon-tile.picked .balloon-body{ border-color:#fff; box-shadow:0 0 0 3px var(--gold), 0 6px 14px -6px rgba(0,0,0,.35); animation-play-state:paused; }
@@ -1779,3 +1796,16 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 /* the three-digit window slid across a 111 multiplication */
 .bd-window{ fill:color-mix(in srgb, var(--sun2) 30%, transparent); stroke:var(--sun1); stroke-width:1.2; }
 .bd-flagrow-2{ grid-template-columns:repeat(2,1fr); }
+
+
+/* ---------- auth hero (the pitch, above the sign-in form) ---------- */
+.auth-hero{ text-align:center; margin:2px 0 18px; padding:16px 14px 18px; border-radius:18px;
+  background:color-mix(in srgb, var(--sun2) 10%, var(--surface-2));
+  border:2px solid color-mix(in srgb, var(--ink-line) 22%, transparent); }
+.auth-kicker{ font-size:11px; font-weight:800; letter-spacing:.18em; color:var(--sun1); }
+.auth-hero-title{ font-family:"Baloo 2",system-ui,sans-serif; font-size:26px; font-weight:800;
+  color:var(--ink); line-height:1.2; margin-top:6px; text-wrap:balance; }
+.auth-hero-tagline{ font-size:16px; font-weight:800; color:var(--green-dk); margin-top:6px; text-wrap:balance; }
+.auth-hero-pitch{ font-size:13px; font-weight:600; color:var(--muted); line-height:1.65;
+  margin:10px 0 0; text-wrap:pretty; }
+.auth-lang{ margin:0 0 16px; }
