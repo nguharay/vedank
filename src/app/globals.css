@@ -2085,3 +2085,17 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   border-color:var(--ink-line); font-size:22px; }
 .mem-tile.up{ background:var(--surface); color:var(--ink); font-size:15px; }
 .mem-tile.up.ans{ background:color-mix(in srgb, var(--sky1) 13%, var(--surface)); }
+
+/* ---------- game of the day ---------- */
+.daily-game{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:100%;
+  cursor:pointer; text-align:left; font-family:inherit; margin-bottom:14px; padding:15px 16px;
+  border-radius:18px; color:#fff; border:3px solid var(--ink-line);
+  background:linear-gradient(130deg,var(--violet),var(--sun3) 60%,var(--sun1));
+  box-shadow:4px 4px 0 var(--ink-line); position:relative; overflow:hidden; }
+.daily-game::after{ content:""; position:absolute; inset:0;
+  background:repeating-linear-gradient(115deg, rgba(255,255,255,.12) 0 2px, transparent 2px 22px);
+  pointer-events:none; }
+.daily-game:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink-line); }
+.daily-game-tag{ font-size:10px; font-weight:900; letter-spacing:.18em; opacity:.9; }
+.daily-game-name{ font-size:19px; font-weight:900; }
+.daily-game-sub{ font-size:11.5px; font-weight:700; opacity:.92; line-height:1.45; }

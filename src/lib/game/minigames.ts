@@ -194,3 +194,30 @@ export function buildSortRound(count = 4, want: Difficulty = "easy"): SortRound 
 export function sortedIds(round: SortRound): string[] {
   return [...round.cards].sort((a, b) => a.value - b.value).map((c) => c.id);
 }
+
+/* ---------- Game of the Day ----------
+   One board, the same for everyone, changing at midnight — which is what
+   makes a score worth telling a friend. Only the fixed-board games qualify:
+   Which is Bigger, Odd One Out and Smallest First are endless streaks, so
+   there is no shared thing to compare.
+
+   Distinct from the existing Daily Challenge, which is eight questions. */
+export type DailyGameId = "match" | "memory";
+
+export function dailySeed(dateKey: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < dateKey.length; i++) {
+    h ^= dateKey.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/* Alternates day to day so it does not become the same game forever. */
+export function dailyGameId(dateKey: string): DailyGameId {
+  return dailySeed(dateKey) % 2 === 0 ? "match" : "memory";
+}
+
+export function dailyGameKey(dateKey: string): string {
+  return `sutraSprint.dailyGame.${dateKey}`;
+}
