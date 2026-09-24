@@ -376,6 +376,34 @@ export async function visibleCompetitions(userId: string): Promise<CompetitionSu
   });
 }
 
+/* What an invite link needs to render before anyone commits to anything:
+   whose race it is, and whether it is still on. */
+export async function raceInvite(competitionId: string): Promise<
+  | { ok: true; id: string; name: string; hostId: string; hostName: string; levelName: string;
+      durationSec: number; questionCount: number; status: string }
+  | { ok: false; error: string }
+> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: competitions.id, name: competitions.name, status: competitions.status,
+      scope: competitions.scope, level: competitions.level,
+      durationSec: competitions.durationSec, questionCount: competitions.questionCount,
+      hostId: competitions.teacherId, hostName: users.name,
+    })
+    .from(competitions)
+    .innerJoin(users, eq(users.id, competitions.teacherId))
+    .where(eq(competitions.id, competitionId))
+    .limit(1);
+  const c = rows[0];
+  if (!c || c.scope !== "friends") return { ok: false, error: "That invite link is not a race." };
+  return {
+    ok: true, id: c.id, name: c.name, hostId: c.hostId, hostName: c.hostName,
+    levelName: compLevel(c.level).name, durationSec: c.durationSec,
+    questionCount: c.questionCount, status: c.status,
+  };
+}
+
 /* Handing out the paper. Refuses a second attempt, so nobody retries until
    they win, and refuses a competition the player is not in the class for. */
 export async function startCompetition(

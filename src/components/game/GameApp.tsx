@@ -556,6 +556,37 @@ export function GameApp({
     await refreshComps();
   }
 
+  const [copiedRace, setCopiedRace] = useState<string | null>(null);
+  async function onShareRace(id: string) {
+    const url = `${window.location.origin}/r/${id}`;
+    const text = lang === "ja" ? "レースに参加してね！" : "Race me on Sutra Sprint!";
+    /* The native sheet where there is one — on a phone this is the difference
+       between sharing and copy-then-hunt-for-the-app. */
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Sutra Sprint", text, url });
+        return;
+      }
+    } catch {
+      return; /* the user dismissed the sheet */
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedRace(id);
+      setTimeout(() => setCopiedRace(null), 1600);
+    } catch {}
+  }
+
+  /* Rematch: a duel's score is fixed when it is created, so a rematch is not
+     a row to insert — it is "play Blitz now at that level, and send the
+     result to that person". Remember who, then fire it off when the run ends. */
+  const rematchRef = useRef<{ id: string; name: string } | null>(null);
+  function onRematch(friendId: string, name: string, level: number) {
+    rematchRef.current = { id: friendId, name };
+    setFriendsOpen(false);
+    startBlitz(level);
+  }
+
   async function onEndRace(id: string) {
     await endCompetitionAction(id);
     await refreshComps();
@@ -1506,6 +1537,23 @@ export function GameApp({
         .catch(() => {});
     }
     setBlitzOver(true);
+    /* A rematch was queued before this run: send the score straight back to
+       whoever was being answered, rather than making them find the name again. */
+    const rm = rematchRef.current;
+    if (rm) {
+      rematchRef.current = null;
+      challengeAction(rm.id, finalScore, lvl)
+        .then((r) => {
+          if (r.ok) {
+            spawnToast(
+              lang === "ja" ? `${rm.name} さんに送りました！` : `Sent to ${rm.name}!`,
+              null
+            );
+            refreshFriends();
+          }
+        })
+        .catch(() => {});
+    }
     if (finalScore > (blitzBests[lvl] ?? 0)) {
       setBlitzBests((b) => ({ ...b, [lvl]: finalScore }));
       setBlitzJustBeatBest(true);
@@ -1564,6 +1612,31 @@ export function GameApp({
   }, [blitzProblem, view]);
 
   /* ================= RENDER ================= */
+  /* An invite link lands on /?race=<id>. Enter it once, then strip the query
+     so a reload does not try to re-enter a race already taken. */
+  const raceHandledRef = useRef(false);
+  useEffect(() => {
+    if (raceHandledRef.current) return;
+    let raceId: string | null = null;
+    try {
+      raceId = new URLSearchParams(window.location.search).get("race");
+    } catch {}
+    if (!raceId) return;
+    raceHandledRef.current = true;
+    window.history.replaceState({}, "", window.location.pathname);
+    (async () => {
+      const rows = (await competitionsAction()).rows;
+      setComps(rows);
+      const c = rows.find((r) => r.id === raceId);
+      if (!c) return;
+      if (c.myScore !== null || c.status !== "live") {
+        setFriendsOpen(true);
+        return;
+      }
+      beginCompetition(c);
+    })();
+  }, []);
+
   /* ---------- add to home screen ----------
      Chrome and Edge fire beforeinstallprompt and suppress their own banner if
      you call preventDefault; keeping the event lets the game offer the install
@@ -2127,6 +2200,15 @@ export function GameApp({
                       {lang === "ja" ? "結果" : "Results"}
                     </button>
                   )}
+                  {c.status === "live" && (
+                    <button
+                      className="race-share"
+                      aria-label={lang === "ja" ? "招待リンクを共有" : "Share invite link"}
+                      onClick={() => onShareRace(c.id)}
+                    >
+                      {copiedRace === c.id ? "✅" : "🔗"}
+                    </button>
+                  )}
                   {c.hostedByMe && c.status === "live" && (
                     <button
                       className="friend-remove"
@@ -2215,6 +2297,15 @@ export function GameApp({
                         </span>{" "}
                         {d.won === null ? (lang === "ja" ? "引き分け" : "Tie") : d.won ? (lang === "ja" ? "勝ち" : "Won") : (lang === "ja" ? "負け" : "Lost")}
                       </span>
+                    )}
+                    {d.status === "done" && (
+                      <button
+                        className="duel-rematch"
+                        title={lang === "ja" ? "リベンジ" : "Rematch"}
+                        onClick={() => onRematch(d.opponentId, d.opponentName, d.level)}
+                      >
+                        ⟳ {lang === "ja" ? "リベンジ" : "Rematch"}
+                      </button>
                     )}
                   </div>
                 ))}
