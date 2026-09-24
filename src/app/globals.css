@@ -1930,16 +1930,37 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   background:var(--gold); padding:5px 10px calc(5px + env(safe-area-inset-top,0px));
   box-shadow:0 2px 8px -3px rgba(20,20,50,.45); }
 
-/* ---------- per-question pips ---------- */
-.stage-pips{ display:flex; gap:6px; margin-bottom:9px; }
-.stage-pip{ flex:1; height:9px; border-radius:999px; background:var(--surface-3);
+/* ---------- per-question pips ----------
+   Named q-* deliberately: .stage-pips already styles the little dot pill
+   under each topic node on the home path, and reusing it here silently
+   restyled those. */
+.q-pips{ display:flex; gap:6px; margin-bottom:9px; }
+.q-pip{ flex:1; height:9px; border-radius:999px; background:var(--surface-3);
   border:2px solid var(--line); transition:background .25s, border-color .25s, transform .25s; }
-.stage-pip.hit{ background:linear-gradient(90deg,var(--green),#7BE23A); border-color:var(--green-dk); }
-.stage-pip.miss{ background:var(--wrong); border-color:var(--wrong-dk); }
-.stage-pip.now{ background:var(--gold); border-color:var(--gold-dk); transform:scaleY(1.5);
+.q-pip.hit{ background:linear-gradient(90deg,var(--green),#7BE23A); border-color:var(--green-dk); }
+.q-pip.miss{ background:var(--wrong); border-color:var(--wrong-dk); }
+.q-pip.now{ background:var(--gold); border-color:var(--gold-dk); transform:scaleY(1.5);
   animation:pipNow 1.4s ease-in-out infinite; }
 @keyframes pipNow{ 0%,100%{ opacity:1 } 50%{ opacity:.55 } }
-@media (prefers-reduced-motion: reduce){ .stage-pip.now{ animation:none } }
+@media (prefers-reduced-motion: reduce){ .q-pip.now{ animation:none } }
 
 /* ---------- numbers that count up ---------- */
 .rollup{ font-variant-numeric:lining-nums tabular-nums; }
+
+/* ---------- show-the-rest of the path ---------- */
+.path-more{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center;
+  gap:2px; margin:6px auto 4px; padding:12px 22px; cursor:pointer;
+  border:3px dashed var(--line-strong); border-radius:18px; background:var(--surface);
+  font-family:inherit; font-weight:800; font-size:13.5px; color:var(--ink-dim); }
+.path-more:active{ transform:scale(.97); }
+.path-more-sub{ font-size:10.5px; font-weight:700; color:var(--faint); }
+
+/* ---------- a clean sweep ---------- */
+.result-perfect{ display:flex; justify-content:center; margin:2px 0 6px; }
+.result-perfect span{ font-weight:900; font-size:13px; letter-spacing:.14em; color:#3A2400;
+  padding:5px 16px; border-radius:999px; border:2px solid var(--ink-line);
+  background:linear-gradient(100deg,var(--gold),#FFE68A,var(--gold));
+  background-size:200% 100%; box-shadow:2px 2px 0 var(--ink-line);
+  animation:perfectSheen 2.2s linear infinite; }
+@keyframes perfectSheen{ to{ background-position:-200% 0 } }
+@media (prefers-reduced-motion: reduce){ .result-perfect span{ animation:none } }
