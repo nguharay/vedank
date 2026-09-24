@@ -1564,6 +1564,105 @@ export function GameApp({
   }, [blitzProblem, view]);
 
   /* ================= RENDER ================= */
+  /* ---------- add to home screen ----------
+     Chrome and Edge fire beforeinstallprompt and suppress their own banner if
+     you call preventDefault; keeping the event lets the game offer the install
+     from the profile sheet, where it reads as a choice rather than a nag.
+     Safari never fires it, so the button simply never appears there. */
+  const installEvtRef = useRef<Event | null>(null);
+  const [canInstall, setCanInstall] = useState(false);
+  useEffect(() => {
+    function onPrompt(e: Event) {
+      e.preventDefault();
+      installEvtRef.current = e;
+      setCanInstall(true);
+    }
+    function onInstalled() {
+      installEvtRef.current = null;
+      setCanInstall(false);
+    }
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  async function onInstall() {
+    const evt = installEvtRef.current as (Event & { prompt?: () => Promise<void> }) | null;
+    if (!evt?.prompt) return;
+    await evt.prompt();
+    installEvtRef.current = null;
+    setCanInstall(false);
+  }
+
+  /* ---------- keyboard play ----------
+     On a laptop the whole game was mouse-only: you could type an answer but
+     not pick a tile, and Blitz is a speed mode where reaching for the mouse
+     is the slow part. Number keys pick the nth option, Enter checks or moves
+     on, Escape goes back. */
+  const keyableModes = ["choice", "target", "balloon", "numberline", "arcade", "catch"];
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      /* Never steal a keystroke aimed at a field. */
+      const el = document.activeElement;
+      const typing =
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement ||
+        (el instanceof HTMLElement && el.isContentEditable);
+
+      if (e.key === "Escape" && !typing) {
+        if (view !== "home") {
+          e.preventDefault();
+          handleBack();
+        }
+        return;
+      }
+
+      if (view === "practice" && curProblem) {
+        if (e.key === "Enter" && checkEnabled && !typing) {
+          e.preventDefault();
+          checkPractice();
+          return;
+        }
+        if (typing) return;
+        const n = Number(e.key);
+        if (!Number.isInteger(n) || n < 1) return;
+        if (curMode === "truefalse") {
+          if (n <= 2) {
+            e.preventDefault();
+            submitSelection(n === 1);
+          }
+          return;
+        }
+        if (!keyableModes.includes(curMode)) return;
+        /* The number line is drawn in ascending order, so key 1 has to mean
+           the leftmost dot, not the first element of the unsorted array. */
+        const opts = curMode === "numberline" ? [...tileOptions].sort((a, b) => a - b) : tileOptions;
+        const pick = opts[n - 1];
+        if (pick === undefined || eliminated.includes(pick)) return;
+        e.preventDefault();
+        submitSelection(pick);
+        return;
+      }
+
+      if (view === "blitz" && blitzProblem && !typing) {
+        const n = Number(e.key);
+        if (Number.isInteger(n) && n >= 1 && n <= blitzOptions.length) {
+          e.preventDefault();
+          onBlitzSelect(blitzOptions[n - 1]);
+        }
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, curMode, curProblem, tileOptions, eliminated, checkEnabled, blitzProblem, blitzOptions]);
+
+
   return (
     <div id="app" data-skin={skin.skinId}>
       <div className="sparkle-field">
@@ -1632,6 +1731,12 @@ export function GameApp({
                 <div className="account-email">{user.email}</div>
               </div>
             </div>
+            {canInstall && (
+              <button className="menu-row menu-row-install" onClick={onInstall}>
+                <span>📲 {lang === "ja" ? "ホーム画面に追加" : "Add to home screen"}</span>
+                <span className="menu-row-val">{lang === "ja" ? "インストール" : "Install"}</span>
+              </button>
+            )}
             <button className="menu-row" onClick={sound.toggle}>
               <span>{sound.on ? "🔊" : "🔇"} {t.menu.sound}</span>
               <span className="menu-row-val">{sound.on ? t.menu.on : t.menu.off}</span>
@@ -3867,6 +3972,14 @@ function PracticeView({
         <div className={`eyebrow-tag${isBoss ? " boss-tag" : ""}`}>{isBoss ? t.practice.bossStage : t.practice.stageOf(stageN, STAGE_COUNT)}</div>
         <h1>{title}</h1>
       </div>
+      {/* Marking a tile green is invisible to a screen reader; this says it. */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {feedbackOk === null
+          ? `${t.practice.question} ${qIndex + 1} / ${QUESTIONS_PER_STAGE}. ${problem.prompt}`
+          : feedbackOk
+            ? t.practice.correct
+            : t.practice.incorrect}
+      </div>
       <div
         key={qIndex}
         className={`practice-card${isBoss ? " boss-card" : ""}${feedbackOk === true ? " correct-glow" : feedbackOk === false ? " wrong-glow" : ""}`}
@@ -3896,7 +4009,7 @@ function PracticeView({
         )}
         {mode === "choice" && (
           <div className="tile-grid">
-            {tileOptions.map((o) => (
+            {tileOptions.map((o, i) => (
               <button
                 key={o}
                 className={`choice-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
@@ -3904,13 +4017,14 @@ function PracticeView({
                 onClick={() => onSelect(o)}
               >
                 {fmt(o)}
+                <span className="tile-key" aria-hidden="true">{i + 1}</span>
               </button>
             ))}
           </div>
         )}
         {mode === "target" && (
           <div className="tile-grid cols-3">
-            {tileOptions.map((o) => (
+            {tileOptions.map((o, i) => (
               <button
                 key={o}
                 className={`target-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
@@ -3918,13 +4032,14 @@ function PracticeView({
                 onClick={() => onSelect(o)}
               >
                 {fmt(o)}
+                <span className="tile-key" aria-hidden="true">{i + 1}</span>
               </button>
             ))}
           </div>
         )}
         {mode === "balloon" && (
           <div className="balloon-grid">
-            {tileOptions.map((o) => (
+            {tileOptions.map((o, i) => (
               <button
                 key={o}
                 className={`balloon-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
@@ -3932,6 +4047,7 @@ function PracticeView({
                 onClick={() => onSelect(o)}
               >
                 <span className="balloon-body">{fmt(o)}</span>
+                <span className="tile-key" aria-hidden="true">{i + 1}</span>
                 <span className="balloon-string" />
               </button>
             ))}

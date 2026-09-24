@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 /* The link preview is the first thing a Japanese player sees — it has to sell
@@ -14,7 +14,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://vedank.vercel.app"),
   title: TITLE,
   description: DESCRIPTION,
-  icons: { icon: "/brand/vedank-mark.png" },
+  icons: {
+    icon: "/brand/vedank-mark.png",
+    apple: "/brand/apple-icon.png",
+  },
+  appleWebApp: { capable: true, title: "Sutra Sprint", statusBarStyle: "default" },
   openGraph: {
     type: "website",
     locale: "ja_JP",
@@ -30,6 +34,15 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     images: ["/brand/og-ja.png"],
   },
+};
+
+/* Tints the phone's status bar to the game's paper in standalone mode. */
+export const viewport: Viewport = {
+  themeColor: "#FFF7E8",
+  colorScheme: "light dark",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
