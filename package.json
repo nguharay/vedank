@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "npm run test:logic && npm run test:db",
-    "test:logic": "tsx scripts/test-game-logic.ts && tsx scripts/test-guest.ts && tsx scripts/test-sw.ts && tsx scripts/test-webpush.ts",
+    "test:logic": "tsx scripts/test-game-logic.ts && tsx scripts/test-guest.ts && tsx scripts/test-sw.ts && tsx scripts/test-webpush.ts && tsx scripts/test-match.ts",
     "test:db": "tsx scripts/test-engagement.ts && tsx scripts/test-social.ts && tsx scripts/test-srs.ts && tsx scripts/test-classroom.ts && tsx scripts/test-competition.ts",
     "migrate": "tsx scripts/migrate.ts"
   },

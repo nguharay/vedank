@@ -71,6 +71,7 @@ import { Mascot, Mandala } from "./Mascot";
 import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ } from "./BookDiagrams";
 import { TRICKS, TRICK_BY_ID } from "@/lib/game/tricks";
 import { dailyQuestions, todayKey, DAILY_QUESTIONS, type DailyQuestion } from "@/lib/game/daily";
+import { buildMatchRound, isPair, matchScore, type MatchTile } from "@/lib/game/match";
 import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
@@ -83,7 +84,7 @@ import { useBuddyPos } from "./useBuddyPos";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI, type UIDict } from "./i18n";
 
-type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp";
+type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp" | "match";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
@@ -1593,6 +1594,84 @@ export function GameApp({
     newBlitzQuestion(0);
   }
 
+  /* ---------- Number Match ----------
+     A round is entirely client-side, so it works as a guest and offline —
+     the two places the rest of the game cannot go. */
+  const [matchTiles, setMatchTiles] = useState<MatchTile[]>([]);
+  const [matchPicked, setMatchPicked] = useState<MatchTile[]>([]);
+  const [matchDone, setMatchDone] = useState<string[]>([]);
+  const [matchWrong, setMatchWrong] = useState<string[]>([]);
+  const [matchMistakes, setMatchMistakes] = useState(0);
+  const [matchStart, setMatchStart] = useState(0);
+  const [matchResult, setMatchResult] = useState<{ secs: number; score: number; best: boolean } | null>(null);
+  const [matchBest, setMatchBest] = useState(0);
+
+  function startMatch() {
+    /* Read the best here rather than in a mount effect: it is only ever
+       needed once the game opens, and an event handler is the honest place
+       to touch localStorage. */
+    try {
+      setMatchBest(Number(localStorage.getItem("sutraSprint.matchBest") || 0));
+    } catch {}
+    const round = buildMatchRound(6, "easy");
+    setMatchTiles(round.tiles);
+    setMatchPicked([]);
+    setMatchDone([]);
+    setMatchWrong([]);
+    setMatchMistakes(0);
+    setMatchResult(null);
+    setMatchStart(Date.now());
+    setView("match");
+  }
+
+  function onMatchTap(tile: MatchTile) {
+    if (matchResult || matchDone.includes(tile.id) || matchWrong.length) return;
+    if (matchPicked.some((t) => t.id === tile.id)) {
+      setMatchPicked([]);                       /* tapping it again lets go */
+      return;
+    }
+    const picked = [...matchPicked, tile];
+    if (picked.length < 2) {
+      setMatchPicked(picked);
+      sound.click();
+      return;
+    }
+    const [a, b] = picked;
+    if (isPair(a, b)) {
+      const done = [...matchDone, a.id, b.id];
+      setMatchDone(done);
+      setMatchPicked([]);
+      sound.correct();
+      haptic(18);
+      if (done.length === matchTiles.length) {
+        const secs = Math.round((Date.now() - matchStart) / 1000);
+        const score = matchScore(matchTiles.length / 2, secs, matchMistakes);
+        const best = score > matchBest;
+        if (best) {
+          setMatchBest(score);
+          try {
+            localStorage.setItem("sutraSprint.matchBest", String(score));
+          } catch {}
+        }
+        setMatchResult({ secs, score, best });
+        confetti.burstCenter(140, 0.5);
+        sound.levelUp();
+        if (!guest) fireQuest("correct_answer", matchTiles.length / 2);
+      }
+    } else {
+      /* Show the wrong pairing for a beat rather than snapping it away —
+         seeing what you got wrong is the only way to learn from it. */
+      setMatchWrong([a.id, b.id]);
+      setMatchMistakes((m) => m + 1);
+      sound.wrong();
+      haptic(30);
+      setTimeout(() => {
+        setMatchWrong([]);
+        setMatchPicked([]);
+      }, 620);
+    }
+  }
+
   function endBlitz(finalScore: number) {
     const lvl = blitzLevelRef.current;
     fireQuest("blitz_score", finalScore);
@@ -2872,6 +2951,59 @@ export function GameApp({
           />
         )}
 
+        {view === "match" && (
+          <section className="view active">
+            <div className="match-head">
+              <div className="match-stat">
+                <span className="match-stat-k">{lang === "ja" ? "ミス" : "Misses"}</span>
+                <span className="match-stat-v mono">{matchMistakes}</span>
+              </div>
+              <div className="match-stat">
+                <span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span>
+                <span className="match-stat-v mono">{matchBest}</span>
+              </div>
+            </div>
+            <p className="match-hint">
+              {lang === "ja" ? "式と答えをペアにしよう！" : "Pair each sum with its answer."}
+            </p>
+
+            <div className="match-grid">
+              {matchTiles.map((t) => {
+                const cleared = matchDone.includes(t.id);
+                const picked = matchPicked.some((p) => p.id === t.id);
+                const wrong = matchWrong.includes(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    className={`match-tile${t.kind === "ans" ? " ans" : ""}${cleared ? " cleared" : ""}${picked ? " picked" : ""}${wrong ? " wrong" : ""}`}
+                    onClick={() => onMatchTap(t)}
+                    disabled={cleared}
+                    aria-label={t.text}
+                  >
+                    <span className="mono">{t.text}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {matchResult && (
+              <div className="match-done">
+                <div className="match-done-title">
+                  {matchResult.best
+                    ? (lang === "ja" ? "自己ベスト更新！" : "New best!")
+                    : (lang === "ja" ? "クリア！" : "Cleared!")}
+                </div>
+                <div className="match-done-line mono">
+                  {matchResult.secs}s · {lang === "ja" ? "ミス" : "misses"} {matchMistakes} ·{" "}
+                  <RollUp to={matchResult.score} /> {lang === "ja" ? "点" : "pts"}
+                </div>
+                <button className="btn btn-primary match-again" onClick={startMatch}>
+                  {lang === "ja" ? "もう一回" : "Play again"}
+                </button>
+              </div>
+            )}
+          </section>
+        )}
         {view === "comp" && (
           <section className="view active">
             {compResult ? (
@@ -3062,8 +3194,12 @@ export function GameApp({
               <span className="bottomnav-icon">🏠</span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
+            <button className="bottomnav-item" onClick={startMatch}>
+              <span className="bottomnav-icon">🃏</span>
+              <span>{lang === "ja" ? "マッチ" : "Match"}</span>
+            </button>
             <a className="btn btn-primary guest-save-btn" href="/signup?from=%2F">
-              {lang === "ja" ? "進捗を保存する" : "Save my progress"}
+              {lang === "ja" ? "保存" : "Save"}
             </a>
           </>
         ) : view === "home" ? (
@@ -3091,9 +3227,12 @@ export function GameApp({
               <span className="bottomnav-icon">🏅</span>
               <span>{lang === "ja" ? "実績" : "Badges"}</span>
             </button>
-            <button className="bottomnav-item" onClick={() => setMenuOpen((o) => !o)}>
-              <span className="bottomnav-icon bottomnav-avatar">{(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}</span>
-              <span>{lang === "ja" ? "設定" : "Profile"}</span>
+            {/* Profile moved out: the header avatar already opens the same
+                account menu, and this slot is better spent on something to
+                play than on a second door to settings. */}
+            <button className="bottomnav-item" onClick={startMatch}>
+              <span className="bottomnav-icon">🃏</span>
+              <span>{lang === "ja" ? "マッチ" : "Match"}</span>
             </button>
           </>
         ) : (

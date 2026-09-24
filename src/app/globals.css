@@ -1981,3 +1981,33 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .run-a s{ opacity:.6; margin-right:4px; }
 .run-a strong{ color:var(--green-dk); }
 .run-row.ok .run-a{ color:var(--green-dk); font-weight:800; }
+
+/* ---------- Number Match ---------- */
+.match-head{ display:flex; gap:10px; margin-bottom:10px; }
+.match-stat{ flex:1; display:flex; align-items:baseline; justify-content:space-between;
+  padding:9px 13px; border-radius:13px; background:var(--surface-2); border:2px solid var(--line); }
+.match-stat-k{ font-size:10.5px; font-weight:800; letter-spacing:.05em; color:var(--muted); }
+.match-stat-v{ font-size:17px; font-weight:900; color:var(--ink); }
+.match-hint{ margin:0 0 12px; text-align:center; font-size:12.5px; font-weight:700; color:var(--muted); }
+
+.match-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+@media (min-width:560px){ .match-grid{ grid-template-columns:repeat(4,1fr); } }
+.match-tile{ aspect-ratio:1/0.86; display:grid; place-items:center; padding:6px 4px; cursor:pointer;
+  font-family:var(--font-num); font-size:15px; font-weight:800; line-height:1.15;
+  color:var(--ink); background:var(--surface); border:3px solid var(--ink-line); border-radius:15px;
+  box-shadow:3px 3px 0 color-mix(in srgb, var(--ink-line) 22%, transparent);
+  transition:transform .12s, background .18s, border-color .18s, opacity .3s; overflow-wrap:anywhere; }
+.match-tile.ans{ background:color-mix(in srgb, var(--sky1) 13%, var(--surface)); }
+.match-tile:active{ transform:scale(.94); }
+.match-tile.picked{ border-color:var(--gold); background:color-mix(in srgb, var(--gold) 22%, var(--surface));
+  transform:translateY(-2px); }
+.match-tile.wrong{ border-color:var(--wrong); background:color-mix(in srgb, var(--wrong) 18%, var(--surface));
+  animation:shake .4s; }
+.match-tile.cleared{ opacity:.18; pointer-events:none; border-style:dashed; box-shadow:none; }
+
+.match-done{ margin-top:18px; text-align:center; padding:18px 14px; border-radius:18px;
+  background:var(--surface-2); border:3px solid var(--ink-line);
+  box-shadow:4px 4px 0 color-mix(in srgb, var(--ink-line) 22%, transparent); }
+.match-done-title{ font-family:"Baloo 2",system-ui,sans-serif; font-size:21px; font-weight:800; color:var(--ink); }
+.match-done-line{ margin-top:5px; font-size:13px; color:var(--muted); font-weight:700; }
+.match-again{ margin-top:14px; width:100%; padding:13px; }
