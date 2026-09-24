@@ -71,7 +71,7 @@ import { Mascot, Mandala } from "./Mascot";
 import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ } from "./BookDiagrams";
 import { TRICKS, TRICK_BY_ID } from "@/lib/game/tricks";
 import { dailyQuestions, todayKey, DAILY_QUESTIONS, type DailyQuestion } from "@/lib/game/daily";
-import { buildMatchRound, isPair, matchScore, type MatchTile } from "@/lib/game/match";
+import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore, type MatchTile, type BiggerPair } from "@/lib/game/minigames";
 import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
@@ -84,7 +84,7 @@ import { useBuddyPos } from "./useBuddyPos";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI, type UIDict } from "./i18n";
 
-type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp" | "match";
+type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp" | "match" | "games" | "bigger";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
@@ -1672,6 +1672,84 @@ export function GameApp({
     }
   }
 
+  /* ---------- Which is Bigger ---------- */
+  const [bigPair, setBigPair] = useState<BiggerPair | null>(null);
+  const [bigStreak, setBigStreak] = useState(0);
+  const [bigBest, setBigBest] = useState(0);
+  const [bigPick, setBigPick] = useState<"left" | "right" | null>(null);
+  const [bigOver, setBigOver] = useState<{ streak: number; best: boolean } | null>(null);
+
+  function startBigger() {
+    try {
+      setBigBest(Number(localStorage.getItem("sutraSprint.biggerBest") || 0));
+    } catch {}
+    setBigStreak(0);
+    setBigPick(null);
+    setBigOver(null);
+    setBigPair(buildBiggerPair("easy"));
+    setView("bigger");
+  }
+
+  function onBiggerPick(side: "left" | "right") {
+    if (!bigPair || bigPick || bigOver) return;
+    setBigPick(side);
+    const chosen = side === "left" ? bigPair.left : bigPair.right;
+    const other = side === "left" ? bigPair.right : bigPair.left;
+    const right = chosen.answer > other.answer;
+    if (right) {
+      const streak = bigStreak + 1;
+      setBigStreak(streak);
+      sound.correct();
+      haptic(14);
+      /* Short beat so the green registers before the next pair. */
+      setTimeout(() => {
+        setBigPick(null);
+        setBigPair(buildBiggerPair(streak >= 12 ? "hard" : streak >= 6 ? "medium" : "easy"));
+      }, 420);
+    } else {
+      sound.wrong();
+      haptic(34);
+      const best = bigStreak > bigBest;
+      if (best) {
+        setBigBest(bigStreak);
+        try {
+          localStorage.setItem("sutraSprint.biggerBest", String(bigStreak));
+        } catch {}
+      }
+      setTimeout(() => setBigOver({ streak: bigStreak, best }), 700);
+      if (!guest && bigStreak > 0) fireQuest("correct_answer", bigStreak);
+    }
+  }
+
+  /* The Games tab is a shelf, not one game: adding another is a row here
+     plus its view. Bests are read when the tab opens so a fresh run shows up
+     without a reload. */
+  const [gameBests, setGameBests] = useState<{ match: number; bigger: number }>({ match: 0, bigger: 0 });
+  function openGames() {
+    try {
+      setGameBests({
+        match: Number(localStorage.getItem("sutraSprint.matchBest") || 0),
+        bigger: Number(localStorage.getItem("sutraSprint.biggerBest") || 0),
+      });
+    } catch {}
+    setView("games");
+  }
+  const GAMES = [
+    {
+      id: "match", icon: "🃏", tint: "var(--sky2)",
+      name: "Number Match", nameJa: "ナンバーマッチ",
+      blurb: "Pair each sum with its answer.", blurbJa: "式と答えをペアにしよう。",
+      best: gameBests.match, start: startMatch,
+    },
+    {
+      id: "bigger", icon: "⚖️", tint: "var(--violet)",
+      name: "Which is Bigger?", nameJa: "どっちが大きい？",
+      blurb: "Tap the larger of two sums. One slip ends the run.",
+      blurbJa: "大きいほうをタップ。まちがえたら終わり。",
+      best: gameBests.bigger, start: startBigger,
+    },
+  ];
+
   function endBlitz(finalScore: number) {
     const lvl = blitzLevelRef.current;
     fireQuest("blitz_score", finalScore);
@@ -2951,6 +3029,94 @@ export function GameApp({
           />
         )}
 
+        {view === "games" && (
+          <section className="view active">
+            <p className="games-lede">
+              {lang === "ja"
+                ? "計算を使ったミニゲーム。アカウントがなくても、オフラインでも遊べます。"
+                : "Quick games built on the same maths. No account needed, and they work offline."}
+            </p>
+            <div className="games-grid">
+              {GAMES.map((g) => (
+                <button key={g.id} className="game-card" onClick={g.start} style={{ ["--g" as string]: g.tint }}>
+                  <span className="game-card-icon">{g.icon}</span>
+                  <span className="game-card-body">
+                    <span className="game-card-name">{lang === "ja" ? g.nameJa : g.name}</span>
+                    <span className="game-card-blurb">{lang === "ja" ? g.blurbJa : g.blurb}</span>
+                  </span>
+                  {g.best > 0 && (
+                    <span className="game-card-best mono">
+                      {lang === "ja" ? "ベスト" : "best"} {g.best}
+                    </span>
+                  )}
+                  <span className="game-card-go">›</span>
+                </button>
+              ))}
+            </div>
+            <div className="games-more">
+              {lang === "ja" ? "新しいゲームを準備中！" : "More games on the way."}
+            </div>
+          </section>
+        )}
+
+        {view === "bigger" && bigPair && (
+          <section className="view active">
+            <div className="match-head">
+              <div className="match-stat">
+                <span className="match-stat-k">{lang === "ja" ? "連続" : "Streak"}</span>
+                <span className="match-stat-v mono">{bigStreak}</span>
+              </div>
+              <div className="match-stat">
+                <span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span>
+                <span className="match-stat-v mono">{bigBest}</span>
+              </div>
+            </div>
+            <p className="match-hint">
+              {lang === "ja" ? "大きいほうをタップ！" : "Tap the bigger one."}
+            </p>
+
+            {!bigOver && (
+              <div className="big-pair">
+                {(["left", "right"] as const).map((side) => {
+                  const p = bigPair[side];
+                  const other = side === "left" ? bigPair.right : bigPair.left;
+                  const chosen = bigPick === side;
+                  const won = chosen && p.answer > other.answer;
+                  return (
+                    <button
+                      key={side}
+                      className={`big-card${chosen ? (won ? " right" : " wrong") : ""}`}
+                      onClick={() => onBiggerPick(side)}
+                      disabled={!!bigPick}
+                    >
+                      <span className="big-card-q mono">{p.prompt}</span>
+                      {bigPick && <span className="big-card-a mono">{fmt(p.answer)}</span>}
+                    </button>
+                  );
+                })}
+                <span className="big-vs">VS</span>
+              </div>
+            )}
+
+            {bigOver && (
+              <div className="match-done">
+                <div className="match-done-title">
+                  {bigOver.best && bigOver.streak > 0
+                    ? (lang === "ja" ? "自己ベスト更新！" : "New best!")
+                    : (lang === "ja" ? "おしまい！" : "Run over")}
+                </div>
+                <div className="match-done-line mono">
+                  {lang === "ja" ? "連続" : "streak"} <RollUp to={bigOver.streak} /> ·{" "}
+                  {biggerScore(bigOver.streak)} {lang === "ja" ? "点" : "pts"}
+                </div>
+                <button className="btn btn-primary match-again" onClick={startBigger}>
+                  {lang === "ja" ? "もう一回" : "Play again"}
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
         {view === "match" && (
           <section className="view active">
             <div className="match-head">
@@ -3194,9 +3360,9 @@ export function GameApp({
               <span className="bottomnav-icon">🏠</span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
-            <button className="bottomnav-item" onClick={startMatch}>
-              <span className="bottomnav-icon">🃏</span>
-              <span>{lang === "ja" ? "マッチ" : "Match"}</span>
+            <button className="bottomnav-item" onClick={openGames}>
+              <span className="bottomnav-icon">🎮</span>
+              <span>{lang === "ja" ? "ゲーム" : "Games"}</span>
             </button>
             <a className="btn btn-primary guest-save-btn" href="/signup?from=%2F">
               {lang === "ja" ? "保存" : "Save"}
@@ -3230,9 +3396,9 @@ export function GameApp({
             {/* Profile moved out: the header avatar already opens the same
                 account menu, and this slot is better spent on something to
                 play than on a second door to settings. */}
-            <button className="bottomnav-item" onClick={startMatch}>
-              <span className="bottomnav-icon">🃏</span>
-              <span>{lang === "ja" ? "マッチ" : "Match"}</span>
+            <button className="bottomnav-item" onClick={openGames}>
+              <span className="bottomnav-icon">🎮</span>
+              <span>{lang === "ja" ? "ゲーム" : "Games"}</span>
             </button>
           </>
         ) : (

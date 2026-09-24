@@ -2011,3 +2011,41 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .match-done-title{ font-family:"Baloo 2",system-ui,sans-serif; font-size:21px; font-weight:800; color:var(--ink); }
 .match-done-line{ margin-top:5px; font-size:13px; color:var(--muted); font-weight:700; }
 .match-again{ margin-top:14px; width:100%; padding:13px; }
+
+/* ---------- games hub ---------- */
+.games-lede{ margin:0 0 14px; font-size:12.5px; font-weight:700; color:var(--muted);
+  line-height:1.6; text-align:center; }
+.games-grid{ display:flex; flex-direction:column; gap:11px; }
+.game-card{ display:flex; align-items:center; gap:13px; width:100%; cursor:pointer; text-align:left;
+  padding:14px; border-radius:18px; background:var(--surface); font-family:inherit;
+  border:3px solid var(--ink-line); box-shadow:4px 4px 0 color-mix(in srgb, var(--ink-line) 22%, transparent);
+  transition:transform .12s; }
+.game-card:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 color-mix(in srgb, var(--ink-line) 22%, transparent); }
+.game-card-icon{ flex:none; width:46px; height:46px; border-radius:14px; display:grid; place-items:center;
+  font-size:23px; background:color-mix(in srgb, var(--g) 18%, var(--surface-2));
+  border:2px solid color-mix(in srgb, var(--g) 45%, transparent); }
+.game-card-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.game-card-name{ font-size:15px; font-weight:900; color:var(--ink); }
+.game-card-blurb{ font-size:11.5px; font-weight:600; color:var(--muted); line-height:1.4; }
+.game-card-best{ flex:none; font-size:11px; font-weight:800; color:var(--g);
+  background:color-mix(in srgb, var(--g) 12%, transparent); border-radius:999px; padding:4px 9px; }
+.game-card-go{ flex:none; font-size:22px; color:var(--faint); }
+.games-more{ margin-top:16px; text-align:center; font-size:11.5px; font-weight:700; color:var(--faint);
+  border:2px dashed var(--line); border-radius:14px; padding:13px; }
+
+/* ---------- which is bigger ---------- */
+.big-pair{ position:relative; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.big-card{ aspect-ratio:1/1.15; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:8px; cursor:pointer; padding:10px; font-family:inherit;
+  background:var(--surface); border:3px solid var(--ink-line); border-radius:20px;
+  box-shadow:4px 4px 0 color-mix(in srgb, var(--ink-line) 22%, transparent);
+  transition:transform .12s, background .2s, border-color .2s; }
+.big-card:active{ transform:scale(.96); }
+.big-card-q{ font-size:24px; font-weight:900; color:var(--ink); text-align:center; overflow-wrap:anywhere; }
+.big-card-a{ font-size:14px; font-weight:800; color:var(--muted); }
+.big-card.right{ border-color:var(--green-dk); background:color-mix(in srgb, var(--green) 18%, var(--surface)); }
+.big-card.wrong{ border-color:var(--wrong); background:color-mix(in srgb, var(--wrong) 15%, var(--surface));
+  animation:shake .4s; }
+.big-vs{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2;
+  font-family:var(--font-num); font-size:12px; font-weight:900; color:var(--ink);
+  background:var(--gold); border:2px solid var(--ink-line); border-radius:999px; padding:4px 9px; }
