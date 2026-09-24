@@ -23,6 +23,7 @@ import {
 } from "@/lib/game/competition";
 import { pushConfigured, saveSubscription, removeSubscription, sendTo } from "@/lib/game/push";
 import { saveOverride } from "@/lib/game/overrides";
+import { createRoom, joinRoom, getRoom, moveRoom, rematchRoom } from "@/lib/game/tttOnline";
 import { getAdminSession } from "@/lib/admin";
 import { TOPIC_BY_ID } from "@/lib/game/topics";
 
@@ -229,6 +230,39 @@ export async function saveTopicOverrideAction(topicId: string, data: unknown) {
   const saved = await saveOverride(topicId, data, admin.email);
   return { ok: true as const, data: saved };
 }
+
+/* ---------- online tic-tac-toe ---------- */
+
+export async function tttCreateAction(level: number) {
+  const lv = ([1, 2, 3].includes(Number(level)) ? Number(level) : 2) as 1 | 2 | 3;
+  return createRoom(await requireUserId(), lv);
+}
+
+/* Challenge a friend directly: make the room and tell them. Friends only —
+   the friendship is re-checked here, not trusted from the client. */
+export async function tttChallengeFriendAction(friendId: string, level: number) {
+  const userId = await requireUserId();
+  const ids = await friendIdsOf(userId);
+  if (!ids.includes(friendId)) return { error: "Not on your friends list." as const };
+  const lv = ([1, 2, 3].includes(Number(level)) ? Number(level) : 2) as 1 | 2 | 3;
+  const room = await createRoom(userId, lv);
+  try {
+    const me = await displayName(userId);
+    await sendTo(friendId, {
+      title: `${me || "友だち"} さんから○×の挑戦状`,
+      body: lv === 1 ? "○×ゲームで対決！ · Tic-tac-toe, now" : "計算○×で対決！ · Math tic-tac-toe, now",
+      url: `/?ttt=${room.code}`,
+      tag: "ttt",
+    });
+  } catch {}
+  return room;
+}
+export async function tttJoinAction(code: string) { return joinRoom(await requireUserId(), String(code ?? "")); }
+export async function tttRoomAction(code: string) { return getRoom(await requireUserId(), String(code ?? "")); }
+export async function tttMoveAction(code: string, i: number, chosen: number) {
+  return moveRoom(await requireUserId(), String(code ?? ""), Number(i), Number(chosen));
+}
+export async function tttRematchAction(code: string) { return rematchRoom(await requireUserId(), String(code ?? "")); }
 
 /* ---------- push notifications ---------- */
 

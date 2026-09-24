@@ -53,6 +53,7 @@ import {
   competitionsAction, startCompetitionAction, submitCompetitionAction, competitionBoardAction,
   createFriendCompetitionAction, endCompetitionAction, saveTopicOverrideAction,
   pushStatusAction, savePushSubscriptionAction, removePushSubscriptionAction,
+  tttCreateAction, tttJoinAction, tttRoomAction, tttMoveAction, tttRematchAction, tttChallengeFriendAction,
 } from "@/lib/actions/game-actions";
 import type { CompetitionSummary, CompQuestion, CompRow } from "@/lib/game/competition";
 import { COMP_LEVELS } from "@/lib/game/competition";
@@ -64,6 +65,8 @@ import { BOOK_DIAGRAM_EQ } from "./BookDiagrams";
 import { TRICK_BY_ID } from "@/lib/game/tricks";
 import { dailyQuestions, todayKey, seededRandom, withSeededRandom, type DailyQuestion } from "@/lib/game/daily";
 import { applyOverride, type OverrideMap, type TopicOverride } from "@/lib/game/overrides";
+import { newGame as tttNewGame, play as tttPlay, pass as tttPass, cpuMove as tttCpu, turnSeconds as tttTurnSeconds, normaliseRoomCode, type TTTState, type TTTLevel, type Mark } from "@/lib/game/ttt";
+import type { RoomView } from "@/lib/game/tttOnline";
 import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
   buildOddRound, digitSum, buildSortRound, sortedIds,
   dailySeed, dailyGameId, dailyGameKey, QUICK_GAMES, quickGame,
@@ -122,7 +125,7 @@ export function GameApp({
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick"];
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
@@ -1939,6 +1942,132 @@ export function GameApp({
     }
   }
 
+  /* ---------- Math Tic-Tac-Toe ----------
+     Three ways to play one board: pass the phone, the CPU, or a friend over
+     a room. Level 1 is plain tic-tac-toe; from level 2 a sum guards each
+     square. The board logic is pure (ttt.ts); online, the server owns it. */
+  const [tttMode, setTttMode] = useState<null | "local" | "cpu" | "online">(null);
+  const [tttLevel, setTttLevel] = useState<TTTLevel>(1);
+  const [ttt, setTtt] = useState<TTTState | null>(null);
+  const [tttSel, setTttSel] = useState<number | null>(null);
+  const [tttScore, setTttScore] = useState({ X: 0, O: 0, draw: 0 });
+  const [tttRoom, setTttRoom] = useState<RoomView | null>(null);
+  const [tttJoinCode, setTttJoinCode] = useState("");
+  const [tttNote, setTttNote] = useState<string | null>(null);
+  const [tttBusy, setTttBusy] = useState(false);
+  const tttStarterRef = useRef<Mark>("X");
+
+  function openTtt() { setTttMode(null); setTtt(null); setTttRoom(null); setTttNote(null); setTttSel(null); setView("ttt"); }
+  function startTttLocal(mode: "local" | "cpu") {
+    setTttMode(mode); setTttRoom(null); setTttSel(null); setTttNote(null);
+    tttStarterRef.current = "X";
+    setTtt(tttNewGame("X", tttLevel));
+  }
+  async function startTttOnline() {
+    if (guestLocked("ttt-online")) return;
+    setTttBusy(true);
+    try {
+      const room = await tttCreateAction(tttLevel);
+      setTttRoom(room); setTtt(room.state); setTttMode("online"); setTttNote(null);
+    } catch { setTttNote(lang === "ja" ? "部屋を作れませんでした" : "Could not make a room"); }
+    setTttBusy(false);
+  }
+  async function joinTttOnline(code: string) {
+    if (guestLocked("ttt-online")) return;
+    setTttBusy(true);
+    const res = await tttJoinAction(code);
+    setTttBusy(false);
+    if ("error" in res) { setTttNote(res.error); return; }
+    setTttRoom(res); setTtt(res.state); setTttMode("online"); setTttNote(null); setTttSel(null); setView("ttt");
+  }
+  async function challengeFriendTtt(friendId: string) {
+    setTttBusy(true);
+    const res = await tttChallengeFriendAction(friendId, tttLevel);
+    setTttBusy(false);
+    if ("error" in res) { setFriendNote(res.error); return; }
+    setTttRoom(res); setTtt(res.state); setTttMode("online"); setTttNote(null); setTttSel(null);
+    setFriendsOpen(false); setView("ttt");
+    spawnToast(lang === "ja" ? "挑戦状を送りました！" : "Challenge sent!", null);
+  }
+  const tttMe: Mark = tttMode === "online" ? (tttRoom?.you ?? "X") : tttMode === "cpu" ? "X" : (ttt?.turn ?? "X");
+  const tttMyTurn = !!ttt && !ttt.winner && (tttMode === "local" || ttt.turn === tttMe) && (tttMode !== "online" || !!tttRoom?.guestName);
+
+  function tttTap(i: number) {
+    if (!ttt || !tttMyTurn || ttt.cells[i].owner || tttBusy) return;
+    if (ttt.level === 1) { void tttCommit(i, 0); return; }
+    setTttSel(i); sound.click();
+  }
+  async function tttCommit(i: number, chosen: number) {
+    if (!ttt) return;
+    setTttSel(null);
+    if (tttMode === "online" && tttRoom) {
+      setTttBusy(true);
+      const res = await tttMoveAction(tttRoom.code, i, chosen);
+      setTttBusy(false);
+      if ("error" in res) { setTttNote(res.error); return; }
+      const was = ttt; setTttRoom(res); setTtt(res.state);
+      if (res.state.cells[i].owner) { sound.correct(); haptic(14); } else if (was.level > 1) sound.wrong();
+      return;
+    }
+    const next = tttPlay(ttt, i, chosen);
+    if (next.cells[i].owner) { sound.correct(); haptic(14); } else sound.wrong();
+    setTtt(next);
+    if (next.winner) tttSettle(next);
+  }
+  function tttSettle(st: TTTState) {
+    const k = st.winner === "draw" ? "draw" : (st.winner as Mark);
+    setTttScore((sc) => ({ ...sc, [k]: sc[k] + 1 }));
+    if (st.winner !== "draw" && (tttMode === "local" || st.winner === "X")) { confetti.burstCenter(120, 0.5); sound.levelUp(); }
+  }
+  /* The side on turn ran out of time. Locally we pass the turn here; online
+     the server settles it on the next poll, so the clock is display-only. */
+  function tttTimeUp() {
+    if (!ttt || ttt.winner || tttMode === "online") return;
+    setTttSel(null); sound.wrong(); haptic(20);
+    setTtt(tttPass(ttt));
+  }
+  function tttRematch() {
+    if (tttMode === "online" && tttRoom) {
+      tttRematchAction(tttRoom.code).then((res) => { if (!("error" in res)) { setTttRoom(res); setTtt(res.state); } });
+      return;
+    }
+    tttStarterRef.current = tttStarterRef.current === "X" ? "O" : "X";
+    setTtt(tttNewGame(tttStarterRef.current, tttLevel)); setTttSel(null);
+  }
+  /* The CPU plays O, a beat after you, and always answers its own sums. */
+  useEffect(() => {
+    if (view !== "ttt" || tttMode !== "cpu" || !ttt || ttt.winner || ttt.turn !== "O") return;
+    const id = setTimeout(() => {
+      const i = tttCpu(ttt.cells, "O", ttt.level === 1);
+      if (i < 0) return;
+      const next = tttPlay(ttt, i, ttt.cells[i].answer);
+      setTtt(next); sound.click();
+      if (next.winner) tttSettle(next);
+    }, 650);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttt, tttMode, view]);
+  /* Online: poll the room while it is on screen. Tic-tac-toe does not need
+     a socket; a move every few seconds is the whole traffic. */
+  useEffect(() => {
+    if (view !== "ttt" || tttMode !== "online" || !tttRoom) return;
+    const code = tttRoom.code;
+    const id = setInterval(async () => {
+      try {
+        const r = await tttRoomAction(code);
+        if (r) { setTttRoom(r); setTtt(r.state); }
+      } catch {}
+    }, 1500);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, tttMode, tttRoom?.code]);
+  async function shareTttRoom() {
+    if (!tttRoom) return;
+    const url = `${window.location.origin}/?ttt=${tttRoom.code}`;
+    try { if (navigator.share) { await navigator.share({ title: "Sutra Sprint", text: lang === "ja" ? "○×で対決しよう！" : "Tic-tac-toe me!", url }); return; } } catch { return; }
+    try { await navigator.clipboard.writeText(url); spawnToast(lang === "ja" ? "リンクをコピーしました" : "Link copied", null); } catch {}
+  }
+
   /* ---------- quick games (one view, many generators) ---------- */
   const [quickRound, setQuickRound] = useState<QuickRound | null>(null);
   const [quickPick, setQuickPick] = useState<number | null>(null);
@@ -2121,6 +2250,15 @@ export function GameApp({
     try {
       raceId = new URLSearchParams(window.location.search).get("race");
     } catch {}
+    let tttCode: string | null = null;
+    try { tttCode = new URLSearchParams(window.location.search).get("ttt"); } catch {}
+    if (tttCode) {
+      raceHandledRef.current = true;
+      window.history.replaceState({}, "", window.location.pathname);
+      if (guest) { setLockOpen("ttt-online"); return; }
+      void joinTttOnline(tttCode);
+      return;
+    }
     if (!raceId) return;
     raceHandledRef.current = true;
     window.history.replaceState({}, "", window.location.pathname);
@@ -2896,6 +3034,14 @@ export function GameApp({
                     </div>
                   </div>
                   <button
+                    className="friend-ttt"
+                    title={lang === "ja" ? "○×で対戦" : "Tic-tac-toe"}
+                    onClick={() => challengeFriendTtt(f.id)}
+                    disabled={tttBusy}
+                  >
+                    ○✕
+                  </button>
+                  <button
                     className="friend-remove"
                     aria-label={lang === "ja" ? "削除" : "Remove"}
                     onClick={async () => {
@@ -3334,6 +3480,109 @@ export function GameApp({
           />
         )}
 
+        {view === "ttt" && (
+          <section className="view active">
+            {!tttMode && (
+              <div className="ttt-setup">
+                <div className="ttt-levels">
+                  {([1, 2, 3] as TTTLevel[]).map((lv) => (
+                    <button key={lv} className={`ttt-level${tttLevel === lv ? " on" : ""}`} onClick={() => setTttLevel(lv)}>
+                      <span className="ttt-level-n">Lv.{lv}</span>
+                      <span className="ttt-level-t">{lv === 1 ? (lang === "ja" ? "ふつうの○×" : "Classic") : lv === 2 ? (lang === "ja" ? "計算して取る" : "Solve to claim") : (lang === "ja" ? "インド式で取る" : "Vedic tricks")}</span>
+                      <span className="ttt-level-s">⏱ {tttTurnSeconds(lv)}s</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="match-hint">
+                  {tttLevel === 1
+                    ? (lang === "ja" ? "マスをタップして3つ並べよう。" : "Tap a square. Three in a row wins.")
+                    : (lang === "ja" ? `マスの計算に正解すると取れる。まちがえたら相手の番。1手 ${tttTurnSeconds(tttLevel)} 秒。` : `Answer the square's sum to claim it. Miss, and the turn passes. ${tttTurnSeconds(tttLevel)}s a move.`)}
+                </p>
+                <div className="ttt-modes">
+                  <button className="ttt-mode" onClick={() => startTttLocal("local")}><span className="ttt-mode-i">👥</span><span>{lang === "ja" ? "ふたりで（交代）" : "Two players, one phone"}</span></button>
+                  <button className="ttt-mode" onClick={() => startTttLocal("cpu")}><span className="ttt-mode-i">🤖</span><span>{lang === "ja" ? "コンピューターと" : "Play the computer"}</span></button>
+                  <button className={`ttt-mode${guest ? " locked" : ""}`} onClick={startTttOnline} disabled={tttBusy}><span className="ttt-mode-i">🌐</span><span>{lang === "ja" ? "オンラインで友だちと" : "Online with a friend"}</span>{guest && <span className="game-card-lock">🔒</span>}</button>
+                </div>
+                <div className="ttt-join">
+                  <input className="friend-add-input mono" value={tttJoinCode} onChange={(e) => setTttJoinCode(normaliseRoomCode(e.target.value))} placeholder={lang === "ja" ? "部屋コード" : "Room code"} maxLength={4} />
+                  <button className="friend-add-btn" onClick={() => joinTttOnline(tttJoinCode)} disabled={tttJoinCode.length !== 4 || tttBusy}>{lang === "ja" ? "参加" : "Join"}</button>
+                </div>
+                {tttNote && <div className="friend-note">{tttNote}</div>}
+              </div>
+            )}
+
+            {tttMode && ttt && (
+              <>
+                <div className="ttt-top">
+                  <div className={`ttt-player x${ttt.turn === "X" && !ttt.winner ? " turn" : ""}`}>
+                    {ttt.turn === "X" && !ttt.winner && (tttMode !== "online" || !!tttRoom?.guestName) && (
+                      <TurnClock key={`x${ttt.turnAt}`} since={ttt.turnAt} seconds={tttTurnSeconds(ttt.level)} onExpire={tttTimeUp} />
+                    )}
+                    <span className="ttt-glyph">✕</span>
+                    <span>{tttMode === "online" ? tttRoom?.hostName : tttMode === "cpu" ? (lang === "ja" ? "あなた" : "You") : (lang === "ja" ? "プレイヤー X" : "Player X")}</span>
+                    <span className="mono ttt-score">{tttScore.X}</span>
+                  </div>
+                  <div className="ttt-vs">Lv.{ttt.level}</div>
+                  <div className={`ttt-player o${ttt.turn === "O" && !ttt.winner ? " turn" : ""}`}>
+                    {ttt.turn === "O" && !ttt.winner && (tttMode !== "online" || !!tttRoom?.guestName) && (
+                      <TurnClock key={`o${ttt.turnAt}`} since={ttt.turnAt} seconds={tttTurnSeconds(ttt.level)} onExpire={tttTimeUp} />
+                    )}
+                    <span className="ttt-glyph">○</span>
+                    <span>{tttMode === "online" ? (tttRoom?.guestName ?? (lang === "ja" ? "待っています…" : "waiting…")) : tttMode === "cpu" ? "CPU" : (lang === "ja" ? "プレイヤー O" : "Player O")}</span>
+                    <span className="mono ttt-score">{tttScore.O}</span>
+                  </div>
+                </div>
+
+                {tttMode === "online" && tttRoom && !tttRoom.guestName && (
+                  <div className="ttt-room">
+                    <div className="ttt-room-label">{lang === "ja" ? "部屋コード" : "Room code"}</div>
+                    <div className="ttt-room-code mono">{tttRoom.code}</div>
+                    <button className="btn btn-primary" onClick={shareTttRoom}>🔗 {lang === "ja" ? "リンクを送る" : "Send the link"}</button>
+                    <div className="ttt-room-hint">{lang === "ja" ? "友だちが参加すると始まります。" : "Starts when your friend joins."}</div>
+                  </div>
+                )}
+
+                <div className={`ttt-board${tttMyTurn ? "" : " wait"}`}>
+                  {ttt.cells.map((c, i) => {
+                    const win = ttt.line?.includes(i);
+                    return (
+                      <button key={i} className={`ttt-cell${c.owner ? " " + c.owner.toLowerCase() : ""}${win ? " win" : ""}${tttSel === i ? " sel" : ""}`} onClick={() => tttTap(i)} disabled={!!c.owner || !tttMyTurn}>
+                        {c.owner ? <span className="ttt-mark">{c.owner === "X" ? "✕" : "○"}</span> : <span className="ttt-sum mono">{c.prompt}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="ttt-status">
+                  {ttt.winner === "draw" ? (lang === "ja" ? "ひきわけ！" : "Draw!")
+                    : ttt.winner ? (tttMode === "local" ? (lang === "ja" ? `${ttt.winner} の勝ち！` : `${ttt.winner} wins!`) : ttt.winner === tttMe ? (lang === "ja" ? "勝ち！🎉" : "You win! 🎉") : (lang === "ja" ? "まけた…" : "You lost"))
+                    : tttMode === "online" && !tttRoom?.guestName ? "" : tttMyTurn ? (lang === "ja" ? "あなたの番" : "Your turn") : (lang === "ja" ? "相手の番…" : "Their turn…")}
+                </div>
+                {tttNote && <div className="friend-note">{tttNote}</div>}
+
+                <div className="ttt-actions">
+                  {ttt.winner && <button className="btn btn-primary" onClick={tttRematch}>{lang === "ja" ? "もう一回" : "Rematch"}</button>}
+                  <button className="btn btn-ghost" onClick={openTtt}>{lang === "ja" ? "モードをえらぶ" : "Change mode"}</button>
+                </div>
+
+                {tttSel !== null && ttt.cells[tttSel] && !ttt.cells[tttSel].owner && (
+                  <>
+                    <div className="menu-overlay" onClick={() => setTttSel(null)} />
+                    <div className="hint-sheet ttt-sheet" role="dialog" aria-modal="true">
+                      <div className="quick-prompt mono">{ttt.cells[tttSel].prompt} = ?</div>
+                      <div className="quick-options n3">
+                        {ttt.cells[tttSel].options.map((o) => (
+                          <button key={o} className="quick-opt" onClick={() => tttCommit(tttSel, o)}><span className="mono">{o.toLocaleString("en-IN")}</span></button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </section>
+        )}
+
         {view === "quick" && quickRound && (() => {
           const g = quickGame(quickId)!;
           return (
@@ -3493,6 +3742,18 @@ export function GameApp({
             </p>
             {/* One board a day, the same for everyone — the bit worth telling
                 a friend about. */}
+            {/* Kept at the top: the one game that is as good with a friend as alone. */}
+            <button className="ttt-card" onClick={openTtt}>
+              <span className="ttt-card-board" aria-hidden="true">
+                <i>✕</i><i></i><i>○</i><i></i><i>✕</i><i></i><i>○</i><i></i><i>✕</i>
+              </span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "計算○×ゲーム" : "Math Tic-Tac-Toe"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "ひとりでも、友だちとも。Lv.1 はふつうの○×。" : "Solo, vs CPU, or a friend online. Lv.1 is the classic."}</span>
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
+
             <button className="daily-game" onClick={startDailyGame}>
               <span className="daily-game-tag">{lang === "ja" ? "今日のゲーム" : "GAME OF THE DAY"}</span>
               <span className="daily-game-name">
@@ -4170,3 +4431,28 @@ export function GameApp({
    the clock starts from `timerMs` by construction rather than by an effect
    that resets state. */
 
+/* A draining bar plus the seconds left, for one side's turn. Owns its own
+   ticking so the board does not re-render ten times a second; remounted by
+   key whenever the turn (turnAt) changes. onExpire fires once. */
+function TurnClock({ since, seconds, onExpire }: { since: number; seconds: number; onExpire: () => void }) {
+  const total = seconds * 1000;
+  const [left, setLeft] = useState(() => Math.max(0, total - (Date.now() - since)));
+  const fired = useRef(false);
+  const expire = useRef(onExpire);
+  useEffect(() => { expire.current = onExpire; }, [onExpire]);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const l = Math.max(0, total - (Date.now() - since));
+      setLeft(l);
+      if (l <= 0 && !fired.current) { fired.current = true; clearInterval(id); expire.current(); }
+    }, 100);
+    return () => clearInterval(id);
+  }, [since, total]);
+  const secs = Math.ceil(left / 1000);
+  return (
+    <>
+      <span className={`ttt-clock-bar${left < 3000 ? " low" : ""}`} style={{ width: `${(left / total) * 100}%` }} aria-hidden="true" />
+      <span className={`ttt-clock mono${left < 3000 ? " low" : ""}`} aria-label={`${secs} seconds`}>{secs}</span>
+    </>
+  );
+}
