@@ -57,8 +57,10 @@ import type { Friend, ChallengeRow } from "@/lib/game/friends";
 import { myClassesAction, joinClassAction, leaveClassAction } from "@/lib/actions/game-actions";
 import {
   competitionsAction, startCompetitionAction, submitCompetitionAction, competitionBoardAction,
+  createFriendCompetitionAction, endCompetitionAction,
 } from "@/lib/actions/game-actions";
 import type { CompetitionSummary, CompQuestion, CompRow } from "@/lib/game/competition";
+import { COMP_LEVELS } from "@/lib/game/competition";
 import type { QuestState, InventoryState, ReviewStats } from "@/lib/game/engagement";
 import type { LeaderboardEntry } from "@/lib/game/progress";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
@@ -529,6 +531,36 @@ export function GameApp({
 
   const liveComps = comps.filter((c) => c.status === "live" && c.myScore === null);
 
+  /* Competitions split by where they came from: the class sheet shows class
+     races, the friends sheet shows friends races. */
+  const classComps = comps.filter((c) => c.scope !== "friends");
+  const friendComps = comps.filter((c) => c.scope === "friends");
+  const myLiveRace = friendComps.find((c) => c.hostedByMe && c.status === "live") ?? null;
+
+  const [raceFormOpen, setRaceFormOpen] = useState(false);
+  const [raceName, setRaceName] = useState("");
+  const [raceLevel, setRaceLevel] = useState("easy");
+  const [raceMinutes, setRaceMinutes] = useState(3);
+  const [raceNote, setRaceNote] = useState<string | null>(null);
+
+  async function onHostRace() {
+    const name = raceName.trim() || (lang === "ja" ? "フレンド対決" : "Friends race");
+    const res = await createFriendCompetitionAction(name, raceLevel, raceMinutes * 60);
+    if (!res.ok) {
+      setRaceNote(res.error ?? null);
+      return;
+    }
+    setRaceNote(null);
+    setRaceName("");
+    setRaceFormOpen(false);
+    await refreshComps();
+  }
+
+  async function onEndRace(id: string) {
+    await endCompetitionAction(id);
+    await refreshComps();
+  }
+
   async function refreshComps() {
     try {
       setComps((await competitionsAction()).rows);
@@ -551,6 +583,7 @@ export function GameApp({
     setCompEndsAt(Date.now() + res.durationSec * 1000);
     setCompLeft(res.durationSec * 1000);
     setClassOpen(false);
+    setFriendsOpen(false);
     setView("comp");
   }
 
@@ -1815,10 +1848,10 @@ export function GameApp({
               )}
             </div>
 
-            {comps.length > 0 && (
+            {classComps.length > 0 && (
               <div className="duel-history">
                 <div className="duel-history-label">{ja ? "コンペティション" : "Competitions"}</div>
-                {comps.slice(0, 6).map((c) => (
+                {classComps.slice(0, 6).map((c) => (
                   <div key={c.id} className="duel-row">
                     <span className="duel-vs">{c.name}</span>
                     {c.myScore !== null ? (
@@ -1897,6 +1930,131 @@ export function GameApp({
                     <span className="duel-send-go">⚔️ {lang === "ja" ? "送る" : "Send"}</span>
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* ---- friends race: the class competition, hosted by a player ---- */}
+            <div className="race-box">
+              <div className="race-head">
+                <span className="race-title">
+                  🏁 {lang === "ja" ? "フレンド対決レース" : "Friends race"}
+                </span>
+                {!myLiveRace && friends.length > 0 && (
+                  <button className="race-host-btn" onClick={() => setRaceFormOpen((o) => !o)}>
+                    {raceFormOpen
+                      ? lang === "ja" ? "やめる" : "Cancel"
+                      : lang === "ja" ? "＋ 開催する" : "+ Host one"}
+                  </button>
+                )}
+              </div>
+              <div className="race-hint">
+                {lang === "ja"
+                  ? "全員が同じ問題に挑戦。正解数がまず効いて、同点なら速さで決まります。"
+                  : "Everyone sits the same paper. Correct answers come first; speed only splits a tie."}
+              </div>
+
+              {raceFormOpen && (
+                <div className="race-form">
+                  <input
+                    className="friend-add-input"
+                    value={raceName}
+                    onChange={(e) => setRaceName(e.target.value)}
+                    placeholder={lang === "ja" ? "レース名" : "Name the race"}
+                    maxLength={60}
+                  />
+                  <div className="race-row">
+                    <label className="race-field">
+                      <span>{lang === "ja" ? "レベル" : "Level"}</span>
+                      <select value={raceLevel} onChange={(e) => setRaceLevel(e.target.value)}>
+                        {COMP_LEVELS.map((l) => (
+                          <option key={l.id} value={l.id}>{l.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="race-field">
+                      <span>{lang === "ja" ? "時間" : "Minutes"}</span>
+                      <select value={raceMinutes} onChange={(e) => setRaceMinutes(Number(e.target.value))}>
+                        {[1, 2, 3, 5, 10].map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <button className="btn btn-primary race-go" onClick={onHostRace}>
+                    {lang === "ja" ? "レースを開始" : "Start the race"}
+                  </button>
+                </div>
+              )}
+              {raceNote && <div className="friend-note">{raceNote}</div>}
+
+              {friendComps.length === 0 && !raceFormOpen && (
+                <div className="friend-empty race-empty">
+                  {friends.length === 0
+                    ? lang === "ja"
+                      ? "フレンドを追加するとレースを開けます。"
+                      : "Add a friend and you can host a race."
+                    : lang === "ja"
+                      ? "まだレースがありません。開催してみよう！"
+                      : "No races yet — host one."}
+                </div>
+              )}
+
+              {friendComps.slice(0, 6).map((c) => (
+                <div key={c.id} className="race-row-item">
+                  <div className="race-row-body">
+                    <div className="race-row-name">{c.name}</div>
+                    <div className="race-row-sub mono">
+                      {c.hostedByMe ? (lang === "ja" ? "あなたが開催" : "you host") : c.hostName}
+                      {" · "}{c.levelName}
+                      {" · "}{c.finished}/{c.entrants} {lang === "ja" ? "完走" : "done"}
+                    </div>
+                  </div>
+                  {c.myScore !== null ? (
+                    <button className="duel-accept" onClick={() => openCompBoard(c.id)}>
+                      🏅 {lang === "ja" ? `${c.myRank} 位` : `#${c.myRank}`}
+                    </button>
+                  ) : c.status === "live" ? (
+                    <button className="duel-accept" onClick={() => beginCompetition(c)}>
+                      ▶ {lang === "ja" ? "参加" : "Enter"}
+                    </button>
+                  ) : (
+                    <button className="duel-accept ghost" onClick={() => openCompBoard(c.id)}>
+                      {lang === "ja" ? "結果" : "Results"}
+                    </button>
+                  )}
+                  {c.hostedByMe && c.status === "live" && (
+                    <button
+                      className="friend-remove"
+                      aria-label={lang === "ja" ? "終了" : "End"}
+                      onClick={() => onEndRace(c.id)}
+                    >
+                      ■
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* ---- standings: the friends list as a table you can place in ---- */}
+            {friends.length > 0 && (
+              <div className="standings">
+                <div className="duel-history-label">
+                  {lang === "ja" ? "フレンドランキング" : "Friends standings"}
+                </div>
+                {[
+                  { id: "__me", name: user.name || (lang === "ja" ? "あなた" : "You"), level: li.level, dailyStreak, me: true },
+                  ...friends.map((f) => ({ id: f.id, name: f.name, level: f.level, dailyStreak: f.dailyStreak, me: false })),
+                ]
+                  .sort((a, b) => b.level - a.level || b.dailyStreak - a.dailyStreak || a.name.localeCompare(b.name))
+                  .map((r, i) => (
+                    <div key={r.id} className={`standings-row${r.me ? " me" : ""}`}>
+                      <span className={`standings-rank rank-${i < 3 ? i + 1 : "n"}`}>{i + 1}</span>
+                      <span className="standings-name">{r.name}</span>
+                      <span className="standings-stat mono">
+                        {t.share.statLevel} {r.level} · 🔥 {r.dailyStreak}
+                      </span>
+                    </div>
+                  ))}
               </div>
             )}
 

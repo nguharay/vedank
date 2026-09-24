@@ -17,7 +17,7 @@ import {
   classRoster, setAssignment, setClassOpen, removeStudent,
 } from "@/lib/game/classroom";
 import {
-  createCompetition, endCompetition, visibleCompetitions, competitionsForClass,
+  createCompetition, createFriendCompetition, endCompetition, visibleCompetitions, competitionsForClass,
   startCompetition, submitCompetition, leaderboard,
 } from "@/lib/game/competition";
 
@@ -201,6 +201,15 @@ export async function createCompetitionAction(
 ) {
   const userId = await requireUserId();
   return createCompetition(userId, classId, name, level, durationSec, questionCount);
+}
+
+/* A player hosting a race for their friends. No classId — the host's friends
+   list is the entry list. */
+export async function createFriendCompetitionAction(
+  name: string, level: string, durationSec: number, questionCount?: number
+) {
+  const userId = await requireUserId();
+  return createFriendCompetition(userId, name, level, durationSec, questionCount);
 }
 
 export async function endCompetitionAction(competitionId: string) {

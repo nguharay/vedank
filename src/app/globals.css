@@ -1809,3 +1809,44 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .auth-hero-pitch{ font-size:13px; font-weight:600; color:var(--muted); line-height:1.65;
   margin:10px 0 0; text-wrap:pretty; }
 .auth-lang{ margin:0 0 16px; }
+/* ---------- friends race + standings ---------- */
+.race-box{ margin-top:14px; padding:12px; border-radius:16px; background:var(--surface-2);
+  border:2px solid color-mix(in srgb, var(--ink-line) 20%, transparent); }
+.race-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.race-title{ font-weight:900; font-size:14px; color:var(--ink); }
+.race-host-btn{ border:2px solid var(--ink-line); background:var(--surface); color:var(--ink);
+  font-weight:800; font-size:12px; border-radius:999px; padding:5px 12px; cursor:pointer; }
+.race-host-btn:active{ transform:scale(.96); }
+.race-hint{ font-size:11.5px; color:var(--muted); line-height:1.5; margin-top:5px; }
+.race-empty{ margin-top:10px; }
+
+.race-form{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+.race-row{ display:flex; gap:8px; }
+.race-field{ flex:1; display:flex; flex-direction:column; gap:4px; font-size:11px;
+  font-weight:800; color:var(--muted); }
+.race-field select{ font:inherit; font-size:13px; font-weight:700; color:var(--ink);
+  padding:8px 10px; border-radius:10px; border:2px solid var(--line); background:var(--surface); }
+.race-go{ width:100%; padding:10px; font-size:14px; }
+
+.race-row-item{ display:flex; align-items:center; gap:9px; margin-top:9px; padding:9px 10px;
+  border-radius:12px; background:var(--surface); border:2px solid var(--line); }
+.race-row-body{ flex:1; min-width:0; text-align:left; }
+.race-row-name{ font-weight:800; font-size:13px; color:var(--ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.race-row-sub{ font-size:11px; color:var(--muted); margin-top:2px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.duel-accept.ghost{ background:var(--surface-2); color:var(--ink); border:2px solid var(--line); }
+
+.standings{ margin-top:14px; }
+.standings-row{ display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:11px;
+  background:var(--surface); border:2px solid var(--line); margin-top:6px; }
+.standings-row.me{ border-color:var(--sun1);
+  background:color-mix(in srgb, var(--sun2) 14%, var(--surface)); }
+.standings-rank{ width:22px; height:22px; flex:none; border-radius:50%; display:grid; place-items:center;
+  font-size:11px; font-weight:900; color:var(--ink); background:var(--surface-3); }
+.standings-rank.rank-1{ background:var(--gold); color:#3A2400; }
+.standings-rank.rank-2{ background:#C9CEDA; color:#2B2B33; }
+.standings-rank.rank-3{ background:#E0A97B; color:#3A2400; }
+.standings-name{ flex:1; min-width:0; font-weight:800; font-size:13px; color:var(--ink);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.standings-stat{ font-size:11px; color:var(--muted); flex:none; }
