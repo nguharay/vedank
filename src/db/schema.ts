@@ -257,9 +257,14 @@ export const classMembers = pgTable(
    server can re-derive it to grade — the client never reports its own score. */
 export const competitions = pgTable("competitions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  classId: uuid("class_id")
-    .notNull()
-    .references(() => classrooms.id, { onDelete: "cascade" }),
+  /* Null for a friends competition: those have no class behind them. Who may
+     sit the paper is decided by `scope`. */
+  classId: uuid("class_id").references(() => classrooms.id, { onDelete: "cascade" }),
+  /* class | friends. A class competition is open to the roster; a friends
+     competition is open to the host's friends. */
+  scope: text("scope").notNull().default("class"),
+  /* The creator — a teacher for a class competition, the host for a friends
+     one. Named for its original use; `scope` says which it is. */
   teacherId: uuid("teacher_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),

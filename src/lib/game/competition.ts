@@ -1,6 +1,6 @@
-import { and, eq, desc, inArray, sql as raw } from "drizzle-orm";
+import { and, eq, or, desc, inArray, sql as raw } from "drizzle-orm";
 import { getDb } from "@/db";
-import { classMembers, classrooms, competitionEntries, competitions, users } from "@/db/schema";
+import { classMembers, classrooms, competitionEntries, competitions, friendships, users } from "@/db/schema";
 import { BLITZ_TOPICS, blitzDiff, type Difficulty, type Problem } from "./topics";
 import { seededRandom, withSeededRandom } from "./daily";
 
@@ -127,8 +127,12 @@ export function scoreCompetition(correct: number, elapsedMs: number, total: numb
 
 export type CompetitionSummary = {
   id: string;
-  classId: string;
+  scope: "class" | "friends";
+  classId: string | null;
+  /* class name, or the host's name for a friends competition */
   className: string;
+  hostName: string;
+  hostedByMe: boolean;
   name: string;
   level: CompLevelId;
   levelName: string;
@@ -162,6 +166,86 @@ async function ownsClass(teacherId: string, classId: string) {
     .limit(1);
   return rows.length > 0;
 }
+
+/* Who is allowed into a friends competition: the host, and anyone on the
+   host's friends list. Friendship rows are written in both directions, so one
+   lookup settles it. Kept next to the class check because these two functions
+   are the whole access model for a competition. */
+async function isFriendOfHost(userId: string, hostId: string) {
+  if (userId === hostId) return true;
+  const db = getDb();
+  const rows = await db
+    .select({ friendId: friendships.friendId })
+    .from(friendships)
+    .where(and(eq(friendships.userId, hostId), eq(friendships.friendId, userId)))
+    .limit(1);
+  return rows.length > 0;
+}
+
+/* A player hosts their own competition for their friends — no class, no
+   teacher. Everything downstream (the paper, the marking, the leaderboard) is
+   the class machinery unchanged; only who may enter differs. */
+export async function createFriendCompetition(
+  hostId: string,
+  name: string,
+  levelId: string,
+  durationSec: number,
+  questionCount?: number
+): Promise<{ ok: boolean; error?: string; id?: string }> {
+  const clean = name.trim().slice(0, 60);
+  if (!clean) return { ok: false, error: "Give the competition a name." };
+  const L = COMP_LEVELS.find((l) => l.id === levelId);
+  if (!L) return { ok: false, error: "Unknown level." };
+
+  const db = getDb();
+
+  /* No friends, no competition — otherwise it is a solo paper with a
+     leaderboard of one. */
+  const friendCount = await db
+    .select({ n: raw<number>`count(*)::int` })
+    .from(friendships)
+    .where(eq(friendships.userId, hostId));
+  if (!(friendCount[0]?.n ?? 0)) {
+    return { ok: false, error: "Add a friend first — a competition needs someone to race." };
+  }
+
+  /* One live competition per host at a time, so the friends list is not
+     buried under half-finished races. */
+  const live = await db
+    .select({ id: competitions.id })
+    .from(competitions)
+    .where(
+      and(
+        eq(competitions.teacherId, hostId),
+        eq(competitions.scope, "friends"),
+        eq(competitions.status, "live")
+      )
+    )
+    .limit(1);
+  if (live.length) return { ok: false, error: "You already have one running. End it first." };
+
+  const dur = Math.max(30, Math.min(3600, Math.round(durationSec)));
+  const count = Math.max(4, Math.min(40, Math.round(questionCount ?? L.questions)));
+
+  const rows = await db
+    .insert(competitions)
+    .values({
+      classId: null,
+      scope: "friends",
+      teacherId: hostId,
+      name: clean,
+      level: L.id,
+      durationSec: dur,
+      questionCount: count,
+      seed: Math.floor(Math.random() * 2147483647),
+    })
+    .returning({ id: competitions.id });
+  return { ok: true, id: rows[0].id };
+}
+
+/* The host ends their own race. `endCompetition` checks teacherId, which is
+   the host here, so it already covers this — this is only a clearer name. */
+export const endFriendCompetition = endCompetition;
 
 export async function createCompetition(
   teacherId: string,
@@ -216,25 +300,43 @@ export async function endCompetition(
 export async function visibleCompetitions(userId: string): Promise<CompetitionSummary[]> {
   const db = getDb();
 
-  const [taught, joined] = await Promise.all([
+  /* Three sources: classes I teach, classes I am in, and friends races —
+     mine, plus every friend's. */
+  const [taught, joined, myFriends] = await Promise.all([
     db.select({ id: classrooms.id, name: classrooms.name }).from(classrooms).where(eq(classrooms.teacherId, userId)),
     db
       .select({ id: classrooms.id, name: classrooms.name })
       .from(classMembers)
       .innerJoin(classrooms, eq(classrooms.id, classMembers.classId))
       .where(eq(classMembers.userId, userId)),
+    db
+      .select({ friendId: friendships.friendId })
+      .from(friendships)
+      .where(eq(friendships.userId, userId)),
   ]);
   const classes = [...taught, ...joined];
-  if (!classes.length) return [];
   const nameById = new Map(classes.map((c) => [c.id, c.name]));
+  const hostIds = [userId, ...myFriends.map((f) => f.friendId)];
+
+  const scopes = [];
+  if (nameById.size) scopes.push(inArray(competitions.classId, [...nameById.keys()]));
+  scopes.push(and(eq(competitions.scope, "friends"), inArray(competitions.teacherId, hostIds)));
 
   const comps = await db
     .select()
     .from(competitions)
-    .where(inArray(competitions.classId, [...nameById.keys()]))
+    .where(or(...scopes))
     .orderBy(desc(competitions.createdAt))
     .limit(30);
   if (!comps.length) return [];
+
+  /* Host names, for the friends races. */
+  const hostNameById = new Map<string, string>();
+  const needHosts = [...new Set(comps.filter((c) => c.scope === "friends").map((c) => c.teacherId))];
+  if (needHosts.length) {
+    const hosts = await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, needHosts));
+    hosts.forEach((h) => hostNameById.set(h.id, h.name));
+  }
 
   const entries = await db
     .select()
@@ -251,10 +353,15 @@ export async function visibleCompetitions(userId: string): Promise<CompetitionSu
       const sorted = [...done].sort((a, b) => b.score - a.score || a.elapsedMs - b.elapsedMs);
       myRank = sorted.findIndex((e) => e.userId === userId) + 1 || null;
     }
+    const friendsScope = c.scope === "friends";
+    const hostName = hostNameById.get(c.teacherId) ?? "";
     return {
       id: c.id,
+      scope: friendsScope ? ("friends" as const) : ("class" as const),
       classId: c.classId,
-      className: nameById.get(c.classId) ?? "",
+      className: friendsScope ? hostName : (c.classId && nameById.get(c.classId)) || "",
+      hostName,
+      hostedByMe: friendsScope && c.teacherId === userId,
       name: c.name,
       level: c.level as CompLevelId,
       levelName: compLevel(c.level).name,
@@ -284,13 +391,20 @@ export async function startCompetition(
   if (!c) return { ok: false, error: "No such competition." };
   if (c.status !== "live") return { ok: false, error: "That competition has ended." };
 
-  const member = await db
-    .select({ userId: classMembers.userId })
-    .from(classMembers)
-    .where(and(eq(classMembers.classId, c.classId), eq(classMembers.userId, userId)))
-    .limit(1);
-  const isTeacher = c.teacherId === userId;
-  if (!member.length && !isTeacher) return { ok: false, error: "You're not in that class." };
+  if (c.scope === "friends") {
+    if (!(await isFriendOfHost(userId, c.teacherId))) {
+      return { ok: false, error: "That race is only open to the host's friends." };
+    }
+  } else {
+    const member = c.classId
+      ? await db
+          .select({ userId: classMembers.userId })
+          .from(classMembers)
+          .where(and(eq(classMembers.classId, c.classId), eq(classMembers.userId, userId)))
+          .limit(1)
+      : [];
+    if (!member.length && c.teacherId !== userId) return { ok: false, error: "You're not in that class." };
+  }
 
   const existing = await db
     .select()

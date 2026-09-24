@@ -86,7 +86,10 @@ create index if not exists class_members_user_idx ON public.class_members USING 
 
 create table if not exists competitions (
   id uuid default gen_random_uuid() not null,
-  class_id uuid not null,
+  -- null for a friends competition, which has no class behind it
+  class_id uuid,
+  -- class | friends
+  scope text default 'class'::text not null,
   teacher_id uuid not null,
   name text not null,
   level text default 'easy'::text not null,
@@ -101,6 +104,7 @@ create table if not exists competitions (
   foreign key (teacher_id) references users(id) on delete cascade
 );
 create index if not exists competitions_class_idx ON public.competitions USING btree (class_id, status);
+create index if not exists competitions_scope_teacher_idx ON public.competitions USING btree (scope, teacher_id);
 
 create table if not exists competition_entries (
   competition_id uuid not null,
