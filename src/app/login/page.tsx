@@ -13,7 +13,9 @@ const COPY = {
   en: {
     kicker: "VEDANK ACADEMY",
     hero: "Indian-style mental maths, as a game",
-    tagline: "Think it. Spot it. Take it on.",
+    /* No English tagline: the Japanese one is the author's own line, and an
+       invented English echo of it was not wanted. */
+    tagline: "",
     pitch:
       "A game that doesn't just teach Indian calculation methods — it teaches you to see mathematics differently.",
     title: "Welcome back",
@@ -78,7 +80,7 @@ export default function LoginPage() {
         <div className="auth-hero">
           <div className="auth-kicker">{c.kicker}</div>
           <div className="auth-hero-title">{c.hero}</div>
-          <div className="auth-hero-tagline">{c.tagline}</div>
+          {c.tagline && <div className="auth-hero-tagline">{c.tagline}</div>}
           <p className="auth-hero-pitch">{c.pitch}</p>
         </div>
 
