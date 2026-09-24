@@ -2253,3 +2253,27 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 @keyframes tttTick{ 50%{ opacity:.55 } }
 @media (prefers-reduced-motion: reduce){ .ttt-clock.low{ animation:none } }
 .ttt-level-s{ font-size:10.5px; font-weight:800; color:var(--muted); }
+
+/* ---------- Number Pop ---------- */
+.pop-prompt{ text-align:center; font-size:30px; font-weight:900; color:var(--ink); margin:2px 0 14px; padding:10px 14px; border-radius:16px;
+  background:var(--surface); border:3px solid var(--ink-line); box-shadow:4px 4px 0 var(--ink-line); }
+.pop-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px 12px; max-width:420px; margin:0 auto; }
+.pop-hole{ position:relative; aspect-ratio:1/0.95; overflow:hidden; cursor:pointer; padding:0; font-family:inherit;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--sky2) 14%, var(--surface)), color-mix(in srgb, var(--sky2) 34%, var(--surface)));
+  border:3px solid var(--ink-line); border-radius:18px; box-shadow:3px 3px 0 color-mix(in srgb, var(--ink-line) 22%, transparent); }
+.pop-hole:active{ transform:scale(.96); }
+.pop-balloon{ position:absolute; left:50%; bottom:14%; width:72%; transform:translate(-50%, 115%); z-index:2;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  transition:transform .18s cubic-bezier(.2,1.4,.4,1); }
+.pop-balloon.up{ transform:translate(-50%, 0); }
+.pop-face{ font-size:clamp(26px, 9vw, 40px); line-height:1; filter:drop-shadow(0 2px 0 rgba(0,0,0,.25)); }
+.pop-num{ font-size:clamp(14px, 4.6vw, 20px); font-weight:900; color:var(--ink); padding:2px 8px; border-radius:999px;
+  background:var(--surface); border:2px solid var(--ink-line); }
+.pop-balloon.hit{ transform:translate(-50%, 0) scale(1.12); }
+.pop-balloon.hit .pop-face{ animation:popBonk .35s both; }
+.pop-balloon.hit .pop-num{ background:var(--green); color:#fff; border-color:var(--green-dk); }
+.pop-balloon.wrong .pop-num{ background:var(--wrong); color:#fff; border-color:var(--wrong); animation:shake .4s; }
+.pop-balloon.reveal .pop-num{ background:var(--gold); border-color:var(--gold-dk); }
+.pop-grid.miss .pop-balloon.up:not(.wrong):not(.reveal){ transform:translate(-50%, 115%); }
+@keyframes popBonk{ 0%{ transform:scale(1) } 45%{ transform:scale(1.5); opacity:.6 } 100%{ transform:scale(0); opacity:0 } }
+@media (prefers-reduced-motion: reduce){ .pop-balloon{ transition:none } .pop-balloon.hit .pop-face{ animation:none } }

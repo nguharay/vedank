@@ -108,7 +108,7 @@ export const BLITZ_DEFAULT_LEVEL = 2;
 /* one bought Time Boost is worth this much extra clock, for one run */
 export const BLITZ_BOOST_MS = 4000;
 
-export type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp" | "match" | "games" | "bigger" | "odd" | "sortg" | "memory" | "quick" | "ttt";
+export type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp" | "match" | "games" | "bigger" | "odd" | "sortg" | "memory" | "quick" | "ttt" | "pop";
 
 export type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 
