@@ -9,7 +9,7 @@
    there merges into their account the next time they sign in.
 
    Bump VERSION to retire every old cache on the next activate. */
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = `sutra-${VERSION}`;
 
 /* /offline.html is a plain file with inline styles and no script: a fallback
@@ -90,4 +90,42 @@ self.addEventListener("fetch", (e) => {
         .catch(async () => (await caches.match(req)) || (await caches.match("/offline.html")) || Response.error())
     );
   }
+});
+
+/* ---------- push ----------
+   The payload is written by src/lib/game/push.ts. A push with no readable
+   body still shows something rather than the browser's own "This site has
+   been updated in the background" placeholder. */
+self.addEventListener("push", (e) => {
+  let note = { title: "インド式算数ゲーム", body: "新しいお知らせがあります", url: "/", tag: "general" };
+  try {
+    if (e.data) note = Object.assign(note, e.data.json());
+  } catch {}
+  e.waitUntil(
+    self.registration.showNotification(note.title, {
+      body: note.body,
+      tag: note.tag,
+      icon: "/brand/icon-192.png",
+      badge: "/brand/icon-192.png",
+      data: { url: note.url || "/" },
+    })
+  );
+});
+
+/* Focus a tab that is already open on the app rather than piling up new
+   ones; only open a window when there is nothing to focus. */
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || "/";
+  e.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) {
+        if (new URL(w.url).origin === self.location.origin && "focus" in w) {
+          w.navigate(target).catch(() => {});
+          return w.focus();
+        }
+      }
+      return self.clients.openWindow(target);
+    })
+  );
 });

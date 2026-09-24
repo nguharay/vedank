@@ -60,6 +60,7 @@ import { myClassesAction, joinClassAction, leaveClassAction } from "@/lib/action
 import {
   competitionsAction, startCompetitionAction, submitCompetitionAction, competitionBoardAction,
   createFriendCompetitionAction, endCompetitionAction,
+  pushStatusAction, savePushSubscriptionAction, removePushSubscriptionAction,
 } from "@/lib/actions/game-actions";
 import type { CompetitionSummary, CompQuestion, CompRow } from "@/lib/game/competition";
 import { COMP_LEVELS } from "@/lib/game/competition";
@@ -106,6 +107,17 @@ function weightedPick<T extends string>(pairs: [T, number][]): T {
   }
   return pairs[0][0];
 }
+/* VAPID keys travel as base64url; PushManager wants the raw bytes. */
+function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
+  const padded = (base64 + "=".repeat((4 - (base64.length % 4)) % 4))
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const raw = atob(padded);
+  const out = new Uint8Array(new ArrayBuffer(raw.length));
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
 function fmt(n: number) {
   return n.toLocaleString("en-IN");
 }
@@ -1704,6 +1716,64 @@ export function GameApp({
     } catch {}
   }, [guest, progress]);
 
+  /* ---------- notifications ----------
+     Opt-in and reversible, and the row only appears when the server actually
+     has VAPID keys and the browser supports push — a toggle that cannot work
+     is worse than no toggle. The permission prompt is only ever raised by the
+     tap, never on load. */
+  const [pushKey, setPushKey] = useState<string | null>(null);
+  const [pushOn, setPushOn] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    if (guest) return;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    (async () => {
+      try {
+        const st = await pushStatusAction();
+        if (!st.configured || !st.publicKey) return;
+        setPushKey(st.publicKey);
+        const reg = await navigator.serviceWorker.ready;
+        setPushOn(!!(await reg.pushManager.getSubscription()));
+      } catch {}
+    })();
+  }, [guest]);
+
+  async function togglePush() {
+    if (!pushKey || pushBusy) return;
+    setPushBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const existing = await reg.pushManager.getSubscription();
+      if (existing) {
+        await removePushSubscriptionAction(existing.endpoint);
+        await existing.unsubscribe();
+        setPushOn(false);
+      } else {
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") {
+          spawnToast(lang === "ja" ? "通知はブロックされています" : "Notifications are blocked", null);
+          return;
+        }
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(pushKey),
+        });
+        const res = await savePushSubscriptionAction(sub.toJSON());
+        if (res.ok) {
+          setPushOn(true);
+          spawnToast(lang === "ja" ? "通知をオンにしました" : "Notifications on", null);
+        } else {
+          await sub.unsubscribe();
+        }
+      }
+    } catch {
+      spawnToast(lang === "ja" ? "通知を設定できませんでした" : "Could not set up notifications", null);
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
   /* ---------- add to home screen ----------
      Chrome and Edge fire beforeinstallprompt and suppress their own banner if
      you call preventDefault; keeping the event lets the game offer the install
@@ -1875,6 +1945,14 @@ export function GameApp({
               <button className="menu-row menu-row-install" onClick={onInstall}>
                 <span>📲 {lang === "ja" ? "ホーム画面に追加" : "Add to home screen"}</span>
                 <span className="menu-row-val">{lang === "ja" ? "インストール" : "Install"}</span>
+              </button>
+            )}
+            {pushKey && (
+              <button className="menu-row" onClick={togglePush} disabled={pushBusy}>
+                <span>🔔 {lang === "ja" ? "通知" : "Notifications"}</span>
+                <span className="menu-row-val">
+                  {pushBusy ? "…" : pushOn ? (lang === "ja" ? "オン" : "On") : (lang === "ja" ? "オフ" : "Off")}
+                </span>
               </button>
             )}
             <button className="menu-row" onClick={sound.toggle}>

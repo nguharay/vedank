@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "npm run test:logic && npm run test:db",
-    "test:logic": "tsx scripts/test-game-logic.ts && tsx scripts/test-guest.ts && tsx scripts/test-sw.ts",
+    "test:logic": "tsx scripts/test-game-logic.ts && tsx scripts/test-guest.ts && tsx scripts/test-sw.ts && tsx scripts/test-webpush.ts",
     "test:db": "tsx scripts/test-engagement.ts && tsx scripts/test-social.ts && tsx scripts/test-srs.ts && tsx scripts/test-classroom.ts && tsx scripts/test-competition.ts",
     "migrate": "tsx scripts/migrate.ts"
   },
@@ -19,7 +19,8 @@
     "next": "16.3.5",
     "next-auth": "^5.0.0-beta.32",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

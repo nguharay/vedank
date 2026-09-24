@@ -191,7 +191,10 @@ export async function createFriendCompetition(
   levelId: string,
   durationSec: number,
   questionCount?: number
-): Promise<{ ok: boolean; error?: string; id?: string }> {
+): Promise<{
+  ok: boolean; error?: string; id?: string;
+  notify?: { name: string; levelName: string; minutes: number };
+}> {
   const clean = name.trim().slice(0, 60);
   if (!clean) return { ok: false, error: "Give the competition a name." };
   const L = COMP_LEVELS.find((l) => l.id === levelId);
@@ -240,7 +243,10 @@ export async function createFriendCompetition(
       seed: Math.floor(Math.random() * 2147483647),
     })
     .returning({ id: competitions.id });
-  return { ok: true, id: rows[0].id };
+  /* Telling the host's friends is the action layer's job: this module is
+     imported by the game component for COMP_LEVELS, so anything Node-only
+     reached from here ends up in the browser bundle. */
+  return { ok: true, id: rows[0].id, notify: { name: clean, levelName: L.name, minutes: Math.round(dur / 60) } };
 }
 
 /* The host ends their own race. `endCompetition` checks teacherId, which is

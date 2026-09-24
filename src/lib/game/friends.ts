@@ -206,6 +206,21 @@ export async function createChallenge(
   return { ok: true };
 }
 
+/* Who to tell when something happens. Kept here rather than in the push
+   module so nothing Node-only is reachable from the client bundle. */
+export async function friendIdsOf(userId: string): Promise<string[]> {
+  const rows = await getDb()
+    .select({ id: friendships.friendId })
+    .from(friendships)
+    .where(eq(friendships.userId, userId));
+  return rows.map((r) => r.id);
+}
+
+export async function displayName(userId: string): Promise<string> {
+  const rows = await getDb().select({ name: users.name }).from(users).where(eq(users.id, userId)).limit(1);
+  return rows[0]?.name ?? "";
+}
+
 export async function listChallenges(userId: string): Promise<ChallengeRow[]> {
   const db = getDb();
   const rows = await db
