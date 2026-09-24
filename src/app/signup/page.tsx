@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { signupAction } from "@/lib/actions/auth-actions";
 import { Mascot } from "@/components/game/Mascot";
+import { useLang } from "@/components/game/i18n";
 import { COUNTRIES } from "@/lib/countries";
 
 const COPY = {
@@ -76,7 +77,9 @@ function scorePassword(pw: string): number {
 
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signupAction, undefined);
-  const [lang, setLang] = useState<"en" | "ja">("en");
+  /* Japanese by default for a Japanese browser; the choice is shared with the
+     sign-in screen and the game. */
+  const { lang, setLang } = useLang("ja");
   const [country, setCountry] = useState("");
   const [password, setPassword] = useState("");
   const c = COPY[lang];

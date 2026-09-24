@@ -1,16 +1,40 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+/* The link preview is the first thing a Japanese player sees — it has to sell
+   the idea before they ever reach the login screen, so the copy here is
+   Japanese-first with the English line kept underneath. */
+const TITLE = "インド式算数ゲーム — 考えて、ひらめいて、挑戦しよう！";
+const DESCRIPTION =
+  "インド式算数を覚えるアプリではなく、数学の「見方」を発見するゲーム。" +
+  "古代の計算法を、14のスートラとマッチ棒パズルで。" +
+  "A game that doesn't just teach Indian calculation methods — it teaches you to see mathematics differently.";
+
 export const metadata: Metadata = {
-  title: "Sutra Sprint",
-  description:
-    "A Vedic Math game: 14 sutras as stage-based lessons, an interactive matchstick puzzle dojo, and mixed question formats.",
+  metadataBase: new URL("https://vedank.vercel.app"),
+  title: TITLE,
+  description: DESCRIPTION,
   icons: { icon: "/brand/vedank-mark.png" },
+  openGraph: {
+    type: "website",
+    locale: "ja_JP",
+    alternateLocale: ["en_US"],
+    siteName: "Sutra Sprint",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: "/brand/og-ja.png", width: 1200, height: 630, alt: "インド式算数ゲーム" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/brand/og-ja.png"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
