@@ -69,3 +69,18 @@ code, set `ADMIN_EMAILS=someone@example.com` on the project.
 Users, progress, streaks, gems, friendships, classrooms and competitions all
 live in the database, so a separate database means a genuinely separate app.
 Only the code is common.
+
+## Schema changes
+
+`migrations/` holds one SQL file per change, each a single idempotent `DO`
+block. They are replayed on every build by `scripts/migrate.ts`, which is
+wired into `npm run build` — so a deploy applies them automatically using the
+deploy environment's `DATABASE_URL`. A build with no `DATABASE_URL` skips
+them; a migration that fails stops the build rather than shipping code that
+expects a column the database does not have.
+
+Run them by hand against any database with:
+
+```bash
+DATABASE_URL="postgres://…" npm run migrate
+```
