@@ -1850,3 +1850,32 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .standings-name{ flex:1; min-width:0; font-weight:800; font-size:13px; color:var(--ink);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .standings-stat{ font-size:11px; color:var(--muted); flex:none; }
+
+/* ---------- keyboard play + a11y ---------- */
+/* Announced, never shown. */
+.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0; }
+
+/* The key that picks a tile. Only where there is a keyboard to press it with:
+   a touch device gets nothing, and neither does a narrow window. */
+.tile-key{ display:none; }
+@media (min-width:760px) and (pointer:fine){
+  .choice-tile, .target-tile, .balloon-tile{ position:relative; }
+  .tile-key{ display:grid; place-items:center; position:absolute; top:5px; left:6px;
+    width:17px; height:17px; border-radius:6px; font-family:var(--font-num);
+    font-size:10px; font-weight:800; line-height:1;
+    color:var(--muted); background:color-mix(in srgb, var(--ink-line) 9%, transparent);
+    border:1px solid color-mix(in srgb, var(--ink-line) 16%, transparent); }
+  .balloon-tile .tile-key{ top:2px; left:2px; color:#fff;
+    background:rgba(0,0,0,.22); border-color:rgba(255,255,255,.3); }
+  .choice-tile.eliminated .tile-key, .target-tile.eliminated .tile-key{ opacity:0; }
+}
+
+/* A visible focus ring — the keyboard is now a real way to play. */
+.choice-tile:focus-visible, .target-tile:focus-visible, .balloon-tile:focus-visible,
+.numberline-dot:focus-visible, .btn:focus-visible, .menu-row:focus-visible,
+.bottomnav-item:focus-visible{
+  outline:3px solid var(--blue); outline-offset:2px; }
+
+.menu-row-install{ color:var(--ink); }
+.menu-row-install .menu-row-val{ color:var(--sun1); font-weight:800; }
