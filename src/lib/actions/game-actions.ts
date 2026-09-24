@@ -11,6 +11,7 @@ import type { QuestEvent } from "@/lib/game/quests";
 import {
   ensureFriendCode, addFriendByCode, removeFriend, listFriends,
   createChallenge, listChallenges, answerChallenge, pendingChallengeCount,
+  friendIdsOf, displayName,
 } from "@/lib/game/friends";
 import {
   createClassroom, myClassrooms, joinClassroom, leaveClassroom, myClassMemberships,
@@ -20,6 +21,7 @@ import {
   createCompetition, createFriendCompetition, endCompetition, visibleCompetitions, competitionsForClass,
   startCompetition, submitCompetition, leaderboard,
 } from "@/lib/game/competition";
+import { pushConfigured, saveSubscription, removeSubscription, sendTo } from "@/lib/game/push";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -145,7 +147,22 @@ export async function friendsAction() {
 
 export async function challengeAction(toUserId: string, score: number, level: number) {
   const userId = await requireUserId();
-  return createChallenge(userId, toUserId, score, level);
+  const res = await createChallenge(userId, toUserId, score, level);
+  /* Awaited so a serverless invocation does not end mid-send, but its own
+     failures are swallowed — the duel exists whether or not a phone hears
+     about it. */
+  if (res.ok) {
+    try {
+      const me = await displayName(userId);
+      await sendTo(toUserId, {
+        title: `${me || "友だち"} さんから挑戦状`,
+        body: `${Math.floor(score)}点に挑戦しよう！ · Beat ${Math.floor(score)} to win`,
+        url: "/",
+        tag: "duel",
+      });
+    } catch {}
+  }
+  return res;
 }
 
 export async function answerChallengeAction(challengeId: string, score: number) {
@@ -199,6 +216,24 @@ export async function removeStudentAction(classId: string, studentId: string) {
   return removeStudent(userId, classId, studentId);
 }
 
+/* ---------- push notifications ---------- */
+
+export async function pushStatusAction() {
+  /* No session needed to know whether the feature exists at all. */
+  return { configured: pushConfigured(), publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "" };
+}
+
+export async function savePushSubscriptionAction(sub: unknown) {
+  const userId = await requireUserId();
+  return saveSubscription(userId, sub as Parameters<typeof saveSubscription>[1]);
+}
+
+export async function removePushSubscriptionAction(endpoint: string) {
+  await requireUserId();
+  await removeSubscription(String(endpoint || ""));
+  return { ok: true };
+}
+
 /* ---------- competitions ---------- */
 
 export async function createCompetitionAction(
@@ -214,7 +249,25 @@ export async function createFriendCompetitionAction(
   name: string, level: string, durationSec: number, questionCount?: number
 ) {
   const userId = await requireUserId();
-  return createFriendCompetition(userId, name, level, durationSec, questionCount);
+  const res = await createFriendCompetition(userId, name, level, durationSec, questionCount);
+  /* A race nobody knows about is a race of one. */
+  if (res.ok && res.id && res.notify) {
+    try {
+      const [host, ids] = await Promise.all([displayName(userId), friendIdsOf(userId)]);
+      const n = res.notify;
+      await Promise.all(
+        ids.slice(0, 50).map((id) =>
+          sendTo(id, {
+            title: `${host || "友だち"} さんがレースを開催！`,
+            body: `${n.name} · ${n.levelName} — ${n.minutes}分`,
+            url: `/r/${res.id}`,
+            tag: "race",
+          })
+        )
+      );
+    } catch {}
+  }
+  return res;
 }
 
 export async function endCompetitionAction(competitionId: string) {

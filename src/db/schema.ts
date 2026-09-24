@@ -8,6 +8,7 @@ import {
   timestamp,
   date,
   primaryKey,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -296,4 +297,22 @@ export const competitionEntries = pgTable(
     score: integer("score").notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.competitionId, t.userId] })]
+);
+
+/* ---------- web push ----------
+   One row per browser that has allowed notifications. The endpoint is the
+   identity — a person may have a phone and a laptop — and it is the primary
+   key so re-subscribing the same browser updates rather than duplicates. */
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    endpoint: text("endpoint").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("push_subscriptions_user_idx").on(t.userId)]
 );
