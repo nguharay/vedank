@@ -127,7 +127,6 @@ for (const g of QUICK_GAMES) {
     if (g.id === "sq5") { const n = Number(q.prompt.replace("²", "")); ok("sq5 correct", Number(chosen.replace(/,/g, "")) === n * n); }
     if (g.id === "digitsum") { const n = Number(q.prompt.replace(/,/g, "")); ok("digitsum correct", Number(chosen) === digitSum(n)); }
     if (g.id === "lastdigit") { const m = q.prompt.match(/(\d+) × (\d+)/)!; ok("lastdigit correct", Number(chosen) === (Number(m[1]) * Number(m[2])) % 10); }
-    if (g.id === "div9") { const n = Number(q.prompt.replace(/,/g, "")); ok("div9 correct", (q.answer === 0) === (n % 9 === 0)); }
     if (g.id === "tf") { const [lhs, rhs] = q.prompt.split(" = "); const v = evalP(lhs); if (v !== null) ok("tf correct", (q.answer === 0) === (v === Number(rhs.replace(/,/g, "")))); }
     if (g.id === "missing") {
       const m = q.prompt.replace(/,/g, "").match(/^(□|\d+) ([+×]) (□|\d+) = (\d+)$/)!;

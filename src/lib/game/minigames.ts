@@ -19,9 +19,8 @@ const MAX_TILE_CHARS = 16;
    example. These topics are fine on a question card, where the chapter has
    just explained the notation, and meaningless on a bare tile:
      balancing   "8 | 10 | 53"      — the bars mean nothing out of context
-     devinculum  "4 9̄ (bar number)" — same, plus a combining overline
    Excluded rather than reworded, because the prompt is the lesson's. */
-const NOT_SELF_EXPLANATORY = new Set(["balancing", "devinculum"]);
+const NOT_SELF_EXPLANATORY = new Set(["balancing"]);
 
 function miniTopics() {
   return BLITZ_TOPICS.filter((t) => !NOT_SELF_EXPLANATORY.has(t.id));
