@@ -1930,3 +1930,17 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   font-size:11.5px; font-weight:800; letter-spacing:.02em; color:#3A2400;
   background:var(--gold); padding:5px 10px calc(5px + env(safe-area-inset-top,0px));
   box-shadow:0 2px 8px -3px rgba(20,20,50,.45); }
+
+/* ---------- per-question pips ---------- */
+.stage-pips{ display:flex; gap:6px; margin-bottom:9px; }
+.stage-pip{ flex:1; height:9px; border-radius:999px; background:var(--surface-3);
+  border:2px solid var(--line); transition:background .25s, border-color .25s, transform .25s; }
+.stage-pip.hit{ background:linear-gradient(90deg,var(--green),#7BE23A); border-color:var(--green-dk); }
+.stage-pip.miss{ background:var(--wrong); border-color:var(--wrong-dk); }
+.stage-pip.now{ background:var(--gold); border-color:var(--gold-dk); transform:scaleY(1.5);
+  animation:pipNow 1.4s ease-in-out infinite; }
+@keyframes pipNow{ 0%,100%{ opacity:1 } 50%{ opacity:.55 } }
+@media (prefers-reduced-motion: reduce){ .stage-pip.now{ animation:none } }
+
+/* ---------- numbers that count up ---------- */
+.rollup{ font-variant-numeric:lining-nums tabular-nums; }
