@@ -1845,7 +1845,7 @@ export function GameApp({
       id: "odd", icon: "🔍", tint: "var(--green-dk)",
       name: "Odd One Out", nameJa: "仲間はずれ",
       blurb: "Three share a digit sum. Spot the one that doesn't.",
-      blurbJa: "3つは digit sum が同じ。ちがう1つを見つけよう。",
+      blurbJa: "3つは数字の合計が同じ。ちがう1つを見つけよう。",
       best: gameBests.odd ?? 0, start: shelf(startOdd),
     },
     {
@@ -2804,7 +2804,7 @@ export function GameApp({
               </div>
               <div className="race-hint">
                 {lang === "ja"
-                  ? "全員が同じ問題に挑戦。正解数がまず効いて、同点なら速さで決まります。"
+                  ? "全員が同じ問題に挑戦。正解数が優先、同点なら速さで決まります。"
                   : "Everyone sits the same paper. Correct answers come first; speed only splits a tie."}
               </div>
 
@@ -3375,7 +3375,7 @@ export function GameApp({
           return (
             <section className="view active">
               <div className="match-head">
-                <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続" : "Streak"}</span><span className="match-stat-v mono">{quickStreak}</span></div>
+                <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続正解" : "Streak"}</span><span className="match-stat-v mono">{quickStreak}</span></div>
                 <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span><span className="match-stat-v mono">{quickBest}</span></div>
               </div>
               <p className="match-hint">{lang === "ja" ? g.hintJa : g.hintEn}</p>
@@ -3404,7 +3404,7 @@ export function GameApp({
               {quickOver && (
                 <div className="match-done">
                   <div className="match-done-title">{quickOver.best && quickOver.streak > 0 ? (lang === "ja" ? "自己ベスト更新！" : "New best!") : (lang === "ja" ? "おしまい！" : "Run over")}</div>
-                  <div className="match-done-line mono">{lang === "ja" ? "連続" : "streak"} <RollUp to={quickOver.streak} /></div>
+                  <div className="match-done-line mono">{lang === "ja" ? "連続正解" : "streak"} <RollUp to={quickOver.streak} /></div>
                   <button className="btn btn-primary match-again" onClick={() => startQuick(quickId)}>{lang === "ja" ? "もう一回" : "Play again"}</button>
                 </div>
               )}
@@ -3415,11 +3415,11 @@ export function GameApp({
         {view === "odd" && oddRound && (
           <section className="view active">
             <div className="match-head">
-              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続" : "Streak"}</span><span className="match-stat-v mono">{oddStreak}</span></div>
+              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続正解" : "Streak"}</span><span className="match-stat-v mono">{oddStreak}</span></div>
               <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span><span className="match-stat-v mono">{oddBest}</span></div>
             </div>
             <p className="match-hint">
-              {lang === "ja" ? "3つは digit sum が同じ。ちがう1つをタップ！" : "Three share a digit sum. Tap the one that doesn't."}
+              {lang === "ja" ? "3つは数字の合計が同じ。ちがう1つをタップ！" : "Three share a digit sum. Tap the one that doesn't."}
             </p>
             {!oddOver && (
               <div className="odd-grid">
@@ -3443,7 +3443,7 @@ export function GameApp({
             {oddOver && (
               <div className="match-done">
                 <div className="match-done-title">{oddOver.best && oddOver.streak > 0 ? (lang === "ja" ? "自己ベスト更新！" : "New best!") : (lang === "ja" ? "おしまい！" : "Run over")}</div>
-                <div className="match-done-line mono">{lang === "ja" ? "連続" : "streak"} <RollUp to={oddOver.streak} /></div>
+                <div className="match-done-line mono">{lang === "ja" ? "連続正解" : "streak"} <RollUp to={oddOver.streak} /></div>
                 <button className="btn btn-primary match-again" onClick={startOdd}>{lang === "ja" ? "もう一回" : "Play again"}</button>
               </div>
             )}
@@ -3453,7 +3453,7 @@ export function GameApp({
         {view === "sortg" && sortRound && (
           <section className="view active">
             <div className="match-head">
-              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続" : "Streak"}</span><span className="match-stat-v mono">{sortStreak}</span></div>
+              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続正解" : "Streak"}</span><span className="match-stat-v mono">{sortStreak}</span></div>
               <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span><span className="match-stat-v mono">{sortBest}</span></div>
             </div>
             <p className="match-hint">{lang === "ja" ? "答えが小さい順にタップ！" : "Tap them smallest answer first."}</p>
@@ -3479,7 +3479,7 @@ export function GameApp({
             {sortOver && (
               <div className="match-done">
                 <div className="match-done-title">{sortOver.best && sortOver.streak > 0 ? (lang === "ja" ? "自己ベスト更新！" : "New best!") : (lang === "ja" ? "おしまい！" : "Run over")}</div>
-                <div className="match-done-line mono">{lang === "ja" ? "そろえた回数" : "rounds"} <RollUp to={sortOver.streak} /></div>
+                <div className="match-done-line mono">{lang === "ja" ? "クリア回数" : "rounds"} <RollUp to={sortOver.streak} /></div>
                 <button className="btn btn-primary match-again" onClick={startSort}>{lang === "ja" ? "もう一回" : "Play again"}</button>
               </div>
             )}
@@ -3490,7 +3490,7 @@ export function GameApp({
           <section className="view active">
             <div className="match-head">
               <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "めくった回数" : "Turns"}</span><span className="match-stat-v mono">{memTurns}</span></div>
-              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "最少" : "Fewest"}</span><span className="match-stat-v mono">{memBest || "—"}</span></div>
+              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "最少回数" : "Fewest"}</span><span className="match-stat-v mono">{memBest || "—"}</span></div>
             </div>
             <p className="match-hint">{lang === "ja" ? "式と答えのペアを覚えて当てよう！" : "Remember where the pairs are."}</p>
             <div className="match-grid">
@@ -3574,7 +3574,7 @@ export function GameApp({
           <section className="view active">
             <div className="match-head">
               <div className="match-stat">
-                <span className="match-stat-k">{lang === "ja" ? "連続" : "Streak"}</span>
+                <span className="match-stat-k">{lang === "ja" ? "連続正解" : "Streak"}</span>
                 <span className="match-stat-v mono">{bigStreak}</span>
               </div>
               <div className="match-stat">
@@ -3617,7 +3617,7 @@ export function GameApp({
                     : (lang === "ja" ? "おしまい！" : "Run over")}
                 </div>
                 <div className="match-done-line mono">
-                  {lang === "ja" ? "連続" : "streak"} <RollUp to={bigOver.streak} /> ·{" "}
+                  {lang === "ja" ? "連続正解" : "streak"} <RollUp to={bigOver.streak} /> ·{" "}
                   {biggerScore(bigOver.streak)} {lang === "ja" ? "点" : "pts"}
                 </div>
                 <button className="btn btn-primary match-again" onClick={startBigger}>
@@ -4012,7 +4012,7 @@ export function GameApp({
                 <div className="run-recap-head">
                   {lang === "ja" ? "このステージのふりかえり" : "How it went"}
                   {stageLog.some((e) => !e.ok) && (
-                    <span className="run-recap-cta">{lang === "ja" ? "✗ をタップで解き方" : "tap a ✗ for the method"}</span>
+                    <span className="run-recap-cta">{lang === "ja" ? "✗をタップして解き方を見る" : "tap a ✗ for the method"}</span>
                   )}
                 </div>
                 {[...stageLog]
@@ -4561,7 +4561,7 @@ function HomeView({
         })}
         {hiddenTopics > 0 && (
           <button className="path-more" onClick={() => setShowAllTopics(true)}>
-            {lang === "ja" ? `のこり ${hiddenTopics} 個をみる` : `Show ${hiddenTopics} more`}
+            {lang === "ja" ? `あと ${hiddenTopics} トピックを見る` : `Show ${hiddenTopics} more`}
             <span className="path-more-sub">
               {lang === "ja" ? "まだロック中" : "still locked"}
             </span>

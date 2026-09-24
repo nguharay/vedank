@@ -335,7 +335,8 @@ export const QUICK_GAMES: QuickGame[] = [
       let n = ri(100, 9999);
       if (yes) n = n - (n % 9) || 9; else if (n % 9 === 0) n += ri(1, 8);
       return { prompt: `${fmtN(n)}`, options: ["○ 割れる", "× 割れない"], answer: yes ? 0 : 1,
-        noteJa: `数字の合計 → ${digitSum(n)}${yes ? "（9）" : ""}`, noteEn: `digit sum → ${digitSum(n)}${yes ? " (9)" : ""}` };
+        noteJa: `数字の合計 → ${digitSum(n)} → ${yes ? "9で割れる" : "割れない"}`,
+        noteEn: `digit sum → ${digitSum(n)} → ${yes ? "divisible" : "not divisible"}` };
     },
   },
   {
@@ -365,7 +366,7 @@ export const QUICK_GAMES: QuickGame[] = [
   },
   {
     id: "estimate", icon: "🎯", tint: "var(--gold-dk)",
-    name: "Closest Guess", nameJa: "だいたい いくつ？",
+    name: "Closest Guess", nameJa: "だいたいいくつ？",
     blurb: "Which is nearest? No exact working needed.", blurbJa: "いちばん近いのはどれ？ 計算しきらなくてOK。",
     hintJa: "だいたいで考えて、いちばん近い答えをえらぼう", hintEn: "Round, then pick the nearest",
     next: () => {
