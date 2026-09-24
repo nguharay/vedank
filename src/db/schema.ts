@@ -326,3 +326,16 @@ export const topicOverrides = pgTable("topic_overrides", {
   updatedBy: text("updated_by"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/* ---------- online tic-tac-toe ----------
+   Short-lived rooms. The board lives in `state`; every move is validated on
+   the server against it, so a client can only ever claim its own turn. */
+export const tttRooms = pgTable("ttt_rooms", {
+  code: text("code").primaryKey(),
+  hostId: uuid("host_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  guestId: uuid("guest_id").references(() => users.id, { onDelete: "set null" }),
+  state: jsonb("state").notNull(),
+  round: integer("round").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
