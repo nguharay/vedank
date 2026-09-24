@@ -30,7 +30,7 @@ for (const t of TOPICS) {
         }
         // formula-based topics: verify the "trick" answer against direct arithmetic on the prompt
         const mult = r.prompt.match(/^(\d+) × (\d+)$/);
-        if (mult && (t.id === "balancing" || t.id === "baseBelow100" || t.id === "baseAbove100" || t.id === "generalMult2d")) {
+        if (mult && (t.id === "balancing" || t.id === "baseBelow100" || t.id === "baseAbove100")) {
           const [, a, b] = mult;
           if (Number(a) * Number(b) !== r.answer) fails.push(`${t.id} mult mismatch: ${r.prompt} -> ${r.answer}`);
         }
@@ -51,9 +51,6 @@ for (const t of TOPICS) {
           if (a <= b) fails.push(`${t.id} non-positive operands: ${r.prompt}`);
         }
         const divM = r.prompt.match(/^(\d+) ÷ 8/);
-        if (divM && t.id === "div8") {
-          if (Math.floor(Number(divM[1]) / 8) !== r.answer) fails.push(`div8 mismatch: ${r.prompt} -> ${r.answer}`);
-        }
         const sq5 = r.prompt.match(/^(\d+)²$/);
         if (sq5 && t.id === "squareStart5") {
           const n = Number(sq5[1]);

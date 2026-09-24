@@ -327,19 +327,7 @@ function DivisionDiagram({ spec }: { spec: DivSpec }) {
 
 const DIV_SPECS: Record<string, DivSpec> = {
   // p.143 — 23 ÷ 9
-  div9: {
-    caption: ["Quotient (Q) builds left → right;", "the last sum is the Remainder (R)."],
-    dividend: ["2", "3"], quotient: ["2"], remainder: "5", hop: "+",
-    notes: ["Bring down 2 → Q.", "2 + 3 = 5 → R"],
-    answer: "Q 2 · R 5",
-  },
   // p.149 — 31 ÷ 8 (8 is 2 less than base 10, so double each quotient digit)
-  div8: {
-    caption: ["8 is 2 less than the base (10),", "so double each quotient digit."],
-    dividend: ["3", "1"], quotient: ["3"], remainder: "7", hop: "×2",
-    notes: ["3 down as the first quotient digit.", "(2 × 3) + 1 = 7 = remainder"],
-    answer: "Q 3 · R 7",
-  },
 };
 
 // Book p.68 — Multiplication by 12 to 19, worked as 243 × 14 (flag = 4).
@@ -560,91 +548,6 @@ function BalancingDiagram() {
   );
 }
 
-function CrosswisePanel({
-  a,
-  b,
-  kind,
-  label,
-  running,
-  note,
-  uid,
-}: {
-  a: number[];
-  b: number[];
-  kind: "left" | "cross" | "right";
-  label: string;
-  running: string;
-  note?: string;
-  uid: string;
-}) {
-  /* 22px digits reach about 15px above their baseline, so the rows sit 30px
-     apart: at 22px the connecting arrows ended inside the bottom digit. */
-  const xL = 38, xR = 68, w = 104;
-  const yTop = 34, yBot = 64;
-  return (
-    <svg viewBox={`0 0 ${w} 106`} className="bd-svg bd-flagpanel">
-      <defs>
-        <marker id={uid} markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <path d="M0,0 L6,3 L0,6 Z" fill="var(--sun1)" />
-        </marker>
-      </defs>
-
-      <text x="8" y="13" className="bd-steplabel" style={{ fontSize: 9 }}>{label}</text>
-
-      <text x={xL} y={yTop} className="bd-digit" textAnchor="middle">{a[0]}</text>
-      <text x={xR} y={yTop} className="bd-digit" textAnchor="middle">{a[1]}</text>
-      <text x="10" y={yBot} className="bd-num" textAnchor="start">×</text>
-      <text x={xL} y={yBot} className="bd-digit" textAnchor="middle">{b[0]}</text>
-      <text x={xR} y={yBot} className="bd-digit" textAnchor="middle">{b[1]}</text>
-
-      {/* the pattern the step is named after */}
-      {kind === "left" && (
-        <path d={`M ${xL} ${yTop + 5} L ${xL} ${yBot - 19}`} className="bd-tick" markerEnd={`url(#${uid})`} />
-      )}
-      {kind === "right" && (
-        <path d={`M ${xR} ${yTop + 5} L ${xR} ${yBot - 19}`} className="bd-tick" markerEnd={`url(#${uid})`} />
-      )}
-      {kind === "cross" && (
-        <>
-          <path d={`M ${xL + 5} ${yTop + 5} L ${xR - 5} ${yBot - 19}`} className="bd-tick" markerEnd={`url(#${uid})`} />
-          <path d={`M ${xR - 5} ${yTop + 5} L ${xL + 5} ${yBot - 19}`} className="bd-tick" />
-        </>
-      )}
-
-      <line x1="8" y1="74" x2={w - 6} y2="74" className="bd-rule" />
-      <text x={w - 6} y="92" className="bd-partline" textAnchor="end">{running}</text>
-      {note && <text x={w - 6} y="103" className="bd-caption" style={{ fontSize: 8 }} textAnchor="end">{note}</text>}
-    </svg>
-  );
-}
-
-function CrosswiseDiagram({ lang }: { lang: Lang }) {
-  const a = [2, 1], b = [1, 3];
-  const left = a[0] * b[0];
-  const cross = a[0] * b[1] + a[1] * b[0];
-  const right = a[1] * b[1];
-  const total = (a[0] * 10 + a[1]) * (b[0] * 10 + b[1]);
-
-  /* Each panel shows the answer as far as it has been built. */
-  const r1 = String(left);
-  const r2 = String(left) + String(cross % 10);
-  const r3 = String(total);
-
-  return (
-    <div className="bd-flaggrid">
-      <div className="bd-flagcap">
-        {lang === "ja" ? "たて → たすきがけ → たて" : "vertically → crosswise → vertically"}
-      </div>
-      <div className="bd-flagrow bd-flagrow-3">
-        <CrosswisePanel a={a} b={b} kind="left" label={lang === "ja" ? "① たて" : "STEP 1"} running={r1} uid="cwA" />
-        <CrosswisePanel a={a} b={b} kind="cross" label={lang === "ja" ? "② たすきがけ" : "STEP 2"} running={r2} note={`(${a[0] * b[1]}+${a[1] * b[0]})`} uid="cwB" />
-        <CrosswisePanel a={a} b={b} kind="right" label={lang === "ja" ? "③ たて" : "STEP 3"} running={r3} uid="cwC" />
-      </div>
-      <div className="bd-flaganswer">{total}</div>
-    </div>
-  );
-}
-
 type NikhilamSpec = { caption: string; top: string[]; minuend: string[]; subtrahend: string[]; notes: string[]; answer: string[] };
 
 const NK_RIGHT = 232, NK_PITCH = 30;
@@ -691,14 +594,6 @@ function AllFrom9Diagram({ spec }: { spec: NikhilamSpec }) {
 
 const NIKHILAM_SPECS: Record<string, NikhilamSpec> = {
   // p.175 — 8324 − 2348 without borrowing; bar the columns that go negative
-  subVinculum: {
-    caption: "subtract straight down; bar a column instead of borrowing",
-    top: ["", "", "", ""],
-    minuend: ["8", "3", "2", "4"],
-    subtrahend: ["2", "3", "4", "8"],
-    notes: ["Column differences: 6, 0, 2\u0304, 4\u0304", "Devinculate 6 0 2\u0304 4\u0304 → 5976", "No borrowing anywhere"],
-    answer: ["5", "9", "7", "6"],
-  },
   subFromPower10: {
     caption: "all from 9, the last from 10",
     top: ["9", "9", "9", "9", "10"],
@@ -779,19 +674,7 @@ const PARTS_SPECS: Record<string, PartsSpec> = {
     join: "25 | 60 | 36", answer: "3136",
   },
   // p.164 — vinculating the units of 47
-  vinculum: {
-    caption: "a bar digit is negative, so 47 = 50 − 3",
-    leftLabel: "the left digit", leftWork: ["4 → 5", "one more"],
-    rightLabel: "the units", rightWork: ["7 → 3\u0304", "10 − 7, barred"],
-    join: "47  =  50 − 3", answer: "5 3\u0304",
-  },
   // p.170 — devinculating 7 2̄
-  devinculum: {
-    caption: "all from 9 and the last from 10, then one less on the left",
-    leftLabel: "the left digit", leftWork: ["7 → 6", "one less"],
-    rightLabel: "the barred digit", rightWork: ["2\u0304 → 8", "10 − 2"],
-    join: "6 | 8", answer: "68",
-  },
   // p.23 — 47 + 29, one more than the one before
   add9: {
     caption: "add the next ten, then give one back",
@@ -842,71 +725,6 @@ function DigitSumDiagram() {
 
       <AnswerBox x={100} y={146} w={130} h={38} value="DS = 8" />
     </svg>
-  );
-}
-
-/* Page 131: the three numbers stacked, and the answer built one column at a
-   time, each panel noting the bars that column hands to the left. */
-function BarAddPanel({ nums, upto, running, note }: {
-  nums: string[]; upto: number; running: string; note?: string;
-}) {
-  const w = 92, pitch = 17, right = w - 10;
-  const cols = nums[0].length;
-  return (
-    <svg viewBox={`0 0 ${w} 112`} className="bd-svg bd-flagpanel">
-      {nums.map((n, r) =>
-        n.split("").map((d, i) => {
-          const col = cols - 1 - i;
-          return (
-            <text
-              key={`${r}-${i}`}
-              x={right - col * pitch}
-              y={22 + r * 18}
-              className="bd-num"
-              textAnchor="end"
-              opacity={col < upto ? 1 : 0.28}
-            >
-              {d}
-            </text>
-          );
-        })
-      )}
-      <text x={right - (cols - 1) * pitch - 14} y={22 + (nums.length - 1) * 18} className="bd-num" textAnchor="end">+</text>
-      <line x1="8" y1={30 + (nums.length - 1) * 18} x2={w - 6} y2={30 + (nums.length - 1) * 18} className="bd-rule" />
-      <text x={right} y={52 + (nums.length - 1) * 18} className="bd-partline" textAnchor="end">{running}</text>
-      {note && <text x={right} y={66 + (nums.length - 1) * 18} className="bd-caption" style={{ fontSize: 8 }} textAnchor="end">{note}</text>}
-    </svg>
-  );
-}
-
-function AdditionBarDiagram() {
-  const nums = ["826", "758", "852"];
-  const cols = 3;
-  const digit = (n: string, col: number) => Number(n[n.length - 1 - col]);
-  const panels: { upto: number; running: string; note?: string }[] = [];
-  let carry = 0;
-  let out = "";
-  for (let col = 0; col < cols; col++) {
-    const sum = nums.reduce((a, n) => a + digit(n, col), 0) + carry;
-    const bars = Math.floor(sum / 10);
-    out = String(sum % 10) + out;
-    carry = bars;
-    panels.push({ upto: col + 1, running: out, note: `${bars} bar${bars === 1 ? "" : "s"}` });
-  }
-  /* The book adds one last panel that brings the leading bars down, which is
-     where the 2 of 2436 comes from. */
-  if (carry > 0) panels.push({ upto: cols, running: String(carry) + out });
-  const total = nums.reduce((a, n) => a + Number(n), 0);
-  return (
-    <div className="bd-flaggrid">
-      <div className="bd-flagcap">a bar for every ten the column passes</div>
-      <div className="bd-flagrow bd-flagrow-3">
-        {panels.map((p, i) => (
-          <BarAddPanel key={i} nums={nums} upto={p.upto} running={p.running} note={p.note} />
-        ))}
-      </div>
-      <div className="bd-flaganswer">{total}</div>
-    </div>
   );
 }
 
@@ -1105,69 +923,13 @@ function FlagDivDiagram({ spec }: { spec: FlagDivSpec }) {
 
 const FLAGDIV_SPECS: Record<string, FlagDivSpec> = {
   // p.144 — 3794 ÷ 9, drawn as the book draws it: one panel per carry
-  div9carry: {
-    caption: "a sum of 9 or more is divided by 9 and its quotient carried left",
-    dividend: "3794", zone: 1,
-    steps: [
-      { note: "bring down 3", quotient: "3", rem: "" },
-      { note: "3 + 7 = 10 → 1 r 1", work: "carry 1 left", quotient: "4 1", rem: "" },
-      { note: "1 + 9 = 10 → 1 r 1", work: "carry 1 left", quotient: "4 2 1", rem: "" },
-      { note: "1 + 4 = 5", quotient: "421", rem: "5" },
-    ],
-    answer: "Q 421 · R 5",
-  },
   // p.195 — 5367 ÷ 72, divisor 7 with flag 2
-  flagDivision: {
-    caption: "divisor 7 · flag 2 · divide → flag × quotient → subtract",
-    dividend: "5367", zone: 1,
-    steps: [
-      { note: "53 ÷ 7", quotient: "7", rem: "4" },
-      { note: "flag 2 × 7 = 14", work: "46 − 14", quotient: "7", rem: "32" },
-      { note: "32 ÷ 7", quotient: "74", rem: "4" },
-      { note: "flag 2 × 4 = 8", work: "47 − 8", quotient: "74", rem: "39" },
-    ],
-    answer: "Q 74 · R 39",
-  },
   // p.196 — 3425 ÷ 73, where a remainder goes negative
-  flagAboveBase: {
-    caption: "divisor 7 · flag 3 · a negative remainder takes the divisor back",
-    dividend: "3425", zone: 1,
-    steps: [
-      { note: "34 ÷ 7", quotient: "4", rem: "6" },
-      { note: "flag 3 × 4 = 12", work: "62 − 12", quotient: "4", rem: "50" },
-      { note: "50 ÷ 7", quotient: "46", rem: "1" },
-      { note: "flag 3 × 6 = 18", work: "15 − 18 → +73", quotient: "46", rem: "67" },
-    ],
-    answer: "Q 46 · R 67",
-  },
   // p.199 — 3425 ÷ 58, the flag is a bar so it adds
-  flagBelowBase: {
-    caption: "from 58: divisor 6, bar flag 2 — a bar flag adds",
-    dividend: "3425", zone: 1,
-    steps: [
-      { note: "34 ÷ 6", quotient: "5", rem: "4" },
-      { note: "bar flag 2 × 5 = 10", work: "42 + 10", quotient: "5", rem: "52" },
-      { note: "52 ÷ 6", quotient: "58", rem: "4" },
-      { note: "bar flag 2 × 8 = 16", work: "45 + 16 = 61 → 61 − 58", quotient: "59", rem: "3" },
-    ],
-    answer: "Q 59 · R 3",
-  },
   // p.188 — 123123 ÷ 99, base 100 so two digits are the remainder zone
-  div99: {
-    caption: "base 100 · multiplier 01 · last two digits are the remainder",
-    dividend: "123123", zone: 2,
-    steps: [
-      { note: "bring down 1", quotient: "1", rem: "" },
-      { note: "+01 → 2", quotient: "12", rem: "" },
-      { note: "+01 → 4", quotient: "124", rem: "" },
-      { note: "+01 → 3, then the zone", quotient: "1243", rem: "66" },
-    ],
-    answer: "Q 1243 · R 66",
-  },
 };
 
 export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.ReactElement>> = {
-  additionBar: AdditionBarDiagram,
   mult1x: Mult1xDiagram,
   ...Object.fromEntries(
     Object.entries(FLAGDIV_SPECS).map(([id, spec]) => [id, () => <FlagDivDiagram spec={spec} />])
@@ -1177,7 +939,6 @@ export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.
   mult12to19: FlagDigitDiagram,
   mult111: Mult111Diagram,
   balancing: BalancingDiagram,
-  generalMult2d: CrosswiseDiagram,
   additionGeneral: FriendlyTensDiagram,
   digitsum: DigitSumDiagram,
   ...Object.fromEntries(
@@ -1202,18 +963,9 @@ export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.
 
 // The worked example each diagram draws, shown in the card header.
 export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {
-  additionBar: "826 + 758 + 852",
   baseBelow20to90: "19 × 16",
   baseAbove20to90: "23 × 24",
-  div9carry: "3794 ÷ 9",
-  div99: "123123 ÷ 99",
-  flagDivision: "5367 ÷ 72",
-  flagAboveBase: "3425 ÷ 73",
-  flagBelowBase: "3425 ÷ 58",
   duplexSquare: "56²",
-  vinculum: "47 → 5 3\u0304",
-  devinculum: "7 2\u0304 → 68",
-  subVinculum: "8324 − 2348",
   add9: "36 + 9",
   sub9: "36 − 9",
   add8sub8: "73 + 8",
@@ -1226,12 +978,9 @@ export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {
   baseAbove10: "14 × 18",
   baseBelow100: "96 × 98",
   baseAbove100: "104 × 107",
-  div9: "23 ÷ 9",
-  div8: "31 ÷ 8",
   mult12to19: "243 × 14",
   mult111: "4213 × 111",
   balancing: "24 | 51 | 39",
-  generalMult2d: "21 × 13",
   additionGeneral: "342 + 256",
   digitsum: "DS of 512",
   subFromPower10: "100000 − 35875",
