@@ -71,7 +71,9 @@ import { Mascot, Mandala } from "./Mascot";
 import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ } from "./BookDiagrams";
 import { TRICKS, TRICK_BY_ID } from "@/lib/game/tricks";
 import { dailyQuestions, todayKey, DAILY_QUESTIONS, type DailyQuestion } from "@/lib/game/daily";
-import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore, type MatchTile, type BiggerPair } from "@/lib/game/minigames";
+import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
+  buildOddRound, digitSum, buildSortRound, sortedIds,
+  type MatchTile, type BiggerPair, type OddRound, type SortRound } from "@/lib/game/minigames";
 import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
@@ -84,7 +86,7 @@ import { useBuddyPos } from "./useBuddyPos";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI, type UIDict } from "./i18n";
 
-type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp" | "match" | "games" | "bigger";
+type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp" | "match" | "games" | "bigger" | "odd" | "sortg" | "memory";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
@@ -881,9 +883,14 @@ export function GameApp({
 
   const headerTitle = t.headerTitles[view];
 
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg"];
+
   function handleBack() {
     if (view === "practice") { openStageMap(currentTopicId!); }
     else if (view === "stagemap") { openTopic(currentTopicId!); }
+    /* Out of a game goes back to the shelf, not all the way home — finishing
+       one and wanting another is the common case. */
+    else if (GAME_VIEWS.includes(view)) { openGames(); }
     else { goHome(); }
   }
 
@@ -1724,12 +1731,15 @@ export function GameApp({
   /* The Games tab is a shelf, not one game: adding another is a row here
      plus its view. Bests are read when the tab opens so a fresh run shows up
      without a reload. */
-  const [gameBests, setGameBests] = useState<{ match: number; bigger: number }>({ match: 0, bigger: 0 });
+  const [gameBests, setGameBests] = useState<Record<string, number>>({});
   function openGames() {
     try {
       setGameBests({
         match: Number(localStorage.getItem("sutraSprint.matchBest") || 0),
         bigger: Number(localStorage.getItem("sutraSprint.biggerBest") || 0),
+        memory: Number(localStorage.getItem("sutraSprint.memBest") || 0),
+        odd: Number(localStorage.getItem("sutraSprint.oddBest") || 0),
+        sortg: Number(localStorage.getItem("sutraSprint.sortBest") || 0),
       });
     } catch {}
     setView("games");
@@ -1739,16 +1749,158 @@ export function GameApp({
       id: "match", icon: "🃏", tint: "var(--sky2)",
       name: "Number Match", nameJa: "ナンバーマッチ",
       blurb: "Pair each sum with its answer.", blurbJa: "式と答えをペアにしよう。",
-      best: gameBests.match, start: startMatch,
+      best: gameBests.match ?? 0, start: startMatch,
     },
     {
       id: "bigger", icon: "⚖️", tint: "var(--violet)",
       name: "Which is Bigger?", nameJa: "どっちが大きい？",
       blurb: "Tap the larger of two sums. One slip ends the run.",
       blurbJa: "大きいほうをタップ。まちがえたら終わり。",
-      best: gameBests.bigger, start: startBigger,
+      best: gameBests.bigger ?? 0, start: startBigger,
+    },
+    {
+      id: "memory", icon: "🧠", tint: "var(--sun1)",
+      name: "Memory Pairs", nameJa: "神経衰弱",
+      blurb: "Same pairs, face down. Fewest turns wins.",
+      blurbJa: "ふせたカードでペア探し。少ない回数でクリア。",
+      best: gameBests.memory ?? 0, start: startMemory,
+    },
+    {
+      id: "odd", icon: "🔍", tint: "var(--green-dk)",
+      name: "Odd One Out", nameJa: "仲間はずれ",
+      blurb: "Three share a digit sum. Spot the one that doesn't.",
+      blurbJa: "3つは digit sum が同じ。ちがう1つを見つけよう。",
+      best: gameBests.odd ?? 0, start: startOdd,
+    },
+    {
+      id: "sortg", icon: "📊", tint: "var(--pink)",
+      name: "Smallest First", nameJa: "小さい順",
+      blurb: "Put four answers in order without working them all out.",
+      blurbJa: "4つの答えを小さい順に並べよう。",
+      best: gameBests.sortg ?? 0, start: startSort,
     },
   ];
+
+  /* ---------- Odd One Out ---------- */
+  const [oddRound, setOddRound] = useState<OddRound | null>(null);
+  const [oddPick, setOddPick] = useState<string | null>(null);
+  const [oddStreak, setOddStreak] = useState(0);
+  const [oddBest, setOddBest] = useState(0);
+  const [oddOver, setOddOver] = useState<{ streak: number; best: boolean } | null>(null);
+
+  function startOdd() {
+    try { setOddBest(Number(localStorage.getItem("sutraSprint.oddBest") || 0)); } catch {}
+    setOddStreak(0); setOddPick(null); setOddOver(null);
+    setOddRound(buildOddRound());
+    setView("odd");
+  }
+
+  function onOddPick(id: string) {
+    if (!oddRound || oddPick || oddOver) return;
+    setOddPick(id);
+    if (id === oddRound.oddId) {
+      const streak = oddStreak + 1;
+      setOddStreak(streak); sound.correct(); haptic(14);
+      setTimeout(() => { setOddPick(null); setOddRound(buildOddRound()); }, 620);
+    } else {
+      sound.wrong(); haptic(34);
+      const best = oddStreak > oddBest;
+      if (best) {
+        setOddBest(oddStreak);
+        try { localStorage.setItem("sutraSprint.oddBest", String(oddStreak)); } catch {}
+      }
+      setTimeout(() => setOddOver({ streak: oddStreak, best }), 900);
+      if (!guest && oddStreak > 0) fireQuest("correct_answer", oddStreak);
+    }
+  }
+
+  /* ---------- Sort ---------- */
+  const [sortRound, setSortRound] = useState<SortRound | null>(null);
+  const [sortPicked, setSortPicked] = useState<string[]>([]);
+  const [sortBad, setSortBad] = useState<string | null>(null);
+  const [sortStreak, setSortStreak] = useState(0);
+  const [sortBest, setSortBest] = useState(0);
+  const [sortOver, setSortOver] = useState<{ streak: number; best: boolean } | null>(null);
+
+  function startSort() {
+    try { setSortBest(Number(localStorage.getItem("sutraSprint.sortBest") || 0)); } catch {}
+    setSortStreak(0); setSortPicked([]); setSortBad(null); setSortOver(null);
+    setSortRound(buildSortRound(4));
+    setView("sortg");
+  }
+
+  function onSortPick(id: string) {
+    if (!sortRound || sortBad || sortOver || sortPicked.includes(id)) return;
+    const want = sortedIds(sortRound)[sortPicked.length];
+    if (id === want) {
+      const next = [...sortPicked, id];
+      setSortPicked(next);
+      sound.click();
+      if (next.length === sortRound.cards.length) {
+        const streak = sortStreak + 1;
+        setSortStreak(streak); sound.correct(); confetti.burstCenter(70, 0.45);
+        setTimeout(() => { setSortPicked([]); setSortRound(buildSortRound(4)); }, 700);
+      }
+    } else {
+      setSortBad(id); sound.wrong(); haptic(34);
+      const best = sortStreak > sortBest;
+      if (best) {
+        setSortBest(sortStreak);
+        try { localStorage.setItem("sutraSprint.sortBest", String(sortStreak)); } catch {}
+      }
+      setTimeout(() => setSortOver({ streak: sortStreak, best }), 900);
+      if (!guest && sortStreak > 0) fireQuest("correct_answer", sortStreak);
+    }
+  }
+
+  /* ---------- Memory ----------
+     The same round as Number Match, face down. Pairing is identical; what
+     changes is that you have to remember where things were. */
+  const [memTiles, setMemTiles] = useState<MatchTile[]>([]);
+  const [memUp, setMemUp] = useState<string[]>([]);
+  const [memDone, setMemDone] = useState<string[]>([]);
+  const [memTurns, setMemTurns] = useState(0);
+  const [memBest, setMemBest] = useState(0);
+  const [memOver, setMemOver] = useState<{ turns: number; best: boolean } | null>(null);
+  const memBusy = useRef(false);
+
+  function startMemory() {
+    try { setMemBest(Number(localStorage.getItem("sutraSprint.memBest") || 0)); } catch {}
+    setMemTiles(buildMatchRound(6, "easy").tiles);
+    setMemUp([]); setMemDone([]); setMemTurns(0); setMemOver(null);
+    memBusy.current = false;
+    setView("memory");
+  }
+
+  function onMemTap(tile: MatchTile) {
+    if (memBusy.current || memOver) return;
+    if (memDone.includes(tile.id) || memUp.includes(tile.id)) return;
+    const up = [...memUp, tile.id];
+    if (up.length < 2) { setMemUp(up); sound.click(); return; }
+    setMemUp(up);
+    setMemTurns((t) => t + 1);
+    const [a, b] = up.map((id) => memTiles.find((t) => t.id === id)!);
+    if (isPair(a, b)) {
+      const done = [...memDone, a.id, b.id];
+      sound.correct(); haptic(16);
+      setMemDone(done); setMemUp([]);
+      if (done.length === memTiles.length) {
+        const turns = memTurns + 1;
+        const best = memBest === 0 || turns < memBest;   /* fewer turns is better */
+        if (best) {
+          setMemBest(turns);
+          try { localStorage.setItem("sutraSprint.memBest", String(turns)); } catch {}
+        }
+        setMemOver({ turns, best });
+        confetti.burstCenter(140, 0.5); sound.levelUp();
+      }
+    } else {
+      /* Long enough to commit them to memory — that is the whole game. */
+      memBusy.current = true;
+      sound.wrong();
+      setTimeout(() => { setMemUp([]); memBusy.current = false; }, 900);
+    }
+  }
 
   function endBlitz(finalScore: number) {
     const lvl = blitzLevelRef.current;
@@ -3027,6 +3179,114 @@ export function GameApp({
             onReset={() => loadPuzzle(puzIdx)}
             onNext={() => loadPuzzle(puzIdx + 1)}
           />
+        )}
+
+        {view === "odd" && oddRound && (
+          <section className="view active">
+            <div className="match-head">
+              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続" : "Streak"}</span><span className="match-stat-v mono">{oddStreak}</span></div>
+              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span><span className="match-stat-v mono">{oddBest}</span></div>
+            </div>
+            <p className="match-hint">
+              {lang === "ja" ? "3つは digit sum が同じ。ちがう1つをタップ！" : "Three share a digit sum. Tap the one that doesn't."}
+            </p>
+            {!oddOver && (
+              <div className="odd-grid">
+                {oddRound.tiles.map((t) => {
+                  const picked = oddPick === t.id;
+                  const isOdd = t.id === oddRound.oddId;
+                  return (
+                    <button
+                      key={t.id}
+                      className={`odd-tile${picked ? (isOdd ? " right" : " wrong") : ""}${oddPick && isOdd ? " reveal" : ""}`}
+                      onClick={() => onOddPick(t.id)}
+                      disabled={!!oddPick}
+                    >
+                      <span className="odd-n mono">{fmt(t.n)}</span>
+                      {oddPick && <span className="odd-ds mono">→ {digitSum(t.n)}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {oddOver && (
+              <div className="match-done">
+                <div className="match-done-title">{oddOver.best && oddOver.streak > 0 ? (lang === "ja" ? "自己ベスト更新！" : "New best!") : (lang === "ja" ? "おしまい！" : "Run over")}</div>
+                <div className="match-done-line mono">{lang === "ja" ? "連続" : "streak"} <RollUp to={oddOver.streak} /></div>
+                <button className="btn btn-primary match-again" onClick={startOdd}>{lang === "ja" ? "もう一回" : "Play again"}</button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {view === "sortg" && sortRound && (
+          <section className="view active">
+            <div className="match-head">
+              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続" : "Streak"}</span><span className="match-stat-v mono">{sortStreak}</span></div>
+              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span><span className="match-stat-v mono">{sortBest}</span></div>
+            </div>
+            <p className="match-hint">{lang === "ja" ? "答えが小さい順にタップ！" : "Tap them smallest answer first."}</p>
+            {!sortOver && (
+              <div className="sort-list">
+                {sortRound.cards.map((c) => {
+                  const at = sortPicked.indexOf(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      className={`sort-card${at >= 0 ? " taken" : ""}${sortBad === c.id ? " wrong" : ""}`}
+                      onClick={() => onSortPick(c.id)}
+                      disabled={at >= 0}
+                    >
+                      <span className="sort-order mono">{at >= 0 ? at + 1 : "·"}</span>
+                      <span className="sort-q mono">{c.prompt}</span>
+                      {(at >= 0 || sortBad) && <span className="sort-v mono">{fmt(c.value)}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {sortOver && (
+              <div className="match-done">
+                <div className="match-done-title">{sortOver.best && sortOver.streak > 0 ? (lang === "ja" ? "自己ベスト更新！" : "New best!") : (lang === "ja" ? "おしまい！" : "Run over")}</div>
+                <div className="match-done-line mono">{lang === "ja" ? "そろえた回数" : "rounds"} <RollUp to={sortOver.streak} /></div>
+                <button className="btn btn-primary match-again" onClick={startSort}>{lang === "ja" ? "もう一回" : "Play again"}</button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {view === "memory" && (
+          <section className="view active">
+            <div className="match-head">
+              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "めくった回数" : "Turns"}</span><span className="match-stat-v mono">{memTurns}</span></div>
+              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "最少" : "Fewest"}</span><span className="match-stat-v mono">{memBest || "—"}</span></div>
+            </div>
+            <p className="match-hint">{lang === "ja" ? "式と答えのペアを覚えて当てよう！" : "Remember where the pairs are."}</p>
+            <div className="match-grid">
+              {memTiles.map((t) => {
+                const done = memDone.includes(t.id);
+                const up = memUp.includes(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    className={`match-tile mem-tile${up || done ? " up" : ""}${t.kind === "ans" && (up || done) ? " ans" : ""}${done ? " cleared" : ""}`}
+                    onClick={() => onMemTap(t)}
+                    disabled={done}
+                    aria-label={up || done ? t.text : lang === "ja" ? "ふせてあるカード" : "face-down card"}
+                  >
+                    <span className="mono">{up || done ? t.text : "?"}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {memOver && (
+              <div className="match-done">
+                <div className="match-done-title">{memOver.best ? (lang === "ja" ? "最少記録！" : "Fewest yet!") : (lang === "ja" ? "クリア！" : "Cleared!")}</div>
+                <div className="match-done-line mono"><RollUp to={memOver.turns} /> {lang === "ja" ? "回でクリア" : "turns"}</div>
+                <button className="btn btn-primary match-again" onClick={startMemory}>{lang === "ja" ? "もう一回" : "Play again"}</button>
+              </div>
+            )}
+          </section>
         )}
 
         {view === "games" && (

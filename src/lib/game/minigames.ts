@@ -124,3 +124,73 @@ function drawProblem(want: Difficulty): { prompt: string; answer: number } {
 export function biggerScore(streak: number): number {
   return streak * 10;
 }
+
+/* ---------- Odd One Out — three share a digit sum, one does not ----------
+   Built on digit sums rather than on generated problems: finding three
+   different expressions that happen to share an answer needs rejection
+   sampling that may not terminate, whereas numbers with a given digit sum
+   can simply be constructed. It also puts the book's own digit-sum idea in
+   front of the player. */
+export type OddRound = { tiles: { id: string; n: number }[]; oddId: string; sum: number };
+
+export function digitSum(n: number): number {
+  let x = Math.abs(n);
+  while (x > 9) x = String(x).split("").reduce((a, c) => a + Number(c), 0);
+  return x;
+}
+
+function numberWithDigitSum(target: number, rng = Math.random): number {
+  /* Digit sum is invariant mod 9, so any n ≡ target (mod 9) works.
+     target 9 maps to multiples of 9, which is the identity the book uses. */
+  for (let i = 0; i < 200; i++) {
+    const n = 12 + Math.floor(rng() * 300);
+    if (digitSum(n) === target) return n;
+  }
+  return target;
+}
+
+export function buildOddRound(): OddRound {
+  const sum = 1 + Math.floor(Math.random() * 9);
+  let other = 1 + Math.floor(Math.random() * 9);
+  while (other === sum) other = 1 + Math.floor(Math.random() * 9);
+
+  const used = new Set<number>();
+  const pick = (s: number) => {
+    for (let i = 0; i < 200; i++) {
+      const n = numberWithDigitSum(s);
+      if (!used.has(n)) {
+        used.add(n);
+        return n;
+      }
+    }
+    return numberWithDigitSum(s);
+  };
+
+  const same = [pick(sum), pick(sum), pick(sum)];
+  const odd = pick(other);
+  const tiles = shuffle([...same.map((n) => ({ n })), { n: odd }]).map((t, i) => ({
+    id: `o${i}`,
+    n: t.n,
+  }));
+  return { tiles, oddId: tiles.find((t) => t.n === odd)!.id, sum };
+}
+
+/* ---------- Sort — put four results in order ----------
+   Distinct values, or "smallest first" has more than one right answer. */
+export type SortRound = { cards: { id: string; prompt: string; value: number }[] };
+
+export function buildSortRound(count = 4, want: Difficulty = "easy"): SortRound {
+  const seen = new Set<number>();
+  const picked: { prompt: string; value: number }[] = [];
+  for (let i = 0; i < 300 && picked.length < count; i++) {
+    const p = drawProblem(want);
+    if (seen.has(p.answer)) continue;
+    seen.add(p.answer);
+    picked.push({ prompt: p.prompt, value: p.answer });
+  }
+  return { cards: shuffle(picked).map((c, i) => ({ id: `s${i}`, ...c })) };
+}
+
+export function sortedIds(round: SortRound): string[] {
+  return [...round.cards].sort((a, b) => a.value - b.value).map((c) => c.id);
+}
