@@ -3159,6 +3159,13 @@ export function GameApp({
                 </span>
               ))}
             </div>
+            {/* A clean sweep deserves to be called one — three stars alone
+                does not distinguish 5/5 from a scrape. */}
+            {stageResult.correct === QUESTIONS_PER_STAGE && (
+              <div className="result-perfect">
+                <span>{lang === "ja" ? "全問正解！" : "PERFECT"}</span>
+              </div>
+            )}
             <div className="result-sub">{t.result.correctOf(stageResult.correct, QUESTIONS_PER_STAGE)}</div>
             <div className="result-gems"><RollUp to={stageResult.gemsGained} prefix="+" /> 💎</div>
             <div className="result-actions">
@@ -3384,6 +3391,16 @@ function HomeView({
 
   const pathWrapRef = useRef<HTMLDivElement | null>(null);
   const [mapGeo, setMapGeo] = useState<{ w: number; h: number; d: string }>({ w: 0, h: 0, d: "" });
+  /* The path is 44 topics long and nearly all of them start locked, so a new
+     player scrolled past three dozen padlocks to reach the bottom. Show what
+     they can reach plus the next few — enough to see where this is going —
+     and put the rest behind one tap. */
+  const [showAllTopics, setShowAllTopics] = useState(false);
+  const PEEK_AHEAD = 3;
+  const visibleTopics = showAllTopics
+    ? TOPICS.length
+    : Math.max(8, firstIncompleteIdx + 1 + PEEK_AHEAD);   /* 8 keeps the dojo row */
+  const hiddenTopics = Math.max(0, TOPICS.length - visibleTopics);
 
   useEffect(() => {
     const wrap = pathWrapRef.current;
@@ -3624,7 +3641,7 @@ function HomeView({
             <path className="path-svg-line" d={mapGeo.d} fill="none" />
           </svg>
         )}
-        {TOPICS.map((tp, i) => {
+        {TOPICS.slice(0, visibleTopics).map((tp, i) => {
           const p = topicProgressOf(progress, tp.id);
           const locked = !topicUnlocked(progress, tp.id);
           const isCurrent = i === firstIncompleteIdx;
@@ -3667,6 +3684,14 @@ function HomeView({
             </div>
           );
         })}
+        {hiddenTopics > 0 && (
+          <button className="path-more" onClick={() => setShowAllTopics(true)}>
+            {lang === "ja" ? `のこり ${hiddenTopics} 個をみる` : `Show ${hiddenTopics} more`}
+            <span className="path-more-sub">
+              {lang === "ja" ? "まだロック中" : "still locked"}
+            </span>
+          </button>
+        )}
       </div>
     </section>
   );
@@ -4273,11 +4298,11 @@ function PracticeView({
       <div className="practice-hud">
         {/* A bar says how far in you are; these say how it is going. Five
             questions is few enough to show each one. */}
-        <div className="stage-pips" aria-hidden="true">
+        <div className="q-pips" aria-hidden="true">
           {Array.from({ length: QUESTIONS_PER_STAGE }, (_, i) => {
             const mark = marks[i];
             const state = i === qIndex ? "now" : mark === true ? "hit" : mark === false ? "miss" : "todo";
-            return <span key={i} className={`stage-pip ${state}`} />;
+            return <span key={i} className={`q-pip ${state}`} />;
           })}
         </div>
         <CountdownTimer timerKey={timerKey} timerMs={timerMs} paused={timerPaused} />
