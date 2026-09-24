@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { signOut } from "next-auth/react";
 import {
+  TOPICS,
   TOPIC_BY_ID,
   STAGE_COUNT,
   STAGE_DIFF,
@@ -121,6 +122,7 @@ export function GameApp({
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
@@ -783,6 +785,7 @@ export function GameApp({
     setView("home");
   }
   function openTopic(id: string) {
+    if (guest && TOPICS.findIndex((t) => t.id === id) >= GUEST_TOPICS) { setLockOpen("topic"); return; }
     setCurrentTopicId(id);
     setView("topic");
   }
@@ -796,7 +799,17 @@ export function GameApp({
       ? (lang === "ja" ? quickGame(quickId)?.nameJa : quickGame(quickId)?.name) ?? t.headerTitles.quick
       : t.headerTitles[view];
 
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick"];
+  /* Guests get a taste — the first two topics, Blitz, Game of the Day and
+     three shelf games — and a lock everywhere else. Everything is one tap
+     from a sign-up that keeps their progress. */
+  const GUEST_TOPICS = 2;
+  const GUEST_GAMES = new Set(["match", "bigger", "memory"]);
+  const [lockOpen, setLockOpen] = useState<string | null>(null);
+  function guestLocked(kind: string): boolean {
+    if (!guest) return false;
+    setLockOpen(kind);
+    return true;
+  }
 
   function handleBack() {
     if (view === "practice") { openStageMap(currentTopicId!); }
@@ -825,6 +838,10 @@ export function GameApp({
         loadPuzzle(0);
         setView("arena");
       }
+      /* A game round cannot survive a refresh, but the shelf it came from
+         can — landing there beats landing on home. */
+      else if (savedView === "games" || GAME_VIEWS.includes(savedView as View)) setView("games");
+      else if (savedView === "tricks") setView("tricks");
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -990,8 +1007,11 @@ export function GameApp({
     setTimeout(() => setStageIntro(null), 900);
   }
 
+  const deadlineRef = useRef(0);
+  const hintRemainingRef = useRef<number | null>(null);
   useEffect(() => {
     if (view !== "practice" || !curProblem) return;
+    deadlineRef.current = Date.now() + timerMs;
     timeoutRef.current = setTimeout(() => handleTimeout(), timerMs);
     return () => {
       if (timeoutRef.current) {
@@ -1001,6 +1021,23 @@ export function GameApp({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curProblem, view]);
+
+  /* The lesson overlay stops the clock — both the one you see and the one
+     that ends the question. Otherwise reading the method for twenty seconds
+     times you out behind the sheet. */
+  useEffect(() => {
+    if (view !== "practice" || !curProblem || answeredRef.current) return;
+    if (hintOpen) {
+      if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+      hintRemainingRef.current = Math.max(0, deadlineRef.current - Date.now());
+    } else if (hintRemainingRef.current !== null) {
+      const left = hintRemainingRef.current;
+      hintRemainingRef.current = null;
+      deadlineRef.current = Date.now() + left;
+      timeoutRef.current = setTimeout(() => handleTimeout(), left);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hintOpen]);
 
   function useFiftyFifty() {
     if (fiftyLeft <= 0 || !curProblem) return;
@@ -1270,10 +1307,17 @@ export function GameApp({
     }
   }
 
-  function afterStageResult(action: "next" | "retry" | "map") {
+  function afterStageResult(action: "next" | "retry" | "map" | "nextTopic") {
     const n = stageResult?.n ?? 1;
     setStageResult(null);
     if (action === "next" && currentTopic) startStage(n + 1);
+    else if (action === "nextTopic" && currentTopic) {
+      /* The topic after this one — the boss just unlocked it. */
+      const i = TOPICS.findIndex((tp) => tp.id === currentTopic.id);
+      const nxt = TOPICS[i + 1];
+      if (nxt) openTopic(nxt.id);
+      else if (currentTopicId) openStageMap(currentTopicId);
+    }
     else if (action === "retry") startStage(n);
     else if (currentTopicId) openStageMap(currentTopicId);
   }
@@ -1713,53 +1757,58 @@ export function GameApp({
     setView("games");
   }
   /* Tapping a shelf card is a free play, never the day's board. */
-  const shelf = (fn: () => void) => () => { isDailyRef.current = false; fn(); };
+  const shelf = (fn: () => void, id?: string) => () => {
+    isDailyRef.current = false;
+    if (id && guest && !GUEST_GAMES.has(id)) { setLockOpen("game"); return; }
+    fn();
+  };
+  const gameLocked = (id: string) => guest && !GUEST_GAMES.has(id);
   const GAMES = [
     {
       id: "match", icon: "🃏", tint: "var(--sky2)",
       name: "Number Match", nameJa: "ナンバーマッチ",
       blurb: "Pair each sum with its answer.", blurbJa: "式と答えをペアにしよう。",
-      best: gameBests.match ?? 0, start: shelf(() => startMatch()),
+      best: gameBests.match ?? 0, start: shelf(() => startMatch(), "match"),
     },
     {
       id: "bigger", icon: "⚖️", tint: "var(--violet)",
       name: "Which is Bigger?", nameJa: "どっちが大きい？",
       blurb: "Tap the larger of two sums. One slip ends the run.",
       blurbJa: "大きいほうをタップ。まちがえたら終わり。",
-      best: gameBests.bigger ?? 0, start: shelf(startBigger),
+      best: gameBests.bigger ?? 0, start: shelf(startBigger, "bigger"),
     },
     {
       id: "memory", icon: "🧠", tint: "var(--sun1)",
       name: "Memory Pairs", nameJa: "神経衰弱",
       blurb: "Same pairs, face down. Fewest turns wins.",
       blurbJa: "ふせたカードでペア探し。少ない回数でクリア。",
-      best: gameBests.memory ?? 0, start: shelf(() => startMemory()),
+      best: gameBests.memory ?? 0, start: shelf(() => startMemory(), "memory"),
     },
     {
       id: "odd", icon: "🔍", tint: "var(--green-dk)",
       name: "Odd One Out", nameJa: "仲間はずれ",
       blurb: "Three share a digit sum. Spot the one that doesn't.",
       blurbJa: "3つは数字の合計が同じ。ちがう1つを見つけよう。",
-      best: gameBests.odd ?? 0, start: shelf(startOdd),
+      best: gameBests.odd ?? 0, start: shelf(startOdd, "odd"),
     },
     {
       id: "sortg", icon: "📊", tint: "var(--pink)",
       name: "Smallest First", nameJa: "小さい順",
       blurb: "Put four answers in order without working them all out.",
       blurbJa: "4つの答えを小さい順に並べよう。",
-      best: gameBests.sortg ?? 0, start: shelf(startSort),
+      best: gameBests.sortg ?? 0, start: shelf(startSort, "sortg"),
     },
     {
       id: "sprint", icon: "🔥", tint: "var(--sun1)",
       name: "Matchstick Sprint", nameJa: "マッチ棒スプリント",
       blurb: `${SPRINT_LEN} dojo puzzles against the clock.`,
       blurbJa: `道場のパズル${SPRINT_LEN}問をタイムアタック。`,
-      best: gameBests.sprint ?? 0, start: shelf(startSprint),
+      best: gameBests.sprint ?? 0, start: shelf(startSprint, "sprint"),
     },
     ...QUICK_GAMES.map((g) => ({
       id: g.id, icon: g.icon, tint: g.tint,
       name: g.name, nameJa: g.nameJa, blurb: g.blurb, blurbJa: g.blurbJa,
-      best: gameBests[g.id] ?? 0, start: shelf(() => startQuick(g.id)),
+      best: gameBests[g.id] ?? 0, start: shelf(() => startQuick(g.id), g.id),
     })),
   ];
 
@@ -1903,7 +1952,7 @@ export function GameApp({
     if (!g) return;
     try { setQuickBest(Number(localStorage.getItem(quickBestKey(id)) || 0)); } catch {}
     setQuickId(id); setQuickStreak(0); setQuickPick(null); setQuickOver(null);
-    setQuickRound(g.next(0));
+    setQuickRound(g.next(0, lang));
     setView("quick");
   }
 
@@ -1915,7 +1964,7 @@ export function GameApp({
       const streak = quickStreak + 1;
       setQuickStreak(streak); sound.correct(); haptic(14);
       /* Long enough to read the trick under the answer — that is the lesson. */
-      setTimeout(() => { setQuickPick(null); setQuickRound(g.next(streak)); }, 1100);
+      setTimeout(() => { setQuickPick(null); setQuickRound(g.next(streak, lang)); }, 1100);
     } else {
       sound.wrong(); haptic(34);
       const best = quickStreak > quickBest;
@@ -2625,6 +2674,27 @@ export function GameApp({
         </>
       )}
 
+      {lockOpen && (
+        <>
+          <div className="menu-overlay" onClick={() => setLockOpen(null)} />
+          <div className="hint-sheet lock-sheet" role="dialog" aria-modal="true">
+            <div className="lock-sheet-icon">🔒</div>
+            <h3>{lang === "ja" ? "ここから先はアカウントが必要です" : "Sign up to unlock this"}</h3>
+            <p>
+              {lang === "ja"
+                ? "おためしでは最初の2トピックと一部のゲームが遊べます。無料のアカウントを作ると、すべてのトピック・ゲーム・デイリーチャレンジ・マッチ棒道場が開き、今までの記録もそのまま引き継がれます。"
+                : "Guests can play the first two topics and a few games. A free account opens every topic, every game, the Daily Challenge and the Matchstick Dojo — and keeps the progress you've made so far."}
+            </p>
+            <a className="btn btn-primary auth-submit" href="/signup?from=%2F">
+              {lang === "ja" ? "無料でアカウントを作る" : "Create a free account"}
+            </a>
+            <button className="btn btn-ghost lock-sheet-later" onClick={() => setLockOpen(null)}>
+              {lang === "ja" ? "あとで" : "Not now"}
+            </button>
+          </div>
+        </>
+      )}
+
       {friendsOpen && (
         <>
           <div className="menu-overlay" onClick={() => setFriendsOpen(false)} />
@@ -3147,15 +3217,16 @@ export function GameApp({
         {view === "home" && (
           <HomeView
             guest={guest}
+            guestTopicLimit={guest ? GUEST_TOPICS : Infinity}
             progress={progress}
             li={li}
             solvedCount={solvedCount}
             dailyStreak={dailyStreak}
             onOpenTopic={openTopic}
-            onOpenArena={() => { loadPuzzle(puzIdx); setView("arena"); }}
+            onOpenArena={() => { if (guestLocked("arena")) return; loadPuzzle(puzIdx); setView("arena"); }}
             onOpenBlitz={openBlitzPicker}
-            onOpenTricks={() => { setTrickId(null); setView("tricks"); }}
-            onOpenDaily={startDaily}
+            onOpenTricks={() => { if (guestLocked("tricks")) return; setTrickId(null); setView("tricks"); }}
+            onOpenDaily={() => { if (guestLocked("daily")) return; startDaily(); }}
             dailyPlayed={!!dailyStatus?.played}
             onContinue={continueStage}
             onShare={openShare}
@@ -3209,7 +3280,7 @@ export function GameApp({
             eliminated={eliminated}
             timerKey={timerKey}
             timerMs={timerMs}
-            timerPaused={!!feedback}
+            timerPaused={!!feedback || hintOpen}
             runs={runs}
             runReady={runReady}
             swingAnim={swingAnim}
@@ -3442,13 +3513,14 @@ export function GameApp({
 
             <div className="games-grid">
               {GAMES.map((g) => (
-                <button key={g.id} className="game-card" onClick={g.start} style={{ ["--g" as string]: g.tint }}>
+                <button key={g.id} className={`game-card${gameLocked(g.id) ? " locked" : ""}`} onClick={g.start} style={{ ["--g" as string]: g.tint }}>
                   <span className="game-card-icon">{g.icon}</span>
                   <span className="game-card-body">
                     <span className="game-card-name">{lang === "ja" ? g.nameJa : g.name}</span>
                     <span className="game-card-blurb">{lang === "ja" ? g.blurbJa : g.blurb}</span>
                   </span>
-                  {g.best > 0 && (
+                  {gameLocked(g.id) && <span className="game-card-lock" aria-label="locked">🔒</span>}
+                  {g.best > 0 && !gameLocked(g.id) && (
                     <span className="game-card-best mono">
                       {lang === "ja" ? "ベスト" : "best"} {g.best}
                     </span>
@@ -3817,7 +3889,10 @@ export function GameApp({
             )}
             {view === "practice" && (
               <>
-                <button className="btn btn-ghost" onClick={() => openTopic(currentTopicId!)}>
+                {/* Mid-question, the lesson is an overlay you can close and
+                    carry on from — not a navigation that throws the question
+                    away. The steps sheet pauses the clock while it is up. */}
+                <button className="btn btn-ghost" onClick={() => setHintOpen(true)}>
                   {t.practice.lesson}
                 </button>
                 {(curMode === "choice" || curMode === "target" || curMode === "balloon" || curMode === "numberline" || curMode === "catch") &&
@@ -3940,6 +4015,10 @@ export function GameApp({
               {stageResult.passed ? (
                 stageResult.n < STAGE_COUNT ? (
                   <button className="btn btn-primary" onClick={() => afterStageResult("next")}>{t.result.nextStage}</button>
+                ) : currentTopic && TOPICS.findIndex((tp) => tp.id === currentTopic.id) < TOPICS.length - 1 ? (
+                  <button className="btn btn-primary" onClick={() => afterStageResult("nextTopic")}>
+                    {lang === "ja" ? "次のトピックへ →" : "Next topic →"}
+                  </button>
                 ) : (
                   <button className="btn btn-primary" onClick={() => afterStageResult("map")}>{t.result.backToMap}</button>
                 )

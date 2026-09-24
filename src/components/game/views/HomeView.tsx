@@ -34,6 +34,7 @@ export function HomeView({
   onOpenQuests,
   onOpenShop,
   guest = false,
+  guestTopicLimit = Infinity,
   onStartReview,
   gemBalance,
   openDuels,
@@ -63,6 +64,8 @@ export function HomeView({
   onOpenQuests: () => void;
   onOpenShop: () => void;
   guest?: boolean;
+  /* Topics at or past this index are drawn locked for a guest. */
+  guestTopicLimit?: number;
   onStartReview: () => void;
   gemBalance: number | null;
   openDuels: ChallengeRow[];
@@ -345,7 +348,7 @@ export function HomeView({
         )}
         {TOPICS.slice(0, visibleTopics).map((tp, i) => {
           const p = topicProgressOf(progress, tp.id);
-          const locked = !topicUnlocked(progress, tp.id);
+          const locked = !topicUnlocked(progress, tp.id) || i >= guestTopicLimit;
           const isCurrent = i === firstIncompleteIdx;
           const boss =
             i === 6 ? (
