@@ -1,0 +1,41 @@
+import { buildMatchRound, isPair, matchScore } from "../src/lib/game/match";
+
+const fails: string[] = [];
+const ok = (l: string, c: boolean) => { if (!c) fails.push(l); };
+
+for (let r = 0; r < 300; r++) {
+  const { tiles, pairs } = buildMatchRound(6);
+  ok("a full round is built", pairs === 6);
+  ok("two tiles per pair", tiles.length === pairs * 2);
+
+  /* The rule the whole game rests on. */
+  const answers = tiles.filter((t) => t.kind === "ans").map((t) => t.value);
+  ok("every answer is unique", new Set(answers).size === answers.length);
+
+  /* Each pairId appears exactly once as an expression and once as an answer. */
+  for (let p = 0; p < pairs; p++) {
+    const of = tiles.filter((t) => t.pairId === p);
+    ok("a pair is one expression and one answer",
+      of.length === 2 && of.filter((t) => t.kind === "expr").length === 1);
+    ok("both halves agree on the value", of[0].value === of[1].value);
+    ok("the pair matches itself", isPair(of[0], of[1]) && isPair(of[1], of[0]));
+  }
+
+  /* Nothing pairs with itself, or with the wrong problem. */
+  ok("a tile never pairs with itself", tiles.every((t) => !isPair(t, t)));
+  const [x, y] = [tiles.find((t) => t.pairId === 0 && t.kind === "expr")!,
+                  tiles.find((t) => t.pairId === 1 && t.kind === "ans")!];
+  ok("different problems do not pair", !isPair(x, y));
+  ok("tiles stay readable", tiles.every((t) => t.text.length <= 16));
+}
+
+/* Scoring: mistakes cost more than seconds, and it never goes negative. */
+ok("a clean fast round beats a sloppy one", matchScore(6, 20, 0) > matchScore(6, 20, 4));
+ok("faster wins a tie", matchScore(6, 10, 1) > matchScore(6, 40, 1));
+ok("score never goes negative", matchScore(1, 9999, 9999) === 0);
+
+if (fails.length) {
+  console.error("match game FAILED:\n  " + [...new Set(fails)].join("\n  "));
+  process.exit(1);
+}
+console.log("match rounds are always solvable and unambiguous (300 rounds)");
