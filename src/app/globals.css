@@ -1811,8 +1811,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   border:2px solid color-mix(in srgb, var(--ink-line) 22%, transparent); }
 .auth-kicker{ font-size:11px; font-weight:800; letter-spacing:.18em; color:var(--sun1); }
 .auth-hero-title{ font-family:"Baloo 2",system-ui,sans-serif; font-size:26px; font-weight:800;
-  color:var(--ink); line-height:1.2; margin-top:6px; text-wrap:balance; }
-.auth-hero-tagline{ font-size:16px; font-weight:800; color:var(--green-dk); margin-top:6px; text-wrap:balance; }
+  color:var(--ink); line-height:1.2; margin-top:8px; text-wrap:balance; }
 .auth-hero-pitch{ font-size:13px; font-weight:600; color:var(--muted); line-height:1.65;
   margin:10px 0 0; text-wrap:pretty; }
 .auth-lang{ margin:0 0 16px; }
