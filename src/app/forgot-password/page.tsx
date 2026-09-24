@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="auth-shell">
       <div className="auth-card">
-        <img src="/brand/vedank-logo.png" alt="VedAnk Academy" className="auth-logo" />
+        <img src="/brand/vedank-logo.png" alt="" className="auth-logo" />
         <div className="auth-mascot">
           <Mascot mood="happy" />
         </div>

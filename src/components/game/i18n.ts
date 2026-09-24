@@ -96,7 +96,7 @@ export const UI: Record<LangCode, UIDict> = {
     home: {
       eyebrow: "The Sutra Deck",
       title: "Play the Sutras",
-      brand: "VedAnk Academy",
+      brand: "Sutra Sprint",
       level: "Level",
       dojo: "Matchstick Dojo",
       streakSuffix: "-day streak",
@@ -200,7 +200,7 @@ export const UI: Record<LangCode, UIDict> = {
       statBlitz: "Blitz best",
       statBosses: "Bosses beaten",
       statPuzzles: "Puzzles solved",
-      blurb: (level, rank) => `I'm level ${level} — ${rank} — at VedAnk Academy's Sutra Sprint! 🪔`,
+      blurb: (level, rank) => `I'm level ${level} — ${rank} — in Sutra Sprint! 🪔`,
       blitzBlurb: (score) => `I scored ${score} in Number Blitz on Sutra Sprint! ⚡ Can you beat it?`,
     },
   },

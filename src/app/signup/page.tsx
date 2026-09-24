@@ -113,8 +113,17 @@ export default function SignupPage() {
         <div className="auth-lockup">
           <img src="/brand/vedank-mark.png" alt="" className="auth-lockup-tree" />
           <div className="auth-lockup-words">
-            <span className="auth-lockup-name">VedAnk Academy</span>
-            <span className="auth-lockup-tag">Unleashing Brainpower &amp; Creativity</span>
+            {lang === "ja" ? (
+              <>
+                <span className="auth-lockup-name">VedAnk Academy</span>
+                <span className="auth-lockup-tag">Unleashing Brainpower &amp; Creativity</span>
+              </>
+            ) : (
+              <>
+                <span className="auth-lockup-name">Sutra Sprint</span>
+                <span className="auth-lockup-tag">Indian-style mental maths, as a game</span>
+              </>
+            )}
           </div>
         </div>
         <div className="auth-mascot">
