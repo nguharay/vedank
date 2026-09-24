@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import { submitStageResult, submitPuzzleSolved, getLeaderboard } from "@/lib/game/progress";
+import { submitStageResult, importGuestProgress, submitPuzzleSolved, getLeaderboard } from "@/lib/game/progress";
 import { getDailyStatus, submitDaily, getLeagueStanding } from "@/lib/game/league";
 import {
   getQuests, reportQuestEvent, claimQuest, getInventory, getWallet,
@@ -31,6 +31,11 @@ async function requireUserId(): Promise<string> {
 export async function finishStageAction(topicId: string, stageN: number, correct: number) {
   const userId = await requireUserId();
   return submitStageResult(userId, topicId, stageN, correct);
+}
+
+export async function importGuestProgressAction(progress: unknown) {
+  const userId = await requireUserId();
+  return importGuestProgress(userId, progress as Parameters<typeof importGuestProgress>[1]);
 }
 
 export async function solvePuzzleAction(puzzleId: string, moves: number) {

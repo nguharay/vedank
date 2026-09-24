@@ -118,6 +118,9 @@ export default function LoginPage() {
         <div className="auth-switch">
           {c.newHere} <Link href="/signup">{c.create}</Link>
         </div>
+        <Link className="auth-try" href="/try">
+          {lang === "ja" ? "▶ アカウントなしで遊んでみる" : "▶ Just play — no account needed"}
+        </Link>
       </div>
     </div>
   );

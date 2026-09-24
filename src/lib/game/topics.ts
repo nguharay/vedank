@@ -2141,11 +2141,15 @@ export const BLITZ_LEVELS: BlitzLevel[] = [
     nameJa: "エキスパート",
     blurb: "Medium into hard, and a fast clock.",
     blurbJa: "中級から上級へ、時間も短め。",
-    ladder: ["medium", "hard"],
-    step: 6,
-    startMs: 6500,
-    minMs: 3500,
-    decayMs: 160,
+    /* Eased: hard questions arrived every other question on a clock that was
+       already near its floor, which made Sharp a wall rather than a step up
+       from Quick. Two mediums per hard, a later climb, and a slower decay to
+       a higher floor — still the hardest level, but winnable. */
+    ladder: ["medium", "medium", "hard"],
+    step: 8,
+    startMs: 7500,
+    minMs: 4200,
+    decayMs: 130,
   },
 ];
 

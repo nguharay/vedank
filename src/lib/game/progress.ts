@@ -1,7 +1,8 @@
 import { eq, and, sql } from "drizzle-orm";
 import { getDb } from "@/db";
+import { stageOutcome } from "./state";
 import { topicProgress, arenaProgress, users, inventory } from "@/db/schema";
-import { TOPICS, PASS_THRESHOLD, QUESTIONS_PER_STAGE, rankFor } from "./topics";
+import { TOPICS, QUESTIONS_PER_STAGE, STAGE_COUNT, rankFor } from "./topics";
 import { PUZZLES } from "./matchstick";
 import type { ProgressState, TopicProgressRow } from "./state";
 
@@ -137,8 +138,7 @@ export async function submitStageResult(
   correct: number
 ): Promise<StageResult> {
   const db = getDb();
-  const stars = correct >= 5 ? 3 : correct >= 4 ? 2 : correct >= 3 ? 1 : 0;
-  const passed = correct >= PASS_THRESHOLD;
+  const { stars, passed } = stageOutcome(correct, stageN, 0);
 
   const rows = await db
     .select()
@@ -150,7 +150,7 @@ export async function submitStageResult(
 
   const nextStars = { ...prevStars };
   if (stars > (nextStars[String(stageN)] || 0)) nextStars[String(stageN)] = stars;
-  const justUnlocked = passed && stageN > prevCleared;
+  const { justUnlocked, gemsGained } = stageOutcome(correct, stageN, prevCleared);
   const nextCleared = justUnlocked ? stageN : prevCleared;
 
   if (existing) {
@@ -167,8 +167,53 @@ export async function submitStageResult(
     });
   }
 
-  const gemsGained = correct * 10 + (justUnlocked ? 50 : 0);
   return { stars, passed, justUnlocked, gemsGained };
+}
+
+/* Carrying a guest's play into their new account. Merges rather than
+   overwrites — take the better of each — so signing in on a device where you
+   had also played as a guest can never cost you stars. */
+export async function importGuestProgress(
+  userId: string,
+  incoming: ProgressState
+): Promise<{ ok: boolean; topics: number }> {
+  const db = getDb();
+  const entries = Object.entries(incoming?.topics ?? {}).filter(
+    ([id]) => typeof id === "string" && id.length > 0 && id.length < 64
+  );
+  if (!entries.length) return { ok: true, topics: 0 };
+
+  const existing = await db
+    .select()
+    .from(topicProgress)
+    .where(eq(topicProgress.userId, userId));
+  const byId = new Map(existing.map((r) => [r.topicId, r]));
+
+  let written = 0;
+  for (const [topicId, row] of entries.slice(0, 64)) {
+    const cleared = Math.max(0, Math.min(STAGE_COUNT, Number(row?.cleared) || 0));
+    const starsIn: Record<string, number> = {};
+    for (const [k, v] of Object.entries(row?.stageStars ?? {})) {
+      const n = Number(v);
+      if (Number.isInteger(n) && n >= 0 && n <= 3) starsIn[String(k)] = n;
+    }
+    const prev = byId.get(topicId);
+    const prevStars: Record<string, number> = (prev?.stageStars as Record<string, number>) || {};
+    const merged = { ...prevStars };
+    for (const [k, v] of Object.entries(starsIn)) merged[k] = Math.max(merged[k] || 0, v);
+    const nextCleared = Math.max(prev?.cleared ?? 0, cleared);
+
+    if (prev) {
+      await db
+        .update(topicProgress)
+        .set({ cleared: nextCleared, stageStars: merged, updatedAt: new Date() })
+        .where(and(eq(topicProgress.userId, userId), eq(topicProgress.topicId, topicId)));
+    } else {
+      await db.insert(topicProgress).values({ userId, topicId, cleared: nextCleared, stageStars: merged });
+    }
+    written++;
+  }
+  return { ok: true, topics: written };
 }
 
 export async function submitPuzzleSolved(userId: string, puzzleId: string, moves: number) {
