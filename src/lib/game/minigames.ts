@@ -221,3 +221,164 @@ export function dailyGameId(dateKey: string): DailyGameId {
 export function dailyGameKey(dateKey: string): string {
   return `sutraSprint.dailyGame.${dateKey}`;
 }
+
+/* ---------- Quick games ----------
+   Eight games share one shape: a prompt, two to four options, one right.
+   Each is a generator here and a row on the shelf — the view is shared. The
+   `note` is shown after answering: the one-line trick that makes the answer
+   quick, which is the point of a Vedic maths game. */
+export type QuickRound = { prompt: string; options: string[]; answer: number; noteJa: string; noteEn: string };
+export type QuickGame = {
+  id: string; icon: string; tint: string;
+  name: string; nameJa: string; blurb: string; blurbJa: string;
+  hintJa: string; hintEn: string;
+  next: (streak: number) => QuickRound;
+};
+
+const ri = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
+const fmtN = (n: number) => n.toLocaleString("en-IN");
+
+/* Options around a numeric answer, all distinct, shuffled; returns the index
+   of the right one. */
+function numericOptions(answer: number, count: number, spread: (a: number) => number[]): { options: string[]; answer: number } {
+  const set = new Set<number>([answer]);
+  const cands = spread(answer).filter((x) => Number.isFinite(x) && x !== answer);
+  for (const c of shuffle(cands)) {
+    if (set.size >= count) break;
+    set.add(c);
+  }
+  let k = 1;
+  while (set.size < count) { set.add(answer + k); set.add(answer - k); k++; }
+  const opts = shuffle([...set].slice(0, count).concat(set.has(answer) ? [] : [answer]).slice(0, count));
+  if (!opts.includes(answer)) opts[0] = answer;
+  return { options: opts.map(fmtN), answer: opts.indexOf(answer) };
+}
+
+export const QUICK_GAMES: QuickGame[] = [
+  {
+    id: "tf", icon: "⭕", tint: "var(--green-dk)",
+    name: "True or False", nameJa: "○×スピード",
+    blurb: "Is the sum right? Decide fast.", blurbJa: "この式、正しい？ すばやく判定。",
+    hintJa: "正しければ○、まちがいなら×", hintEn: "○ if it's right, × if it's wrong",
+    next: (streak) => {
+      /* A prompt that is itself a statement ("49 = 50 − ?") cannot be judged
+         true or false once an "= answer" is appended to it. */
+      let p = drawProblem(streak >= 8 ? "medium" : "easy");
+      for (let i = 0; i < 40 && /[=?]/.test(p.prompt); i++) p = drawProblem(streak >= 8 ? "medium" : "easy");
+      if (/[=?]/.test(p.prompt)) p = { prompt: "7 × 8", answer: 56 };
+      const lie = Math.random() < 0.5;
+      const shown = lie ? p.answer + pick([1, -1, 10, -10, 2, 9, -9]) : p.answer;
+      return {
+        prompt: `${p.prompt} = ${fmtN(shown)}`,
+        options: ["○", "×"], answer: lie ? 1 : 0,
+        noteJa: `正解は ${fmtN(p.answer)}`, noteEn: `The answer is ${fmtN(p.answer)}`,
+      };
+    },
+  },
+  {
+    id: "missing", icon: "❓", tint: "var(--sky2)",
+    name: "Missing Number", nameJa: "穴うめ",
+    blurb: "Fill the blank in the sum.", blurbJa: "□ に入る数は？",
+    hintJa: "□ に入る数をえらぼう", hintEn: "Pick what goes in the blank",
+    next: (streak) => {
+      const a = ri(10, streak >= 8 ? 99 : 60), b = ri(2, streak >= 8 ? 99 : 40);
+      const hideA = Math.random() < 0.5;
+      const add = Math.random() < 0.6;
+      const total = add ? a + b : a * b;
+      const missing = hideA ? a : b;
+      const prompt = add
+        ? (hideA ? `□ + ${b} = ${total}` : `${a} + □ = ${total}`)
+        : (hideA ? `□ × ${b} = ${fmtN(total)}` : `${a} × □ = ${fmtN(total)}`);
+      const o = numericOptions(missing, 4, (x) => [x + 1, x - 1, x + 10, x - 10, x + 2, x - 2, x + 5]);
+      return { prompt, ...o,
+        noteJa: add ? `${fmtN(total)} − ${hideA ? b : a} = ${missing}` : `${fmtN(total)} ÷ ${hideA ? b : a} = ${missing}`,
+        noteEn: add ? `${fmtN(total)} − ${hideA ? b : a} = ${missing}` : `${fmtN(total)} ÷ ${hideA ? b : a} = ${missing}` };
+    },
+  },
+  {
+    id: "lastdigit", icon: "🔚", tint: "var(--violet)",
+    name: "Last Digit", nameJa: "一の位だけ",
+    blurb: "Only the last digit of the product matters.", blurbJa: "かけ算の一の位だけ当てよう。",
+    hintJa: "一の位どうしをかければ、答えの一の位がわかる", hintEn: "Multiply just the last digits",
+    next: () => {
+      const a = ri(12, 99), b = ri(12, 99);
+      const last = (a * b) % 10;
+      const o = numericOptions(last, 4, (x) => [0,1,2,3,4,5,6,7,8,9].filter((d) => d !== x));
+      return { prompt: `${a} × ${b} の一の位は？`, ...o,
+        noteJa: `${a % 10} × ${b % 10} = ${(a % 10) * (b % 10)} → 一の位は ${last}`,
+        noteEn: `${a % 10} × ${b % 10} = ${(a % 10) * (b % 10)} → last digit ${last}` };
+    },
+  },
+  {
+    id: "digitsum", icon: "9️⃣", tint: "var(--sun1)",
+    name: "Digit Sum", nameJa: "数字の合計",
+    blurb: "Fold the digits down to one.", blurbJa: "各位の数字をたして、一けたにしよう。",
+    hintJa: "数字をぜんぶたして、一けたになるまでくり返す", hintEn: "Add the digits until one remains",
+    next: (streak) => {
+      const n = ri(streak >= 6 ? 1000 : 100, streak >= 6 ? 99999 : 9999);
+      const ds = digitSum(n);
+      const o = numericOptions(ds, 4, (x) => [1,2,3,4,5,6,7,8,9].filter((d) => d !== x));
+      const firstPass = String(n).split("").reduce((s, c) => s + Number(c), 0);
+      return { prompt: `${fmtN(n)}`, ...o,
+        noteJa: `${String(n).split("").join("+")} = ${firstPass}${firstPass > 9 ? ` → ${ds}` : ""}`,
+        noteEn: `${String(n).split("").join("+")} = ${firstPass}${firstPass > 9 ? ` → ${ds}` : ""}` };
+    },
+  },
+  {
+    id: "div9", icon: "➗", tint: "var(--pink)",
+    name: "Divisible by 9?", nameJa: "9で割れる？",
+    blurb: "Yes or no — without dividing.", blurbJa: "割らずに判定できるかな？",
+    hintJa: "数字の合計が9なら、9で割れる", hintEn: "Digit sum 9 means divisible by 9",
+    next: () => {
+      const yes = Math.random() < 0.5;
+      let n = ri(100, 9999);
+      if (yes) n = n - (n % 9) || 9; else if (n % 9 === 0) n += ri(1, 8);
+      return { prompt: `${fmtN(n)}`, options: ["○ 割れる", "× 割れない"], answer: yes ? 0 : 1,
+        noteJa: `数字の合計 → ${digitSum(n)}${yes ? "（9）" : ""}`, noteEn: `digit sum → ${digitSum(n)}${yes ? " (9)" : ""}` };
+    },
+  },
+  {
+    id: "sq5", icon: "🟪", tint: "var(--indigo, #3A1D7A)",
+    name: "Squares Ending in 5", nameJa: "5で終わる数の2乗",
+    blurb: "25², 35², 85² — in one step.", blurbJa: "25², 35², 85² を一発で。",
+    hintJa: "十の位 × (十の位+1) のあとに 25", hintEn: "tens × (tens+1), then write 25",
+    next: () => {
+      const t = ri(1, 12), n = t * 10 + 5, sq = n * n;
+      const o = numericOptions(sq, 4, (x) => [x + 100, x - 100, x + 1000, x - 1000, x + 10, x + 200]);
+      return { prompt: `${n}²`, ...o,
+        noteJa: `${t} × ${t + 1} = ${t * (t + 1)} → ${fmtN(sq)}`, noteEn: `${t} × ${t + 1} = ${t * (t + 1)} → ${fmtN(sq)}` };
+    },
+  },
+  {
+    id: "x11", icon: "1️⃣", tint: "var(--teal, #0A7E92)",
+    name: "Times Eleven", nameJa: "11をかける",
+    blurb: "Any two-digit number × 11.", blurbJa: "2けたの数 × 11 をすばやく。",
+    hintJa: "両はしはそのまま、まん中はたし算", hintEn: "Keep the ends, add for the middle",
+    next: (streak) => {
+      const n = ri(12, streak >= 6 ? 98 : 89), ans = n * 11;
+      const o = numericOptions(ans, 4, (x) => [x + 11, x - 11, x + 10, x - 10, x + 100, x - 100]);
+      const d1 = Math.floor(n / 10), d2 = n % 10;
+      return { prompt: `${n} × 11`, ...o,
+        noteJa: `${d1} | ${d1}+${d2}=${d1 + d2} | ${d2} → ${fmtN(ans)}`, noteEn: `${d1} | ${d1}+${d2}=${d1 + d2} | ${d2} → ${fmtN(ans)}` };
+    },
+  },
+  {
+    id: "estimate", icon: "🎯", tint: "var(--gold-dk)",
+    name: "Closest Guess", nameJa: "だいたい いくつ？",
+    blurb: "Which is nearest? No exact working needed.", blurbJa: "いちばん近いのはどれ？ 計算しきらなくてOK。",
+    hintJa: "だいたいで考えて、いちばん近い答えをえらぼう", hintEn: "Round, then pick the nearest",
+    next: () => {
+      const a = ri(21, 99), b = ri(21, 99), exact = a * b;
+      const near = Math.round(exact / 100) * 100;
+      const opts = shuffle([near, near + 500, near - 500, near + 1000].filter((x) => x > 0));
+      const target = opts.indexOf(near);
+      return { prompt: `${a} × ${b} ≈ ?`, options: opts.map(fmtN), answer: target,
+        noteJa: `${a} × ${b} = ${fmtN(exact)}`, noteEn: `${a} × ${b} = ${fmtN(exact)}` };
+    },
+  },
+];
+
+export function quickGame(id: string): QuickGame | undefined {
+  return QUICK_GAMES.find((g) => g.id === id);
+}

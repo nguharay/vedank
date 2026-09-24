@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { GameApp } from "@/components/game/GameApp";
 import type { ProgressState } from "@/lib/game/state";
+import type { OverrideMap } from "@/lib/game/overrides";
 
 const GUEST_KEY = "sutraSprint.guestProgress";
 const EMPTY: ProgressState = { topics: {}, arena: { solved: {}, bestMoves: {} } };
 
 /* Progress is read on the client because it lives in localStorage; rendering
    the game before it is read would start the guest at zero and then jump. */
-export function GuestGame() {
+export function GuestGame({ overrides = {} }: { overrides?: OverrideMap }) {
   const [progress, setProgress] = useState<ProgressState | null>(null);
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export function GuestGame() {
       dailyStreak={0}
       initialLang="ja"
       user={{ name: null, email: null }}
+      overrides={overrides}
     />
   );
 }

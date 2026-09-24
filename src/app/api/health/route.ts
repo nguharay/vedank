@@ -18,6 +18,7 @@ export const dynamic = "force-dynamic";
 const EXPECTED: { table: string; column: string; feature: string }[] = [
   { table: "competitions", column: "scope", feature: "friends competitions" },
   { table: "push_subscriptions", column: "endpoint", feature: "web push" },
+  { table: "topic_overrides", column: "data", feature: "admin lesson edits" },
 ];
 
 export async function GET() {

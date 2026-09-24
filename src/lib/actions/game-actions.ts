@@ -22,6 +22,9 @@ import {
   startCompetition, submitCompetition, leaderboard,
 } from "@/lib/game/competition";
 import { pushConfigured, saveSubscription, removeSubscription, sendTo } from "@/lib/game/push";
+import { saveOverride } from "@/lib/game/overrides";
+import { getAdminSession } from "@/lib/admin";
+import { TOPIC_BY_ID } from "@/lib/game/topics";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -214,6 +217,17 @@ export async function setClassOpenAction(classId: string, open: boolean) {
 export async function removeStudentAction(classId: string, studentId: string) {
   const userId = await requireUserId();
   return removeStudent(userId, classId, studentId);
+}
+
+/* ---------- topic overrides (admin edits lesson text) ---------- */
+
+export async function saveTopicOverrideAction(topicId: string, data: unknown) {
+  /* Admin only — checked on the server, not by whether the button was drawn. */
+  const admin = await getAdminSession();
+  if (!admin) return { ok: false as const, error: "Not allowed." };
+  if (typeof topicId !== "string" || !TOPIC_BY_ID[topicId]) return { ok: false as const, error: "Unknown topic." };
+  const saved = await saveOverride(topicId, data, admin.email);
+  return { ok: true as const, data: saved };
 }
 
 /* ---------- push notifications ---------- */
