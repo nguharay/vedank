@@ -316,3 +316,13 @@ export const pushSubscriptions = pgTable(
   },
   (t) => [index("push_subscriptions_user_idx").on(t.userId)]
 );
+
+/* ---------- topic overrides ----------
+   The admin's edits to a topic's lesson prose. The code keeps the generators
+   and the defaults; a row here replaces only the text fields it names. */
+export const topicOverrides = pgTable("topic_overrides", {
+  topicId: text("topic_id").primaryKey(),
+  data: jsonb("data").notNull().default({}),
+  updatedBy: text("updated_by"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});

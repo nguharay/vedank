@@ -59,7 +59,7 @@ import type { Friend, ChallengeRow } from "@/lib/game/friends";
 import { myClassesAction, joinClassAction, leaveClassAction } from "@/lib/actions/game-actions";
 import {
   competitionsAction, startCompetitionAction, submitCompetitionAction, competitionBoardAction,
-  createFriendCompetitionAction, endCompetitionAction,
+  createFriendCompetitionAction, endCompetitionAction, saveTopicOverrideAction,
   pushStatusAction, savePushSubscriptionAction, removePushSubscriptionAction,
 } from "@/lib/actions/game-actions";
 import type { CompetitionSummary, CompQuestion, CompRow } from "@/lib/game/competition";
@@ -71,9 +71,11 @@ import { Mascot, Mandala } from "./Mascot";
 import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ } from "./BookDiagrams";
 import { TRICKS, TRICK_BY_ID } from "@/lib/game/tricks";
 import { dailyQuestions, todayKey, seededRandom, withSeededRandom, DAILY_QUESTIONS, type DailyQuestion } from "@/lib/game/daily";
+import { applyOverride, type OverrideMap, type TopicOverride } from "@/lib/game/overrides";
 import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
   buildOddRound, digitSum, buildSortRound, sortedIds,
-  dailySeed, dailyGameId, dailyGameKey,
+  dailySeed, dailyGameId, dailyGameKey, QUICK_GAMES, quickGame,
+  type QuickRound,
   type MatchTile, type BiggerPair, type OddRound, type SortRound } from "@/lib/game/minigames";
 import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
@@ -87,13 +89,15 @@ import { useBuddyPos } from "./useBuddyPos";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI, type UIDict } from "./i18n";
 
-type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp" | "match" | "games" | "bigger" | "odd" | "sortg" | "memory";
+type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp" | "match" | "games" | "bigger" | "odd" | "sortg" | "memory" | "quick";
 type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 
 function ri(a: number, b: number) {
   return Math.floor(Math.random() * (b - a + 1)) + a;
 }
+const SPRINT_LEN = 3;   /* puzzles per Matchstick Sprint */
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -202,6 +206,7 @@ export function GameApp({
   user,
   isAdmin = false,
   guest = false,
+  overrides = {},
 }: {
   initialProgress: ProgressState;
   dailyStreak: number;
@@ -216,9 +221,12 @@ export function GameApp({
      lives in localStorage until they sign up — and the parts that are
      meaningless alone (friends, classes, leagues, the shop) stay hidden. */
   guest?: boolean;
+  /* The admin's edits to lesson text, keyed by topic id. */
+  overrides?: OverrideMap;
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
+  const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
   const [bonusGems, setBonusGems] = useState(initialBonusGems || 0);
@@ -230,7 +238,22 @@ export function GameApp({
   const lang: Lang = langHook.lang;
   const t = UI[lang];
   const [currentTopicId, setCurrentTopicId] = useState<string | null>(null);
-  const currentTopic: Topic | null = currentTopicId ? TOPIC_BY_ID[currentTopicId] : null;
+  /* Admin edits to lesson prose sit over the code's defaults. Applied here,
+     once, so the lesson page, the hint sheet and the recap all agree. */
+  const [ovr, setOvr] = useState<OverrideMap>(overrides);
+  const currentTopic: Topic | null = currentTopicId
+    ? applyOverride(TOPIC_BY_ID[currentTopicId], ovr[currentTopicId])
+    : null;
+  async function saveOverride(topicId: string, data: TopicOverride) {
+    const res = await saveTopicOverrideAction(topicId, data);
+    if (res.ok) {
+      setOvr((m) => ({ ...m, [topicId]: res.data }));
+      spawnToast(lang === "ja" ? "保存しました" : "Saved", null);
+    } else {
+      spawnToast(res.error ?? "Could not save", null);
+    }
+    return res.ok;
+  }
 
   const [hearts, setHearts] = useState(5);
   const [bestStreakEver, setBestStreakEver] = useState(0);
@@ -882,16 +905,21 @@ export function GameApp({
     setView("stagemap");
   }
 
-  const headerTitle = t.headerTitles[view];
+  const headerTitle =
+    view === "quick"
+      ? (lang === "ja" ? quickGame(quickId)?.nameJa : quickGame(quickId)?.name) ?? t.headerTitles.quick
+      : t.headerTitles[view];
 
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg"];
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick"];
 
   function handleBack() {
     if (view === "practice") { openStageMap(currentTopicId!); }
     else if (view === "stagemap") { openTopic(currentTopicId!); }
     /* Out of a game goes back to the shelf, not all the way home — finishing
        one and wanting another is the common case. */
-    else if (GAME_VIEWS.includes(view)) { openGames(); }
+    else if (GAME_VIEWS.includes(view) || (view === "arena" && (sprintRef.current || sprintOver))) {
+      sprintRef.current = null; setSprintOver(null); openGames();
+    }
     else { goHome(); }
   }
 
@@ -1453,7 +1481,9 @@ export function GameApp({
       setBoardLocked(true);
       const p = PUZZLES[puzIdx];
       const already = !!progress.arena.solved[p.id];
-      const res = await solvePuzzleAction(p.id, moveCount + 1);
+      const res = guest
+        ? { bestMoves: Math.min(progress.arena.bestMoves[p.id] ?? Infinity, moveCount + 1) }
+        : await solvePuzzleAction(p.id, moveCount + 1);
       fireQuest("puzzle_solved");
       sayLine("puzzleSolved");
       setProgress((prev) => ({
@@ -1468,6 +1498,10 @@ export function GameApp({
       confetti.burstFromEl(puzzleSvgRef.current as unknown as HTMLElement, speedy ? 100 : 70);
       sound.stageClear();
       if (speedy) spawnToast("⚡ Speed Solve!", puzzleSvgRef.current as unknown as HTMLElement);
+      if (sprintRef.current) {
+        setTimeout(sprintAdvance, 900);
+        return;
+      }
       if (!already) {
         setTimeout(() => {
           setCelebrate({
@@ -1777,6 +1811,8 @@ export function GameApp({
         memory: Number(localStorage.getItem("sutraSprint.memBest") || 0),
         odd: Number(localStorage.getItem("sutraSprint.oddBest") || 0),
         sortg: Number(localStorage.getItem("sutraSprint.sortBest") || 0),
+        sprint: Number(localStorage.getItem("sutraSprint.sprintBest") || 0),
+        ...Object.fromEntries(QUICK_GAMES.map((g) => [g.id, Number(localStorage.getItem(`sutraSprint.quick.${g.id}`) || 0)])),
       });
     } catch {}
     readDailyGame();
@@ -1819,6 +1855,18 @@ export function GameApp({
       blurbJa: "4つの答えを小さい順に並べよう。",
       best: gameBests.sortg ?? 0, start: shelf(startSort),
     },
+    {
+      id: "sprint", icon: "🔥", tint: "var(--sun1)",
+      name: "Matchstick Sprint", nameJa: "マッチ棒スプリント",
+      blurb: `${SPRINT_LEN} dojo puzzles against the clock.`,
+      blurbJa: `道場のパズル${SPRINT_LEN}問をタイムアタック。`,
+      best: gameBests.sprint ?? 0, start: shelf(startSprint),
+    },
+    ...QUICK_GAMES.map((g) => ({
+      id: g.id, icon: g.icon, tint: g.tint,
+      name: g.name, nameJa: g.nameJa, blurb: g.blurb, blurbJa: g.blurbJa,
+      best: gameBests[g.id] ?? 0, start: shelf(() => startQuick(g.id)),
+    })),
   ];
 
   /* ---------- Odd One Out ---------- */
@@ -1946,6 +1994,81 @@ export function GameApp({
       sound.wrong();
       setTimeout(() => { setMemUp([]); memBusy.current = false; }, 900);
     }
+  }
+
+  /* ---------- quick games (one view, many generators) ---------- */
+  const [quickRound, setQuickRound] = useState<QuickRound | null>(null);
+  const [quickPick, setQuickPick] = useState<number | null>(null);
+  const [quickStreak, setQuickStreak] = useState(0);
+  const [quickBest, setQuickBest] = useState(0);
+  const [quickOver, setQuickOver] = useState<{ streak: number; best: boolean } | null>(null);
+  const quickBestKey = (id: string) => `sutraSprint.quick.${id}`;
+
+  function startQuick(id: string) {
+    const g = quickGame(id);
+    if (!g) return;
+    try { setQuickBest(Number(localStorage.getItem(quickBestKey(id)) || 0)); } catch {}
+    setQuickId(id); setQuickStreak(0); setQuickPick(null); setQuickOver(null);
+    setQuickRound(g.next(0));
+    setView("quick");
+  }
+
+  function onQuickPick(i: number) {
+    const g = quickGame(quickId);
+    if (!g || !quickRound || quickPick !== null || quickOver) return;
+    setQuickPick(i);
+    if (i === quickRound.answer) {
+      const streak = quickStreak + 1;
+      setQuickStreak(streak); sound.correct(); haptic(14);
+      /* Long enough to read the trick under the answer — that is the lesson. */
+      setTimeout(() => { setQuickPick(null); setQuickRound(g.next(streak)); }, 1100);
+    } else {
+      sound.wrong(); haptic(34);
+      const best = quickStreak > quickBest;
+      if (best) {
+        setQuickBest(quickStreak);
+        try { localStorage.setItem(quickBestKey(quickId), String(quickStreak)); } catch {}
+      }
+      setTimeout(() => setQuickOver({ streak: quickStreak, best }), 1500);
+      if (!guest && quickStreak > 0) fireQuest("correct_answer", quickStreak);
+    }
+  }
+
+  /* ---------- Matchstick Sprint ----------
+     The dojo's puzzles, three in a row against a clock. Rides on the arena
+     view: sprintRef says "we are sprinting", checkSolved consults it. */
+  const sprintRef = useRef<{ order: number[]; at: number; started: number } | null>(null);
+  const [sprintOver, setSprintOver] = useState<{ secs: number; best: boolean } | null>(null);
+  const [sprintBest, setSprintBest] = useState(0);
+  const [sprintAt, setSprintAt] = useState(0);
+
+  function startSprint() {
+    try { setSprintBest(Number(localStorage.getItem("sutraSprint.sprintBest") || 0)); } catch {}
+    const order = shuffle(PUZZLES.map((_, i) => i)).slice(0, SPRINT_LEN);
+    sprintRef.current = { order, at: 0, started: Date.now() };
+    setSprintAt(0); setSprintOver(null);
+    loadPuzzle(order[0]);
+    setView("arena");
+  }
+
+  function sprintAdvance() {
+    const sp = sprintRef.current;
+    if (!sp) return;
+    sp.at += 1;
+    if (sp.at >= sp.order.length) {
+      const secs = Math.round((Date.now() - sp.started) / 1000);
+      const best = sprintBest === 0 || secs < sprintBest;
+      if (best) {
+        setSprintBest(secs);
+        try { localStorage.setItem("sutraSprint.sprintBest", String(secs)); } catch {}
+      }
+      sprintRef.current = null;
+      setSprintOver({ secs, best });
+      confetti.burstCenter(140, 0.5); sound.levelUp();
+      return;
+    }
+    setSprintAt(sp.at);
+    loadPuzzle(sp.order[sp.at]);
   }
 
   function endBlitz(finalScore: number) {
@@ -3161,7 +3284,10 @@ export function GameApp({
           />
         )}
 
-        {view === "topic" && currentTopic && <TopicView topic={currentTopic} lang={lang} t={t} />}
+        {view === "topic" && currentTopic && (
+          <TopicView topic={currentTopic} lang={lang} t={t}
+            canEdit={isAdmin && !guest} override={ovr[currentTopic.id]} onSave={saveOverride} />
+        )}
 
         {view === "stagemap" && currentTopic && (
           <StageMapView topic={currentTopic} progress={progress} onPlay={startStage} lang={lang} t={t} />
@@ -3206,6 +3332,23 @@ export function GameApp({
           />
         )}
 
+        {view === "arena" && (sprintRef.current || sprintOver) && (
+          <div className="sprint-bar">
+            {sprintOver ? (
+              <div className="match-done sprint-done">
+                <div className="match-done-title">{sprintOver.best ? (lang === "ja" ? "最速記録！" : "Fastest yet!") : (lang === "ja" ? "スプリント完走！" : "Sprint complete!")}</div>
+                <div className="match-done-line mono"><RollUp to={sprintOver.secs} />{lang === "ja" ? " 秒" : "s"} · {SPRINT_LEN} {lang === "ja" ? "問" : "puzzles"}</div>
+                <button className="btn btn-primary match-again" onClick={startSprint}>{lang === "ja" ? "もう一回" : "Again"}</button>
+              </div>
+            ) : (
+              <>
+                <span className="sprint-tag">⏱ {lang === "ja" ? "スプリント" : "SPRINT"}</span>
+                <span className="sprint-progress mono">{sprintAt + 1} / {SPRINT_LEN}</span>
+                {sprintBest > 0 && <span className="sprint-best mono">{lang === "ja" ? "最速" : "best"} {sprintBest}s</span>}
+              </>
+            )}
+          </div>
+        )}
         {view === "arena" && (
           <ArenaView
             t={t}
@@ -3226,6 +3369,48 @@ export function GameApp({
             onNext={() => loadPuzzle(puzIdx + 1)}
           />
         )}
+
+        {view === "quick" && quickRound && (() => {
+          const g = quickGame(quickId)!;
+          return (
+            <section className="view active">
+              <div className="match-head">
+                <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続" : "Streak"}</span><span className="match-stat-v mono">{quickStreak}</span></div>
+                <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span><span className="match-stat-v mono">{quickBest}</span></div>
+              </div>
+              <p className="match-hint">{lang === "ja" ? g.hintJa : g.hintEn}</p>
+              {!quickOver && (
+                <>
+                  <div className="quick-prompt mono">{quickRound.prompt}</div>
+                  <div className={`quick-options n${quickRound.options.length}`}>
+                    {quickRound.options.map((o, i) => {
+                      const picked = quickPick === i;
+                      const isAns = i === quickRound.answer;
+                      const cls = quickPick === null ? "" : picked ? (isAns ? " right" : " wrong") : isAns ? " reveal" : " dim";
+                      return (
+                        <button key={i} className={`quick-opt${cls}`} onClick={() => onQuickPick(i)} disabled={quickPick !== null}>
+                          <span className="mono">{o}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* The trick, shown once you have answered — this is the part
+                      that makes it a Vedic maths game and not a quiz. */}
+                  <div className={`quick-note${quickPick !== null ? " show" : ""}`} aria-live="polite">
+                    {quickPick !== null ? (lang === "ja" ? quickRound.noteJa : quickRound.noteEn) : "\u00a0"}
+                  </div>
+                </>
+              )}
+              {quickOver && (
+                <div className="match-done">
+                  <div className="match-done-title">{quickOver.best && quickOver.streak > 0 ? (lang === "ja" ? "自己ベスト更新！" : "New best!") : (lang === "ja" ? "おしまい！" : "Run over")}</div>
+                  <div className="match-done-line mono">{lang === "ja" ? "連続" : "streak"} <RollUp to={quickOver.streak} /></div>
+                  <button className="btn btn-primary match-again" onClick={() => startQuick(quickId)}>{lang === "ja" ? "もう一回" : "Play again"}</button>
+                </div>
+              )}
+            </section>
+          );
+        })()}
 
         {view === "odd" && oddRound && (
           <section className="view active">
@@ -3826,12 +4011,23 @@ export function GameApp({
               <div className="run-recap">
                 <div className="run-recap-head">
                   {lang === "ja" ? "このステージのふりかえり" : "How it went"}
+                  {stageLog.some((e) => !e.ok) && (
+                    <span className="run-recap-cta">{lang === "ja" ? "✗ をタップで解き方" : "tap a ✗ for the method"}</span>
+                  )}
                 </div>
                 {[...stageLog]
                   .map((e, i) => ({ ...e, i }))
                   .sort((a, b) => Number(a.ok) - Number(b.ok) || a.i - b.i)
                   .map((e) => (
-                    <div key={e.i} className={`run-row${e.ok ? " ok" : ""}`}>
+                    <div
+                      key={e.i}
+                      className={`run-row${e.ok ? " ok" : " tap"}`}
+                      role={e.ok ? undefined : "button"}
+                      tabIndex={e.ok ? undefined : 0}
+                      onClick={e.ok ? undefined : () => setHintOpen(true)}
+                      onKeyDown={e.ok ? undefined : (ev) => { if (ev.key === "Enter" || ev.key === " ") setHintOpen(true); }}
+                      title={e.ok ? undefined : lang === "ja" ? "解き方を見る" : "Show me how"}
+                    >
                       <span className="run-mark">{e.ok ? "✓" : "✗"}</span>
                       <span className="run-q mono">{e.prompt}</span>
                       <span className="run-a mono">
@@ -4754,7 +4950,14 @@ function BookMethodCard({
   );
 }
 
-function TopicView({ topic, lang, t }: { topic: Topic; lang: Lang; t: UIDict }) {
+function TopicView({
+  topic, lang, t, canEdit = false, override, onSave,
+}: {
+  topic: Topic; lang: Lang; t: UIDict;
+  canEdit?: boolean;
+  override?: TopicOverride;
+  onSave?: (topicId: string, data: TopicOverride) => Promise<boolean>;
+}) {
   const ex = topic.example();
   const rows = topic.exSteps(ex, lang);
   const rows2 = topic.example2 ? topic.exSteps(topic.example2(), lang) : undefined;
@@ -4776,6 +4979,8 @@ function TopicView({ topic, lang, t }: { topic: Topic; lang: Lang; t: UIDict }) 
         )}
       </div>
 
+      {canEdit && onSave && <LessonEditor topic={topic} override={override} lang={lang} onSave={onSave} />}
+
       {/* The line the book's mascot says on this page, in its speech bubble. */}
       {topic.tip && (
         <div className="lesson-tip">
@@ -4789,6 +4994,67 @@ function TopicView({ topic, lang, t }: { topic: Topic; lang: Lang; t: UIDict }) 
         </div>
       )}
     </section>
+  );
+}
+
+/* The admin's edit panel for one lesson. Only the prose is editable — the
+   rule steps, the mascot's tip, the blurb — and only for the signed-in admin,
+   which the server re-checks on save. Empty fields fall back to the code. */
+function LessonEditor({
+  topic, override, lang, onSave,
+}: { topic: Topic; override?: TopicOverride; lang: Lang; onSave: (id: string, d: TopicOverride) => Promise<boolean> }) {
+  const base = TOPIC_BY_ID[topic.id];
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [stepsJa, setStepsJa] = useState((override?.stepsJa ?? base.stepsJa).join("\n"));
+  const [steps, setSteps] = useState((override?.steps ?? base.steps).join("\n"));
+  const [tipJa, setTipJa] = useState(override?.tipJa ?? base.tipJa ?? "");
+  const [tip, setTip] = useState(override?.tip ?? base.tip ?? "");
+  const [blurbJa, setBlurbJa] = useState(override?.blurbJa ?? base.blurbJa);
+  const [blurb, setBlurb] = useState(override?.blurb ?? base.blurb);
+  const lines = (v: string) => v.split("\n").map((x) => x.trim()).filter(Boolean);
+  const ja = lang === "ja";
+
+  async function save() {
+    setBusy(true);
+    /* Send only what differs from the code, so clearing a field restores it. */
+    const d: TopicOverride = {};
+    if (lines(stepsJa).join("|") !== base.stepsJa.join("|")) d.stepsJa = lines(stepsJa);
+    if (lines(steps).join("|") !== base.steps.join("|")) d.steps = lines(steps);
+    if (tipJa.trim() !== (base.tipJa ?? "")) d.tipJa = tipJa.trim();
+    if (tip.trim() !== (base.tip ?? "")) d.tip = tip.trim();
+    if (blurbJa.trim() !== base.blurbJa) d.blurbJa = blurbJa.trim();
+    if (blurb.trim() !== base.blurb) d.blurb = blurb.trim();
+    const ok = await onSave(topic.id, d);
+    setBusy(false);
+    if (ok) setOpen(false);
+  }
+  function reset() {
+    setStepsJa(base.stepsJa.join("\n")); setSteps(base.steps.join("\n"));
+    setTipJa(base.tipJa ?? ""); setTip(base.tip ?? ""); setBlurbJa(base.blurbJa); setBlurb(base.blurb);
+  }
+
+  return (
+    <div className="lesson-editor">
+      <button className="lesson-editor-toggle" onClick={() => setOpen((o) => !o)}>
+        ✏️ {open ? (ja ? "閉じる" : "Close") : (ja ? "このレッスンを編集（管理者）" : "Edit this lesson (admin)")}
+        {override && Object.keys(override).length > 0 && <span className="lesson-editor-dot" title="edited" />}
+      </button>
+      {open && (
+        <div className="lesson-editor-form">
+          <label>{ja ? "説明（日本語）" : "Blurb (JA)"}<textarea rows={2} value={blurbJa} onChange={(e) => setBlurbJa(e.target.value)} /></label>
+          <label>{ja ? "説明（英語）" : "Blurb (EN)"}<textarea rows={2} value={blurb} onChange={(e) => setBlurb(e.target.value)} /></label>
+          <label>{ja ? "手順（日本語・1行に1つ）" : "Steps (JA, one per line)"}<textarea rows={4} value={stepsJa} onChange={(e) => setStepsJa(e.target.value)} /></label>
+          <label>{ja ? "手順（英語・1行に1つ）" : "Steps (EN, one per line)"}<textarea rows={4} value={steps} onChange={(e) => setSteps(e.target.value)} /></label>
+          <label>{ja ? "ひとこと（日本語）" : "Tip (JA)"}<textarea rows={2} value={tipJa} onChange={(e) => setTipJa(e.target.value)} /></label>
+          <label>{ja ? "ひとこと（英語）" : "Tip (EN)"}<textarea rows={2} value={tip} onChange={(e) => setTip(e.target.value)} /></label>
+          <div className="lesson-editor-actions">
+            <button className="btn btn-ghost" onClick={reset} disabled={busy}>{ja ? "元にもどす" : "Reset to default"}</button>
+            <button className="btn btn-primary" onClick={save} disabled={busy}>{busy ? "…" : (ja ? "保存" : "Save")}</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

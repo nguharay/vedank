@@ -3,6 +3,7 @@ import { loadProgress, touchDailyStreak } from "@/lib/game/progress";
 import { GameApp } from "@/components/game/GameApp";
 import { GuestGame } from "./try/GuestGame";
 import { isAdminEmail } from "@/lib/admin";
+import { loadOverrides } from "@/lib/game/overrides";
 
 export default async function HomePage() {
   const session = await auth();
@@ -10,7 +11,8 @@ export default async function HomePage() {
 
   /* No session: play. Asking someone to make an account before they have
      seen a question is how a shared link gets closed. */
-  if (!userId) return <GuestGame />;
+  const overrides = await loadOverrides();
+  if (!userId) return <GuestGame overrides={overrides} />;
   const [progress, daily] = await Promise.all([loadProgress(userId), touchDailyStreak(userId)]);
 
   return (
@@ -22,6 +24,7 @@ export default async function HomePage() {
       dailyChestReward={daily.chestReward}
       user={{ name: session?.user?.name ?? null, email: session?.user?.email ?? null }}
       isAdmin={isAdminEmail(session?.user?.email)}
+      overrides={overrides}
     />
   );
 }

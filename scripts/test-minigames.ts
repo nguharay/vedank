@@ -1,6 +1,6 @@
 import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
   buildOddRound, digitSum, buildSortRound, sortedIds,
-  dailySeed, dailyGameId } from "../src/lib/game/minigames";
+  dailySeed, dailyGameId, QUICK_GAMES } from "../src/lib/game/minigames";
 import { seededRandom, withSeededRandom } from "../src/lib/game/daily";
 
 const fails: string[] = [];
@@ -107,8 +107,46 @@ for (let r = 0; r < 300; r++) {
   ok("the daily game rotates", ids.size === 2);
 }
 
+/* ---------- Quick games: every round must be answerable, once ---------- */
+const evalP = (t: string) => {
+  const e = t.replace(/×/g, "*").replace(/÷/g, "/").replace(/[−–—]/g, "-").replace(/,/g, "")
+    .replace(/(\d+)²/g, "($1**2)");
+  try { const v = Function("return(" + e + ")")(); return typeof v === "number" && !Number.isNaN(v) ? v : null; } catch { return null; }
+};
+for (const g of QUICK_GAMES) {
+  for (let r = 0; r < 200; r++) {
+    const q = g.next(r % 12);
+    ok(`${g.id}: has options`, q.options.length >= 2 && q.options.length <= 4);
+    ok(`${g.id}: answer index in range`, q.answer >= 0 && q.answer < q.options.length);
+    ok(`${g.id}: options distinct`, new Set(q.options).size === q.options.length);
+    ok(`${g.id}: has a note`, q.noteJa.length > 0 && q.noteEn.length > 0);
+    ok(`${g.id}: prompt not empty`, q.prompt.length > 0 && q.prompt.length <= 40);
+    /* Where the answer can be recomputed, the marked option must be it. */
+    const chosen = q.options[q.answer];
+    if (g.id === "x11") { const n = Number(q.prompt.split(" ")[0]); ok("x11 correct", Number(chosen.replace(/,/g, "")) === n * 11); }
+    if (g.id === "sq5") { const n = Number(q.prompt.replace("²", "")); ok("sq5 correct", Number(chosen.replace(/,/g, "")) === n * n); }
+    if (g.id === "digitsum") { const n = Number(q.prompt.replace(/,/g, "")); ok("digitsum correct", Number(chosen) === digitSum(n)); }
+    if (g.id === "lastdigit") { const m = q.prompt.match(/(\d+) × (\d+)/)!; ok("lastdigit correct", Number(chosen) === (Number(m[1]) * Number(m[2])) % 10); }
+    if (g.id === "div9") { const n = Number(q.prompt.replace(/,/g, "")); ok("div9 correct", (q.answer === 0) === (n % 9 === 0)); }
+    if (g.id === "tf") { const [lhs, rhs] = q.prompt.split(" = "); const v = evalP(lhs); if (v !== null) ok("tf correct", (q.answer === 0) === (v === Number(rhs.replace(/,/g, "")))); }
+    if (g.id === "missing") {
+      const m = q.prompt.replace(/,/g, "").match(/^(□|\d+) ([+×]) (□|\d+) = (\d+)$/)!;
+      const val = Number(chosen.replace(/,/g, ""));
+      const a = m[1] === "□" ? val : Number(m[1]), b = m[3] === "□" ? val : Number(m[3]);
+      ok("missing correct", (m[2] === "+" ? a + b : a * b) === Number(m[4]));
+    }
+    if (g.id === "estimate") {
+      const m = q.prompt.match(/(\d+) × (\d+)/)!; const exact = Number(m[1]) * Number(m[2]);
+      const dists = q.options.map((o) => Math.abs(Number(o.replace(/,/g, "")) - exact));
+      ok("estimate: marked option is the nearest", dists[q.answer] === Math.min(...dists));
+    }
+  }
+}
+ok("eight quick games", QUICK_GAMES.length === 8);
+ok("quick game ids unique", new Set(QUICK_GAMES.map((g) => g.id)).size === QUICK_GAMES.length);
+
 if (fails.length) {
   console.error("mini-games FAILED:\n  " + [...new Set(fails)].join("\n  "));
   process.exit(1);
 }
-console.log("mini-games hold up (300 match, 400 bigger, 400 odd-one-out, 300 sort, daily board stable)");
+console.log("mini-games hold up (match, bigger, odd, sort, daily, and 8 quick games x200 rounds)");
