@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { loginAction } from "@/lib/actions/auth-actions";
 import { Mascot } from "@/components/game/Mascot";
 import { useLang } from "@/components/game/i18n";
@@ -45,11 +45,29 @@ const COPY = {
   },
 } as const;
 
+
+/* The middleware puts the page you were bounced from in `?from=`, and an
+   invite link needs it to survive the sign-in. Written straight into the
+   hidden field rather than held in state: it is a DOM value the form reads on
+   submit, never something the page renders. Reading location instead of
+   useSearchParams also keeps the page static — no Suspense for one string. */
+function useFromField() {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    try {
+      const v = new URLSearchParams(window.location.search).get("from");
+      if (v && v.startsWith("/") && !v.startsWith("//") && ref.current) ref.current.value = v;
+    } catch {}
+  }, []);
+  return ref;
+}
+
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, undefined);
   /* Shared with the game, so the language picked here carries through after
      sign-in — and a Japanese browser lands on Japanese by default. */
   const { lang, setLang } = useLang("ja");
+  const fromRef = useFromField();
   const c = COPY[lang];
 
   return (
@@ -80,6 +98,7 @@ export default function LoginPage() {
         </div>
 
         <form action={formAction}>
+          <input type="hidden" name="from" defaultValue="/" ref={fromRef} />
           <div className="field">
             <label htmlFor="email">{c.email}</label>
             <input id="email" name="email" type="email" required autoComplete="email" />

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { signupAction } from "@/lib/actions/auth-actions";
 import { Mascot } from "@/components/game/Mascot";
 import { useLang } from "@/components/game/i18n";
@@ -75,11 +75,29 @@ function scorePassword(pw: string): number {
   return Math.min(s, 4);
 }
 
+
+/* The middleware puts the page you were bounced from in `?from=`, and an
+   invite link needs it to survive the sign-in. Written straight into the
+   hidden field rather than held in state: it is a DOM value the form reads on
+   submit, never something the page renders. Reading location instead of
+   useSearchParams also keeps the page static — no Suspense for one string. */
+function useFromField() {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    try {
+      const v = new URLSearchParams(window.location.search).get("from");
+      if (v && v.startsWith("/") && !v.startsWith("//") && ref.current) ref.current.value = v;
+    } catch {}
+  }, []);
+  return ref;
+}
+
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signupAction, undefined);
   /* Japanese by default for a Japanese browser; the choice is shared with the
      sign-in screen and the game. */
   const { lang, setLang } = useLang("ja");
+  const fromRef = useFromField();
   const [country, setCountry] = useState("");
   const [password, setPassword] = useState("");
   const c = COPY[lang];
@@ -113,6 +131,7 @@ export default function SignupPage() {
         </ul>
 
         <form action={formAction}>
+          <input type="hidden" name="from" defaultValue="/" ref={fromRef} />
           <div className="field">
             <label>{c.lang}</label>
             <div className="lang-toggle">

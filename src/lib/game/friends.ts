@@ -21,6 +21,7 @@ export type ChallengeRow = {
   fromScore: number;
   toScore: number | null;
   status: string;
+  opponentId: string;
   opponentName: string;
   /* true when the asking player is the one being challenged */
   incoming: boolean;
@@ -98,6 +99,21 @@ export async function addFriendByCode(
     .onConflictDoNothing();
 
   return { ok: true, name: friend.name };
+}
+
+/* Used by a race invite: following the host's link makes you friends, which
+   is what lets you into the race. Mutual rows, idempotent — same as adding by
+   code, minus the code. */
+export async function ensureFriendship(a: string, b: string): Promise<void> {
+  if (a === b) return;
+  const db = getDb();
+  await db
+    .insert(friendships)
+    .values([
+      { userId: a, friendId: b },
+      { userId: b, friendId: a },
+    ])
+    .onConflictDoNothing();
 }
 
 export async function removeFriend(userId: string, friendId: string): Promise<void> {
@@ -224,6 +240,7 @@ export async function listChallenges(userId: string): Promise<ChallengeRow[]> {
 
   return rows.map((r) => {
     const incoming = r.toUserId === userId;
+    const opponentId = incoming ? r.fromUserId : r.toUserId;
     const opponentName = incoming ? r.fromName : nameById.get(r.toUserId) ?? "—";
     let won: boolean | null = null;
     if (r.status === "done" && r.toScore !== null) {
@@ -238,6 +255,7 @@ export async function listChallenges(userId: string): Promise<ChallengeRow[]> {
       fromScore: r.fromScore,
       toScore: r.toScore,
       status: r.status,
+      opponentId,
       opponentName,
       incoming,
       won,

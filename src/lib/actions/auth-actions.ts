@@ -60,7 +60,18 @@ export async function signupAction(
     phone: phoneRaw || null,
   });
 
-  await signIn("credentials", { email, password, redirectTo: "/" });
+  await signIn("credentials", { email, password, redirectTo: safeNext(formData.get("from")) });
+}
+
+/* Where to land after signing in. The middleware puts the page you were
+   trying to reach in `from`, which matters for an invite link: following one
+   while signed out should take you to the race, not the home screen.
+   Only same-origin paths are honoured — an absolute URL here would be an open
+   redirect. */
+function safeNext(raw: FormDataEntryValue | null): string {
+  const v = String(raw || "");
+  if (!v.startsWith("/") || v.startsWith("//")) return "/";
+  return v;
 }
 
 export async function loginAction(
@@ -69,8 +80,9 @@ export async function loginAction(
 ): Promise<AuthActionResult> {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
+  const redirectTo = safeNext(formData.get("from"));
   try {
-    await signIn("credentials", { email, password, redirectTo: "/" });
+    await signIn("credentials", { email, password, redirectTo });
   } catch (err: unknown) {
     if (err instanceof AuthError) {
       return {
