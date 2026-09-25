@@ -5,9 +5,9 @@ import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 /* The link preview is the first thing a Japanese player sees — it has to sell
    the idea before they ever reach the login screen, so the copy here is
    Japanese-first with the English line kept underneath. */
-const TITLE = "インド式算数ゲーム — 考えて、ひらめいて、挑戦しよう！";
+const TITLE = "インド式数学ゲーム — 考えて、ひらめいて、挑戦しよう！";
 const DESCRIPTION =
-  "インド式算数を覚えるアプリではなく、数学の「見方」を発見するゲーム。" +
+  "インド式数学を覚えるアプリではなく、数学の「見方」を発見するゲーム。" +
   "古代の計算法を、14のスートラとマッチ棒パズルで。" +
   "A game that doesn't just teach Indian calculation methods — it teaches you to see mathematics differently.";
 
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     siteName: "Sutra Sprint",
     title: TITLE,
     description: DESCRIPTION,
-    images: [{ url: "/brand/og-ja.png", width: 1200, height: 630, alt: "インド式算数ゲーム" }],
+    images: [{ url: "/brand/og-ja.png", width: 1200, height: 630, alt: "インド式数学ゲーム" }],
   },
   twitter: {
     card: "summary_large_image",

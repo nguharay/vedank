@@ -9,7 +9,7 @@
    there merges into their account the next time they sign in.
 
    Bump VERSION to retire every old cache on the next activate. */
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = `sutra-${VERSION}`;
 
 /* /offline.html is a plain file with inline styles and no script: a fallback
@@ -97,7 +97,7 @@ self.addEventListener("fetch", (e) => {
    body still shows something rather than the browser's own "This site has
    been updated in the background" placeholder. */
 self.addEventListener("push", (e) => {
-  let note = { title: "インド式算数ゲーム", body: "新しいお知らせがあります", url: "/", tag: "general" };
+  let note = { title: "インド式数学ゲーム", body: "新しいお知らせがあります", url: "/", tag: "general" };
   try {
     if (e.data) note = Object.assign(note, e.data.json());
   } catch {}

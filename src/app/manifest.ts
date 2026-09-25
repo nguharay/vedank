@@ -5,9 +5,9 @@ import type { MetadataRoute } from "next";
    bursts on a phone is most of the difference between a site and an app. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "インド式算数ゲーム — Sutra Sprint",
+    name: "インド式数学ゲーム — Sutra Sprint",
     short_name: "Sutra Sprint",
-    description: "インド式算数を覚えるアプリではなく、数学の「見方」を発見するゲーム。",
+    description: "インド式数学を覚えるアプリではなく、数学の「見方」を発見するゲーム。",
     lang: "ja",
     start_url: "/",
     scope: "/",
