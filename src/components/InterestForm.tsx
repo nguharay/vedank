@@ -57,7 +57,7 @@ export function ClassesHero({ lang }: { lang: "ja" | "en" }) {
         <div className="classes-hero-kicker">{ja ? "オンライン ・ 対面（日本）" : "Online · In person in Japan"}</div>
         <div className="classes-hero-title">{ja ? "Ray先生と一緒に、インド式数学！" : "Learn Vedic Maths with Ray Sensei!"}</div>
         <div className="classes-hero-tags">
-          <span>🧒 {ja ? "子ども" : "Kids"}</span><span>🧑 {ja ? "大人" : "Adults"}</span><span>👩‍🏫 {ja ? "先生・学校" : "Teachers"}</span>
+          <span>🧒 {ja ? "子ども" : "Kids"}</span><span>🧑 {ja ? "大人" : "Adults"}</span><span>📚 {ja ? "先生・学校" : "Teachers"}</span>
         </div>
       </div>
     </div>
@@ -73,7 +73,7 @@ const MODES: Opt<InterestInput["mode"]>[] = [
 const LEARNERS: Opt<InterestInput["learner"]>[] = [
   { v: "child", icon: "🧒", en: "Child", ja: "子ども" },
   { v: "adult", icon: "🧑", en: "Adult", ja: "大人" },
-  { v: "teacher-school", icon: "👩‍🏫", en: "Teacher / school", ja: "先生・学校" },
+  { v: "teacher-school", icon: "📚", en: "Teacher / school", ja: "先生・学校" },
 ];
 
 /* The "learn with a teacher" form. Used in the in-app sheet and on /classes. */

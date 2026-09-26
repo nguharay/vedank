@@ -269,7 +269,7 @@ export function TopicView({
 
       {onOpenClasses && (
         <button className="classes-strip" onClick={onOpenClasses}>
-          👩‍🏫 この方法をRay先生と学びたい？ 日本で対面・オンライン授業あり ›
+          🎓 この方法をRay先生と学びたい？ 日本で対面・オンライン授業あり ›
         </button>
       )}
     </section>
