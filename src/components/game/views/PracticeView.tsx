@@ -274,11 +274,21 @@ export function PracticeView({
               <button
                 key={o}
                 className={`catch-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
-                style={{
-                  "--col": i % 3,
-                  "--delay": `${(i % 3) * 0.7 + Math.floor(i / 3) * 0.35}s`,
-                  "--dur": `${3.4 + (i % 3) * 0.5}s`,
-                } as React.CSSProperties}
+                /* A fixed slot per answer (3 lanes × rows), each tile bobbing inside
+                   its own slot — no tile can hide behind another or leave the field.
+                   Negative delays start them at different heights. */
+                style={(() => {
+                  const n = tileOptions.length, cols = Math.min(3, n), rows = Math.ceil(n / cols);
+                  const H = 236, size = rows > 1 ? 64 : 78, band = (H - 12) / rows;
+                  return ({
+                    "--size": `${size}px`,
+                    "--left": `calc(${(100 / cols) * ((i % cols) + 0.5)}% - ${size / 2}px)`,
+                    "--top": `${6 + Math.floor(i / cols) * band}px`,
+                    "--travel": `${Math.max(8, band - size - 10)}px`,
+                    "--dur": `${2.2 + (i % 3) * 0.4}s`,
+                    "--delay": `${-(i * 0.7 + 0.2)}s`,
+                  }) as React.CSSProperties;
+                })()}
                 disabled={eliminated.includes(o)}
                 onClick={() => onSelect(o)}
               >

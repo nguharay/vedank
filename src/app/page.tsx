@@ -4,6 +4,7 @@ import { GameApp } from "@/components/game/GameApp";
 import { GuestGame } from "./try/GuestGame";
 import { isAdminEmail } from "@/lib/admin";
 import { loadOverrides } from "@/lib/game/overrides";
+import { ownerSheetEnabled as classesEnabled } from "@/lib/owner-notify";
 
 export default async function HomePage() {
   const session = await auth();
@@ -12,7 +13,8 @@ export default async function HomePage() {
   /* No session: play. Asking someone to make an account before they have
      seen a question is how a shared link gets closed. */
   const overrides = await loadOverrides();
-  if (!userId) return <GuestGame overrides={overrides} />;
+  const classesOn = classesEnabled();
+  if (!userId) return <GuestGame overrides={overrides} classesEnabled={classesOn} />;
   const [progress, daily] = await Promise.all([loadProgress(userId), touchDailyStreak(userId)]);
 
   return (
@@ -25,6 +27,7 @@ export default async function HomePage() {
       user={{ name: session?.user?.name ?? null, email: session?.user?.email ?? null }}
       isAdmin={isAdminEmail(session?.user?.email)}
       overrides={overrides}
+      classesEnabled={classesOn}
     />
   );
 }
