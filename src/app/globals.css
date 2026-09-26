@@ -2375,3 +2375,20 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .if-close{ font-family:inherit; font-size:15px; font-weight:800; padding:12px; border-radius:16px; cursor:pointer;
   color:var(--ink); background:var(--surface); border:2px solid var(--line-strong); }
 .if-close:active{ transform:scale(.98); }
+
+/* lesson-page call to action for Ray先生's classes */
+.classes-cta{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:18px 0 6px; padding:14px 14px 14px 12px;
+  border-radius:20px; border:3px solid var(--ink-line); box-shadow:4px 4px 0 var(--ink-line);
+  background:linear-gradient(120deg, color-mix(in srgb, var(--gold) 30%, var(--surface)), color-mix(in srgb, #FF3D77 14%, var(--surface))); }
+.classes-cta-badge{ display:grid; place-items:center; width:46px; height:46px; flex:none; border-radius:50%; font-size:24px;
+  background:var(--surface); border:2px solid var(--ink-line); animation:ctaBob 2.4s ease-in-out infinite; }
+@keyframes ctaBob{ 50%{ transform:translateY(-3px) rotate(-6deg); } }
+.classes-cta-text{ flex:1; min-width:150px; }
+.classes-cta-title{ font-size:15.5px; font-weight:900; color:var(--ink); line-height:1.35; }
+.classes-cta-sub{ font-size:12px; font-weight:700; color:var(--ink-dim); margin-top:2px; }
+.classes-cta-btn{ flex:none; font-family:inherit; font-size:14.5px; font-weight:900; color:#fff; cursor:pointer; padding:11px 16px;
+  border-radius:14px; border:3px solid var(--ink-line); box-shadow:3px 3px 0 var(--ink-line);
+  background:linear-gradient(100deg,#FF6B00,#FF3D77 55%,#7B3FA0); }
+.classes-cta-btn:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink-line); }
+@media (max-width:420px){ .classes-cta-btn{ width:100%; } }
+@media (prefers-reduced-motion: reduce){ .classes-cta-badge{ animation:none; } }
