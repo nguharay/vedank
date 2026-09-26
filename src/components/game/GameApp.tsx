@@ -2031,6 +2031,12 @@ export function GameApp({
      square. The board logic is pure (ttt.ts); online, the server owns it. */
   /* "Learn with a teacher" sheet — which link opened it travels with the enquiry. */
   const [classesFrom, setClassesFrom] = useState<string | null>(null);
+  useEffect(() => {
+    if (!classesFrom) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setClassesFrom(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [classesFrom]);
   const [tttMode, setTttMode] = useState<null | "local" | "cpu" | "online">(null);
   const [tttLevel, setTttLevel] = useState<TTTLevel>(1);
   const [ttt, setTtt] = useState<TTTState | null>(null);
@@ -2664,8 +2670,8 @@ export function GameApp({
               <span>🌐 {t.menu.language}</span>
               <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
             </button>
-            {classesEnabled && <button className="menu-row" onClick={() => { setMenuOpen(false); setClassesFrom("menu"); }}>
-              <span>👩‍🏫 {lang === "ja" ? "先生と学ぶ（授業）" : "Classes with a teacher"}</span>
+            {classesEnabled && lang === "ja" && <button className="menu-row" onClick={() => { setMenuOpen(false); setClassesFrom("menu"); }}>
+              <span>👩‍🏫 Ray先生と学ぶ（授業）</span>
               <span className="menu-row-val">›</span>
             </button>}
             <button className="menu-row" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
@@ -2925,18 +2931,16 @@ export function GameApp({
         </>
       )}
 
-      {classesFrom && (
+      {classesFrom && lang === "ja" && (
         <>
           <div className="menu-overlay" onClick={() => setClassesFrom(null)} />
           <div className="hint-sheet interest-sheet" role="dialog" aria-modal="true">
-            <button className="interest-close" aria-label={lang === "ja" ? "閉じる" : "Close"} onClick={() => setClassesFrom(null)}>✕</button>
-            <ClassesHero lang={lang} />
+            <button className="interest-close" aria-label="閉じる" onClick={() => setClassesFrom(null)}>✕</button>
+            <ClassesHero lang="ja" />
             <p className="interest-lede">
-              {lang === "ja"
-                ? "詳しく知りたい方は、下のフォームを送るか、直接ご連絡ください。"
-                : "Leave your details below, or contact us directly — we'll get back to you."}
+              詳しく知りたい方は、下のフォームを送るか、Ray先生に直接ご連絡ください。
             </p>
-            <InterestForm lang={lang} source={classesFrom} onDone={() => setClassesFrom(null)} />
+            <InterestForm lang="ja" source={classesFrom} onDone={() => setClassesFrom(null)} onClose={() => setClassesFrom(null)} />
           </div>
         </>
       )}
@@ -3497,7 +3501,7 @@ export function GameApp({
             assignedTopic={assignedTopic}
             onOpenFriends={openFriends}
             onAcceptDuel={acceptDuel}
-            onOpenClasses={classesEnabled ? () => setClassesFrom("home") : undefined}
+            onOpenClasses={classesEnabled && lang === "ja" ? () => setClassesFrom("home") : undefined}
             lang={lang}
             t={t}
           />
@@ -3506,7 +3510,7 @@ export function GameApp({
         {view === "topic" && currentTopic && (
           <TopicView topic={currentTopic} lang={lang} t={t}
             canEdit={isAdmin && !guest} override={ovr[currentTopic.id]} onSave={saveOverride}
-            onOpenClasses={classesEnabled ? () => setClassesFrom(`lesson:${currentTopic.id}`) : undefined} />
+            onOpenClasses={classesEnabled && lang === "ja" ? () => setClassesFrom(`lesson:${currentTopic.id}`) : undefined} />
         )}
 
         {view === "stagemap" && currentTopic && (

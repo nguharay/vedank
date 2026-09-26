@@ -405,12 +405,12 @@ export function HomeView({
         <button className="classes-card" onClick={onOpenClasses}>
           <span className="classes-card-icon">👩‍🏫</span>
           <span className="classes-card-body">
-            <span className="classes-card-title">{lang === "ja" ? "先生と学ぼう" : "Learn with a teacher"}</span>
+            <span className="classes-card-title">Ray先生と学ぼう</span>
             <span className="classes-card-sub">
-              {lang === "ja" ? "日本で対面・オンラインの授業があります" : "Live classes — in person in Japan, or online"}
+              日本で対面・オンラインの授業があります
             </span>
           </span>
-          <span className="classes-card-go">{lang === "ja" ? "くわしく" : "Find out"} ›</span>
+          <span className="classes-card-go">くわしく ›</span>
         </button>
       )}
     </section>
