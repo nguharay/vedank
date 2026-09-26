@@ -222,7 +222,7 @@ button{ font-family:inherit; }
 .bookmethod-badge{ flex:0 0 auto; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
   font-size:17px; color:#fff; font-weight:800; border:2px solid var(--ink-line); }
 .bookmethod-title{ font-weight:800; font-size:15px; color:var(--ink); margin-bottom:4px; }
-.bookmethod-desc{ font-size:14.5px; color:var(--ink-dim); line-height:1.55; font-weight:600; }
+.bookmethod-desc{ font-size:14.5px; color:var(--ink-dim); line-height:1.55; font-weight:600; white-space:pre-line; }
 .bookexample-card{ border-radius:14px; overflow:hidden; border:2px solid var(--ink-line); box-shadow:3px 3px 0 color-mix(in srgb, var(--ink-line) 25%, transparent); background:var(--surface); max-width:320px; margin:0 auto; width:100%; }
 .bookexample-header{ padding:11px 14px; color:#fff; font-weight:800; font-size:16px; }
 .bookexample-list{ padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
@@ -299,12 +299,12 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .bd-sweep{ stroke:var(--sun1); stroke-width:1.6; fill:none; }
 .bd-sweepHead{ fill:var(--sun1); stroke:none; }
 .bd-stagewrite{ font-family:"Nunito",sans-serif; font-size:12px; font-weight:800; fill:var(--blue-dk); }
-.bd-window{ fill:none; stroke:var(--blue); stroke-width:2; stroke-dasharray:5 4; }
+.bd-window{ fill:none; stroke:var(--blue); stroke-width:2; }
 .bd-seg{ stroke:var(--line-strong); stroke-width:2; }
 .bd-vert{ stroke:var(--blue); stroke-width:2; fill:none; }
 .bd-cross{ stroke:var(--sun1); stroke-width:2; fill:none; }
 .bd-nine{ font-family:var(--font-num); font-size:14px; font-weight:800; fill:var(--blue); }
-.bd-pair{ stroke:var(--green-dk); stroke-width:2; fill:none; stroke-dasharray:5 4; }
+.bd-pair{ stroke:var(--green-dk); stroke-width:2; fill:none; }
 .bd-partbox{ fill:var(--surface-2); stroke:var(--line-strong); stroke-width:2; }
 .bd-partbox-hi{ fill:color-mix(in srgb, var(--blue) 10%, var(--surface)); stroke:var(--blue); }
 .bd-partline{ font-family:var(--font-num); font-size:14px; font-weight:800; fill:var(--ink); }
@@ -2278,3 +2278,12 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .pop-grid.miss .pop-balloon.up:not(.wrong):not(.reveal){ transform:translate(-50%, 115%); }
 @keyframes popBonk{ 0%{ transform:scale(1) } 45%{ transform:scale(1.5); opacity:.6 } 100%{ transform:scale(0); opacity:0 } }
 @media (prefers-reduced-motion: reduce){ .pop-balloon{ transition:none } .pop-balloon.hit .pop-face{ animation:none } }
+
+/* book "Pattern:" box — the ✓ badge in the book's deep violet */
+.bookpattern-badge{ background:#3B2A7A; color:#fff; font-weight:900; }
+.bookpattern-card{ margin-bottom:10px; }
+.bd-opk{ font-family:var(--font-num); font-size:14px; font-weight:800; fill:var(--ink); }
+.bd-fnum{ font-family:var(--font-num); font-size:17px; font-weight:800; fill:var(--ink); }
+.bd-sub{ font-family:var(--font-num); font-size:11px; font-weight:800; fill:var(--ink); }
+.bd-blue{ fill:var(--blue); }
+.bd-orange{ font-family:"Nunito",sans-serif; font-size:13px; font-weight:900; fill:var(--sun1); }

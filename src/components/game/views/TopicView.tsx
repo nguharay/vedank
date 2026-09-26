@@ -1,7 +1,7 @@
 "use client";
 
 import { STAGE_POS } from "../util";
-import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ } from "../BookDiagrams";
+import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ, BOOK_DIAGRAMS2, BOOK_DIAGRAM_EQ2, BOOK_MORE, BOOK_BARE_HEADERS, BOOK_INTRO } from "../BookDiagrams";
 import { Mascot } from "../Mascot";
 import type { UIDict } from "../i18n";
 import { DIGIT_ARROW_EX, DIGIT_FLOW_TOPICS } from "./shared";
@@ -128,13 +128,27 @@ export function BookMethodCard({
   const bodyRows = rows.slice(1);
   const Diagram = BOOK_DIAGRAMS[topic.id];
   const diagramEq = BOOK_DIAGRAM_EQ[topic.id];
+  const Diagram2 = BOOK_DIAGRAMS2[topic.id];
+  const more = BOOK_MORE[topic.id] ?? [];
+  const intro = BOOK_INTRO[topic.id];
+  const bare = BOOK_BARE_HEADERS.has(topic.id);
+  const pattern = lang === "ja" ? topic.patternJa : topic.pattern;
   return (
     <div className="bookmethod-wrap">
+      {pattern && (
+        <div className="bookmethod-card bookpattern-card" style={{ background: `color-mix(in srgb, ${topic.grad[0]} 14%, var(--surface-2))`, borderColor: topic.grad[0] }}>
+          <span className="bookmethod-badge bookpattern-badge">✓</span>
+          <div>
+            <div className="bookmethod-title">{lang === "ja" ? "パターン" : "Pattern"}</div>
+            <div className="bookmethod-desc">{pattern}</div>
+          </div>
+        </div>
+      )}
       <div className="bookmethod-card" style={{ background: `color-mix(in srgb, ${topic.grad[0]} 14%, var(--surface-2))`, borderColor: topic.grad[0] }}>
         <span className="bookmethod-badge" style={{ background: gradCss(topic.grad) }}>{topic.icon}</span>
         <div>
-          <div className="bookmethod-title">{lang === "ja" ? "やり方" : "The Method"}</div>
-          <div className="bookmethod-desc">{blurb}</div>
+          <div className="bookmethod-title">{lang === "ja" ? (topic.methodTitleJa ?? "やり方") : (topic.methodTitle ?? "The Method")}</div>
+          <div className="bookmethod-desc">{blurb.replace(/ (Step 2)|(?<=。)(手順2)/, "\n$1$2")}</div>
         </div>
       </div>
       <div className="bookexample-flow-title">
@@ -144,9 +158,17 @@ export function BookMethodCard({
           <>Spot the Pattern First <span>→</span> Then Calculate From Left to Right</>
         )}
       </div>
+      {intro && (
+        <div className="bookexample-card">
+          <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
+            {lang === "ja" ? intro.titleJa : intro.title}
+          </div>
+          <intro.D lang={lang} />
+        </div>
+      )}
       <div className="bookexample-card">
         <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
-          {lang === "ja" ? "例：" : "Example: "}{Diagram ? diagramEq! : eq}
+          {bare ? "" : lang === "ja" ? "例：" : "Example: "}{Diagram ? diagramEq! : eq}
         </div>
         {Diagram ? (
           <Diagram lang={lang} />
@@ -165,7 +187,23 @@ export function BookMethodCard({
       {/* The second Example box. The diagram draws the first, so this one is
           listed out — two diagrams of the same method teach less than one
           diagram and a second set of numbers to follow. */}
-      {rows2 && rows2.length > 1 && (
+      {Diagram2 && (
+        <div className="bookexample-card bookexample-second">
+          <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
+            {bare ? "" : lang === "ja" ? "例2：" : "Example 2: "}{BOOK_DIAGRAM_EQ2[topic.id]}
+          </div>
+          <Diagram2 lang={lang} />
+        </div>
+      )}
+      {more.map(({ eq: moreEq, D }, i) => (
+        <div className="bookexample-card bookexample-second" key={moreEq}>
+          <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
+            {bare ? "" : lang === "ja" ? `例${i + 3}：` : `Example ${i + 3}: `}{moreEq}
+          </div>
+          <D lang={lang} />
+        </div>
+      ))}
+      {!Diagram2 && rows2 && rows2.length > 1 && (
         <div className="bookexample-card bookexample-second">
           <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
             {lang === "ja" ? "例2：" : "Example 2: "}{rows2[0][0]}
