@@ -403,7 +403,7 @@ export function HomeView({
 
       {onOpenClasses && (
         <button className="classes-card" onClick={onOpenClasses}>
-          <span className="classes-card-icon">🎓</span>
+          <span className="classes-card-icon classes-card-mascot"><Mascot mood="excited" /></span>
           <span className="classes-card-body">
             <span className="classes-card-title">Ray先生と学ぼう</span>
             <span className="classes-card-sub">
