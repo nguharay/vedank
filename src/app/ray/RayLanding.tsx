@@ -31,25 +31,31 @@ export function RayLanding({ enabled }: { enabled: boolean }) {
 
       <section className="lp-hero">
         <div className="lp-hero-text">
-          <div className="lp-kicker">オンライン ・ 対面（日本）</div>
-          <h1>Ray先生と学ぶ<br />インド式数学</h1>
+          <div className="lp-pills"><span>💻 オンライン</span><span>🏫 対面（日本）</span></div>
+          <h1>Ray先生と学ぶ<br /><span className="lp-mark">インド式数学</span></h1>
           <p>考えて、ひらめいて、挑戦しよう！<br />数学の「見方」が変わる授業です。</p>
           <div className="lp-hero-btns">
             <a href="#form" className="lp-btn lp-btn-primary">授業について問い合わせる →</a>
             <Link href="/" className="lp-btn lp-btn-ghost">まずはゲームで遊ぶ 🎮</Link>
           </div>
         </div>
-        <div className="lp-hero-mascot" aria-hidden="true"><Mascot mood="excited" /></div>
+        <div className="lp-hero-art" aria-hidden="true">
+          <span className="lp-spark s1">✦</span><span className="lp-spark s2">✦</span><span className="lp-spark s3">✧</span>
+          <div className="lp-hero-mascot"><Mascot mood="excited" /></div>
+        </div>
       </section>
 
 
       <section className="lp-section lp-about">
         <h2>授業について</h2>
-        <ul className="lp-facts">
-          <li><b>🏫 かたち</b> 日本国内の対面授業／オンライン授業</li>
-          <li><b>🧒 対象</b> 小学生・中学生・大人、先生や学校の研修</li>
-          <li><b>📘 教材</b> Ray先生の本とこのゲームアプリ</li>
-        </ul>
+        <div className="lp-facts">
+          {[["🏫", "かたち", "日本国内の対面授業／オンライン授業"], ["🧒", "対象", "小学生・中学生・大人、先生や学校の研修"], ["📘", "教材", "Ray先生の本とこのゲームアプリ"]].map(([ic, k, v]) => (
+            <div className="lp-fact" key={k}>
+              <span className="lp-fact-ic">{ic}</span>
+              <div><div className="lp-fact-k">{k}</div><div className="lp-fact-v">{v}</div></div>
+            </div>
+          ))}
+        </div>
       </section>
 
 
