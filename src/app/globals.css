@@ -2319,7 +2319,8 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .if-step-head{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:900; color:var(--ink); }
 .if-num{ display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--ink-line); color:#fff; font-size:12px; font-weight:900; }
 .if-sublabel{ font-size:12.5px; font-weight:800; color:var(--ink-dim); margin-top:2px; }
-.if-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.if-row{ display:grid; grid-template-columns:1fr; gap:9px; }
+@media (min-width:520px){ .if-row{ grid-template-columns:1fr 1fr; } }
 .if-field{ position:relative; display:block; }
 .if-ic{ position:absolute; left:11px; top:50%; transform:translateY(-50%); font-size:16px; pointer-events:none; }
 .if-field input, .if-step textarea{ width:100%; box-sizing:border-box; font:inherit; font-size:15px; font-weight:600; color:var(--ink);
@@ -2346,10 +2347,11 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .contact-btn{ display:flex; align-items:center; gap:8px; text-align:left; padding:9px 10px; border-radius:14px; text-decoration:none; color:var(--ink);
   background:color-mix(in srgb, var(--c) 12%, var(--surface)); border:2px solid color-mix(in srgb, var(--c) 55%, transparent); min-width:0; }
 .contact-btn:active{ transform:scale(.97); }
-.contact-ic{ display:grid; place-items:center; width:30px; height:30px; flex:none; border-radius:50%; background:var(--c); font-size:15px; }
+.contact-ic{ display:grid; place-items:center; width:32px; height:32px; flex:none; border-radius:50%; background:var(--c); }
+.contact-btn[href*="instagram"] .contact-ic{ background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%); }
 .contact-txt{ display:flex; flex-direction:column; min-width:0; }
 .contact-name{ font-size:13px; font-weight:900; color:var(--c); filter:brightness(.8); }
-.contact-sub{ font-size:10.5px; font-weight:700; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.contact-sub{ font-size:10.5px; font-weight:700; color:var(--ink-dim); overflow-wrap:anywhere; line-height:1.3; }
 .interest-done{ position:relative; text-align:center; padding:8px 0; display:flex; flex-direction:column; align-items:center; gap:6px; }
 .interest-done h3{ margin:4px 0 0; font-size:20px; }
 .interest-done p{ margin:0 0 6px; color:var(--ink-dim); font-size:13.5px; }
@@ -2370,3 +2372,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .classes-hero-title{ font-size:19px; font-weight:900; line-height:1.25; margin:2px 0 6px; }
 .classes-hero-tags{ display:flex; flex-wrap:wrap; gap:5px; }
 .classes-hero-tags span{ font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,.22); }
+.if-close{ font-family:inherit; font-size:15px; font-weight:800; padding:12px; border-radius:16px; cursor:pointer;
+  color:var(--ink); background:var(--surface); border:2px solid var(--line-strong); }
+.if-close:active{ transform:scale(.98); }

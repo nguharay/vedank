@@ -269,7 +269,7 @@ export function TopicView({
 
       {onOpenClasses && (
         <button className="classes-strip" onClick={onOpenClasses}>
-          {lang === "ja" ? "👩‍🏫 この方法を先生と学びたい？ 日本で対面・オンライン授業あり ›" : "👩‍🏫 Want to learn this with a teacher? Classes in Japan & online ›"}
+          👩‍🏫 この方法をRay先生と学びたい？ 日本で対面・オンライン授業あり ›
         </button>
       )}
     </section>
