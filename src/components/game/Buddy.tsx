@@ -90,7 +90,7 @@ export function Buddy({
       <svg className="buddy-layer buddy-attire" viewBox="0 0 68 68" aria-hidden="true">
         {/* The collar sits below the mouth (which ends at y 46) so the face stays clear. */}
         {hasCape && (
-          <path d="M25 50 Q34 55 43 50 Q42 55 34 57 Q26 55 25 50 Z" fill={outfit.scarf} stroke={outfit.capeEdge} strokeWidth="1" />
+          <path d="M25 41 Q34 46 43 41 Q42 46 34 48 Q26 46 25 41 Z" fill={outfit.scarf} stroke={outfit.capeEdge} strokeWidth="1" />
         )}
         <HeadPiece kind={outfit.head} outfit={outfit} />
       </svg>

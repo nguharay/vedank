@@ -1798,7 +1798,7 @@ export function GameApp({
       best: gameBests.bigger ?? 0, start: shelf(startBigger, "bigger"),
     },
     {
-      id: "memory", icon: "🧠", tint: "var(--sun1)",
+      id: "memory", icon: "🎴", tint: "var(--sun1)",
       name: "Memory Pairs", nameJa: "神経衰弱",
       blurb: "Same pairs, face down. Fewest turns wins.",
       blurbJa: "ふせたカードでペア探し。少ない回数でクリア。",
@@ -2671,7 +2671,7 @@ export function GameApp({
               <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
             </button>
             {classesEnabled && lang === "ja" && <button className="menu-row" onClick={() => { setMenuOpen(false); setClassesFrom("menu"); }}>
-              <span>🎓 Ray先生と学ぶ（授業）</span>
+              <span>🧮 Ray先生と学ぶ（授業）</span>
               <span className="menu-row-val">›</span>
             </button>}
             <button className="menu-row" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
@@ -3872,7 +3872,7 @@ export function GameApp({
               <span className="daily-game-tag">{lang === "ja" ? "今日のゲーム" : "GAME OF THE DAY"}</span>
               <span className="daily-game-name">
                 {dailyGameId(todayKey()) === "memory"
-                  ? (lang === "ja" ? "🧠 神経衰弱" : "🧠 Memory Pairs")
+                  ? (lang === "ja" ? "🎴 神経衰弱" : "🎴 Memory Pairs")
                   : (lang === "ja" ? "🃏 ナンバーマッチ" : "🃏 Number Match")}
               </span>
               <span className="daily-game-sub">
