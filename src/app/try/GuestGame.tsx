@@ -10,7 +10,7 @@ const EMPTY: ProgressState = { topics: {}, arena: { solved: {}, bestMoves: {} } 
 
 /* Progress is read on the client because it lives in localStorage; rendering
    the game before it is read would start the guest at zero and then jump. */
-export function GuestGame({ overrides = {} }: { overrides?: OverrideMap }) {
+export function GuestGame({ overrides = {}, classesEnabled = false }: { overrides?: OverrideMap; classesEnabled?: boolean }) {
   const [progress, setProgress] = useState<ProgressState | null>(null);
 
   useEffect(() => {
@@ -35,6 +35,7 @@ export function GuestGame({ overrides = {} }: { overrides?: OverrideMap }) {
       initialLang="ja"
       user={{ name: null, email: null }}
       overrides={overrides}
+      classesEnabled={classesEnabled}
     />
   );
 }

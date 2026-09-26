@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { GuestGame } from "./GuestGame";
+import { ownerSheetEnabled as classesEnabled } from "@/lib/owner-notify";
 import { loadOverrides } from "@/lib/game/overrides";
 
 /* The shared link used to land on a password form: someone taps a Japanese
@@ -16,5 +17,5 @@ export default async function TryPage() {
   /* Already signed in? Then the real thing is strictly better. */
   const session = await auth();
   if (session?.user) redirect("/");
-  return <GuestGame overrides={await loadOverrides()} />;
+  return <GuestGame overrides={await loadOverrides()} classesEnabled={classesEnabled()} />;
 }

@@ -67,6 +67,7 @@ import { dailyQuestions, todayKey, seededRandom, withSeededRandom, type DailyQue
 import { applyOverride, type OverrideMap, type TopicOverride } from "@/lib/game/overrides";
 import { newGame as tttNewGame, play as tttPlay, pass as tttPass, cpuMove as tttCpu, turnSeconds as tttTurnSeconds, normaliseRoomCode, type TTTState, type TTTLevel, type Mark } from "@/lib/game/ttt";
 import type { RoomView } from "@/lib/game/tttOnline";
+import { InterestForm, ClassesHero } from "@/components/InterestForm";
 import { buildPopRound, popUpMs, popPoints, type PopRound } from "@/lib/game/minigames";
 import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
   buildOddRound, digitSum, buildSortRound, sortedIds,
@@ -107,6 +108,7 @@ export function GameApp({
   isAdmin = false,
   guest = false,
   overrides = {},
+  classesEnabled = false,
 }: {
   initialProgress: ProgressState;
   dailyStreak: number;
@@ -114,6 +116,8 @@ export function GameApp({
   initialBonusGems?: number;
   dailyChestReward?: number | null;
   user: { name: string | null; email: string | null };
+  /* Class-enquiry links show only once the owner's sheet (SHEET_WEBHOOK_URL) is configured, so a form never fails in front of a parent. */
+  classesEnabled?: boolean;
   /* Server-resolved; the /admin page re-checks it, so this only decides
      whether the menu row is drawn. */
   isAdmin?: boolean;
@@ -952,8 +956,12 @@ export function GameApp({
             ["balloon", 2],
             ["numberline", 2],
           ]);
+    /* Dev only: localStorage "dev.forceMode" = "catch" etc. forces a question style for testing. */
+    let forced: Mode | null = null;
+    if (process.env.NODE_ENV !== "production") { try { forced = localStorage.getItem("dev.forceMode") as Mode | null; } catch {} }
+    const useMode: Mode = forced ?? mode;
     setCurProblem(problem);
-    setCurMode(mode);
+    setCurMode(useMode);
     setCurSelection(null);
     setCheckEnabled(false);
     setWrongFlash(false);
@@ -964,11 +972,11 @@ export function GameApp({
     setTimerMs((30 + 10 * (n - 1)) * 1000);
     setTimerKey((k) => k + 1);
     questionStartRef.current = Date.now();
-    if (mode === "choice") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
-    else if (mode === "target" || mode === "arcade" || mode === "catch" || mode === "balloon")
+    if (useMode === "choice") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
+    else if (useMode === "target" || useMode === "arcade" || useMode === "catch" || useMode === "balloon")
       setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 5)]));
-    else if (mode === "numberline") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 4)]));
-    else if (mode === "truefalse") {
+    else if (useMode === "numberline") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 4)]));
+    else if (useMode === "truefalse") {
       const isTrue = Math.random() < 0.5;
       setTfIsTrue(isTrue);
       setTfShown(isTrue ? problem.answer : makeDistractors(problem.answer, 1)[0]);
@@ -2021,6 +2029,8 @@ export function GameApp({
      Three ways to play one board: pass the phone, the CPU, or a friend over
      a room. Level 1 is plain tic-tac-toe; from level 2 a sum guards each
      square. The board logic is pure (ttt.ts); online, the server owns it. */
+  /* "Learn with a teacher" sheet — which link opened it travels with the enquiry. */
+  const [classesFrom, setClassesFrom] = useState<string | null>(null);
   const [tttMode, setTttMode] = useState<null | "local" | "cpu" | "online">(null);
   const [tttLevel, setTttLevel] = useState<TTTLevel>(1);
   const [ttt, setTtt] = useState<TTTState | null>(null);
@@ -2654,6 +2664,10 @@ export function GameApp({
               <span>🌐 {t.menu.language}</span>
               <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
             </button>
+            {classesEnabled && <button className="menu-row" onClick={() => { setMenuOpen(false); setClassesFrom("menu"); }}>
+              <span>👩‍🏫 {lang === "ja" ? "先生と学ぶ（授業）" : "Classes with a teacher"}</span>
+              <span className="menu-row-val">›</span>
+            </button>}
             <button className="menu-row" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
               <span>🏫 {ja ? "クラス" : "Class"}</span>
               <span className="menu-row-val">
@@ -2907,6 +2921,22 @@ export function GameApp({
             <button className="btn btn-ghost lock-sheet-later" onClick={() => setLockOpen(null)}>
               {lang === "ja" ? "あとで" : "Not now"}
             </button>
+          </div>
+        </>
+      )}
+
+      {classesFrom && (
+        <>
+          <div className="menu-overlay" onClick={() => setClassesFrom(null)} />
+          <div className="hint-sheet interest-sheet" role="dialog" aria-modal="true">
+            <button className="interest-close" aria-label={lang === "ja" ? "閉じる" : "Close"} onClick={() => setClassesFrom(null)}>✕</button>
+            <ClassesHero lang={lang} />
+            <p className="interest-lede">
+              {lang === "ja"
+                ? "詳しく知りたい方は、下のフォームを送るか、直接ご連絡ください。"
+                : "Leave your details below, or contact us directly — we'll get back to you."}
+            </p>
+            <InterestForm lang={lang} source={classesFrom} onDone={() => setClassesFrom(null)} />
           </div>
         </>
       )}
@@ -3467,6 +3497,7 @@ export function GameApp({
             assignedTopic={assignedTopic}
             onOpenFriends={openFriends}
             onAcceptDuel={acceptDuel}
+            onOpenClasses={classesEnabled ? () => setClassesFrom("home") : undefined}
             lang={lang}
             t={t}
           />
@@ -3474,7 +3505,8 @@ export function GameApp({
 
         {view === "topic" && currentTopic && (
           <TopicView topic={currentTopic} lang={lang} t={t}
-            canEdit={isAdmin && !guest} override={ovr[currentTopic.id]} onSave={saveOverride} />
+            canEdit={isAdmin && !guest} override={ovr[currentTopic.id]} onSave={saveOverride}
+            onOpenClasses={classesEnabled ? () => setClassesFrom(`lesson:${currentTopic.id}`) : undefined} />
         )}
 
         {view === "stagemap" && currentTopic && (

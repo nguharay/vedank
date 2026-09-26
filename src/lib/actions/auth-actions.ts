@@ -7,6 +7,7 @@ import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { signIn } from "@/auth";
 import { COUNTRY_CODES } from "@/lib/countries";
+import { addOwnerRow } from "@/lib/owner-notify";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
@@ -59,6 +60,17 @@ export async function signupAction(
     phoneCode: phoneRaw ? phoneCodeRaw : null,
     phone: phoneRaw || null,
   });
+
+  /* Every new registration becomes a row in the owner's sheet ("Registrations"
+     tab). Best effort and time-boxed (8s): a slow Google must never block a sign-up. */
+  await addOwnerRow("Registrations", {
+    Name: name,
+    Username: username,
+    Email: email,
+    Country: country,
+    Phone: phoneRaw ? `${phoneCodeRaw} ${phoneRaw}` : "",
+    Language: preferredLang === "ja" ? "日本語" : "English",
+  }).catch(() => false);
 
   await signIn("credentials", { email, password, redirectTo: safeNext(formData.get("from")) });
 }

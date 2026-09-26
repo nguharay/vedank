@@ -44,6 +44,7 @@ export function HomeView({
   assignedTopic,
   onOpenFriends,
   onAcceptDuel,
+  onOpenClasses,
   lang,
   t,
 }: {
@@ -73,6 +74,7 @@ export function HomeView({
   onEnterComp: (c: CompetitionSummary) => void;
   assignment: { name: string; teacherName: string; assignedNote: string | null } | undefined;
   assignedTopic: Topic | undefined;
+  onOpenClasses?: () => void;
   onOpenFriends: () => void;
   onAcceptDuel: (d: ChallengeRow) => void;
   lang: Lang;
@@ -398,6 +400,19 @@ export function HomeView({
           </button>
         )}
       </div>
+
+      {onOpenClasses && (
+        <button className="classes-card" onClick={onOpenClasses}>
+          <span className="classes-card-icon">👩‍🏫</span>
+          <span className="classes-card-body">
+            <span className="classes-card-title">{lang === "ja" ? "先生と学ぼう" : "Learn with a teacher"}</span>
+            <span className="classes-card-sub">
+              {lang === "ja" ? "日本で対面・オンラインの授業があります" : "Live classes — in person in Japan, or online"}
+            </span>
+          </span>
+          <span className="classes-card-go">{lang === "ja" ? "くわしく" : "Find out"} ›</span>
+        </button>
+      )}
     </section>
   );
 }

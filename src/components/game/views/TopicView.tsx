@@ -223,9 +223,10 @@ export function BookMethodCard({
 }
 
 export function TopicView({
-  topic, lang, t, canEdit = false, override, onSave,
+  topic, lang, t, canEdit = false, override, onSave, onOpenClasses,
 }: {
   topic: Topic; lang: Lang; t: UIDict;
+  onOpenClasses?: () => void;
   canEdit?: boolean;
   override?: TopicOverride;
   onSave?: (topicId: string, data: TopicOverride) => Promise<boolean>;
@@ -264,6 +265,12 @@ export function TopicView({
             <Mascot mood="excited" />
           </div>
         </div>
+      )}
+
+      {onOpenClasses && (
+        <button className="classes-strip" onClick={onOpenClasses}>
+          {lang === "ja" ? "👩‍🏫 この方法を先生と学びたい？ 日本で対面・オンライン授業あり ›" : "👩‍🏫 Want to learn this with a teacher? Classes in Japan & online ›"}
+        </button>
       )}
     </section>
   );
