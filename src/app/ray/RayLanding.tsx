@@ -16,7 +16,7 @@ const BENEFITS: { title: string; line: string }[] = [
 
 
 /* Landing page for Ray先生's classes — for ads, flyers, LINE and social posts.
-   Japanese only and deliberately short: why join → the essentials → form,
+   Japanese only and deliberately short: the essentials → form → why join,
    with a way into the game at the top and the bottom. */
 export function RayLanding({ enabled }: { enabled: boolean }) {
   return (
@@ -33,7 +33,7 @@ export function RayLanding({ enabled }: { enabled: boolean }) {
         <div className="lp-hero-text">
           <div className="lp-kicker">オンライン ・ 対面（日本）</div>
           <h1>Ray先生と学ぶ<br />インド式数学</h1>
-          <p>考えて、ひらめいて、挑戦しよう！<br />小学生から大人まで。</p>
+          <p>考えて、ひらめいて、挑戦しよう！<br />数学の「見方」が変わる授業です。</p>
           <div className="lp-hero-btns">
             <a href="#form" className="lp-btn lp-btn-primary">授業について問い合わせる →</a>
             <Link href="/" className="lp-btn lp-btn-ghost">まずはゲームで遊ぶ 🎮</Link>
@@ -42,17 +42,6 @@ export function RayLanding({ enabled }: { enabled: boolean }) {
         <div className="lp-hero-mascot" aria-hidden="true"><Mascot mood="excited" /></div>
       </section>
 
-      <section className="lp-section">
-        <h2>授業に参加すると、こんないいことが！</h2>
-        <div className="lp-comic">
-          {BENEFITS.map((b, i) => (
-            <div className="lp-panel" key={b.title}>
-              <div className="lp-panel-head"><span className="lp-panel-num">{i + 1}</span>{b.title}</div>
-              <div className="lp-bubble">{b.line}</div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       <section className="lp-section lp-about">
         <h2>授業について</h2>
@@ -68,6 +57,18 @@ export function RayLanding({ enabled }: { enabled: boolean }) {
         <h2>授業のお問い合わせ</h2>
         <div className="lp-form-card">
           {enabled ? <InterestForm lang="ja" source="landing" /> : <ContactLinks lang="ja" />}
+        </div>
+      </section>
+
+      <section className="lp-section">
+        <h2>授業に参加すると、こんないいことが！</h2>
+        <div className="lp-comic">
+          {BENEFITS.map((b, i) => (
+            <div className="lp-panel" key={b.title}>
+              <div className="lp-panel-head"><span className="lp-panel-num">{i + 1}</span>{b.title}</div>
+              <div className="lp-bubble">{b.line}</div>
+            </div>
+          ))}
         </div>
       </section>
 
