@@ -2671,7 +2671,7 @@ export function GameApp({
               <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
             </button>
             {classesEnabled && lang === "ja" && <button className="menu-row" onClick={() => { setMenuOpen(false); setClassesFrom("menu"); }}>
-              <span>👩‍🏫 Ray先生と学ぶ（授業）</span>
+              <span>🎓 Ray先生と学ぶ（授業）</span>
               <span className="menu-row-val">›</span>
             </button>}
             <button className="menu-row" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
