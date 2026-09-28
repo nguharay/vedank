@@ -398,7 +398,7 @@ export function popUpMs(streak: number): number {
 /* Pop sums are meant to be read and answered in a second or two — this is a
    reflex game, so the arithmetic stays small. It ramps gently: single digits,
    then teens and the small tables, then the book's easiest tricks. */
-function popSum(streak: number): { prompt: string; answer: number } {
+export function popSum(streak: number): { prompt: string; answer: number } {
   const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
   const tier = streak < 6 ? 0 : streak < 14 ? 1 : 2;
   const k = ri(0, 3);
@@ -438,4 +438,44 @@ export function buildPopRound(streak: number): PopRound {
 /* Combos pay: the fifth hit in a row is worth more than the first. */
 export function popPoints(combo: number): number {
   return 10 + Math.min(combo, 10) * 5;
+}
+
+/* ---------- Math Runner & Math Race ----------
+   Both are "answer to move" games: one sum, three answers to tap. They share
+   Number Pop's sums, which ramp by streak and stay small enough to do in a
+   second or two while something is running at you. */
+export type ChoiceRound = { prompt: string; answer: number; options: number[] };
+
+export function buildChoiceRound(streak: number): ChoiceRound {
+  const p = popSum(streak);
+  const swapped = Number(String(Math.abs(p.answer)).split("").reverse().join(""));
+  const cands = [p.answer + 1, p.answer - 1, p.answer + 10, p.answer - 10, swapped, p.answer + 2, p.answer - 2];
+  const decoys = new Set<number>();
+  for (const c of shuffle(cands)) {
+    if (decoys.size >= 2) break;
+    if (c !== p.answer && c > 0 && Number.isFinite(c)) decoys.add(c);
+  }
+  while (decoys.size < 2) decoys.add(p.answer + 3 + decoys.size);
+  return { prompt: p.prompt, answer: p.answer, options: shuffle([p.answer, ...decoys]) };
+}
+
+/* Runner: how long an obstacle takes to reach you — the answer window. */
+export function runnerWindowMs(streak: number): number {
+  return Math.max(2600, 5200 - streak * 110);
+}
+/* Runner: each obstacle cleared is worth more the longer the run. */
+export function runnerPoints(streak: number): number {
+  return 10 + Math.min(streak, 20) * 2;
+}
+
+/* Race: correct answers needed to cross the line, and how long each CPU
+   rival takes to get there. The fast rival is beatable at ~3 s an answer. */
+export const RACE_GOAL = 15;
+export const RACE_RIVALS = [
+  { id: "usa", emoji: "🐰", name: "Hop", nameJa: "ウサピョン", secs: 52 },
+  { id: "kame", emoji: "🐢", name: "Shelly", nameJa: "カメキチ", secs: 70 },
+];
+/* Where the player finished among the rivals, given their time. 1-based. */
+export function racePlace(secs: number): number {
+  return 1 + RACE_RIVALS.filter((r) => r.secs < secs).length;
 }

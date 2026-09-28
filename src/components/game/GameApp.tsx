@@ -78,6 +78,7 @@ import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
 import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
+import { RunnerGame, RaceGame } from "./views/RunGames";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
@@ -131,7 +132,7 @@ export function GameApp({
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop"];
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
@@ -821,7 +822,7 @@ export function GameApp({
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
   const GUEST_TOPICS = 2;
-  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop"]);
+  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   function guestLocked(kind: string): boolean {
     if (!guest) return false;
@@ -1781,6 +1782,8 @@ export function GameApp({
         sortg: Number(localStorage.getItem("sutraSprint.sortBest") || 0),
         sprint: Number(localStorage.getItem("sutraSprint.sprintBest") || 0),
         pop: Number(localStorage.getItem("sutraSprint.popBest") || 0),
+        runner: Number(localStorage.getItem("sutraSprint.runnerBest") || 0),
+        race: Number(localStorage.getItem("sutraSprint.raceBest") || 0),
         ...Object.fromEntries(QUICK_GAMES.map((g) => [g.id, Number(localStorage.getItem(`sutraSprint.quick.${g.id}`) || 0)])),
       });
     } catch {}
@@ -3899,6 +3902,27 @@ export function GameApp({
               <span className="game-card-go">›</span>
             </button>
 
+            {/* The two action games sit up top with the tic-tac-toe card —
+                they are the ones that feel most like a real game. */}
+            <button className="ttt-card run-feature" onClick={shelf(() => setView("runner"), "runner")}>
+              <span className="feature-art runner" aria-hidden="true"><b className="fa-boy"><Mascot animated={false} /></b><b className="fa-rock">🪨</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🏃 計算ランナー" : "🏃 Math Runner"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "答えをタップしてジャンプ！どこまで走れるかな？" : "Answer to jump the rocks and logs. How far can you run?"}</span>
+                {(gameBests.runner ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.runner}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
+            <button className="ttt-card race-feature" onClick={shelf(() => setView("race"), "race")}>
+              <span className="feature-art race" aria-hidden="true"><b className="fa-flag">🏁</b><b className="fa-r1">🐰</b><b className="fa-r2">🐢</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🏁 計算レース" : "🏁 Math Race"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "正解でダッシュ！ウサギとカメに勝ってゴールしよう。" : "Every right answer is a dash. Beat the rabbit and the turtle!"}</span>
+                {(gameBests.race ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベストタイム" : "Best time"} {gameBests.race}s</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
+
             <button className="daily-game" onClick={startDailyGame}>
               <span className="daily-game-tag">{lang === "ja" ? "今日のゲーム" : "GAME OF THE DAY"}</span>
               <span className="daily-game-name">
@@ -3938,6 +3962,19 @@ export function GameApp({
             <div className="games-more">
               {lang === "ja" ? "新しいゲームを準備中！" : "More games on the way."}
             </div>
+          </section>
+        )}
+
+        {view === "runner" && (
+          <section className="view active">
+            <RunnerGame lang={lang} sound={sound} celebrate={() => confetti.burstCenter(60, 0.35)}
+              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+          </section>
+        )}
+        {view === "race" && (
+          <section className="view active">
+            <RaceGame lang={lang} sound={sound} celebrate={() => confetti.burstCenter(90, 0.35)}
+              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
           </section>
         )}
 
