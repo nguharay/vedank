@@ -3917,8 +3917,8 @@ export function GameApp({
               <span className="feature-art race" aria-hidden="true"><b className="fa-flag">🏁</b><b className="fa-r1">🐰</b><b className="fa-r2">🐢</b></span>
               <span className="ttt-card-body">
                 <span className="ttt-card-name">{lang === "ja" ? "🏁 計算レース" : "🏁 Math Race"}</span>
-                <span className="ttt-card-sub">{lang === "ja" ? "正解でダッシュ！ウサギとカメに勝ってゴールしよう。" : "Every right answer is a dash. Beat the rabbit and the turtle!"}</span>
-                {(gameBests.race ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベストタイム" : "Best time"} {gameBests.race}s</span>}
+                <span className="ttt-card-sub">{lang === "ja" ? "正解でダッシュ！4つのレベル、ライバルはどんどん速くなる。" : "Every right answer is a dash. 4 levels of faster rivals!"}</span>
+                {(gameBests.race ?? 0) > 0 && <span className="feature-best mono">🏆 Lv.{gameBests.race} {lang === "ja" ? "クリア" : "cleared"}</span>}
               </span>
               <span className="game-card-go">›</span>
             </button>

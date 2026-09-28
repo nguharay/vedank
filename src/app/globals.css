@@ -2683,3 +2683,16 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .fa-r2{ right:5px; bottom:12px; font-size:17px; animation:run-bob .34s ease-in-out infinite alternate; }
 .feature-best{ margin-top:2px; align-self:flex-start; font-size:11px; font-weight:800; background:rgba(255,255,255,.22); border-radius:999px; padding:2px 8px; }
 @media (prefers-reduced-motion: reduce){ .fa-boy, .fa-rock, .fa-r1, .fa-r2{ animation:none; } }
+/* race levels */
+.race-levels{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:4px 0 6px; }
+.race-lvbtn{ display:flex; flex-direction:column; align-items:center; gap:1px; padding:6px 2px; border-radius:12px; cursor:pointer;
+  border:2px solid #d8d4ea; background:#fff; color:#1d1b33; font-family:inherit; }
+.race-lvbtn.on{ border-color:#1d1b33; background:#ffe89a; box-shadow:0 3px 0 #1d1b33; }
+.race-lvbtn.locked{ opacity:.45; cursor:not-allowed; }
+.race-lvbtn-emo{ font-size:16px; line-height:1.2; }
+.race-lvbtn-name{ font:800 12px/1.1 "Baloo 2",system-ui,sans-serif; }
+.race-lvbtn-sub{ font-size:9.5px; font-weight:700; color:#6a6688; white-space:nowrap; }
+.race-vs{ font-size:12px; font-weight:700; color:#4a4766; margin:2px 0 4px; }
+.race-unlock{ margin-top:6px; font-size:13px; font-weight:800; color:#2E8B57; }
+.race-unlock.soft{ color:#6a6688; font-weight:700; font-size:12px; }
+.race-over-btns{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }

@@ -468,14 +468,50 @@ export function runnerPoints(streak: number): number {
   return 10 + Math.min(streak, 20) * 2;
 }
 
-/* Race: correct answers needed to cross the line, and how long each CPU
-   rival takes to get there. The fast rival is beatable at ~3 s an answer. */
+/* Race: correct answers needed to cross the line. */
 export const RACE_GOAL = 15;
-export const RACE_RIVALS = [
-  { id: "usa", emoji: "🐰", name: "Hop", nameJa: "ウサピョン", secs: 52 },
-  { id: "kame", emoji: "🐢", name: "Shelly", nameJa: "カメキチ", secs: 70 },
+
+/* Race levels. The sums never get harder — the rivals get faster. Each level
+   has two rivals; `secs` is how long each takes to finish. Beating the faster
+   one needs roughly secs / RACE_GOAL seconds per answer:
+     Lv1  ~6 s an answer   Lv2  ~3.7 s   Lv3  ~2.8 s   Lv4  ~2.1 s
+   Winning a level (1st place) unlocks the next. */
+export type RaceRival = { id: string; emoji: string; name: string; nameJa: string; secs: number };
+export type RaceLevel = { id: number; name: string; nameJa: string; rivals: [RaceRival, RaceRival] };
+export const RACE_LEVELS: RaceLevel[] = [
+  { id: 1, name: "Beginner", nameJa: "はじめて", rivals: [
+    { id: "kame", emoji: "🐢", name: "Shelly", nameJa: "カメキチ", secs: 90 },
+    { id: "katatsu", emoji: "🐌", name: "Slowpoke", nameJa: "ノロノロ", secs: 105 },
+  ] },
+  { id: 2, name: "Runner", nameJa: "ランナー", rivals: [
+    { id: "usa", emoji: "🐰", name: "Hop", nameJa: "ウサピョン", secs: 56 },
+    { id: "kame", emoji: "🐢", name: "Shelly", nameJa: "カメキチ", secs: 68 },
+  ] },
+  { id: 3, name: "Pro", nameJa: "プロ", rivals: [
+    { id: "kitsune", emoji: "🦊", name: "Foxy", nameJa: "コンタ", secs: 42 },
+    { id: "usa", emoji: "🐰", name: "Hop", nameJa: "ウサピョン", secs: 48 },
+  ] },
+  { id: 4, name: "Champion", nameJa: "チャンピオン", rivals: [
+    { id: "cheetah", emoji: "🐆", name: "Dash", nameJa: "チーター", secs: 32 },
+    { id: "kitsune", emoji: "🦊", name: "Foxy", nameJa: "コンタ", secs: 37 },
+  ] },
 ];
-/* Where the player finished among the rivals, given their time. 1-based. */
-export function racePlace(secs: number): number {
-  return 1 + RACE_RIVALS.filter((r) => r.secs < secs).length;
+export function raceLevel(id: number): RaceLevel {
+  return RACE_LEVELS.find((l) => l.id === id) ?? RACE_LEVELS[0];
+}
+
+/* A rival's progress (0..1) after `t` seconds. They do not run like a
+   metronome: each surges and fades a little mid-race — zero at the start and
+   at the line, so their finish time is exactly `secs` — which makes the lead
+   change hands and keeps the race close. */
+export function rivalProgress(r: RaceRival, t: number, seed: number): number {
+  if (t >= r.secs) return 1;
+  const f = t / r.secs;
+  const surge = Math.sin(f * Math.PI) * (0.05 * Math.sin(t * 0.9 + seed * 2.1) + 0.025 * Math.sin(t * 2.3 + seed));
+  return Math.max(0, Math.min(1, f + surge));
+}
+
+/* Where the player finished, given their time. 1-based. */
+export function racePlace(level: RaceLevel, secs: number): number {
+  return 1 + level.rivals.filter((r) => r.secs < secs).length;
 }

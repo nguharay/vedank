@@ -26,6 +26,14 @@ export function ServiceWorkerRegistrar() {
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
+    /* Not in `next dev`: dev chunk URLs are not content-hashed, so the worker's
+       cache-first rule would pin an old stylesheet under new code. Also clear
+       out a worker an earlier dev session left behind. */
+    if (process.env.NODE_ENV !== "production") {
+      navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister())).catch(() => {});
+      if ("caches" in window) caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))).catch(() => {});
+      return;
+    }
     /* After load, so registration never competes with the first paint. */
     const register = () => {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
