@@ -2158,10 +2158,16 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
    inside them were not — a 450px circle carried 19px type. Container units
    let the type follow the tile, clamped so a phone is unchanged. */
 .target-tile, .balloon-tile, .choice-tile, .catch-tile{ container-type:inline-size; }
-.target-tile{ font-size:clamp(19px, 15cqi, 52px); }
-.balloon-body{ font-size:clamp(17px, 15cqi, 46px); }
-.choice-tile{ font-size:clamp(24px, 12cqi, 40px); }
-.catch-tile{ font-size:clamp(15px, 16cqi, 34px); }
+/* …and shrink to fit long answers: a digit is ~0.6em wide, so N characters
+   need about 0.6·N em — capped to the tile's inner width (--chars is set per
+   tile from the formatted number, e.g. "469,224" → 7). */
+/* Container units resolve against the nearest *ancestor* container, so the
+   number sits in a child (.tile-num) — then cqi means "this tile". */
+.target-tile .tile-num{ font-size:min(clamp(19px, 15cqi, 52px), calc(86cqi / (var(--chars, 3) * 0.55))); }
+.balloon-body{ font-size:min(clamp(17px, 15cqi, 46px), calc(82cqi / (var(--chars, 3) * 0.55))); }
+.choice-tile .tile-num{ font-size:min(clamp(24px, 12cqi, 40px), calc(82cqi / (var(--chars, 3) * 0.6))); }
+.catch-tile .tile-num{ font-size:min(clamp(14px, 27cqi, 34px), calc(86cqi / (var(--chars, 3) * 0.55))); }
+.tile-num, .balloon-body{ white-space:nowrap; letter-spacing:-.02em; line-height:1; }
 
 
 /* ---------- guest locks ---------- */
