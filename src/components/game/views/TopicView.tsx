@@ -5,6 +5,7 @@ import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ, BOOK_DIAGRAMS2, BOOK_DIAGRAM_EQ2, BOOK_
 import { Mascot } from "../Mascot";
 import type { UIDict } from "../i18n";
 import { DIGIT_ARROW_EX, DIGIT_FLOW_TOPICS } from "./shared";
+import { monsterFor } from "../monsters";
 import type { TopicOverride } from "@/lib/game/overrides";
 import { stageBlocker, stageUnlocked, starsForStage, topicProgressOf } from "@/lib/game/state";
 import type { ProgressState } from "@/lib/game/state";
@@ -378,7 +379,13 @@ export function StageMapView({
                   style={unlocked ? { background: gradCss(topic.grad) } : {}}
                   onClick={() => unlocked && onPlay(n)}
                 >
-                  {unlocked ? n : "🔒"}
+                  {unlocked ? (
+                    <span className={`stage-monster${stars > 0 ? " beaten" : ""}${n === STAGE_COUNT ? " boss" : ""}`}>
+                      {n === STAGE_COUNT && <i className="stage-crown">👑</i>}
+                      {monsterFor(topic.id, n, lang).emoji}
+                      <b className="stage-n mono">{n}</b>
+                    </span>
+                  ) : "🔒"}
                   {unlocked && (
                     <span className="stars-mini">
                       {[0, 1, 2].map((k) => (

@@ -2547,3 +2547,32 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .result-monster-emoji{ font-size:52px; line-height:1; }
 .result-monster.beaten .result-monster-emoji{ transform:rotate(90deg); filter:grayscale(.6); opacity:.8; }
 .result-monster-line{ font-size:15px; font-weight:900; color:var(--ink); }
+
+/* ---------- adventure: hero stats, monsters on the maps, boss loot ---------- */
+.hero-stats{ display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:8px; font-size:12px; font-weight:800; color:#fff; opacity:.95; }
+.hero-stats span{ padding:3px 10px; border-radius:999px; background:rgba(0,0,0,.18); }
+.hero-stats b{ font-size:13px; }
+.continue-monster{ font-size:20px; margin-right:6px; vertical-align:-2px; display:inline-block; animation:monsterIdle 1.8s ease-in-out infinite; }
+.node-wrap{ position:relative; }
+.node-monster{ position:absolute; top:-6px; right:-14px; z-index:3; font-size:24px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,0,0,.25));
+  animation:monsterIdle 2s ease-in-out infinite; }
+.node-monster.beaten{ animation:none; filter:grayscale(.8); opacity:.7; }
+.node-monster i{ position:absolute; right:-4px; bottom:-4px; font-style:normal; font-size:11px; font-weight:900; color:#fff; background:var(--green-dk);
+  border-radius:50%; width:16px; height:16px; display:grid; place-items:center; opacity:1; filter:none; }
+.stage-monster{ position:relative; display:grid; place-items:center; font-size:34px; line-height:1; }
+.stage-monster.boss{ font-size:42px; }
+.stage-monster .stage-crown{ position:absolute; top:-18px; font-style:normal; font-size:18px; }
+.stage-monster .stage-n{ position:absolute; bottom:-10px; right:-12px; font-size:11px; font-weight:900; color:#fff; background:var(--ink-line);
+  border-radius:999px; padding:1px 6px; }
+.stage-monster.beaten{ filter:grayscale(.75); }
+.stage-monster.beaten::after{ content:"✓"; position:absolute; top:-6px; left:-12px; font-size:12px; font-weight:900; color:#fff; background:var(--green-dk);
+  width:18px; height:18px; border-radius:50%; display:grid; place-items:center; }
+.loot-chest{ display:flex; align-items:center; justify-content:center; gap:8px; margin:6px auto 4px; padding:10px 18px; cursor:pointer; font-family:inherit;
+  font-size:15px; font-weight:900; color:var(--ink); border-radius:16px; border:3px solid var(--ink-line); box-shadow:3px 3px 0 var(--ink-line);
+  background:linear-gradient(120deg,#FFE27A,#FFB800); animation:chestWiggle 1.2s ease-in-out infinite; }
+.loot-chest-ic{ font-size:26px; }
+@keyframes chestWiggle{ 0%,100%{ transform:rotate(0); } 20%{ transform:rotate(-4deg) scale(1.03); } 40%{ transform:rotate(4deg) scale(1.03); } 60%{ transform:rotate(0); } }
+.result-gems.loot-open{ font-size:28px; animation:lootPop .5s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes lootPop{ from{ transform:scale(.3); opacity:0; } to{ transform:scale(1); opacity:1; } }
+@media (prefers-reduced-motion: reduce){ .loot-chest, .node-monster, .continue-monster{ animation:none; } }
+.continue-topic{ display:block; font-size:11.5px; font-weight:700; opacity:.9; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
