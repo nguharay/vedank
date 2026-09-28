@@ -68,6 +68,7 @@ import { applyOverride, type OverrideMap, type TopicOverride } from "@/lib/game/
 import { newGame as tttNewGame, play as tttPlay, pass as tttPass, cpuMove as tttCpu, turnSeconds as tttTurnSeconds, normaliseRoomCode, type TTTState, type TTTLevel, type Mark } from "@/lib/game/ttt";
 import type { RoomView } from "@/lib/game/tttOnline";
 import { InterestForm, ClassesHero } from "@/components/InterestForm";
+import { monsterFor } from "./monsters";
 import { buildPopRound, popUpMs, popPoints, type PopRound } from "@/lib/game/minigames";
 import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
   buildOddRound, digitSum, buildSortRound, sortedIds,
@@ -882,6 +883,11 @@ export function GameApp({
 
   /* ================= PRACTICE ================= */
   const [curStage, setCurStage] = useState({ n: 1, qIndex: 0, correct: 0 });
+  /* The auto-advance timer is created in the render *before* the answer that
+     scheduled it was counted, so it must read the stage from here — reading
+     `curStage` there dropped the last correct answer (3 hits scored as 2). */
+  const curStageRef = useRef(curStage);
+  useEffect(() => { curStageRef.current = curStage; }, [curStage]);
   /* How each question of the current stage went, so the run can be read at a
      glance while it is still happening rather than only in the result. */
   const [stageMarks, setStageMarks] = useState<(boolean | null)[]>([]);
@@ -1247,19 +1253,19 @@ export function GameApp({
     }
     setFeedback(null);
     if (runReady) addRun();
-    const nextIndex = curStage.qIndex + 1;
+    const stage = curStageRef.current;
+    const nextIndex = stage.qIndex + 1;
     if (nextIndex >= QUESTIONS_PER_STAGE) {
       await finishStage();
     } else {
       setCurStage((s) => ({ ...s, qIndex: nextIndex }));
-      if (currentTopic) newStageQuestion(currentTopic, curStage.n);
+      if (currentTopic) newStageQuestion(currentTopic, stage.n);
     }
   }
 
   async function finishStage() {
     if (!currentTopic) return;
-    const correct = curStage.correct;
-    const n = curStage.n;
+    const { correct, n } = curStageRef.current;
     /* Same numbers either way: the server and the browser both call
        stageOutcome, so a guest's stars do not change when they sign up. */
     const result = guest
@@ -2640,8 +2646,8 @@ export function GameApp({
             <div className="account-menu-head">
               <div className="avatar-btn avatar-lg">{(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}</div>
               <div>
-                <div className="account-name">{user.name || t.menu.player}</div>
-                <div className="account-email">{user.email}</div>
+                <div className="account-name">{guest ? (lang === "ja" ? "ゲスト" : "Guest") : user.name || t.menu.player}</div>
+                <div className="account-email">{guest ? (lang === "ja" ? "このブラウザにだけ保存中" : "Saved in this browser only") : user.email}</div>
               </div>
             </div>
             {canInstall && (
@@ -2744,9 +2750,22 @@ export function GameApp({
               </>
             )}
             <div className="menu-divider" />
-            <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
-              <span>⏻ {t.menu.signOut}</span>
-            </button>
+            {guest ? (
+              <>
+                <a className="menu-row menu-row-link" href="/login?from=%2F">
+                  <span>🔑 {lang === "ja" ? "ログイン" : "Sign in"}</span>
+                  <span className="menu-row-val">→</span>
+                </a>
+                <a className="menu-row menu-row-link menu-row-signup" href="/signup?from=%2F">
+                  <span>✨ {lang === "ja" ? "無料で登録（記録を保存）" : "Create a free account"}</span>
+                  <span className="menu-row-val">→</span>
+                </a>
+              </>
+            ) : (
+              <button className="menu-row menu-row-danger" onClick={() => signOut({ redirectTo: "/login" })}>
+                <span>⏻ {t.menu.signOut}</span>
+              </button>
+            )}
           </div>
         </>
       )}
@@ -4334,7 +4353,7 @@ export function GameApp({
                   ) : null)}
                 {(inventory?.hintTokens ?? 0) > 0 && curSelection === null && (
                   <button className="btn btn-ghost hint-btn" onClick={useHintToken}>
-                    💡 {t.practice.lesson} <span className="token-count mono">×{inventory?.hintTokens}</span>
+                    💡 {lang === "ja" ? "ヒント" : "Hint"} <span className="token-count mono">×{inventory?.hintTokens}</span>
                   </button>
                 )}
                 {curMode === "type" && (
@@ -4378,8 +4397,21 @@ export function GameApp({
             {stageResult.isBoss && (
               <div className="boss-badge">{stageResult.passed ? t.result.bossDefeated : t.result.bossStage}</div>
             )}
+            {currentTopic && (() => {
+              const m = monsterFor(currentTopic.id, stageResult.n, lang);
+              return (
+                <div className={`result-monster${stageResult.passed ? " beaten" : ""}`}>
+                  <span className="result-monster-emoji">{m.emoji}</span>
+                  <span className="result-monster-line">
+                    {stageResult.passed
+                      ? (lang === "ja" ? `${m.name}をたおした！` : `You beat ${m.name}!`)
+                      : (lang === "ja" ? `${m.name}はまだ元気…` : `${m.name} is still standing…`)}
+                  </span>
+                </div>
+              );
+            })()}
             <div className={`hanko ${stageResult.passed ? "" : "fail"}`}>
-              <span className="jp">{stageResult.passed ? "合格" : "再挑戦"}</span>
+              <span className="jp">{stageResult.passed ? "勝利" : "再戦"}</span>
               <span className="en">{stageResult.passed ? t.result.clear : t.result.retry}</span>
             </div>
             <div className="result-stars">

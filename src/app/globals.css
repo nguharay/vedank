@@ -2507,3 +2507,43 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .lp-fact-ic{ display:grid; place-items:center; width:42px; height:42px; flex:none; border-radius:50%; font-size:22px; background:var(--surface); border:2px solid var(--ink-line); }
 .lp-fact-k{ font-size:12px; font-weight:900; color:var(--sun1); letter-spacing:.06em; }
 .lp-fact-v{ font-size:13.5px; font-weight:800; color:var(--ink); line-height:1.45; }
+.menu-row-signup{ color:var(--sun1); font-weight:900; }
+
+/* ---------- battle: each stage is a monster fight ---------- */
+.battle{ position:relative; display:flex; align-items:center; gap:12px; margin:4px 0 10px; padding:10px 12px; border-radius:18px;
+  border:3px solid var(--ink-line); box-shadow:3px 3px 0 var(--ink-line);
+  background:linear-gradient(120deg, color-mix(in srgb, #7B3FA0 16%, var(--surface)), color-mix(in srgb, #FF3D77 10%, var(--surface))); }
+.battle.boss{ background:linear-gradient(120deg, color-mix(in srgb, #FFB800 30%, var(--surface)), color-mix(in srgb, #D4006A 16%, var(--surface))); }
+.battle-monster{ position:relative; flex:none; width:58px; height:58px; display:grid; place-items:center; }
+.battle.boss .battle-monster{ width:70px; height:70px; }
+.battle-emoji{ font-size:44px; line-height:1; animation:monsterIdle 1.8s ease-in-out infinite; display:inline-block; }
+.battle.boss .battle-emoji{ font-size:54px; }
+.battle-crown{ position:absolute; top:-12px; left:50%; transform:translateX(-50%); font-size:20px; z-index:1; }
+@keyframes monsterIdle{ 0%,100%{ transform:translateY(0) scale(1); } 50%{ transform:translateY(-3px) scale(1.04); } }
+.battle.hit .battle-emoji{ animation:monsterHit .55s ease-out both; }
+@keyframes monsterHit{ 0%{ transform:translateX(0); filter:none; } 20%{ transform:translateX(-8px) rotate(-10deg); filter:brightness(2.2) saturate(0); }
+  45%{ transform:translateX(6px) rotate(8deg); } 70%{ transform:translateX(-3px); filter:none; } 100%{ transform:translateX(0); } }
+.battle.attack .battle-emoji{ animation:monsterLunge .5s ease-out both; }
+@keyframes monsterLunge{ 0%{ transform:scale(1); } 40%{ transform:translateX(16px) scale(1.25); } 100%{ transform:scale(1); } }
+.battle.attack{ animation:battleShake .4s ease-out; }
+@keyframes battleShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-5px); } 50%{ transform:translateX(5px); } 75%{ transform:translateX(-3px); } }
+.battle.down:not(.hit) .battle-emoji{ animation:none; transform:rotate(90deg) translateX(8px); filter:grayscale(.7); opacity:.75; }
+.battle-dmg{ position:absolute; top:-8px; right:-20px; font-size:14px; font-weight:900; color:#E0245E; white-space:nowrap;
+  text-shadow:0 1px 0 #fff, 0 0 4px #fff; animation:dmgFloat .9s ease-out both; }
+@keyframes dmgFloat{ from{ transform:translateY(8px) scale(.6); opacity:0; } 30%{ opacity:1; transform:translateY(0) scale(1.15); } to{ transform:translateY(-14px) scale(1); opacity:0; } }
+.battle-claw{ position:absolute; top:-6px; right:-8px; font-size:22px; animation:dmgFloat .8s ease-out both; }
+.battle-info{ flex:1; min-width:0; }
+.battle-name{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:15px; font-weight:900; color:var(--ink); }
+.battle-state{ font-size:11.5px; font-weight:800; color:var(--ink-dim); }
+.battle.attack .battle-state{ color:#E0245E; }
+.battle.down .battle-state{ color:var(--green-dk); }
+.battle-hp{ display:flex; align-items:center; gap:4px; margin-top:6px; }
+.battle-hp span{ flex:1; height:12px; border-radius:6px; border:2px solid var(--ink-line); background:var(--surface-2); }
+.battle-hp span.on{ background:linear-gradient(180deg,#7CE35B,#2FA84F); }
+.battle.boss .battle-hp span.on{ background:linear-gradient(180deg,#FF8A5B,#E0245E); }
+.battle-hp b{ flex:none; margin-left:4px; font-size:11px; color:var(--ink-dim); }
+@media (prefers-reduced-motion: reduce){ .battle-emoji, .battle, .battle-dmg, .battle-claw{ animation:none !important; } }
+.result-monster{ display:flex; flex-direction:column; align-items:center; gap:2px; margin-bottom:6px; }
+.result-monster-emoji{ font-size:52px; line-height:1; }
+.result-monster.beaten .result-monster-emoji{ transform:rotate(90deg); filter:grayscale(.6); opacity:.8; }
+.result-monster-line{ font-size:15px; font-weight:900; color:var(--ink); }
