@@ -2582,3 +2582,104 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 @keyframes lootPop{ from{ transform:scale(.3); opacity:0; } to{ transform:scale(1); opacity:1; } }
 @media (prefers-reduced-motion: reduce){ .loot-chest, .node-monster, .continue-monster{ animation:none; } }
 .continue-topic{ display:block; font-size:11.5px; font-weight:700; opacity:.9; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ---------- Math Runner & Math Race ---------- */
+.rg{ max-width:480px; margin:0 auto; }
+.rg-answers{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+.rg-ans{ font-size:24px; font-weight:800; padding:14px 6px; border-radius:18px; border:3px solid var(--ink);
+  background:var(--card, #fff); color:var(--ink); box-shadow:0 5px 0 var(--ink); cursor:pointer;
+  transition:transform .08s, box-shadow .08s; font-variant-numeric:tabular-nums; }
+.rg-ans:active{ transform:translateY(4px); box-shadow:0 1px 0 var(--ink); }
+.rg-ans.right{ background:#7ED957; color:#10300a; }
+.rg-ans.wrong{ background:#FF7A7A; color:#3a0909; animation:rg-shake .35s; }
+.rg-ans:disabled{ opacity:.75; }
+@keyframes rg-shake{ 25%{ transform:translateX(-5px) } 75%{ transform:translateX(5px) } }
+.rg-card{ position:absolute; inset:auto 14px 50%; transform:translateY(50%); z-index:6; text-align:center;
+  background:rgba(255,255,255,.94); color:#1d1b33; border:3px solid #1d1b33; border-radius:20px; padding:16px 14px;
+  box-shadow:0 6px 0 #1d1b33; }
+.rg-card-title{ font-family:"Baloo 2",system-ui,sans-serif; font-size:22px; font-weight:800; }
+.rg-card-sub{ font-size:13.5px; line-height:1.5; margin:6px 0 12px; color:#4a4766; font-weight:600; }
+.rg-card-medal{ font-size:46px; line-height:1; }
+.rg-card .btn{ margin-top:10px; }
+
+/* runner scene */
+.run-scene{ position:relative; height:250px; border-radius:22px; overflow:hidden; border:3px solid var(--ink);
+  background:linear-gradient(#8fd3ff 0%, #c9ecff 55%, #e9f8ff 70%); }
+.run-sun{ position:absolute; top:16px; right:22px; width:44px; height:44px; border-radius:50%;
+  background:radial-gradient(#fff6a8, #ffcf3a); box-shadow:0 0 0 8px rgba(255,214,70,.25); }
+.run-clouds, .run-hills, .run-trees, .run-ground{ position:absolute; left:0; background-repeat:repeat-x; will-change:transform; }
+.run-clouds, .run-hills{ width:calc(100% + 400px); }
+.run-trees{ width:200%; }
+.run-ground{ width:calc(100% + 100px); }
+.run-clouds{ top:18px; height:50px;
+  background-image:radial-gradient(ellipse 34px 14px at 40px 26px, #fff 98%, transparent), radial-gradient(ellipse 22px 12px at 66px 18px, #fff 98%, transparent),
+    radial-gradient(ellipse 30px 12px at 250px 34px, #fff 98%, transparent), radial-gradient(ellipse 18px 10px at 272px 26px, #fff 98%, transparent);
+  background-size:360px 50px; }
+.run-hills{ bottom:52px; height:90px;
+  background-image:radial-gradient(ellipse 120px 80px at 110px 100%, #9bd97a 98%, transparent), radial-gradient(ellipse 90px 60px at 260px 100%, #7cc85e 98%, transparent);
+  background-size:340px 90px; }
+.run-trees{ bottom:60px; height:36px; display:flex; font-size:26px; line-height:36px; opacity:.92; }
+.run-trees span{ width:50%; display:flex; justify-content:space-around; }
+.run-trees b{ font-weight:400; }
+.run-ground{ bottom:0; height:52px; background-color:#c79a5b;
+  background-image:linear-gradient(#6fcf4f 0 12px, transparent 12px), repeating-linear-gradient(90deg, transparent 0 34px, rgba(0,0,0,.08) 34px 44px);
+  background-size:100% 100%, 88px 100%; }
+.run-boy{ position:absolute; left:14%; bottom:42px; width:64px; height:64px; z-index:3; }
+.run-boy.run{ animation:run-bob .32s ease-in-out infinite alternate; }
+.run-boy.jump{ animation:run-jump .62s cubic-bezier(.3,.7,.4,1); }
+.run-boy.trip{ animation:run-trip .8s ease-out forwards; }
+@keyframes run-bob{ to{ transform:translateY(-5px) rotate(-3deg); } }
+@keyframes run-jump{ 50%{ transform:translateY(-92px) rotate(-10deg); } }
+@keyframes run-trip{ 30%{ transform:rotate(-28deg) translateY(4px); } 100%{ transform:rotate(-8deg); } }
+.run-obs{ position:absolute; bottom:44px; left:0; width:40px; text-align:center; font-size:36px; line-height:1; z-index:2; will-change:transform; transform:translate3d(-100px,0,0); }
+.run-q{ position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:4; white-space:nowrap;
+  font-size:28px; font-weight:800; color:#1d1b33; background:rgba(255,255,255,.92); border:3px solid #1d1b33;
+  border-radius:16px; padding:4px 16px; box-shadow:0 4px 0 #1d1b33; }
+.run-pop{ position:absolute; left:14%; bottom:120px; z-index:5; font-size:20px; font-weight:800; color:#ff9d00;
+  text-shadow:0 2px 0 #1d1b33; animation:run-pop .8s ease-out forwards; }
+@keyframes run-pop{ to{ transform:translateY(-40px); opacity:0; } }
+
+/* race track */
+.race-track{ position:relative; height:340px; border-radius:22px; overflow:hidden; border:3px solid var(--ink);
+  background:#7cc85e; display:flex; }
+.race-side{ width:13%; font-size:22px; line-height:2.6; text-align:center; padding-top:8px; }
+.race-road{ position:relative; flex:1; background-color:#5d6068;
+  background-image:linear-gradient(90deg, #f2f2f2 0 4px, transparent 4px calc(100% - 4px), #f2f2f2 calc(100% - 4px)),
+    repeating-linear-gradient(transparent 0 26px, rgba(255,255,255,.75) 26px 44px), repeating-linear-gradient(transparent 0 26px, rgba(255,255,255,.75) 26px 44px);
+  background-size:100% 100%, 4px 88px, 4px 88px; background-position:0 0, 33.3% 0, 66.6% 0; background-repeat:no-repeat, repeat-y, repeat-y; }
+.race-track.moving .race-road{ animation:race-scroll .9s linear infinite; }
+@keyframes race-scroll{ to{ background-position:0 0, 33.3% 88px, 66.6% 88px; } }
+.race-finish{ position:absolute; top:6%; left:0; right:0; height:16px;
+  background:repeating-conic-gradient(#1d1b33 0 25%, #fff 0 50%) 0 0/16px 16px; }
+.race-finish span{ position:absolute; left:50%; top:-3px; transform:translateX(-50%); background:#ff4f7a; color:#fff;
+  font:800 11px/1 "Baloo 2",system-ui,sans-serif; padding:4px 8px; border-radius:8px; letter-spacing:.08em; }
+.race-lane{ position:absolute; top:0; bottom:0; width:0; }
+.race-runner{ position:absolute; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; }
+.race-runner.me{ transition:bottom .35s cubic-bezier(.2,.9,.3,1.2); z-index:2; }
+.race-runner.me.stumble{ animation:rg-shake .35s 2; }
+.race-boy{ width:52px; height:52px; display:block; animation:run-bob .28s ease-in-out infinite alternate; }
+.race-emoji{ font-size:38px; line-height:1; animation:run-bob .3s ease-in-out infinite alternate; }
+.race-name{ font:800 10px/1 "Baloo 2",system-ui,sans-serif; background:#fff; color:#1d1b33; border-radius:6px; padding:2px 5px; margin-top:1px; white-space:nowrap; }
+.race-name.you{ background:#ffcf3a; }
+.race-count{ position:absolute; inset:0; display:grid; place-items:center; z-index:6; font-size:96px; font-weight:800;
+  color:#fff; text-shadow:0 5px 0 #1d1b33; animation:race-count .7s ease-out; }
+@keyframes race-count{ from{ transform:scale(1.8); opacity:0; } }
+.race-q{ margin-top:12px; text-align:center; font-size:30px; font-weight:800; color:var(--ink); }
+.rg-nowrap{ white-space:nowrap; }
+/* the Runner and Race feature cards on the Games shelf (share .ttt-card) */
+.ttt-card.run-feature{ background:linear-gradient(130deg,#2E8B57,#1E7A8C 60%,#3F9D45); }
+.ttt-card.race-feature{ background:linear-gradient(130deg,#E0457B,#FF7A3D 60%,#F2A93B); }
+.feature-art{ flex:none; position:relative; width:54px; height:54px; border-radius:12px; overflow:hidden; }
+.feature-art.runner{ background:linear-gradient(#8fd3ff 0 62%, #6fcf4f 62% 70%, #c79a5b 70%); }
+.feature-art.race{ background:#5d6068;
+  background-image:repeating-linear-gradient(transparent 0 6px, rgba(255,255,255,.8) 6px 11px);
+  background-size:3px 100%; background-position:center; background-repeat:repeat-y; }
+.feature-art b{ position:absolute; font-weight:400; line-height:1; }
+.fa-boy{ left:4px; bottom:13px; width:26px; height:26px; animation:run-bob .3s ease-in-out infinite alternate; }
+.fa-rock{ right:5px; bottom:14px; font-size:15px; animation:fa-roll 1.6s linear infinite; }
+@keyframes fa-roll{ from{ transform:translateX(6px); } to{ transform:translateX(-10px); } }
+.fa-flag{ top:2px; left:50%; transform:translateX(-50%); font-size:15px; }
+.fa-r1{ left:5px; bottom:6px; font-size:17px; animation:run-bob .28s ease-in-out infinite alternate; }
+.fa-r2{ right:5px; bottom:12px; font-size:17px; animation:run-bob .34s ease-in-out infinite alternate; }
+.feature-best{ margin-top:2px; align-self:flex-start; font-size:11px; font-weight:800; background:rgba(255,255,255,.22); border-radius:999px; padding:2px 8px; }
+@media (prefers-reduced-motion: reduce){ .fa-boy, .fa-rock, .fa-r1, .fa-r2{ animation:none; } }

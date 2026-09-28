@@ -316,7 +316,7 @@ export const TOPICS: Topic[] = [
       ];
     },
     gen: (diff) => {
-      const t = diff === "easy" ? ri(1, 9) : diff === "medium" ? ri(1, 29) : ri(1, 99);
+      const t = diff === "easy" ? ri(1, 9) : diff === "medium" ? ri(1, 12) : ri(10, 15);
       const u1 = ri(1, 9);
       const u2 = 10 - u1;
       const a = 10 * t + u1, b = 10 * t + u2;
@@ -474,7 +474,7 @@ export const TOPICS: Topic[] = [
       return rows;
     },
     gen: (diff) => {
-      const n = diff === "easy" ? ri(2, 9) : diff === "medium" ? ri(10, 99) : ri(100, 499);
+      const n = diff === "easy" ? ri(2, 9) : diff === "medium" ? ri(10, 39) : ri(10, 99);
       const d = ri(2, 9);
       return { prompt: `${n} × ${10 + d}`, answer: n * (10 + d) };
     },
@@ -622,7 +622,7 @@ export const TOPICS: Topic[] = [
     tip: "Always ends in 25!",
     tipJa: "おわりは いつも 25！",
     gen: (diff) => {
-      const n = diff === "easy" ? ri(1, 9) : diff === "medium" ? ri(1, 19) : ri(1, 49);
+      const n = diff === "easy" ? ri(1, 9) : diff === "medium" ? ri(1, 12) : ri(1, 19);
       const num = n * 10 + 5;
       return { prompt: `${num}²`, answer: num * num };
     },
@@ -815,8 +815,7 @@ export const TOPICS: Topic[] = [
     gen: (diff) => {
       let n: number;
       if (diff === "easy") { do { n = ri(10, 89); } while (Math.floor(n / 10) + (n % 10) >= 10); }
-      else if (diff === "medium") { n = ri(10, 99); }
-      else { n = ri(100, 999); }
+      else { n = ri(10, 99); }
       return { prompt: `${n} × 111`, answer: n * 111 };
     },
   },
@@ -876,7 +875,7 @@ export const TOPICS: Topic[] = [
       ];
     },
     gen: (diff) => {
-      const n = diff === "easy" ? 3 : diff === "medium" ? 4 : 5;
+      const n = diff === "easy" ? 3 : 4;
       const segs: number[] = [ri(1, 9)];
       for (let i = 1; i < n; i++) segs.push(ri(10, 99));
       const val = segs.reduce((acc, v, k) => acc + v * Math.pow(10, segs.length - 1 - k), 0);
@@ -920,7 +919,7 @@ export const TOPICS: Topic[] = [
       ];
     },
     gen: (diff) => {
-      const lo = diff === "easy" ? 96 : diff === "medium" ? 90 : 80;
+      const lo = diff === "easy" ? 96 : diff === "medium" ? 91 : 88;
       const a = ri(lo, 99), b = ri(lo, 99);
       return { prompt: `${a} × ${b}`, answer: a * b };
     },
@@ -962,7 +961,7 @@ export const TOPICS: Topic[] = [
       ];
     },
     gen: (diff) => {
-      const hi = diff === "easy" ? 104 : diff === "medium" ? 112 : 130;
+      const hi = diff === "easy" ? 104 : diff === "medium" ? 109 : 115;
       const a = ri(101, hi), b = ri(101, hi);
       return { prompt: `${a} × ${b}`, answer: a * b };
     },
@@ -1173,8 +1172,9 @@ export const TOPICS: Topic[] = [
     tip: "It's the square of a number starting with 5!",
     tipJa: "5ではじまる数の 2乗だよ！",
     gen: (diff) => {
-      const k = diff === "easy" ? 1 : diff === "medium" ? 2 : 3;
-      const x = ri(0, Math.pow(10, k) - 1);
+      /* 5xyz² runs to seven digits; 5xy² stays mental while x² has three digits */
+      const k = diff === "easy" ? 1 : 2;
+      const x = diff === "easy" ? ri(0, 9) : ri(1, diff === "medium" ? 15 : 31);
       const num = 5 * Math.pow(10, k) + x;
       return { prompt: `${num}²`, answer: num * num };
     },
@@ -1333,7 +1333,7 @@ export const TOPICS: Topic[] = [
       ];
     },
     gen: (diff) => {
-      const n = diff === "easy" ? ri(11, 49) : diff === "medium" ? ri(21, 99) : ri(101, 399);
+      const n = diff === "easy" ? ri(11, 39) : diff === "medium" ? ri(31, 69) : ri(61, 99);
       return { prompt: `${n}²`, answer: n * n };
     },
   },
