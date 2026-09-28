@@ -208,10 +208,11 @@ export function PracticeView({
               <button
                 key={o}
                 className={`choice-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
+                style={{ "--chars": fmt(o).length } as React.CSSProperties}
                 disabled={eliminated.includes(o)}
                 onClick={() => onSelect(o)}
               >
-                {fmt(o)}
+                <span className="tile-num">{fmt(o)}</span>
                 <span className="tile-key" aria-hidden="true">{i + 1}</span>
               </button>
             ))}
@@ -223,10 +224,11 @@ export function PracticeView({
               <button
                 key={o}
                 className={`target-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
+                style={{ "--chars": fmt(o).length } as React.CSSProperties}
                 disabled={eliminated.includes(o)}
                 onClick={() => onSelect(o)}
               >
-                {fmt(o)}
+                <span className="tile-num">{fmt(o)}</span>
                 <span className="tile-key" aria-hidden="true">{i + 1}</span>
               </button>
             ))}
@@ -238,6 +240,7 @@ export function PracticeView({
               <button
                 key={o}
                 className={`balloon-tile${curSelection === o ? " picked" : ""}${curSelection === o && shakeTile ? " shake-tile" : ""}${eliminated.includes(o) ? " eliminated" : ""}`}
+                style={{ "--chars": fmt(o).length } as React.CSSProperties}
                 disabled={eliminated.includes(o)}
                 onClick={() => onSelect(o)}
               >
@@ -312,6 +315,7 @@ export function PracticeView({
                   const H = 236, size = rows > 1 ? 64 : 78, band = (H - 12) / rows;
                   return ({
                     "--size": `${size}px`,
+                    "--chars": fmt(o).length,
                     "--left": `calc(${(100 / cols) * ((i % cols) + 0.5)}% - ${size / 2}px)`,
                     "--top": `${6 + Math.floor(i / cols) * band}px`,
                     "--travel": `${Math.max(8, band - size - 10)}px`,
@@ -322,7 +326,7 @@ export function PracticeView({
                 disabled={eliminated.includes(o)}
                 onClick={() => onSelect(o)}
               >
-                {fmt(o)}
+                <span className="tile-num">{fmt(o)}</span>
               </button>
             ))}
           </div>
