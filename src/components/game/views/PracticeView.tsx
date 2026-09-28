@@ -3,7 +3,8 @@
 import { fmt } from "../util";
 import type { Mode } from "../util";
 import type { UIDict } from "../i18n";
-import { QUESTIONS_PER_STAGE, STAGE_COUNT } from "@/lib/game/topics";
+import { PASS_THRESHOLD, QUESTIONS_PER_STAGE, STAGE_COUNT } from "@/lib/game/topics";
+import { monsterFor } from "../monsters";
 import type { Lang, Problem, Topic } from "@/lib/game/topics";
 import { useEffect, useRef, useState } from "react";
 
@@ -115,6 +116,12 @@ export function PracticeView({
   const comboTier = comboStreak >= 9 ? 3 : comboStreak >= 6 ? 2 : comboStreak >= 3 ? 1 : 0;
   const modeTag = t.practice.modeTags[mode];
   const title = lang === "ja" ? topic.titleJa : topic.title;
+  /* The stage is a battle: the monster has PASS_THRESHOLD hit points, each
+     correct answer is one hit, a miss is the monster's turn. */
+  const monster = monsterFor(topic.id, stageN, lang);
+  const hp = Math.max(0, PASS_THRESHOLD - correct);
+  const down = hp === 0;
+  const ja = lang === "ja";
 
   return (
     <section className="view active">
@@ -136,6 +143,29 @@ export function PracticeView({
       <div className="topic-head" style={{ marginTop: 2 }}>
         <div className={`eyebrow-tag${isBoss ? " boss-tag" : ""}`}>{isBoss ? t.practice.bossStage : t.practice.stageOf(stageN, STAGE_COUNT)}</div>
         <h1>{title}</h1>
+      </div>
+      <div
+        key={`b${qIndex}-${feedbackOk}`}
+        className={`battle${isBoss ? " boss" : ""}${feedbackOk === true ? " hit" : feedbackOk === false ? " attack" : ""}${down ? " down" : ""}`}
+      >
+        <div className="battle-monster" aria-hidden="true">
+          {monster.boss && <span className="battle-crown">👑</span>}
+          <span className="battle-emoji">{monster.emoji}</span>
+          {feedbackOk === true && <span className="battle-dmg">{down && correct > PASS_THRESHOLD ? (ja ? "ボーナス！" : "BONUS!") : "−1 💥"}</span>}
+          {feedbackOk === false && <span className="battle-claw">💢</span>}
+        </div>
+        <div className="battle-info">
+          <div className="battle-name">
+            {monster.name}
+            <span className="battle-state">
+              {down ? (ja ? "たおした！ あとはボーナス" : "Defeated! Bonus hits now") : feedbackOk === false ? (ja ? "こうげきしてきた！" : "It attacks!") : ja ? "こうげきしよう！" : "Attack!"}
+            </span>
+          </div>
+          <div className="battle-hp" role="img" aria-label={`HP ${hp} / ${PASS_THRESHOLD}`}>
+            {Array.from({ length: PASS_THRESHOLD }, (_, i) => <span key={i} className={i < hp ? "on" : ""} />)}
+            <b className="mono">HP {hp}/{PASS_THRESHOLD}</b>
+          </div>
+        </div>
       </div>
       {/* Marking a tile green is invisible to a screen reader; this says it. */}
       <div className="sr-only" role="status" aria-live="polite">
