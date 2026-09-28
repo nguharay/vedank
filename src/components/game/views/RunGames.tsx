@@ -5,7 +5,7 @@ import { Mascot } from "../Mascot";
 import { fmt, haptic } from "../util";
 import type { useSound } from "../useSound";
 import {
-  buildChoiceRound, runnerWindowMs, runnerPoints, racePlace, RACE_GOAL, RACE_RIVALS, type ChoiceRound,
+  buildChoiceRound, runnerWindowMs, runnerPoints, racePlace, raceLevel, rivalProgress, RACE_GOAL, RACE_LEVELS, type ChoiceRound,
 } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
@@ -247,26 +247,34 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
 }
 
 /* ---------- Math Race ----------
-   A three-lane road race against two CPU rivals. The rivals run at a steady
-   pace; the boy only moves when you answer. RACE_GOAL right answers crosses
-   the line. A wrong answer makes him stumble for a moment. */
-const RACE_KEY = "sutraSprint.raceBest";
+   A three-lane road race against two CPU rivals. The sums stay easy at every
+   level; what changes is the rivals — slow at Lv1, a real race by Lv4. The
+   boy only moves when you answer; RACE_GOAL right answers crosses the line,
+   and a wrong one makes him stumble for a moment. Coming 1st unlocks the
+   next level. */
+const RACE_UNLOCK_KEY = "sutraSprint.raceUnlocked";
+/* highest level won — the Games shelf card shows it */
+const RACE_WON_KEY = "sutraSprint.raceBest";
+const raceBestKey = (lv: number) => `sutraSprint.raceBest.L${lv}`;
 
 export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "count" | "race" | "over">("ready");
+  const [unlocked, setUnlocked] = useState(() => Math.max(1, readBest(RACE_UNLOCK_KEY)));
+  const [lvId, setLvId] = useState(() => Math.max(1, readBest(RACE_UNLOCK_KEY)));
   const [count, setCount] = useState(3);
   const [round, setRound] = useState<ChoiceRound | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
   const [stumble, setStumble] = useState(false);
   const [done, setDone] = useState(0);
   const [livePlace, setLivePlace] = useState(1);
-  const [result, setResult] = useState<{ secs: number; place: number; best: boolean } | null>(null);
+  const [result, setResult] = useState<{ secs: number; place: number; best: boolean; unlockedNext: boolean } | null>(null);
   const [best, setBest] = useState(0);
+  const level = raceLevel(lvId);
 
   const rivalRefs = useRef<(HTMLDivElement | null)[]>([]);
   const timeRef = useRef<HTMLSpanElement | null>(null);
-  const s = useRef({ raf: 0, t0: 0, done: 0, streak: 0, over: false, timer: 0 as unknown as ReturnType<typeof setTimeout>, place: 1 });
+  const s = useRef({ raf: 0, t0: 0, done: 0, streak: 0, over: false, timer: 0 as unknown as ReturnType<typeof setTimeout>, place: 1, lv: 1 });
 
   function stopAll() {
     cancelAnimationFrame(s.current.raf);
@@ -281,25 +289,28 @@ export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
     const st = s.current;
     if (st.over) return;
     const secs = (now - st.t0) / 1000;
-    RACE_RIVALS.forEach((r, i) => {
-      const wob = Math.sin(secs * 1.7 + i * 2) * 0.012;
-      const p = Math.min(1, secs / r.secs + (secs < r.secs ? wob : 0));
+    const lv = raceLevel(st.lv);
+    const mine = st.done / RACE_GOAL;
+    let ahead = 0;
+    lv.rivals.forEach((r, i) => {
+      const p = rivalProgress(r, secs, i + st.lv);
+      if (p > mine) ahead++;
       const el = rivalRefs.current[i];
       if (el) el.style.bottom = at(p);
     });
     if (timeRef.current) timeRef.current.textContent = secs.toFixed(1);
-    const mine = st.done / RACE_GOAL;
-    const place = 1 + RACE_RIVALS.filter((r) => secs / r.secs > mine).length;
+    const place = 1 + ahead;
     if (place !== st.place) { st.place = place; setLivePlace(place); }
     st.raf = requestAnimationFrame(tick);
   }
 
-  function start() {
+  function start(lv = lvId) {
     stopAll();
     const st = s.current;
-    st.done = 0; st.streak = 0; st.over = false; st.place = 1;
+    st.done = 0; st.streak = 0; st.over = false; st.place = 1; st.lv = lv;
+    setLvId(lv);
     setDone(0); setResult(null); setPicked(null); setStumble(false); setLivePlace(1);
-    setBest(readBest(RACE_KEY));
+    setBest(readBest(raceBestKey(lv)));
     rivalRefs.current.forEach((el) => { if (el) el.style.bottom = at(0); });
     setPhase("count"); setCount(3);
     let c = 3;
@@ -308,7 +319,7 @@ export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
       if (c > 0) { setCount(c); sound.click(); st.timer = setTimeout(step, 700); return; }
       setPhase("race"); sound.levelUp();
       setRound(buildChoiceRound(0));
-      st.t0 = performance.now();
+      st.t0 = clock();
       st.raf = requestAnimationFrame(tick);
     };
     sound.click();
@@ -334,24 +345,35 @@ export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
     const st = s.current;
     st.over = true;
     cancelAnimationFrame(st.raf);
-    const secs = Math.round(((performance.now() - st.t0) / 1000) * 10) / 10;
-    const place = racePlace(secs);
-    const prev = readBest(RACE_KEY);
+    const secs = Math.round(((clock() - st.t0) / 1000) * 10) / 10;
+    const lv = raceLevel(st.lv);
+    const place = racePlace(lv, secs);
+    const prev = readBest(raceBestKey(lv.id));
     const isBest = prev === 0 || secs < prev;
-    if (isBest) { writeBest(RACE_KEY, secs); setBest(secs); } else setBest(prev);
-    if (place === 1) celebrate();
-    setResult({ secs, place, best: isBest });
+    if (isBest) { writeBest(raceBestKey(lv.id), secs); setBest(secs); } else setBest(prev);
+    let unlockedNext = false;
+    if (place === 1) {
+      celebrate();
+      if (lv.id > readBest(RACE_WON_KEY)) writeBest(RACE_WON_KEY, lv.id);
+      const nextId = lv.id + 1;
+      if (nextId <= RACE_LEVELS.length && nextId > unlocked) {
+        writeBest(RACE_UNLOCK_KEY, nextId); setUnlocked(nextId); unlockedNext = true;
+      }
+    }
+    setResult({ secs, place, best: isBest, unlockedNext });
     setPhase("over");
   }
 
   const medal = ["🥇", "🥈", "🥉"];
   const placeTxt = (p: number) => (ja ? `${p}位` : ["1st", "2nd", "3rd"][p - 1]);
+  const hasNext = lvId < RACE_LEVELS.length && lvId + 1 <= unlocked;
+  const rivalNames = level.rivals.map((r) => (ja ? r.nameJa : r.name)).join(ja ? "と" : " and ");
 
   return (
     <div className="rg">
       <div className="match-head">
         <div className="match-stat"><span className="match-stat-k">{ja ? "順位" : "Place"}</span><span className="match-stat-v rg-nowrap">{phase === "race" ? `${medal[livePlace - 1]} ${placeTxt(livePlace)}` : "–"}</span></div>
-        <div className="match-stat"><span className="match-stat-k">{ja ? "のこり" : "To go"}</span><span className="match-stat-v mono">{RACE_GOAL - done}</span></div>
+        <div className="match-stat"><span className="match-stat-k">{ja ? "のこり" : "To go"} · Lv.{level.id}</span><span className="match-stat-v mono">{RACE_GOAL - done}</span></div>
         <div className="match-stat"><span className="match-stat-k">{ja ? "タイム" : "Time"}</span><span className="match-stat-v mono"><span ref={timeRef}>0.0</span>s</span></div>
       </div>
 
@@ -360,12 +382,10 @@ export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
         <div className="race-road">
           <div className="race-finish" aria-hidden="true"><span>GOAL</span></div>
           <div className="race-lane" style={{ left: "16.6%" }}>
-            {RACE_RIVALS[0] && (
-              <div className="race-runner rival" ref={(el) => { rivalRefs.current[0] = el; }} style={{ bottom: at(0) }}>
-                <span className="race-emoji">{RACE_RIVALS[0].emoji}</span>
-                <span className="race-name">{ja ? RACE_RIVALS[0].nameJa : RACE_RIVALS[0].name}</span>
-              </div>
-            )}
+            <div className="race-runner rival" ref={(el) => { rivalRefs.current[0] = el; }} style={{ bottom: at(0) }}>
+              <span className="race-emoji">{level.rivals[0].emoji}</span>
+              <span className="race-name">{ja ? level.rivals[0].nameJa : level.rivals[0].name}</span>
+            </div>
           </div>
           <div className="race-lane" style={{ left: "50%" }}>
             <div className={`race-runner me${stumble ? " stumble" : ""}`} style={{ bottom: at(done / RACE_GOAL) }}>
@@ -374,12 +394,10 @@ export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
             </div>
           </div>
           <div className="race-lane" style={{ left: "83.3%" }}>
-            {RACE_RIVALS[1] && (
-              <div className="race-runner rival" ref={(el) => { rivalRefs.current[1] = el; }} style={{ bottom: at(0) }}>
-                <span className="race-emoji">{RACE_RIVALS[1].emoji}</span>
-                <span className="race-name">{ja ? RACE_RIVALS[1].nameJa : RACE_RIVALS[1].name}</span>
-              </div>
-            )}
+            <div className="race-runner rival" ref={(el) => { rivalRefs.current[1] = el; }} style={{ bottom: at(0) }}>
+              <span className="race-emoji">{level.rivals[1].emoji}</span>
+              <span className="race-name">{ja ? level.rivals[1].nameJa : level.rivals[1].name}</span>
+            </div>
           </div>
         </div>
         <div className="race-side right" aria-hidden="true">🌲<br />🌻<br />🌳<br />🌷<br />🌲</div>
@@ -390,10 +408,24 @@ export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
             <div className="rg-card-title">{ja ? "🏁 計算レース" : "🏁 Math Race"}</div>
             <p className="rg-card-sub">
               {ja
-                ? `正解するたびに前へダッシュ！${RACE_GOAL}問正解でゴール。ウサピョンとカメキチに勝てるかな？`
-                : `Every right answer is a dash forward. ${RACE_GOAL} to the finish — can you beat Hop and Shelly?`}
+                ? `正解でダッシュ！${RACE_GOAL}問正解でゴール。レベルが上がるとライバルが速くなるよ。`
+                : `Every right answer is a dash. ${RACE_GOAL} to the finish. Higher levels have faster rivals.`}
             </p>
-            <button className="btn btn-primary" onClick={start}>{ja ? "よーい、スタート！" : "Ready, set, go!"}</button>
+            <div className="race-levels">
+              {RACE_LEVELS.map((l) => {
+                const locked = l.id > unlocked;
+                return (
+                  <button key={l.id} className={`race-lvbtn${l.id === lvId ? " on" : ""}${locked ? " locked" : ""}`}
+                    disabled={locked} onClick={() => setLvId(l.id)} aria-pressed={l.id === lvId}>
+                    <span className="race-lvbtn-emo">{locked ? "🔒" : `${l.rivals[0].emoji}${l.rivals[1].emoji}`}</span>
+                    <span className="race-lvbtn-name">Lv.{l.id}</span>
+                    <span className="race-lvbtn-sub">{ja ? l.nameJa : l.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="race-vs">{ja ? `ライバル：${rivalNames}` : `Rivals: ${rivalNames}`}</p>
+            <button className="btn btn-primary" onClick={() => start()}>{ja ? "よーい、スタート！" : "Ready, set, go!"}</button>
           </div>
         )}
         {phase === "over" && result && (
@@ -403,9 +435,19 @@ export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
               {result.place === 1 ? (ja ? "1位でゴール！" : "You won!") : ja ? `${result.place}位でゴール！` : `${placeTxt(result.place)} place!`}
             </div>
             <div className="match-done-line mono">
-              {result.secs}s · {result.best ? (ja ? "ベストタイム！" : "best time!") : `${ja ? "ベスト" : "best"} ${best}s`}
+              Lv.{level.id} · {result.secs}s · {result.best ? (ja ? "ベストタイム！" : "best time!") : `${ja ? "ベスト" : "best"} ${best}s`}
             </div>
-            <button className="btn btn-primary" onClick={start}>{ja ? "もう一回" : "Race again"}</button>
+            {result.unlockedNext && (
+              <div className="race-unlock">{ja ? `🔓 Lv.${lvId + 1} がひらいた！` : `🔓 Lv.${lvId + 1} unlocked!`}</div>
+            )}
+            {result.place > 1 && (
+              <div className="race-unlock soft">{ja ? "1位になると次のレベルがひらくよ" : "Come 1st to unlock the next level"}</div>
+            )}
+            <div className="race-over-btns">
+              <button className="btn" onClick={() => start()}>{ja ? "もう一回" : "Race again"}</button>
+              {hasNext && <button className="btn btn-primary" onClick={() => start(lvId + 1)}>{ja ? `Lv.${lvId + 1} へ ▶` : `Lv.${lvId + 1} ▶`}</button>}
+              <button className="btn" onClick={() => setPhase("ready")}>{ja ? "レベル" : "Levels"}</button>
+            </div>
           </div>
         )}
       </div>
