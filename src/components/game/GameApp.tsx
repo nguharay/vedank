@@ -375,12 +375,21 @@ export function GameApp({
 
   /* A quote once, a beat after the app settles, so a first-time player sees what
      the buddy does instead of having to guess that it is tappable. */
+  /* The language can settle after mount (a saved preference), so the first
+     quote reads it from a ref at speaking time, and a language switch clears
+     whatever the buddy was saying — no Japanese bubble on an English screen. */
+  const langRef = useRef(lang);
+  useEffect(() => {
+    if (langRef.current !== lang) { buddy.quiet(); setQuoteBy(null); }
+    langRef.current = lang;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
   useEffect(() => {
     if (buddy.hidden) return;
     const id = setTimeout(() => {
       const q = nextQuote.current();
       setQuoteBy(q.by ?? null);
-      buddy.speak({ text: quoteText(q, lang === "ja"), mood: "happy", hold: 11000 });
+      buddy.speak({ text: quoteText(q, langRef.current === "ja"), mood: "happy", hold: 11000 });
     }, 1600);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -940,6 +949,8 @@ export function GameApp({
   const [stageIntro, setStageIntro] = useState<number | null>(null);
   const isBoss = curStage.n === STAGE_COUNT;
 
+  /* Boss wins drop a treasure chest the player taps open for the gems. */
+  const [chestOpen, setChestOpen] = useState(false);
   const [stageResult, setStageResult] = useState<
     | null
     | { passed: boolean; stars: number; correct: number; gemsGained: number; n: number; isBoss: boolean }
@@ -1303,6 +1314,7 @@ export function GameApp({
       else if (correct === QUESTIONS_PER_STAGE) sayLine("stagePerfect");
       else sayLine("stagePass");
     }
+    setChestOpen(false);
     setStageResult({ passed: result.passed, stars: result.stars, correct, gemsGained: result.gemsGained, n, isBoss: wasBoss });
     if (result.passed) {
       confetti.burstCenter(wasBoss ? 160 : 100, wasBoss ? 0.55 : 0.4);
@@ -4429,7 +4441,14 @@ export function GameApp({
               </div>
             )}
             <div className="result-sub">{t.result.correctOf(stageResult.correct, QUESTIONS_PER_STAGE)}</div>
-            <div className="result-gems"><RollUp to={stageResult.gemsGained} prefix="+" /> 💎</div>
+            {stageResult.isBoss && stageResult.passed && stageResult.gemsGained > 0 && !chestOpen ? (
+              <button className="loot-chest" onClick={() => { setChestOpen(true); sound.levelUp(); confetti.burstCenter(80, 0.45); haptic([20, 40, 20]); }}>
+                <span className="loot-chest-ic">🎁</span>
+                <span>{lang === "ja" ? "たからばこをあける！" : "Open the treasure!"}</span>
+              </button>
+            ) : (
+              <div className={`result-gems${stageResult.isBoss && stageResult.passed && chestOpen ? " loot-open" : ""}`}><RollUp to={stageResult.gemsGained} prefix="+" /> 💎</div>
+            )}
 
             {/* Stars say how you did; this says what to fix. Missed questions
                 lead, because those are the ones worth a second look. */}

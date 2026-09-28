@@ -2,6 +2,7 @@
 
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
 import { Mandala, Mascot } from "../Mascot";
+import { monsterFor } from "../monsters";
 import type { ShareFocus } from "../ShareCard";
 import type { UIDict } from "../i18n";
 import type { CompetitionSummary } from "@/lib/game/competition";
@@ -158,12 +159,19 @@ export function HomeView({
           <span className="levelrow-right">{li.into} / 150 <span className="levelrow-share-ico" aria-hidden="true">📤</span></span>
         </button>
         <div className="bar-track"><div className="bar-fill" style={{ width: `${li.pct}%` }} /></div>
+        <div className="hero-stats">
+          <span>👾 {lang === "ja" ? "たおしたモンスター" : "Monsters beaten"} <b className="mono">{TOPICS.reduce((a, tp) => a + topicProgressOf(progress, tp.id).cleared, 0)}</b>/{TOPICS.length * STAGE_COUNT}</span>
+          <span>👑 {lang === "ja" ? "ボス" : "Bosses"} <b className="mono">{TOPICS.filter((tp) => topicProgressOf(progress, tp.id).cleared >= STAGE_COUNT).length}</b></span>
+        </div>
       </div>
 
       <div className="continue-card" style={{ background: gradCss(continueTopic.grad) }} onClick={() => onContinue(continueTopic.id, continueStageN)}>
-        <div className="continue-card-label">{lang === "ja" ? "続きから" : "Continue"}</div>
+        <div className="continue-card-label">{lang === "ja" ? "⚔️ つぎのバトル" : "⚔️ Next battle"}</div>
         <div className="continue-card-title">
-          {(lang === "ja" ? continueTopic.titleJa : continueTopic.title)} — {lang === "ja" ? `ステージ ${continueStageN}` : `Stage ${continueStageN}`}
+          <span className="continue-monster">{monsterFor(continueTopic.id, continueStageN, lang).emoji}</span>
+          {monsterFor(continueTopic.id, continueStageN, lang).name}
+          {lang === "ja" ? ` · バトル ${continueStageN}` : ` · Battle ${continueStageN}`}
+          <span className="continue-topic">{lang === "ja" ? continueTopic.titleJa : continueTopic.title}</span>
         </div>
         <span className="continue-card-arrow">▶</span>
       </div>
@@ -384,6 +392,11 @@ export function HomeView({
                       ))}
                     </span>
                   </div>
+                  {!locked && (
+                    <span className={`node-monster${p.cleared >= STAGE_COUNT ? " beaten" : ""}`} aria-hidden="true">
+                      {monsterFor(tp.id, 1, lang).emoji}{p.cleared >= STAGE_COUNT && <i>✓</i>}
+                    </span>
+                  )}
                   <span className="node-platform" />
                   <div className="node-label">{lang === "ja" ? tp.titleJa : tp.title}</div>
                 </div>
