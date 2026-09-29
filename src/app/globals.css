@@ -724,14 +724,18 @@ main{ scroll-padding-top:104px; }
 .board-svg-wrap{ display:flex; justify-content:center; overflow-x:auto; position:relative; z-index:1; }
 .board-svg-wrap svg{ width:100%; max-width:460px; height:auto; }
 .stick-active{ stroke:#F4A63A; filter:drop-shadow(0 0 4px rgba(224,71,43,.35)); }
-.stick-inactive{ stroke:rgba(255,255,255,.75); stroke-dasharray:3 6; }
+.stick-inactive{ stroke:rgba(255,255,255,.2); stroke-dasharray:3 6; }
+/* once a stick is picked up the empty spots are the targets — show them */
+.board-svg-wrap.picking .stick-inactive{ stroke:rgba(255,255,255,.55); }
+.board-svg-wrap.picking .stick-tip-off{ stroke:rgba(255,255,255,.5); }
+.stick-inactive:hover{ stroke:rgba(255,255,255,.6); }
 .stick{ stroke-width:10; stroke-linecap:round; cursor:pointer; transition:stroke .15s, opacity .15s, filter .15s; touch-action:none; }
 .stick-hit{ cursor:pointer; touch-action:none; }
 .drag-ghost{ position:fixed; z-index:70; width:22px; height:22px; border-radius:50%; background:#2B6FEA;
   box-shadow:0 0 10px rgba(43,111,234,.8), 0 4px 8px rgba(0,0,0,.3); transform:translate(-50%,-50%); pointer-events:none; }
 .stick:hover{ opacity:.85; }
 .stick-tip{ fill:#E0472B; }
-.stick-tip-off{ fill:none; stroke:rgba(255,255,255,.75); stroke-width:2; }
+.stick-tip-off{ fill:none; stroke:rgba(255,255,255,.22); stroke-width:2; }
 .stick-selected{ stroke:#2B6FEA !important; filter:drop-shadow(0 0 8px rgba(43,111,234,.7)); animation:stickPulse 1s ease-in-out infinite; }
 circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 @keyframes stickPulse{ 0%,100%{ stroke-width:10; } 50%{ stroke-width:13; } }
@@ -2640,7 +2644,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 @keyframes run-pop{ to{ transform:translateY(-40px); opacity:0; } }
 
 /* race track */
-.race-track{ position:relative; height:340px; border-radius:22px; overflow:hidden; border:3px solid var(--ink);
+.race-track{ position:relative; height:390px; border-radius:22px; overflow:hidden; border:3px solid var(--ink);
   background:#7cc85e; display:flex; }
 .race-side{ width:13%; font-size:22px; line-height:2.6; text-align:center; padding-top:8px; }
 .race-road{ position:relative; flex:1; background-color:#5d6068;
@@ -2696,3 +2700,41 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .race-unlock{ margin-top:6px; font-size:13px; font-weight:800; color:#2E8B57; }
 .race-unlock.soft{ color:#6a6688; font-weight:700; font-size:12px; }
 .race-over-btns{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+/* online race */
+.race-online-btn{ margin-top:8px; width:100%; }
+.race-online-menu{ text-align:center; background:var(--card, #fff); border:3px solid var(--ink); border-radius:20px; padding:18px 16px;
+  box-shadow:4px 4px 0 var(--ink-line); display:flex; flex-direction:column; gap:10px; }
+.race-online-menu .rg-card-sub{ margin:0; }
+.race-join{ display:flex; gap:8px; justify-content:center; }
+.race-join-input{ width:120px; text-align:center; font-size:22px; font-weight:800; letter-spacing:.2em; padding:8px; border-radius:12px;
+  border:2px solid var(--ink-line); background:var(--bg, #fff); color:var(--ink); text-transform:uppercase; }
+.race-note{ font-size:12.5px; font-weight:700; color:#6a6688; margin:6px 0 0; }
+.race-code{ font-size:40px; font-weight:800; letter-spacing:.18em; margin:2px 0 8px; color:#1d1b33; }
+.race-players{ list-style:none; padding:0; margin:10px 0; display:grid; gap:4px; font-size:14px; font-weight:700; text-align:left; }
+.race-players li{ background:#f3f1fb; border-radius:10px; padding:6px 10px; }
+.race-players .race-wait{ background:none; color:#8a86a8; font-weight:600; font-size:12.5px; text-align:center; }
+.race-results{ margin:8px 0 10px; padding:0 0 0 22px; text-align:left; font-size:14px; font-weight:700; }
+.race-results li{ padding:3px 0; }
+.race-results li span{ display:inline-flex; }
+.race-results li{ display:list-item; }
+.race-results li > span:last-child{ float:right; color:#4a4766; }
+.race-results li.me{ color:#c2410c; }
+.race-road.lanes-custom{ background-image:linear-gradient(90deg, #f2f2f2 0 4px, transparent 4px calc(100% - 4px), #f2f2f2 calc(100% - 4px)); background-size:100% 100%; }
+.race-track.moving .race-road.lanes-custom{ animation:none; }
+.race-divider{ position:absolute; top:0; bottom:0; width:4px; margin-left:-2px;
+  background:repeating-linear-gradient(transparent 0 26px, rgba(255,255,255,.75) 26px 44px); }
+.race-track.moving .race-divider{ animation:race-divider .9s linear infinite; }
+@keyframes race-divider{ to{ background-position:0 44px; } }
+.race-runner.online{ transition:bottom .6s ease-out; }
+.race-runner.online.me{ transition:bottom .35s cubic-bezier(.2,.9,.3,1.2); }
+.race-online-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:12px; color:var(--muted); font-weight:700; }
+/* Dojo footer: Back + Prev + Hint + Reset + Next must share one phone-width
+   row, so the buttons shrink evenly and Back drops its word. */
+.footerbar.arena-foot > .btn{ flex:1 1 0; min-width:0; padding:13px 2px; font-size:12px; letter-spacing:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.footerbar.arena-foot > .back-footer-btn{ flex:0 0 44px; }
+.footerbar.arena-foot .back-word{ display:none; }
+@media (min-width: 560px){
+  .footerbar.arena-foot > .btn{ font-size:14px; padding:14px 8px; }
+  .footerbar.arena-foot > .back-footer-btn{ flex:0 0 auto; }
+  .footerbar.arena-foot .back-word{ display:inline; }
+}

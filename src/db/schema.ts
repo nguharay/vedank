@@ -339,3 +339,11 @@ export const tttRooms = pgTable("ttt_rooms", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const raceRooms = pgTable("race_rooms", {
+  code: text("code").primaryKey(),
+  hostId: uuid("host_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  state: jsonb("state").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});

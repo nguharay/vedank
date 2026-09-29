@@ -56,6 +56,8 @@ export type Puzzle = {
   start: () => Glyph[];
   hint: () => Glyph[];
   story: string;
+  /* Japanese story; the first sentence (up to 。) is what is wrong, the rest is the answer */
+  storyJa: string;
 };
 
 export const PUZZLES: Puzzle[] = [
@@ -65,6 +67,7 @@ export const PUZZLES: Puzzle[] = [
     start: () => [glyphDigit("8"), glyphOp("-"), glyphDigit("3"), glyphOp("="), glyphDigit("1"), glyphDigit("2")],
     hint: () => [glyphDigit("9"), glyphOp("+"), glyphDigit("3"), glyphOp("="), glyphDigit("1"), glyphDigit("2")],
     story: "8 − 3 = 12 is wrong. One stick turns the 8 into a 9 and the − into a +.",
+    storyJa: "8 − 3 = 12 はまちがい。1本動かすと、8が9に、−が＋に変わる。",
   },
   {
     id: "p2",
@@ -72,6 +75,7 @@ export const PUZZLES: Puzzle[] = [
     start: () => [glyphDigit("6"), glyphOp("+"), glyphDigit("4"), glyphOp("="), glyphDigit("4")],
     hint: () => [glyphDigit("0"), glyphOp("+"), glyphDigit("4"), glyphOp("="), glyphDigit("4")],
     story: "6 + 4 = 4 is wrong. One stick move turns the 6 into a 0.",
+    storyJa: "6 + 4 = 4 はまちがい。1本動かすと、6が0に変わる。",
   },
   {
     id: "p3",
@@ -79,6 +83,7 @@ export const PUZZLES: Puzzle[] = [
     start: () => [glyphDigit("1"), glyphOp("-"), glyphDigit("6"), glyphOp("="), glyphDigit("7")],
     hint: () => [glyphDigit("7"), glyphOp("-"), glyphDigit("6"), glyphOp("="), glyphDigit("1")],
     story: "1 − 6 = 7 is wrong. Move the top stick from the last digit over to the first.",
+    storyJa: "1 − 6 = 7 はまちがい。最後の数字の上の1本を、最初の数字へ動かそう。",
   },
   {
     id: "p4",
@@ -86,6 +91,7 @@ export const PUZZLES: Puzzle[] = [
     start: () => [glyphDigit("6"), glyphOp("-"), glyphDigit("4"), glyphOp("="), glyphDigit("3")],
     hint: () => [glyphDigit("6"), glyphOp("-"), glyphDigit("4"), glyphOp("="), glyphDigit("2")],
     story: "6 − 4 = 3 is wrong. Slide the last digit's lower-right stick over to lower-left.",
+    storyJa: "6 − 4 = 3 はまちがい。最後の数字の右下の1本を、左下へ動かそう。",
   },
   {
     id: "p5",
@@ -93,6 +99,7 @@ export const PUZZLES: Puzzle[] = [
     start: () => [glyphDigit("2"), glyphOp("+"), glyphDigit("2"), glyphOp("="), glyphDigit("5")],
     hint: () => [glyphDigit("3"), glyphOp("+"), glyphDigit("2"), glyphOp("="), glyphDigit("5")],
     story: "2 + 2 = 5 is wrong. One stick move turns the first 2 into a 3.",
+    storyJa: "2 + 2 = 5 はまちがい。1本動かすと、最初の2が3に変わる。",
   },
   {
     id: "p6",
@@ -100,6 +107,7 @@ export const PUZZLES: Puzzle[] = [
     start: () => [glyphDigit("5"), glyphOp("+"), glyphDigit("5"), glyphOp("="), glyphDigit("8")],
     hint: () => [glyphDigit("3"), glyphOp("+"), glyphDigit("5"), glyphOp("="), glyphDigit("8")],
     story: "5 + 5 = 8 is wrong. One stick move turns the first 5 into a 3.",
+    storyJa: "5 + 5 = 8 はまちがい。1本動かすと、最初の5が3に変わる。",
   },
   {
     id: "p7",
@@ -107,6 +115,7 @@ export const PUZZLES: Puzzle[] = [
     start: () => [glyphDigit("0"), glyphOp("+"), glyphDigit("3"), glyphOp("="), glyphDigit("1"), glyphDigit("2")],
     hint: () => [glyphDigit("9"), glyphOp("+"), glyphDigit("3"), glyphOp("="), glyphDigit("1"), glyphDigit("2")],
     story: "0 + 3 = 12 is wrong. One stick move turns the 0 into a 9.",
+    storyJa: "0 + 3 = 12 はまちがい。1本動かすと、0が9に変わる。",
   },
   {
     id: "p8",
@@ -114,6 +123,7 @@ export const PUZZLES: Puzzle[] = [
     start: () => [glyphDigit("9"), glyphOp("+"), glyphDigit("3"), glyphOp("="), glyphDigit("9")],
     hint: () => [glyphDigit("6"), glyphOp("+"), glyphDigit("3"), glyphOp("="), glyphDigit("9")],
     story: "9 + 3 = 9 is wrong. One stick move turns the 9 into a 6.",
+    storyJa: "9 + 3 = 9 はまちがい。1本動かすと、9が6に変わる。",
   },
 ];
 export const TRAY_SIZE = 2;
