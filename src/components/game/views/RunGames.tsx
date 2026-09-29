@@ -5,6 +5,11 @@ import { Mascot } from "../Mascot";
 import { fmt, haptic } from "../util";
 import type { useSound } from "../useSound";
 import {
+  raceCreateAction, raceJoinAction, raceRoomAction, raceStartAction, raceAnswerAction,
+} from "@/lib/actions/game-actions";
+import type { RaceRoomView } from "@/lib/game/raceOnline";
+import {
+  raceQuestion, RACE_ROOM_MAX,
   buildChoiceRound, runnerWindowMs, runnerPoints, racePlace, raceLevel, rivalProgress, RACE_GOAL, RACE_LEVELS, type ChoiceRound,
 } from "@/lib/game/minigames";
 
@@ -257,7 +262,7 @@ const RACE_UNLOCK_KEY = "sutraSprint.raceUnlocked";
 const RACE_WON_KEY = "sutraSprint.raceBest";
 const raceBestKey = (lv: number) => `sutraSprint.raceBest.L${lv}`;
 
-export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
+function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOnline: () => void }) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "count" | "race" | "over">("ready");
   const [unlocked, setUnlocked] = useState(() => Math.max(1, readBest(RACE_UNLOCK_KEY)));
@@ -426,6 +431,7 @@ export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
             </div>
             <p className="race-vs">{ja ? `ライバル：${rivalNames}` : `Rivals: ${rivalNames}`}</p>
             <button className="btn btn-primary" onClick={() => start()}>{ja ? "よーい、スタート！" : "Ready, set, go!"}</button>
+            <button className="btn race-online-btn" onClick={onOnline}>🌐 {ja ? "友だちとオンライン対戦" : "Race friends online"}</button>
           </div>
         )}
         {phase === "over" && result && (
@@ -458,6 +464,270 @@ export function RaceGame({ lang, sound, celebrate, onCorrect }: Props) {
           <Answers round={round} onPick={pick} picked={picked} disabled={stumble} />
         </>
       )}
+    </div>
+  );
+}
+
+/* ---------- Math Race: the mode switch ----------
+   vs CPU (levels) or online with friends. A shared link (?rr=CODE) opens
+   straight into the online room. */
+export function RaceGame(props: Props & { guest: boolean; onNeedAccount: () => void; joinCode: string | null; onJoined: () => void }) {
+  const [mode, setMode] = useState<"cpu" | "online">(props.joinCode ? "online" : "cpu");
+  if (mode === "online") {
+    return <OnlineRace {...props} onBack={() => setMode("cpu")} />;
+  }
+  return (
+    <CpuRace {...props} onOnline={() => {
+      if (props.guest) { props.onNeedAccount(); return; }
+      setMode("online");
+    }} />
+  );
+}
+
+/* ---------- Math Race: online ----------
+   2–4 friends, one room code, the same sums for everyone. The room is polled
+   once a second — like online tic-tac-toe, no socket needed; your own runner
+   moves the instant you answer and the server confirms it. */
+const FRIEND_AVATARS = ["🐶", "🐱", "🐼", "🦁"];
+
+function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onBack }: Props & {
+  joinCode: string | null; onJoined: () => void; onBack: () => void;
+}) {
+  const ja = lang === "ja";
+  const [room, setRoom] = useState<RaceRoomView | null>(null);
+  const [code, setCode] = useState("");
+  const [note, setNote] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [myDone, setMyDone] = useState(0);
+  const [picked, setPicked] = useState<number | null>(null);
+  const [stumble, setStumble] = useState(false);
+  const [now, setNow] = useState(0);
+  const offset = useRef(0);
+  const round = useRef(-1);
+  const celebrated = useRef(-1);
+  const stumbleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* Every room update goes through here: line the clock up with the server
+     and, on a new round, reset our own runner. */
+  function take(v: RaceRoomView) {
+    offset.current = v.now - Date.now();
+    if (v.round !== round.current) {
+      round.current = v.round;
+      setMyDone(0); setPicked(null); setStumble(false);
+    }
+    const mine = v.players.find((p) => p.me);
+    /* never step backwards, but accept the server's count if it is ahead */
+    if (mine) setMyDone((d) => Math.max(d, mine.done));
+    setRoom(v);
+  }
+
+  async function create() {
+    setBusy(true); setNote(null);
+    try { take(await raceCreateAction()); } catch { setNote(ja ? "部屋を作れませんでした" : "Could not make a room"); }
+    setBusy(false);
+  }
+  async function join(c: string) {
+    setBusy(true); setNote(null);
+    try {
+      const res = await raceJoinAction(c);
+      if ("error" in res) setNote(res.error); else take(res);
+    } catch { setNote(ja ? "参加できませんでした" : "Could not join"); }
+    setBusy(false);
+  }
+  async function startRace() {
+    if (!room) return;
+    setBusy(true);
+    try { const res = await raceStartAction(room.code); if ("error" in res) setNote(res.error); else { setNote(null); take(res); } } catch {}
+    setBusy(false);
+  }
+
+  /* A shared link joins straight away. */
+  const joinedRef = useRef(false);
+  useEffect(() => {
+    if (!joinCode || joinedRef.current) return;
+    joinedRef.current = true;
+    onJoined();
+    void (async () => {
+      try {
+        const res = await raceJoinAction(joinCode);
+        if ("error" in res) setNote(res.error); else take(res);
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joinCode]);
+
+  /* Poll the room; tick a local clock for the countdown and timer. */
+  const roomCode = room?.code;
+  useEffect(() => {
+    if (!roomCode) return;
+    const poll = setInterval(async () => {
+      try { const r = await raceRoomAction(roomCode); if (r) take(r); } catch {}
+    }, 1000);
+    const tick = setInterval(() => setNow(Date.now() + offset.current), 100);
+    return () => { clearInterval(poll); clearInterval(tick); };
+  }, [roomCode]);
+  useEffect(() => () => { if (stumbleTimer.current) clearTimeout(stumbleTimer.current); }, []);
+
+  async function share() {
+    if (!room) return;
+    const url = `${window.location.origin}/?rr=${room.code}`;
+    try { if (navigator.share) { await navigator.share({ title: "Sutra Sprint", text: ja ? "計算レースで勝負しよう！" : "Race me in Math Race!", url }); return; } } catch { return; }
+    try { await navigator.clipboard.writeText(url); setNote(ja ? "リンクをコピーしました" : "Link copied"); } catch {}
+  }
+
+  /* status, derived from the local clock so the countdown flips on time */
+  const status = !room ? null
+    : room.status === "countdown" && room.startAt !== null && now >= room.startAt ? "racing" : room.status;
+  const goal = room?.goal ?? RACE_GOAL;
+  const iFinished = myDone >= goal;
+  const q = room && status === "racing" && !iFinished ? raceQuestion(room.seed, myDone) : null;
+
+  async function pick(v: number) {
+    if (!room || !q || stumble || picked !== null) return;
+    setPicked(v);
+    if (v !== q.answer) {
+      setStumble(true); sound.wrong(); haptic(34);
+      stumbleTimer.current = setTimeout(() => { setStumble(false); setPicked(null); }, 800);
+      return;
+    }
+    sound.correct(); haptic(12); onCorrect?.(1);
+    const idx = myDone;
+    setMyDone(idx + 1);
+    setTimeout(() => setPicked(null), 150);
+    try { const res = await raceAnswerAction(room.code, idx, v); if (!("error" in res)) take(res); } catch {}
+  }
+
+  const at = (p: number) => `calc(${4 + Math.min(1, p) * 80}%)`;
+  const medal = ["🥇", "🥈", "🥉", "4️⃣"];
+  /* standings: finished first by time, then by how far along */
+  const ranked = room ? [...room.players].sort((a, b) =>
+    (a.finishMs ?? Infinity) - (b.finishMs ?? Infinity) || b.done - a.done) : [];
+  const placeOf = (key: string) => ranked.findIndex((p) => p.key === key) + 1;
+  const me = room?.players.find((p) => p.me);
+  const elapsed = room?.startAt && now > room.startAt ? (now - room.startAt) / 1000 : 0;
+
+  /* celebrate a win once per round */
+  useEffect(() => {
+    if (status === "done" && room && me && placeOf(me.key) === 1 && celebrated.current !== room.round) {
+      celebrated.current = room.round;
+      celebrate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, room?.round]);
+
+  /* ---- no room yet: make one or type a code ---- */
+  if (!room) {
+    return (
+      <div className="rg">
+        <div className="race-online-menu">
+          <div className="rg-card-title">🌐 {ja ? "オンライン計算レース" : "Online Math Race"}</div>
+          <p className="rg-card-sub">
+            {ja ? `2〜${RACE_ROOM_MAX}人で同じ問題を解いて競争！部屋を作ってコードを友だちに送ろう。`
+                : `2–${RACE_ROOM_MAX} friends, the same sums, one race. Make a room and send your friends the code.`}
+          </p>
+          <button className="btn btn-primary" onClick={create} disabled={busy}>{ja ? "部屋を作る" : "Make a room"}</button>
+          <div className="race-join">
+            <input className="race-join-input mono" value={code} maxLength={4} placeholder="ABCD"
+              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} aria-label={ja ? "部屋のコード" : "Room code"} />
+            <button className="btn" onClick={() => join(code)} disabled={busy || code.length !== 4}>{ja ? "参加" : "Join"}</button>
+          </div>
+          {note && <p className="race-note">{note}</p>}
+          <button className="btn btn-ghost" onClick={onBack}>← {ja ? "CPUとレース" : "Race the CPU"}</button>
+        </div>
+      </div>
+    );
+  }
+
+  const n = room.players.length;
+  const laneLeft = (i: number) => `${((i + 0.5) / n) * 100}%`;
+
+  return (
+    <div className="rg">
+      <div className="match-head">
+        <div className="match-stat"><span className="match-stat-k">{ja ? "順位" : "Place"}</span>
+          <span className="match-stat-v rg-nowrap">{me && status !== "lobby" && status !== "countdown" ? `${medal[placeOf(me.key) - 1]}` : "–"}</span></div>
+        <div className="match-stat"><span className="match-stat-k">{ja ? "のこり" : "To go"}</span><span className="match-stat-v mono">{goal - myDone}</span></div>
+        <div className="match-stat"><span className="match-stat-k">{ja ? "タイム" : "Time"}</span><span className="match-stat-v mono">{elapsed.toFixed(1)}s</span></div>
+      </div>
+
+      <div className={`race-track${status === "racing" ? " moving" : ""}`}>
+        <div className="race-side left" aria-hidden="true">🌳<br />🌷<br />🌲<br />🌼<br />🌳</div>
+        <div className="race-road lanes-custom">
+          <div className="race-finish" aria-hidden="true"><span>GOAL</span></div>
+          {Array.from({ length: n - 1 }, (_, i) => (
+            <div key={i} className="race-divider" style={{ left: `${((i + 1) / n) * 100}%` }} aria-hidden="true" />
+          ))}
+          {room.players.map((p, i) => {
+            const done = p.me ? myDone : p.done;
+            return (
+              <div key={p.key} className="race-lane" style={{ left: laneLeft(i) }}>
+                <div className={`race-runner online${p.me ? " me" : ""}${p.me && stumble ? " stumble" : ""}`} style={{ bottom: at(done / goal) }}>
+                  {p.me
+                    ? <span className="race-boy"><Mascot mood={stumble ? "sad" : "excited"} animated={false} /></span>
+                    : <span className="race-emoji">{FRIEND_AVATARS[i % FRIEND_AVATARS.length]}</span>}
+                  <span className={`race-name${p.me ? " you" : ""}`}>{p.me ? (ja ? "きみ" : "You") : p.name}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="race-side right" aria-hidden="true">🌲<br />🌻<br />🌳<br />🌷<br />🌲</div>
+
+        {status === "countdown" && room.startAt !== null && (
+          <div key={Math.ceil((room.startAt - now) / 1000)} className="race-count mono">{Math.max(1, Math.ceil((room.startAt - now) / 1000))}</div>
+        )}
+
+        {status === "lobby" && (
+          <div className="rg-card">
+            <div className="rg-card-title">{ja ? "部屋のコード" : "Room code"}</div>
+            <div className="race-code mono">{room.code}</div>
+            <button className="btn" onClick={share}>🔗 {ja ? "友だちに送る" : "Send to friends"}</button>
+            <ul className="race-players">
+              {room.players.map((p, i) => (
+                <li key={p.key}>{p.me ? "🧒" : FRIEND_AVATARS[i % FRIEND_AVATARS.length]} {p.me ? (ja ? `${p.name}（きみ）` : `${p.name} (you)`) : p.name}{p.host ? " 👑" : ""}</li>
+              ))}
+              {n < RACE_ROOM_MAX && <li className="race-wait">{ja ? "友だちを待っています…" : "Waiting for friends…"}</li>}
+            </ul>
+            {room.isHost
+              ? <button className="btn btn-primary" onClick={startRace} disabled={busy || n < 2}>{n < 2 ? (ja ? "2人以上でスタート" : "Needs 2 racers") : (ja ? "よーい、スタート！" : "Start the race!")}</button>
+              : <p className="race-note">{ja ? "ホストがスタートするのを待っています" : "Waiting for the host to start"}</p>}
+            {note && <p className="race-note">{note}</p>}
+          </div>
+        )}
+
+        {(status === "done" || (status === "racing" && iFinished)) && (
+          <div className="rg-card">
+            {me && <div className="rg-card-medal">{medal[placeOf(me.key) - 1]}</div>}
+            <div className="rg-card-title">
+              {status === "done"
+                ? (me && placeOf(me.key) === 1 ? (ja ? "1位！きみの勝ち！" : "You won!") : (ja ? "レース終了！" : "Race over!"))
+                : (ja ? "ゴール！みんなを待っています…" : "Finished! Waiting for the others…")}
+            </div>
+            <ol className="race-results">
+              {ranked.map((p) => (
+                <li key={p.key} className={p.me ? "me" : ""}>
+                  <span>{p.me ? (ja ? "きみ" : "You") : p.name}</span>
+                  <span className="mono">{p.finishMs !== null ? `${(p.finishMs / 1000).toFixed(1)}s` : `${p.done}/${goal}`}</span>
+                </li>
+              ))}
+            </ol>
+            {status === "done" && (room.isHost
+              ? <button className="btn btn-primary" onClick={startRace} disabled={busy}>{ja ? "もう一回レース" : "Race again"}</button>
+              : <p className="race-note">{ja ? "ホストが次のレースを始めるのを待っています" : "Waiting for the host to start the next race"}</p>)}
+          </div>
+        )}
+      </div>
+
+      {q && (
+        <>
+          <div className="race-q mono">{q.prompt} = ?</div>
+          <Answers round={q} onPick={pick} picked={picked} disabled={stumble} />
+        </>
+      )}
+      <div className="race-online-foot">
+        <span className="mono">{ja ? "部屋" : "Room"} {room.code}</span>
+        <button className="btn btn-ghost" onClick={() => { setRoom(null); onBack(); }}>{ja ? "退出" : "Leave"}</button>
+      </div>
     </div>
   );
 }

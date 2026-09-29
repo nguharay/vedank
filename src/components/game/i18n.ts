@@ -61,7 +61,7 @@ export type UIDict = {
   };
   arena: {
     title: string; instructions: string; round: (n: number, total: number) => string; par: (n: number) => string;
-    trayLabel: string; movesUsed: string; best: string; hint: string; reset: string; next: string;
+    trayLabel: string; movesUsed: string; best: string; stuck: string; ja: boolean; hint: string; reset: string; next: string;
     alreadySolved: string; hintText: string; tapFirst: string; shapeInProgress: string; solvedPrefix: string;
     solvedSuffix: string; notTrueYet: string;
   };
@@ -167,6 +167,8 @@ export const UI: Record<LangCode, UIDict> = {
     },
     arena: {
       title: "Move a stick, fix the sum",
+      stuck: "Stuck? Tap Hint.",
+      ja: false,
       instructions: "Tap a lit stick to pick it up, then tap an empty spot — on the board or the tray — to place it. Every equation here bends true in exactly one move.",
       round: (n: number, total: number) => `Round ${n} of ${total}`,
       par: (n: number) => `🎯 Par: ${n} move${n === 1 ? "" : "s"}`,
@@ -295,6 +297,8 @@ export const UI: Record<LangCode, UIDict> = {
     },
     arena: {
       title: "マッチ棒を1本動かして式を直そう",
+      stuck: "わからないときは「ヒント」をタップ。",
+      ja: true,
       instructions: "光っているマッチ棒をタップして持ち上げ、空いている場所（ボードまたはトレイ）にタップして置きます。すべての式はちょうど1手で正しくなります。",
       round: (n: number, total: number) => `ラウンド ${n} / ${total}`,
       par: (n: number) => `🎯 目標：${n}手`,

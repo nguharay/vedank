@@ -24,6 +24,7 @@ import {
 import { pushConfigured, saveSubscription, removeSubscription, sendTo } from "@/lib/game/push";
 import { saveOverride } from "@/lib/game/overrides";
 import { createRoom, joinRoom, getRoom, moveRoom, rematchRoom } from "@/lib/game/tttOnline";
+import { createRaceRoom, joinRaceRoom, getRaceRoom, startRaceRoom, answerRaceRoom } from "@/lib/game/raceOnline";
 import { getAdminSession } from "@/lib/admin";
 import { TOPIC_BY_ID } from "@/lib/game/topics";
 
@@ -263,6 +264,16 @@ export async function tttMoveAction(code: string, i: number, chosen: number) {
   return moveRoom(await requireUserId(), String(code ?? ""), Number(i), Number(chosen));
 }
 export async function tttRematchAction(code: string) { return rematchRoom(await requireUserId(), String(code ?? "")); }
+
+/* ---------- online math race ---------- */
+
+export async function raceCreateAction() { return createRaceRoom(await requireUserId()); }
+export async function raceJoinAction(code: string) { return joinRaceRoom(await requireUserId(), String(code ?? "")); }
+export async function raceRoomAction(code: string) { return getRaceRoom(await requireUserId(), String(code ?? "")); }
+export async function raceStartAction(code: string) { return startRaceRoom(await requireUserId(), String(code ?? "")); }
+export async function raceAnswerAction(code: string, idx: number, answer: number) {
+  return answerRaceRoom(await requireUserId(), String(code ?? ""), Number(idx), Number(answer));
+}
 
 /* ---------- push notifications ---------- */
 

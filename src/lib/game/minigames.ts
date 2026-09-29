@@ -1,4 +1,5 @@
 import { BLITZ_TOPICS, blitzDiff, type Difficulty } from "./topics";
+import { seededRandom, withSeededRandom } from "./daily";
 
 /* The mini-games behind the Games tab. Each one is pure and client-side, so
    they work as a guest and offline — and can be tested without a browser.
@@ -514,4 +515,14 @@ export function rivalProgress(r: RaceRival, t: number, seed: number): number {
 /* Where the player finished, given their time. 1-based. */
 export function racePlace(level: RaceLevel, secs: number): number {
   return 1 + level.rivals.filter((r) => r.secs < secs).length;
+}
+
+/* ---------- Online race ----------
+   Everyone in a room gets the same sums in the same order: question i is
+   drawn from the room's seed, so the server can re-derive it and check an
+   answer without storing the sequence, and nobody gets an easier run. */
+export const RACE_ROOM_MAX = 4;
+export function raceQuestion(seed: number, i: number): ChoiceRound {
+  const rand = seededRandom((seed ^ Math.imul(i + 1, 2654435761)) >>> 0);
+  return withSeededRandom(rand, () => buildChoiceRound(i));
 }

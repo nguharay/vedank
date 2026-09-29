@@ -20,6 +20,7 @@ const EXPECTED: { table: string; column: string; feature: string }[] = [
   { table: "push_subscriptions", column: "endpoint", feature: "web push" },
   { table: "topic_overrides", column: "data", feature: "admin lesson edits" },
   { table: "ttt_rooms", column: "state", feature: "online tic-tac-toe" },
+  { table: "race_rooms", column: "state", feature: "online math race" },
 ];
 
 export async function GET() {

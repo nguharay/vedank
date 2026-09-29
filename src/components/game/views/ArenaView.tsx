@@ -182,7 +182,7 @@ export function ArenaView({
       </div>
       <div className="puzzle-board">
         <svg className="mandala-watermark" viewBox="0 0 100 100"><Mandala stroke="#7A4E2C" /></svg>
-        <div className="board-svg-wrap">
+        <div className={`board-svg-wrap${selection ? " picking" : ""}`}>
           <svg ref={svgRef} viewBox="0 0 440 140" width="440" height="140">{sticks}</svg>
         </div>
       </div>
@@ -210,7 +210,19 @@ export function ArenaView({
         <span>{t.arena.best} <b>{bestMoves != null ? bestMoves : "–"}</b></span>
       </div>
       <div className="puzzle-status" style={{ color: status.color }}>{status.text}</div>
-      <div className="story-chip">{p.story}</div>
+      {/* The story's second half is the answer — keep it back until the
+          puzzle is solved or the hint is asked for; before that show only
+          what is wrong with the sum. */}
+      <div className="story-chip">
+        {(() => {
+          const story = t.arena.ja ? p.storyJa : p.story;
+          if (solvedMap[p.id]) return story;
+          const wrong = t.arena.ja ? story.split("。")[0] + "。" : story.split(". ")[0] + ".";
+          /* after Hint the glowing sticks show the move — no need to say "tap Hint" */
+          if (hintPair) return wrong;
+          return `${wrong}${t.arena.ja ? "" : " "}${t.arena.stuck}`;
+        })()}
+      </div>
       {dragging && ghostPos && (
         <div className="drag-ghost" style={{ left: ghostPos.x, top: ghostPos.y }} />
       )}

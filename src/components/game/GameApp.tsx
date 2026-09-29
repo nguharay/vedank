@@ -824,6 +824,8 @@ export function GameApp({
   const GUEST_TOPICS = 2;
   const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
+  /* a room code from a shared ?rr= link, handed to the race view once */
+  const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
   function guestLocked(kind: string): boolean {
     if (!guest) return false;
     setLockOpen(kind);
@@ -2362,6 +2364,16 @@ export function GameApp({
     try {
       raceId = new URLSearchParams(window.location.search).get("race");
     } catch {}
+    /* ?rr=CODE — a friend's online Math Race room */
+    let rrCode: string | null = null;
+    try { rrCode = new URLSearchParams(window.location.search).get("rr"); } catch {}
+    if (rrCode) {
+      raceHandledRef.current = true;
+      window.history.replaceState({}, "", window.location.pathname);
+      if (guest) { setLockOpen("race-online"); return; }
+      setRaceJoinCode(rrCode); setView("race");
+      return;
+    }
     let tttCode: string | null = null;
     try { tttCode = new URLSearchParams(window.location.search).get("ttt"); } catch {}
     if (tttCode) {
@@ -3974,7 +3986,9 @@ export function GameApp({
         {view === "race" && (
           <section className="view active">
             <RaceGame lang={lang} sound={sound} celebrate={() => confetti.burstCenter(90, 0.35)}
-              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }}
+              guest={guest} onNeedAccount={() => setLockOpen("race-online")}
+              joinCode={raceJoinCode} onJoined={() => setRaceJoinCode(null)} />
           </section>
         )}
 
@@ -4323,7 +4337,7 @@ export function GameApp({
         </div>
       )}
 
-      <footer ref={footerRef} className="footerbar active" style={{ display: "flex" }}>
+      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}`} style={{ display: "flex" }}>
         {view === "home" && guest ? (
           <>
             <button className="bottomnav-item active" onClick={goHome}>
@@ -4374,7 +4388,7 @@ export function GameApp({
         ) : (
           <>
             <button className="btn btn-ghost back-footer-btn" aria-label="Back" onClick={handleBack}>
-              ← {lang === "ja" ? "戻る" : "Back"}
+              ←<span className="back-word"> {lang === "ja" ? "戻る" : "Back"}</span>
             </button>
             {view === "topic" && (
               <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
