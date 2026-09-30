@@ -78,8 +78,15 @@ import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
 import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
-import { RunnerGame, RaceGame } from "./views/RunGames";
-import { SushiShop, CastleDefense } from "./views/ShopGames";
+import dynamic from "next/dynamic";
+/* The action games are loaded only when one is opened, so the home screen
+   does not download them up front. */
+const RunnerGame = dynamic(() => import("./views/RunGames").then((m) => m.RunnerGame), { ssr: false });
+const RaceGame = dynamic(() => import("./views/RunGames").then((m) => m.RaceGame), { ssr: false });
+const SushiShop = dynamic(() => import("./views/ShopGames").then((m) => m.SushiShop), { ssr: false });
+const CastleDefense = dynamic(() => import("./views/ShopGames").then((m) => m.CastleDefense), { ssr: false });
+const KonbiniCashier = dynamic(() => import("./views/TownGames").then((m) => m.KonbiniCashier), { ssr: false });
+const NumberCrossword = dynamic(() => import("./views/TownGames").then((m) => m.NumberCrossword), { ssr: false });
 import { bossBonusGame, type HomeGameId } from "./homeGames";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
@@ -134,7 +141,7 @@ export function GameApp({
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle"];
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
@@ -824,7 +831,7 @@ export function GameApp({
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
   const GUEST_TOPICS = 2;
-  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle"]);
+  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   /* a room code from a shared ?rr= link, handed to the race view once */
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
@@ -1836,6 +1843,8 @@ export function GameApp({
         race: Number(localStorage.getItem("sutraSprint.raceBest") || 0),
         sushi: Number(localStorage.getItem("sutraSprint.sushiBest") || 0),
         castle: Number(localStorage.getItem("sutraSprint.castleBest") || 0),
+        konbini: Number(localStorage.getItem("sutraSprint.konbiniBest") || 0),
+        crossword: Number(localStorage.getItem("sutraSprint.crossBest") || 0),
         ...Object.fromEntries(QUICK_GAMES.map((g) => [g.id, Number(localStorage.getItem(`sutraSprint.quick.${g.id}`) || 0)])),
       });
     } catch {}
@@ -1856,12 +1865,27 @@ export function GameApp({
     const open: Record<HomeGameId, () => void> = {
       runner: () => setView("runner"), race: () => setView("race"),
       sushi: () => setView("sushi"), castle: () => setView("castle"),
+      konbini: () => setView("konbini"), crossword: () => setView("crossword"),
       pop: startPop, ttt: openTtt,
     };
     gameFromHomeRef.current = true;
     shelf(open[id], id === "ttt" ? undefined : id)();
   }
   const GAMES = [
+    {
+      id: "konbini", icon: "🏪", tint: "var(--green-dk)",
+      name: "Konbini Cashier", nameJa: "コンビニのレジ",
+      blurb: "Give every customer the right change, fast.",
+      blurbJa: "お客さんにおつりをわたそう。",
+      best: gameBests.konbini ?? 0, start: shelf(() => setView("konbini"), "konbini"),
+    },
+    {
+      id: "crossword", icon: "🧩", tint: "var(--violet)",
+      name: "Number Crossword", nameJa: "数字クロスワード",
+      blurb: "Fill the blanks so every row and column adds up.",
+      blurbJa: "たて・よこの合計があうようにマスをうめよう。",
+      best: gameBests.crossword ?? 0, start: shelf(() => setView("crossword"), "crossword"),
+    },
     {
       id: "match", icon: "🃏", tint: "var(--sky2)",
       name: "Number Match", nameJa: "ナンバーマッチ",
@@ -4062,6 +4086,18 @@ export function GameApp({
         {view === "runner" && (
           <section className="view active">
             <RunnerGame lang={lang} sound={sound} celebrate={() => confetti.burstCenter(60, 0.35)}
+              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+          </section>
+        )}
+        {view === "konbini" && (
+          <section className="view active">
+            <KonbiniCashier lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
+              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+          </section>
+        )}
+        {view === "crossword" && (
+          <section className="view active">
+            <NumberCrossword lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
               onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
           </section>
         )}

@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Mascot } from "../Mascot";
+import { Person, type PersonMood } from "../Person";
 import { fmt, haptic } from "../util";
 import type { useSound } from "../useSound";
 import {
-  buildSushiBill, sushiPatience, PLATES, type SushiBill,
+  buildSushiBill, sushiPatience, sushiEatMs, sushiLevel, SUSHI_LEVEL_NOTES, PLATES, type SushiBill,
   castleWave, castlePoints, castleQuestion, type ChoiceRound,
 } from "@/lib/game/minigames";
 import { ROSTER } from "../monsters";
@@ -22,7 +23,6 @@ function writeBest(key: string, v: number) {
 const yen = (n: number) => `¥${n.toLocaleString("en-US")}`;
 /* Only ever called from handlers and timers, never during render. */
 const clock = () => performance.now();
-const pickOf = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 const jitter = (ms: number) => Math.random() * ms;
 
 /* ---------- 🍣 Sushi Shop ----------
@@ -30,15 +30,16 @@ const jitter = (ms: number) => Math.random() * ms;
    the belt (their plate stack grows), then raises a hand for the bill. Tap
    them and work out what they owe — or their change from ¥1,000 — before
    their patience runs out. Three customers walking out closes the shop. */
-const GUESTS = ["👨", "👩", "👴", "👵", "🧑", "👦", "👧", "👨‍💼", "👩‍💼", "🧔"];
+/* customers are drawn (Person), picked by a seed */
+const newFace = () => Math.floor(Math.random() * 100000);
 const SUSHI_KEY = "sutraSprint.sushiBest";
 const SEATS = 3;
 
 type Seat =
   | { state: "empty"; until: number }
-  | { state: "eating"; face: string; bill: SushiBill; start: number; until: number; shown: number }
-  | { state: "waiting"; face: string; bill: SushiBill; deadline: number; total: number }
-  | { state: "leaving"; face: string; happy: boolean; until: number; text: string };
+  | { state: "eating"; face: number; bill: SushiBill; start: number; until: number; shown: number }
+  | { state: "waiting"; face: number; bill: SushiBill; deadline: number; total: number }
+  | { state: "leaving"; face: number; happy: boolean; until: number; text: string };
 
 export function SushiShop({ lang, sound, celebrate, onCorrect }: Props) {
   const ja = lang === "ja";
@@ -54,6 +55,7 @@ export function SushiShop({ lang, sound, celebrate, onCorrect }: Props) {
   const [now, setNow] = useState(0);
   const [best, setBest] = useState(0);
   const [newBest, setNewBest] = useState(false);
+  const [levelUp, setLevelUp] = useState<{ lv: number; text: string } | null>(null);
   const st = useRef({ seats: [] as Seat[], served: 0, sales: 0, strikes: 0, timer: 0 as unknown as ReturnType<typeof setInterval>, t0: 0 });
 
   useEffect(() => () => clearInterval(st.current.timer), []);
@@ -62,7 +64,7 @@ export function SushiShop({ lang, sound, celebrate, onCorrect }: Props) {
 
   function newCustomer(t: number): Seat {
     const bill = buildSushiBill(st.current.served);
-    return { state: "eating", face: pickOf(GUESTS), bill, start: t, until: t + 2600 + jitter(1600), shown: 0 };
+    return { state: "eating", face: newFace(), bill, start: t, until: t + sushiEatMs(st.current.served) + jitter(1400), shown: 0 };
   }
 
   function tick() {
@@ -143,10 +145,20 @@ export function SushiShop({ lang, sound, celebrate, onCorrect }: Props) {
     sound.correct(); haptic(12); onCorrect?.(1);
     const t = clock();
     const tipFast = seat.deadline - t > seat.total * 0.6;
-    const earned = (seat.bill.kind === "total" ? seat.bill.answer : 1000 - seat.bill.answer) + (tipFast ? 50 : 0);
+    /* the shop earns what the customer spent, whatever the question was */
+    const spent = seat.bill.kind === "change" ? seat.bill.paid - seat.bill.answer : seat.bill.answer;
+    const earned = spent + (tipFast ? 50 : 0);
     s.sales += earned; setSales(s.sales);
+    const before = sushiLevel(s.served);
     s.served += 1; setServed(s.served);
-    if (s.served % 10 === 0) celebrate();
+    const after = sushiLevel(s.served);
+    if (after > before) {
+      /* level up: say what is new, and cheer */
+      const note = SUSHI_LEVEL_NOTES[after];
+      setLevelUp({ lv: after, text: note ? (ja ? note.ja : note.en) : (ja ? "お客さんがもっといそいでいる！" : "Customers are in more of a hurry!") });
+      sound.levelUp(); celebrate();
+      setTimeout(() => setLevelUp(null), 2600);
+    }
     const next = [...s.seats];
     next[sel] = { state: "leaving", face: seat.face, happy: true, until: t + 1300, text: tipFast ? (ja ? "ごちそうさま！チップ ¥50" : "Delicious! +¥50 tip") : (ja ? "ごちそうさま！" : "Thank you!") };
     commit(next);
@@ -161,7 +173,7 @@ export function SushiShop({ lang, sound, celebrate, onCorrect }: Props) {
     <div className="rg">
       <div className="match-head">
         <div className="match-stat"><span className="match-stat-k">{ja ? "売上" : "Sales"}</span><span className="match-stat-v mono">{yen(sales)}</span></div>
-        <div className="match-stat"><span className="match-stat-k">{ja ? "お客さん" : "Served"}</span><span className="match-stat-v mono">{served}</span></div>
+        <div className="match-stat"><span className="match-stat-k">{ja ? "レベル" : "Level"}</span><span className="match-stat-v mono">{sushiLevel(served)}</span></div>
         <div className="match-stat"><span className="match-stat-k">{ja ? "評判" : "Rating"}</span><span className="match-stat-v">{"⭐".repeat(3 - strikes)}{"✖️".repeat(strikes)}</span></div>
       </div>
 
@@ -184,7 +196,8 @@ export function SushiShop({ lang, sound, celebrate, onCorrect }: Props) {
             const stack = seat.state === "eating" || seat.state === "waiting"
               ? seat.bill.plates.flatMap((p) => Array.from({ length: p.n }, () => p.plate)).slice(0, plates) : [];
             const pct = seat.state === "waiting" ? Math.max(0, (seat.deadline - now) / seat.total) : 1;
-            const mood = seat.state === "waiting" ? (pct > 0.6 ? "🙋" : pct > 0.3 ? "😐" : "😠") : seat.state === "leaving" ? (seat.happy ? "😋" : "😡") : "";
+            const mood: PersonMood = seat.state === "waiting" ? (pct > 0.6 ? "wait" : pct > 0.3 ? "cross" : "angry")
+              : seat.state === "leaving" ? (seat.happy ? "happy" : "angry") : "happy";
             return (
               <button key={i} className={`sushi-seat ${seat.state}${sel === i ? " sel" : ""}`} onClick={() => tapSeat(i)} disabled={seat.state !== "waiting"}
                 aria-label={seat.state === "waiting" ? (ja ? "お会計" : "Bill") : ""}>
@@ -193,8 +206,7 @@ export function SushiShop({ lang, sound, celebrate, onCorrect }: Props) {
                     <span className="sushi-stack">
                       {stack.map((p, k) => <i key={k} style={{ ["--plate" as string]: p.color }} />)}
                     </span>
-                    <span className="sushi-face">{seat.face}</span>
-                    {mood && <span className="sushi-mood">{mood}</span>}
+                    <span className="sushi-face"><Person seed={seat.face} mood={mood} /></span>
                     {seat.state === "eating" && <span className="sushi-bubble">{ja ? "もぐもぐ…" : "munch…"}</span>}
                     {seat.state === "waiting" && <span className="sushi-bubble call">{ja ? "お会計！" : "Bill, please!"}</span>}
                     {seat.state === "leaving" && <span className={`sushi-bubble${seat.happy ? " happy" : " angry"}`}>{seat.text}</span>}
@@ -206,6 +218,12 @@ export function SushiShop({ lang, sound, celebrate, onCorrect }: Props) {
             );
           })}
         </div>
+        {levelUp && (
+          <div key={levelUp.lv} className="sushi-levelup">
+            <b>{ja ? `レベル ${levelUp.lv}！` : `Level ${levelUp.lv}!`}</b>
+            <span>{levelUp.text}</span>
+          </div>
+        )}
         <div className="sushi-chef" aria-hidden="true"><Mascot animated={false} /><span>{ja ? "いらっしゃい！" : "Irasshai!"}</span></div>
 
         {phase === "ready" && (
@@ -226,7 +244,7 @@ export function SushiShop({ lang, sound, celebrate, onCorrect }: Props) {
         {phase === "closed" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && sales > 0 ? (ja ? "売上ベスト更新！" : "Best day ever!") : (ja ? "閉店です" : "Closing time")}</div>
-            <div className="match-done-line mono">{yen(sales)} · {served} {ja ? "人" : "served"} · {ja ? "ベスト" : "best"} {yen(best)}</div>
+            <div className="match-done-line mono">{yen(sales)} · {ja ? `レベル ${sushiLevel(served)}` : `Level ${sushiLevel(served)}`} · {served} {ja ? "人" : "served"} · {ja ? "ベスト" : "best"} {yen(best)}</div>
             <button className="btn btn-primary" onClick={open}>{ja ? "もう一日" : "Open again"}</button>
           </div>
         )}
@@ -235,7 +253,11 @@ export function SushiShop({ lang, sound, celebrate, onCorrect }: Props) {
       {phase === "open" && (
         bill ? (
           <div className="sushi-bill">
-            <div className="sushi-bill-head">{bill.kind === "total" ? (ja ? "🧾 お会計はいくら？" : "🧾 What's the bill?") : (ja ? "💴 1,000円札でお支払い。おつりは？" : "💴 Paid with ¥1,000. Change?")}</div>
+            <div className="sushi-bill-head">
+              {bill.kind === "total" ? (ja ? "🧾 お会計はいくら？" : "🧾 What's the bill?")
+                : bill.kind === "tax" ? (ja ? "🧾 税込み（10%）でいくら？" : "🧾 Total with 10% tax?")
+                : (ja ? `💴 ${yen(bill.paid)}札でお支払い。おつりは？` : `💴 Paid with ${yen(bill.paid)}. Change?`)}
+            </div>
             <div className="sushi-bill-lines">
               {bill.plates.map((p, k) => (
                 <span key={k}><i style={{ ["--plate" as string]: p.plate.color }} />{ja ? p.plate.nameJa : p.plate.name} {p.n} × {yen(p.plate.yen)}</span>
