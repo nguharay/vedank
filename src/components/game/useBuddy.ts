@@ -95,7 +95,7 @@ export const BUDDY_LINES: Record<string, Line> = {
 
   stagePass: { en: "Stage clear! Nicely done.", ja: "ステージクリア！よくできました。", mood: "excited" },
   stagePerfect: { en: "Not one mistake. Perfect!", ja: "ノーミス！パーフェクト！", mood: "excited" },
-  bossDown: { en: "Boss beaten! New skin might be waiting.", ja: "ボス撃破！新しいスキンがあるかも。", mood: "excited" },
+  bossDown: { en: "Boss conquered! New skin might be waiting.", ja: "ボス制覇！新しいスキンがあるかも。", mood: "excited" },
   levelUp: { en: "Level up! Check the shop.", ja: "レベルアップ！ショップを見てみて。", mood: "excited" },
 
   blitzStart: { en: "Fast hands! Don't overthink it.", ja: "スピード勝負！考えすぎないで。", mood: "excited" },

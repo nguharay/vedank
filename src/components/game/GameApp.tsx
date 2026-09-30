@@ -79,6 +79,8 @@ import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
 import { RunnerGame, RaceGame } from "./views/RunGames";
+import { SushiShop, CastleDefense } from "./views/ShopGames";
+import { bossBonusGame, type HomeGameId } from "./homeGames";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
@@ -132,7 +134,7 @@ export function GameApp({
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race"];
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
@@ -822,7 +824,7 @@ export function GameApp({
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
   const GUEST_TOPICS = 2;
-  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race"]);
+  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   /* a room code from a shared ?rr= link, handed to the race view once */
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
@@ -837,6 +839,10 @@ export function GameApp({
     else if (view === "stagemap") { openTopic(currentTopicId!); }
     /* Out of a game goes back to the shelf, not all the way home — finishing
        one and wanting another is the common case. */
+    else if (GAME_VIEWS.includes(view) && gameFromHomeRef.current) {
+      /* launched from Home (today's game, a map stop, a boss bonus) — go back there */
+      gameFromHomeRef.current = false; goHome();
+    }
     else if (GAME_VIEWS.includes(view) || (view === "arena" && (sprintRef.current || sprintOver))) {
       sprintRef.current = null; setSprintOver(null); openGames();
     }
@@ -1500,15 +1506,57 @@ export function GameApp({
     }
     return from && to ? { from, to } : null;
   }
-  function onHint() {
+  /* A Dojo hint is not free: it spends one 💡 hint token from the shop, or —
+     with none held — buys one for gems first, after a second tap to confirm.
+     It only lights the stick to move, never where it goes. */
+  const HINT_COST = SHOP_ITEMS.find((i) => i.id === "hint")?.cost ?? 60;
+  const [hintConfirm, setHintConfirm] = useState(false);
+  const [hintBusy, setHintBusy] = useState(false);
+  async function onHint() {
+    if (hintBusy) return;
     const pair = computeHintDiff();
     if (!pair) {
       setPuzzleStatus({ text: t.arena.alreadySolved, color: "var(--ink-dim)" });
       return;
     }
+    const ja = lang === "ja";
+    if (!guest) {
+      if ((inventory?.hintTokens ?? 0) <= 0) {
+        if (!hintConfirm) {
+          setHintConfirm(true);
+          setPuzzleStatus({
+            text: ja ? `💎 ヒントは ${HINT_COST} ジェム。もう一度「ヒント」をタップすると使います。` : `💎 A hint costs ${HINT_COST} gems. Tap Hint again to buy one.`,
+            color: "var(--ink-dim)",
+          });
+          setTimeout(() => setHintConfirm(false), 5000);
+          return;
+        }
+        setHintConfirm(false);
+        setHintBusy(true);
+        try {
+          const bought = await buyItemAction("hint");
+          if (!bought.ok) {
+            setPuzzleStatus({
+              text: ja ? "💎 ジェムが足りません。バトルに勝ってジェムを集めよう！" : "💎 Not enough gems — win battles to earn more!",
+              color: "var(--red, #d9534f)",
+            });
+            return;
+          }
+          if (typeof bought.balance === "number") setGemBalance(bought.balance);
+          if (bought.inventory) setInventory(bought.inventory);
+        } finally { setHintBusy(false); }
+      }
+      setHintBusy(true);
+      try {
+        const used = await consumeItemAction("hint");
+        if (!used.ok) { setPuzzleStatus({ text: ja ? "ヒントを使えませんでした" : "Couldn't use a hint", color: "var(--ink-dim)" }); return; }
+        setInventory(used.inventory ?? null);
+      } finally { setHintBusy(false); }
+    }
     setHintPair(pair);
+    sound.click();
     setPuzzleStatus({ text: t.arena.hintText, color: "var(--ink-dim)" });
-    setTimeout(() => setHintPair(null), 3200);
+    setTimeout(() => setHintPair(null), 6000);
   }
 
   /* ================= NUMBER BLITZ (arcade mini-game) ================= */
@@ -1786,10 +1834,13 @@ export function GameApp({
         pop: Number(localStorage.getItem("sutraSprint.popBest") || 0),
         runner: Number(localStorage.getItem("sutraSprint.runnerBest") || 0),
         race: Number(localStorage.getItem("sutraSprint.raceBest") || 0),
+        sushi: Number(localStorage.getItem("sutraSprint.sushiBest") || 0),
+        castle: Number(localStorage.getItem("sutraSprint.castleBest") || 0),
         ...Object.fromEntries(QUICK_GAMES.map((g) => [g.id, Number(localStorage.getItem(`sutraSprint.quick.${g.id}`) || 0)])),
       });
     } catch {}
     readDailyGame();
+    gameFromHomeRef.current = false;
     setView("games");
   }
   /* Tapping a shelf card is a free play, never the day's board. */
@@ -1799,6 +1850,17 @@ export function GameApp({
     fn();
   };
   const gameLocked = (id: string) => guest && !GUEST_GAMES.has(id);
+  /* The Home tab's way into a game. Guest gating is the shelf's. */
+  const gameFromHomeRef = useRef(false);
+  function playGame(id: HomeGameId) {
+    const open: Record<HomeGameId, () => void> = {
+      runner: () => setView("runner"), race: () => setView("race"),
+      sushi: () => setView("sushi"), castle: () => setView("castle"),
+      pop: startPop, ttt: openTtt,
+    };
+    gameFromHomeRef.current = true;
+    shelf(open[id], id === "ttt" ? undefined : id)();
+  }
   const GAMES = [
     {
       id: "match", icon: "🃏", tint: "var(--sky2)",
@@ -3527,7 +3589,7 @@ export function GameApp({
             solvedCount={solvedCount}
             dailyStreak={dailyStreak}
             onOpenTopic={openTopic}
-            onOpenArena={() => { if (guestLocked("arena")) return; loadPuzzle(puzIdx); setView("arena"); }}
+            onOpenArena={() => { if (guestLocked("arena")) return; refreshShop(); loadPuzzle(puzIdx); setView("arena"); }}
             onOpenBlitz={openBlitzPicker}
             onOpenTricks={() => { if (guestLocked("tricks")) return; setTrickId(null); setView("tricks"); }}
             onOpenDaily={() => { if (guestLocked("daily")) return; startDaily(); }}
@@ -3548,6 +3610,7 @@ export function GameApp({
             onOpenFriends={openFriends}
             onAcceptDuel={acceptDuel}
             onOpenClasses={classesEnabled && lang === "ja" ? () => setClassesFrom("home") : undefined}
+            onPlayGame={playGame}
             lang={lang}
             t={t}
           />
@@ -3631,6 +3694,7 @@ export function GameApp({
             elapsed={puzzleElapsed}
             bestMoves={progress.arena.bestMoves[PUZZLES[puzIdx].id]}
             solvedMap={progress.arena.solved}
+            solvedNow={boardLocked}
             status={puzzleStatus}
             svgRef={puzzleSvgRef}
             onSlotClick={onSlotClick}
@@ -3916,6 +3980,24 @@ export function GameApp({
 
             {/* The two action games sit up top with the tic-tac-toe card —
                 they are the ones that feel most like a real game. */}
+            <button className="ttt-card castle-feature" onClick={shelf(() => setView("castle"), "castle")}>
+              <span className="feature-art castle" aria-hidden="true"><b className="fa-castle">🏯</b><b className="fa-foe">👾</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🏯 お城をまもれ！" : "🏯 Castle Defense"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "答えて矢をうて！モンスターからお城をまもろう。" : "Answer to fire arrows. Hold off the monster waves!"}</span>
+                {(gameBests.castle ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.castle}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
+            <button className="ttt-card sushi-feature" onClick={shelf(() => setView("sushi"), "sushi")}>
+              <span className="feature-art sushi" aria-hidden="true"><b className="fa-sushi">🍣</b><b className="fa-guest">🙋</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🍣 おすし屋さん" : "🍣 Sushi Shop"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "回転寿司のお会計！お皿の合計を計算しよう。" : "Run a conveyor-belt sushi bar. Total the plates fast!"}</span>
+                {(gameBests.sushi ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "売上ベスト" : "Best day"} ¥{gameBests.sushi.toLocaleString("en-US")}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
             <button className="ttt-card run-feature" onClick={shelf(() => setView("runner"), "runner")}>
               <span className="feature-art runner" aria-hidden="true"><b className="fa-boy"><Mascot animated={false} /></b><b className="fa-rock">🪨</b></span>
               <span className="ttt-card-body">
@@ -3980,6 +4062,18 @@ export function GameApp({
         {view === "runner" && (
           <section className="view active">
             <RunnerGame lang={lang} sound={sound} celebrate={() => confetti.burstCenter(60, 0.35)}
+              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+          </section>
+        )}
+        {view === "sushi" && (
+          <section className="view active">
+            <SushiShop lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
+              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+          </section>
+        )}
+        {view === "castle" && (
+          <section className="view active">
+            <CastleDefense lang={lang} sound={sound} celebrate={() => confetti.burstCenter(80, 0.35)}
               onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
           </section>
         )}
@@ -4429,7 +4523,12 @@ export function GameApp({
             {view === "arena" && (
               <>
                 <button className="btn btn-ghost" onClick={() => loadPuzzle(puzIdx - 1)}>{lang === "ja" ? "◀ 前へ" : "◀ Prev"}</button>
-                {!boardLocked && <button className="btn btn-ghost" onClick={onHint}>{t.arena.hint}</button>}
+                {!boardLocked && (
+                  <button className="btn btn-ghost" onClick={onHint} disabled={hintBusy}>
+                    {t.arena.hint}
+                    {!guest && <span className="hint-cost">{(inventory?.hintTokens ?? 0) > 0 ? `×${inventory?.hintTokens}` : `${HINT_COST}💎`}</span>}
+                  </button>
+                )}
                 <button className="btn btn-ghost" onClick={() => loadPuzzle(puzIdx)}>{t.arena.reset}</button>
                 <button className="btn btn-primary" onClick={() => loadPuzzle(puzIdx + 1)}>{t.arena.next}</button>
               </>
@@ -4467,7 +4566,9 @@ export function GameApp({
                   <span className="result-monster-emoji">{m.emoji}</span>
                   <span className="result-monster-line">
                     {stageResult.passed
-                      ? (lang === "ja" ? `${m.name}をたおした！` : `You beat ${m.name}!`)
+                      ? (stageResult.isBoss
+                        ? (lang === "ja" ? `${m.name}を制覇した！` : `You conquered ${m.name}!`)
+                        : (lang === "ja" ? `${m.name}をたおした！` : `You beat ${m.name}!`))
                       : (lang === "ja" ? `${m.name}はまだ元気…` : `${m.name} is still standing…`)}
                   </span>
                 </div>
@@ -4500,6 +4601,21 @@ export function GameApp({
             ) : (
               <div className={`result-gems${stageResult.isBoss && stageResult.passed && chestOpen ? " loot-open" : ""}`}><RollUp to={stageResult.gemsGained} prefix="+" /> 💎</div>
             )}
+
+            {stageResult.isBoss && stageResult.passed && (() => {
+              const g = bossBonusGame(TOPICS.findIndex((tp) => tp.id === currentTopicId));
+              return (
+                <button className="boss-bonus" style={{ background: g.tint }}
+                  onClick={() => { setStageResult(null); playGame(g.id); }}>
+                  <span className="boss-bonus-icon">{g.icon}</span>
+                  <span className="boss-bonus-body">
+                    <span className="boss-bonus-tag">{lang === "ja" ? "🎁 ボスをたおしたごほうび" : "🎁 BOSS REWARD"}</span>
+                    <span className="boss-bonus-name">{lang === "ja" ? `ボーナスゲーム：${g.nameJa}` : `Bonus round: ${g.name}`}</span>
+                  </span>
+                  <span className="boss-bonus-go">▶</span>
+                </button>
+              );
+            })()}
 
             {/* Stars say how you did; this says what to fix. Missed questions
                 lead, because those are the ones worth a second look. */}

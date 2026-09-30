@@ -50,7 +50,7 @@ function blurbFor(focus: ShareFocus, s: ShareStats, t: UIDict, lang: LangCode): 
     case "bosses":
       return ja
         ? `スートラ・スプリントでボスを${s.bossClears}体倒しました！👹`
-        : `I've beaten ${s.bossClears} boss stages on Sutra Sprint! 👹`;
+        : `I've conquered ${s.bossClears} boss stages on Sutra Sprint! 👹`;
     case "puzzles":
       return ja
         ? `マッチ棒パズルを${s.solvedCount}/${s.totalPuzzles}問クリアしました！🧩`
