@@ -2,6 +2,7 @@
 
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
 import { todaysGame, bonusStopGame, type HomeGameId } from "../homeGames";
+import { useTown, townRank, RANKS } from "../town";
 import { Mandala, Mascot } from "../Mascot";
 import { monsterFor } from "../monsters";
 import type { ShareFocus } from "../ShareCard";
@@ -48,6 +49,7 @@ export function HomeView({
   onAcceptDuel,
   onOpenClasses,
   onPlayGame,
+  onOpenTown,
   lang,
   t,
 }: {
@@ -82,6 +84,7 @@ export function HomeView({
   onAcceptDuel: (d: ChallengeRow) => void;
   /* opens one of the action games (today's card, map bonus stops) */
   onPlayGame: (id: HomeGameId) => void;
+  onOpenTown: () => void;
   lang: Lang;
   t: UIDict;
 }) {
@@ -179,6 +182,8 @@ export function HomeView({
         </div>
         <span className="continue-card-arrow">▶</span>
       </div>
+
+      <HomeTownCard lang={lang} onOpen={onOpenTown} />
 
       {/* Today's game — one of the action games, a different one each day. */}
       {(() => {
@@ -463,5 +468,26 @@ export function HomeView({
         </button>
       )}
     </section>
+  );
+}
+
+/* Math Town on Home: coins in the bank and the town's rank, one tap away. */
+function HomeTownCard({ lang, onOpen }: { lang: "en" | "ja"; onOpen: () => void }) {
+  const town = useTown();
+  const r = RANKS[townRank(town) - 1];
+  const built = town.plots.filter(Boolean).length;
+  return (
+    <button className="town-card" onClick={onOpen}>
+      <span className="town-card-art" aria-hidden="true">🏠🏪🏯</span>
+      <span className="town-card-body">
+        <span className="town-card-name">{lang === "ja" ? `🏙️ 計算タウン · ${r.nameJa}` : `🏙️ Math Town · ${r.name}`}</span>
+        <span className="town-card-sub">
+          {built === 0
+            ? (lang === "ja" ? "正解1問 = 1🪙。まちをつくろう！" : "1 right answer = 1🪙. Start building!")
+            : (lang === "ja" ? `${built}つの建物 · タップして建てる` : `${built} buildings · tap to build more`)}
+        </span>
+      </span>
+      <span className="town-card-coins mono">🪙 {town.coins}</span>
+    </button>
   );
 }
