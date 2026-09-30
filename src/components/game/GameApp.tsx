@@ -87,7 +87,10 @@ const SushiShop = dynamic(() => import("./views/ShopGames").then((m) => m.SushiS
 const CastleDefense = dynamic(() => import("./views/ShopGames").then((m) => m.CastleDefense), { ssr: false });
 const KonbiniCashier = dynamic(() => import("./views/TownGames").then((m) => m.KonbiniCashier), { ssr: false });
 const NumberCrossword = dynamic(() => import("./views/TownGames").then((m) => m.NumberCrossword), { ssr: false });
+const RhythmTap = dynamic(() => import("./views/RhythmTap").then((m) => m.RhythmTap), { ssr: false });
+const TownView = dynamic(() => import("./views/TownView").then((m) => m.TownView), { ssr: false });
 import { bossBonusGame, type HomeGameId } from "./homeGames";
+import { addTownCoins, useTown } from "./town";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
@@ -141,7 +144,7 @@ export function GameApp({
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword"];
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "rhythm", "town"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
@@ -436,6 +439,8 @@ export function GameApp({
 
   /* Fire-and-forget: a quest that fails to record must never break gameplay. */
   function fireQuest(event: QuestEvent, amount = 1) {
+    /* every right answer, in any game, also pays into Math Town — guests too */
+    if (event === "correct_answer") addTownCoins(amount);
     if (guest) return;
     reportQuestAction(event, amount)
       .then((r) => setQuests(r.quests))
@@ -831,7 +836,7 @@ export function GameApp({
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
   const GUEST_TOPICS = 2;
-  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword"]);
+  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "rhythm", "town"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   /* a room code from a shared ?rr= link, handed to the race view once */
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
@@ -846,6 +851,10 @@ export function GameApp({
     else if (view === "stagemap") { openTopic(currentTopicId!); }
     /* Out of a game goes back to the shelf, not all the way home — finishing
        one and wanting another is the common case. */
+    else if (GAME_VIEWS.includes(view) && view !== "town" && gameFromTownRef.current) {
+      /* a game opened from a building in Math Town goes back to the town */
+      gameFromTownRef.current = false; setView("town");
+    }
     else if (GAME_VIEWS.includes(view) && gameFromHomeRef.current) {
       /* launched from Home (today's game, a map stop, a boss bonus) — go back there */
       gameFromHomeRef.current = false; goHome();
@@ -1760,7 +1769,7 @@ export function GameApp({
         recordDailyGame(score);
         confetti.burstCenter(140, 0.5);
         sound.levelUp();
-        if (!guest) fireQuest("correct_answer", matchTiles.length / 2);
+        fireQuest("correct_answer", matchTiles.length / 2);
       }
     } else {
       /* Show the wrong pairing for a beat rather than snapping it away —
@@ -1821,7 +1830,7 @@ export function GameApp({
         } catch {}
       }
       setTimeout(() => setBigOver({ streak: bigStreak, best }), 700);
-      if (!guest && bigStreak > 0) fireQuest("correct_answer", bigStreak);
+      if (bigStreak > 0) fireQuest("correct_answer", bigStreak);
     }
   }
 
@@ -1845,11 +1854,13 @@ export function GameApp({
         castle: Number(localStorage.getItem("sutraSprint.castleBest") || 0),
         konbini: Number(localStorage.getItem("sutraSprint.konbiniBest") || 0),
         crossword: Number(localStorage.getItem("sutraSprint.crossBest") || 0),
+        rhythm: Number(localStorage.getItem("sutraSprint.rhythmBest") || 0),
         ...Object.fromEntries(QUICK_GAMES.map((g) => [g.id, Number(localStorage.getItem(`sutraSprint.quick.${g.id}`) || 0)])),
       });
     } catch {}
     readDailyGame();
     gameFromHomeRef.current = false;
+    gameFromTownRef.current = false;
     setView("games");
   }
   /* Tapping a shelf card is a free play, never the day's board. */
@@ -1859,17 +1870,26 @@ export function GameApp({
     fn();
   };
   const gameLocked = (id: string) => guest && !GUEST_GAMES.has(id);
+  const townState = useTown();
   /* The Home tab's way into a game. Guest gating is the shelf's. */
   const gameFromHomeRef = useRef(false);
+  const gameFromTownRef = useRef(false);
   function playGame(id: HomeGameId) {
     const open: Record<HomeGameId, () => void> = {
       runner: () => setView("runner"), race: () => setView("race"),
       sushi: () => setView("sushi"), castle: () => setView("castle"),
       konbini: () => setView("konbini"), crossword: () => setView("crossword"),
+      rhythm: () => setView("rhythm"),
       pop: startPop, ttt: openTtt,
     };
-    gameFromHomeRef.current = true;
+    /* from the town, "back" returns to the town (gameFromTownRef); otherwise Home */
+    if (!gameFromTownRef.current) gameFromHomeRef.current = true;
     shelf(open[id], id === "ttt" ? undefined : id)();
+  }
+  function openTown(fromHome: boolean) {
+    gameFromTownRef.current = false;
+    gameFromHomeRef.current = fromHome;
+    setView("town");
   }
   const GAMES = [
     {
@@ -2002,7 +2022,7 @@ export function GameApp({
       setPopOver({ score: sc, best });
       return sc;
     });
-    if (!guest && popStreak > 0) fireQuest("correct_answer", popStreak);
+    if (popStreak > 0) fireQuest("correct_answer", popStreak);
   }
   /* Leaving the view mid-round must not leave a balloon timer running. */
   useEffect(() => { if (view !== "pop") popClear(); }, [view]);
@@ -2036,7 +2056,7 @@ export function GameApp({
         try { localStorage.setItem("sutraSprint.oddBest", String(oddStreak)); } catch {}
       }
       setTimeout(() => setOddOver({ streak: oddStreak, best }), 900);
-      if (!guest && oddStreak > 0) fireQuest("correct_answer", oddStreak);
+      if (oddStreak > 0) fireQuest("correct_answer", oddStreak);
     }
   }
 
@@ -2075,7 +2095,7 @@ export function GameApp({
         try { localStorage.setItem("sutraSprint.sortBest", String(sortStreak)); } catch {}
       }
       setTimeout(() => setSortOver({ streak: sortStreak, best }), 900);
-      if (!guest && sortStreak > 0) fireQuest("correct_answer", sortStreak);
+      if (sortStreak > 0) fireQuest("correct_answer", sortStreak);
     }
   }
 
@@ -2302,7 +2322,7 @@ export function GameApp({
         try { localStorage.setItem(quickBestKey(quickId), String(quickStreak)); } catch {}
       }
       setTimeout(() => setQuickOver({ streak: quickStreak, best }), 1500);
-      if (!guest && quickStreak > 0) fireQuest("correct_answer", quickStreak);
+      if (quickStreak > 0) fireQuest("correct_answer", quickStreak);
     }
   }
 
@@ -3635,6 +3655,7 @@ export function GameApp({
             onAcceptDuel={acceptDuel}
             onOpenClasses={classesEnabled && lang === "ja" ? () => setClassesFrom("home") : undefined}
             onPlayGame={playGame}
+            onOpenTown={() => openTown(true)}
             lang={lang}
             t={t}
           />
@@ -4004,6 +4025,23 @@ export function GameApp({
 
             {/* The two action games sit up top with the tic-tac-toe card —
                 they are the ones that feel most like a real game. */}
+            <button className="town-card" onClick={() => openTown(false)}>
+              <span className="town-card-art" aria-hidden="true">🏠🏪🏯</span>
+              <span className="town-card-body">
+                <span className="town-card-name">{lang === "ja" ? "🏙️ 計算タウン" : "🏙️ Math Town"}</span>
+                <span className="town-card-sub">{lang === "ja" ? "ゲームのコインで自分のまちをつくろう" : "Build your own town with coins from every game"}</span>
+              </span>
+              <span className="town-card-coins mono">🪙 {townState.coins}</span>
+            </button>
+            <button className="ttt-card rhythm-feature" onClick={shelf(() => setView("rhythm"), "rhythm")}>
+              <span className="feature-art rhythm" aria-hidden="true"><b className="fa-note1">🎵</b><b className="fa-note2">🎶</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🎵 リズムタップ" : "🎵 Rhythm Tap"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "音楽にあわせて答えをタップ！" : "Tap the answers to the beat of the music!"}</span>
+                {(gameBests.rhythm ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.rhythm}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
             <button className="ttt-card castle-feature" onClick={shelf(() => setView("castle"), "castle")}>
               <span className="feature-art castle" aria-hidden="true"><b className="fa-castle">🏯</b><b className="fa-foe">👾</b></span>
               <span className="ttt-card-body">
@@ -4086,37 +4124,49 @@ export function GameApp({
         {view === "runner" && (
           <section className="view active">
             <RunnerGame lang={lang} sound={sound} celebrate={() => confetti.burstCenter(60, 0.35)}
-              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+              onCorrect={(n) => fireQuest("correct_answer", n)} />
+          </section>
+        )}
+        {view === "rhythm" && (
+          <section className="view active">
+            <RhythmTap lang={lang} sound={sound} celebrate={() => confetti.burstCenter(80, 0.35)}
+              onCorrect={(n) => fireQuest("correct_answer", n)} />
+          </section>
+        )}
+        {view === "town" && (
+          <section className="view active">
+            <TownView lang={lang} sound={sound} celebrate={() => confetti.burstCenter(90, 0.35)}
+              onPlay={(gid) => { gameFromTownRef.current = true; playGame(gid as HomeGameId); }} />
           </section>
         )}
         {view === "konbini" && (
           <section className="view active">
             <KonbiniCashier lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
-              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+              onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}
         {view === "crossword" && (
           <section className="view active">
             <NumberCrossword lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
-              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+              onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}
         {view === "sushi" && (
           <section className="view active">
             <SushiShop lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
-              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+              onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}
         {view === "castle" && (
           <section className="view active">
             <CastleDefense lang={lang} sound={sound} celebrate={() => confetti.burstCenter(80, 0.35)}
-              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }} />
+              onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}
         {view === "race" && (
           <section className="view active">
             <RaceGame lang={lang} sound={sound} celebrate={() => confetti.burstCenter(90, 0.35)}
-              onCorrect={(n) => { if (!guest) fireQuest("correct_answer", n); }}
+              onCorrect={(n) => fireQuest("correct_answer", n)}
               guest={guest} onNeedAccount={() => setLockOpen("race-online")}
               joinCode={raceJoinCode} onJoined={() => setRaceJoinCode(null)} />
           </section>
