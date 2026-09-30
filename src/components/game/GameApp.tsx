@@ -4785,19 +4785,32 @@ export function GameApp({
 
       {/* The companion. Fixed above the nav so it never covers an answer tile,
           and tappable to hush it — a helper you can't silence is a nuisance. */}
-      {!buddy.hidden && (
+      {!buddy.hidden && (() => {
+        /* A moved buddy on the right half of the screen opens its bubble to the
+           LEFT (anchored by `right`), so a quote never runs off the edge. The
+           position only exists on the client, so reading the width is safe. */
+        const onRight = !!buddyPos.pos && buddyPos.pos.x + 29 > window.innerWidth / 2;
+        const dockStyle = !buddyPos.pos ? undefined
+          : onRight ? { right: Math.max(0, window.innerWidth - buddyPos.pos.x - 58), top: buddyPos.pos.y, left: "auto" }
+          : { left: buddyPos.pos.x, top: buddyPos.pos.y };
+        return (
         <div
-          className={`buddy-dock${buddy.say ? " talking" : ""}${buddyPos.pos ? " free" : ""}${buddyPos.dragging ? " dragging" : ""}`}
-          style={buddyPos.pos ? { left: buddyPos.pos.x, top: buddyPos.pos.y } : undefined}
+          className={`buddy-dock${buddy.say ? " talking" : ""}${buddyPos.pos ? " free" : ""}${onRight ? " right" : ""}${buddyPos.dragging ? " dragging" : ""}`}
+          style={dockStyle}
         >
           {buddy.say && (
-            <button
-              className={`buddy-bubble${quoteBy ? " quoting" : ""}`}
-              onClick={() => { buddy.quiet(); setQuoteBy(null); }}
-            >
-              {buddy.say.text}
-              {quoteBy && <span className="buddy-cite">— {quoteBy}</span>}
-            </button>
+            <div className={`buddy-bubble${quoteBy ? " quoting" : ""}`}>
+              <button className="buddy-bubble-text" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
+                {buddy.say.text}
+                {quoteBy && <span className="buddy-cite">— {quoteBy}</span>}
+              </button>
+              <button className="buddy-hide" onClick={() => {
+                buddy.quiet(); setQuoteBy(null); buddy.toggleHidden();
+                spawnToast(ja ? "バディをかくしました（メニューでもどせます）" : "Buddy hidden — turn it back on in the menu", null);
+              }}>
+                🙈 {ja ? "バディをかくす" : "Hide buddy"}
+              </button>
+            </div>
           )}
           <button
             className="buddy-tap"
@@ -4811,7 +4824,8 @@ export function GameApp({
             )}
           </button>
         </div>
-      )}
+        );
+      })()}
 
       <ShareSheet
         open={shareOpen}
