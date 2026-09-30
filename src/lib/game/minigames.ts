@@ -549,48 +549,99 @@ const PLATE = (id: string) => PLATES.find((p) => p.id === id)!;
 
 export type SushiBill = {
   plates: { plate: Plate; n: number }[];
-  kind: "total" | "change";
-  prompt: string;       /* the sum, e.g. "4 × ¥110" or "¥1,000 − ¥440" */
+  kind: "total" | "change" | "tax";
+  paid: number;         /* the note handed over, for "change" bills */
+  prompt: string;       /* the sum, e.g. "4 × ¥110", "¥1,000 − ¥440", "¥600 + 10%" */
   answer: number;
   options: number[];
 };
 
 function yen(n: number) { return `¥${n.toLocaleString("en-US")}`; }
 
-/* How hard the bill is depends on how many customers you've served. */
+/* The shop levels up every SUSHI_PER_LEVEL customers served. Each level adds
+   one new kind of bill — never a jump to paper maths:
+     Lv1  one colour: 2–4 × ¥110 or ¥200                   (×11, ×2)
+     Lv2  up to 9 × ¥110, or ¥99 plates                     (×11, below base 100)
+     Lv3  two colours; change from ¥1,000                   (all from 9, last from 10)
+     Lv4  ¥110 + ¥150 mixes; change on ¥99 plates
+     Lv5  three colours, toro (¥300)
+     Lv6  10% tax on a round subtotal                       (×1.1 = ×11 ÷ 10)
+     Lv7+ change from ¥5,000 on bigger bills, tax on mixes
+   A third of the bills come from the level below, so it ramps, not jumps. */
+export const SUSHI_PER_LEVEL = 5;
+export function sushiLevel(served: number): number {
+  return 1 + Math.floor(served / SUSHI_PER_LEVEL);
+}
+export const SUSHI_LEVEL_NOTES: Record<number, { en: string; ja: string }> = {
+  2: { en: "Bigger stacks — and ¥99 kappa maki!", ja: "お皿がふえる！¥99のかっぱ巻きも登場" },
+  3: { en: "Two kinds of plate, and ¥1,000 notes for change", ja: "2種類のお皿と、1,000円札でおつり" },
+  4: { en: "Salmon ¥150 joins the belt", ja: "¥150のサーモン登場" },
+  5: { en: "Three kinds of plate — and toro ¥300", ja: "3種類のお皿と¥300のトロ" },
+  6: { en: "Tax time: add 10%", ja: "消費税10%をたそう" },
+  7: { en: "Big spenders pay with ¥5,000", ja: "5,000円札でお支払い" },
+};
+
 export function buildSushiBill(served: number): SushiBill {
   const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
-  const tier = served < 4 ? 0 : served < 10 ? 1 : 2;
+  const top = Math.min(7, sushiLevel(served));
+  const lv = top > 1 && Math.random() < 0.33 ? top - 1 : top;
   let plates: { plate: Plate; n: number }[];
-  let kind: "total" | "change" = "total";
-  if (tier === 0) {
-    plates = [{ plate: PLATE(Math.random() < 0.6 ? "w" : "g"), n: ri(2, 5) }];
-  } else if (tier === 1) {
-    const k = ri(0, 2);
-    if (k === 0) plates = [{ plate: PLATE("r"), n: ri(2, 6) }];
-    else if (k === 1) plates = [{ plate: PLATE("w"), n: ri(2, 6) }, { plate: PLATE("g"), n: ri(1, 2) }];
-    else { plates = [{ plate: PLATE("w"), n: ri(2, 4) }]; kind = "change"; }
-  } else {
-    const k = ri(0, 3);
-    if (k === 0) plates = [{ plate: PLATE("w"), n: ri(3, 8) }, { plate: PLATE("b"), n: ri(1, 3) }];
-    else if (k === 1) plates = [{ plate: PLATE("r"), n: ri(3, 9) }];
-    else if (k === 2) plates = [{ plate: PLATE("k"), n: ri(1, 2) }, { plate: PLATE("w"), n: ri(1, 3) }];
-    else { plates = [{ plate: PLATE("r"), n: ri(2, 5) }]; kind = "change"; }
+  let kind: SushiBill["kind"] = "total";
+  let paid = 1000;
+  const k = Math.random();
+  switch (lv) {
+    case 1:
+      plates = [{ plate: PLATE(k < 0.6 ? "w" : "g"), n: ri(2, 4) }];
+      break;
+    case 2:
+      plates = k < 0.5 ? [{ plate: PLATE("w"), n: ri(4, 9) }] : [{ plate: PLATE("r"), n: ri(2, 5) }];
+      break;
+    case 3:
+      if (k < 0.5) plates = [{ plate: PLATE("w"), n: ri(2, 5) }, { plate: PLATE("g"), n: ri(1, 2) }];
+      else { plates = [{ plate: PLATE(k < 0.75 ? "w" : "g"), n: ri(2, 4) }]; kind = "change"; }
+      break;
+    case 4:
+      if (k < 0.5) plates = [{ plate: PLATE("w"), n: ri(3, 8) }, { plate: PLATE("b"), n: ri(1, 3) }];
+      else { plates = [{ plate: PLATE("r"), n: ri(3, 9) }]; kind = "change"; }
+      break;
+    case 5:
+      plates = k < 0.5
+        ? [{ plate: PLATE("w"), n: ri(1, 4) }, { plate: PLATE("b"), n: ri(1, 2) }, { plate: PLATE("g"), n: ri(1, 2) }]
+        : [{ plate: PLATE("k"), n: ri(1, 3) }, { plate: PLATE("w"), n: ri(1, 4) }];
+      break;
+    case 6:
+      /* a subtotal in whole hundreds, so the tax is a clean ×1.1 */
+      plates = k < 0.5 ? [{ plate: PLATE("g"), n: ri(2, 6) }] : [{ plate: PLATE("k"), n: ri(1, 3) }, { plate: PLATE("g"), n: ri(1, 3) }];
+      kind = "tax";
+      break;
+    default:
+      if (k < 0.5) {
+        plates = [{ plate: PLATE("w"), n: ri(2, 5) }, { plate: PLATE("b"), n: ri(1, 3) }, { plate: PLATE("k"), n: ri(1, 2) }];
+        kind = "change"; paid = 5000;
+      } else {
+        plates = [{ plate: PLATE("k"), n: ri(2, 4) }, { plate: PLATE("g"), n: ri(2, 5) }];
+        kind = "tax";
+      }
   }
   const total = plates.reduce((a, p) => a + p.plate.yen * p.n, 0);
-  if (kind === "change" && total >= 1000) kind = "total";
-  const answer = kind === "total" ? total : 1000 - total;
+  if (kind === "change" && total >= paid) kind = "total";
+  const answer = kind === "total" ? total : kind === "change" ? paid - total : total + total / 10;
   const prompt = kind === "total"
     ? plates.map((p) => `${p.n} × ${yen(p.plate.yen)}`).join(" + ")
-    : `${yen(1000)} − ${yen(total)}`;
+    : kind === "change" ? `${yen(paid)} − ${yen(total)}` : `${yen(total)} + 10%`;
   const cands = [answer + 10, answer - 10, answer + 100, answer - 100, answer + 1, answer - 1, answer + 110, answer + 50];
+  if (kind === "tax") cands.push(total, answer + total / 10);
   const decoys = new Set<number>();
   for (const c of shuffle(cands)) { if (decoys.size >= 2) break; if (c > 0 && c !== answer) decoys.add(c); }
-  return { plates, kind, prompt, answer, options: shuffle([answer, ...decoys]) };
+  return { plates, kind, paid, prompt, answer, options: shuffle([answer, ...decoys]) };
 }
-/* Seconds a customer waits for the bill before walking out. */
+/* Seconds a customer waits for the bill, and how long they eat first —
+   both shrink as the shop levels up. */
 export function sushiPatience(served: number): number {
-  return Math.max(9, 16 - served * 0.35);
+  return Math.max(8, 16 - (sushiLevel(served) - 1) * 1.2);
+}
+export function sushiEatMs(served: number): number {
+  return Math.max(1500, 2800 - (sushiLevel(served) - 1) * 200);
 }
 
 /* ---------- Castle Defense ----------
@@ -658,4 +709,130 @@ export function castleQuestion(wave: number): ChoiceRound {
   const tier = top > 0 && Math.random() < 0.33 ? top - 1 : top;
   const gens = tiers[Math.max(0, tier)];
   return choiceFor(gens[Math.floor(Math.random() * gens.length)]());
+}
+
+/* ---------- 🏪 Konbini Cashier ----------
+   Real convenience-store prices. The customer puts items down and pays; you
+   give the change. A level every KONBINI_PER_LEVEL customers:
+     Lv1  one item, a ¥1,000 note            ¥1,000 − ¥150
+     Lv2  one ¥x98 item                       ¥1,000 − ¥298 (all from 9, last from 10)
+     Lv3  two items: the total is shown, ¥1,000 note
+     Lv4  a ¥5,000 note on a bigger basket
+     Lv5  a ¥10,000 note
+     Lv6+ the Japanese trick: pays ¥1,030 for ¥530 so the change is ¥500 */
+export const KONBINI_PER_LEVEL = 5;
+export function konbiniLevel(served: number): number { return 1 + Math.floor(served / KONBINI_PER_LEVEL); }
+export type KonbiniItem = { id: string; emoji: string; name: string; nameJa: string; yen: number };
+export const KONBINI_ITEMS: KonbiniItem[] = [
+  { id: "onigiri", emoji: "🍙", name: "Onigiri", nameJa: "おにぎり", yen: 150 },
+  { id: "tea", emoji: "🍵", name: "Green tea", nameJa: "お茶", yen: 130 },
+  { id: "sando", emoji: "🥪", name: "Sandwich", nameJa: "サンドイッチ", yen: 298 },
+  { id: "karaage", emoji: "🍗", name: "Karaage", nameJa: "からあげ", yen: 238 },
+  { id: "ice", emoji: "🍦", name: "Ice cream", nameJa: "アイス", yen: 168 },
+  { id: "bento", emoji: "🍱", name: "Bento", nameJa: "お弁当", yen: 498 },
+  { id: "nikuman", emoji: "🥟", name: "Nikuman", nameJa: "肉まん", yen: 140 },
+  { id: "coffee", emoji: "☕", name: "Coffee", nameJa: "コーヒー", yen: 120 },
+  { id: "pudding", emoji: "🍮", name: "Pudding", nameJa: "プリン", yen: 198 },
+  { id: "bread", emoji: "🍞", name: "Melon pan", nameJa: "メロンパン", yen: 160 },
+];
+export type KonbiniQ = { items: KonbiniItem[]; total: number; paid: number; answer: number; options: number[] };
+export function buildKonbiniQ(served: number): KonbiniQ {
+  const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const top = Math.min(6, konbiniLevel(served));
+  const lv = top > 1 && Math.random() < 0.3 ? top - 1 : top;
+  const round = KONBINI_ITEMS.filter((i) => i.yen % 10 === 0 && i.yen % 100 !== 98);
+  const x98 = KONBINI_ITEMS.filter((i) => i.yen % 100 === 98);
+  let items: KonbiniItem[];
+  if (lv === 1) items = [round[ri(0, round.length - 1)]];
+  else if (lv === 2) items = [x98[ri(0, x98.length - 1)]];
+  else if (lv === 3) items = shuffle(KONBINI_ITEMS).slice(0, 2);
+  else items = shuffle(KONBINI_ITEMS).slice(0, ri(3, lv >= 5 ? 5 : 4));
+  const total = items.reduce((a, i) => a + i.yen, 0);
+  let paid: number;
+  if (lv <= 3) paid = total < 1000 ? 1000 : 5000;
+  else if (lv === 4) paid = total < 5000 ? 5000 : 10000;
+  else if (lv === 5) paid = 10000;
+  else {
+    /* pay a note plus the coins that round the change: ¥1,030 for ¥530 */
+    const coins = total % 100;
+    const note = Math.ceil(total / 1000) * 1000;
+    paid = coins && Math.random() < 0.7 ? note + coins : note;
+  }
+  const answer = paid - total;
+  const cands = [answer + 10, answer - 10, answer + 100, answer - 100, answer + 2, answer - 2, answer + 1000];
+  const decoys = new Set<number>();
+  for (const c of shuffle(cands)) { if (decoys.size >= 2) break; if (c > 0 && c !== answer) decoys.add(c); }
+  return { items, total, paid, answer, options: shuffle([answer, ...decoys]) };
+}
+export function konbiniPatience(served: number): number { return Math.max(9, 17 - (konbiniLevel(served) - 1) * 1.5); }
+
+/* ---------- 🧩 Number Crossword ----------
+   A grid of numbers with some blanks; every row and column shows its sum.
+   Fill the blanks so all the sums hold. Blanks are chosen so the puzzle can
+   always be solved one step at a time (some row or column always has just
+   one blank left) — which also makes the answer unique.
+
+   Every level is a notch harder than the last — more blanks, bigger
+   numbers, a bigger grid, and from level 4 a longer chain of reasoning
+   ("depth": how many rounds of filling it takes, since a blank that can only
+   be found after another is found is the hard kind):
+     Lv1  2×2  1–9    2 blanks          Lv7  3×3  10–99  5 blanks, depth 3
+     Lv2  3×3  1–9    3 blanks          Lv8  4×4  1–20   6 blanks, depth 3
+     Lv3  3×3  1–9    4 blanks          Lv9  4×4  1–30   7 blanks, depth 3
+     Lv4  3×3  1–9    5 blanks, depth 2 Lv10 4×4  10–60  7 blanks, depth 4
+     Lv5  3×3  10–30  4 blanks, depth 2 Lv11+ 4×4 20–99  7 blanks, depth 4
+     Lv6  3×3  10–50  5 blanks, depth 2
+   (8+ blanks in a 4×4 or 6+ in a 3×3 almost never peel, so difficulty grows
+   through numbers and depth instead.) */
+export type Crossword = { size: number; cells: number[]; blanks: number[]; rowSums: number[]; colSums: number[] };
+const CROSS_LEVELS = [
+  { size: 2, lo: 1, hi: 9, blanks: 2, depth: 1 },
+  { size: 3, lo: 1, hi: 9, blanks: 3, depth: 1 },
+  { size: 3, lo: 1, hi: 9, blanks: 4, depth: 1 },
+  { size: 3, lo: 1, hi: 9, blanks: 5, depth: 2 },
+  { size: 3, lo: 10, hi: 30, blanks: 4, depth: 2 },
+  { size: 3, lo: 10, hi: 50, blanks: 5, depth: 2 },
+  { size: 3, lo: 10, hi: 99, blanks: 5, depth: 3 },
+  { size: 4, lo: 1, hi: 20, blanks: 6, depth: 3 },
+  { size: 4, lo: 1, hi: 30, blanks: 7, depth: 3 },
+  { size: 4, lo: 10, hi: 60, blanks: 7, depth: 4 },
+  { size: 4, lo: 20, hi: 99, blanks: 7, depth: 4 },
+];
+export function buildCrossword(level: number): Crossword {
+  const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const cfg = CROSS_LEVELS[Math.min(CROSS_LEVELS.length, Math.max(1, level)) - 1];
+  const n = cfg.size;
+  /* find a blank pattern that peels with at least the wanted depth; keep the
+     deepest one seen in case the target is rarely reached */
+  let best: number[] | null = null, bestDepth = 0;
+  for (let tries = 0; tries < 600; tries++) {
+    const blanks = shuffle(Array.from({ length: n * n }, (_, i) => i)).slice(0, cfg.blanks);
+    const d = peelDepth(n, blanks);
+    if (d > bestDepth) { best = blanks; bestDepth = d; }
+    if (d >= cfg.depth) break;
+  }
+  if (!best) return buildCrossword(1);
+  const cells = Array.from({ length: n * n }, () => ri(cfg.lo, cfg.hi));
+  const rowSums = Array.from({ length: n }, (_, r) => cells.slice(r * n, r * n + n).reduce((a, b) => a + b, 0));
+  const colSums = Array.from({ length: n }, (_, c) => cells.filter((_, i) => i % n === c).reduce((a, b) => a + b, 0));
+  return { size: n, cells, blanks: best.sort((a, b) => a - b), rowSums, colSums };
+}
+/* How many rounds of "fill every blank that is alone in its row or column"
+   it takes to finish; 0 if it can't be finished that way. */
+export function peelDepth(n: number, blanks: number[]): number {
+  const left = new Set(blanks);
+  let rounds = 0;
+  while (left.size) {
+    const now: number[] = [];
+    for (let k = 0; k < n; k++) {
+      const row = [...left].filter((i) => Math.floor(i / n) === k);
+      if (row.length === 1) now.push(row[0]);
+      const col = [...left].filter((i) => i % n === k);
+      if (col.length === 1) now.push(col[0]);
+    }
+    if (!now.length) return 0;
+    now.forEach((i) => left.delete(i));
+    rounds++;
+  }
+  return rounds;
 }
