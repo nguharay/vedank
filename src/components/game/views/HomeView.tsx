@@ -1,6 +1,7 @@
 "use client";
 
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
+import { todaysGame, bonusStopGame, type HomeGameId } from "../homeGames";
 import { Mandala, Mascot } from "../Mascot";
 import { monsterFor } from "../monsters";
 import type { ShareFocus } from "../ShareCard";
@@ -46,6 +47,7 @@ export function HomeView({
   onOpenFriends,
   onAcceptDuel,
   onOpenClasses,
+  onPlayGame,
   lang,
   t,
 }: {
@@ -78,6 +80,8 @@ export function HomeView({
   onOpenClasses?: () => void;
   onOpenFriends: () => void;
   onAcceptDuel: (d: ChallengeRow) => void;
+  /* opens one of the action games (today's card, map bonus stops) */
+  onPlayGame: (id: HomeGameId) => void;
   lang: Lang;
   t: UIDict;
 }) {
@@ -161,7 +165,7 @@ export function HomeView({
         <div className="bar-track"><div className="bar-fill" style={{ width: `${li.pct}%` }} /></div>
         <div className="hero-stats">
           <span>👾 {lang === "ja" ? "たおしたモンスター" : "Monsters beaten"} <b className="mono">{TOPICS.reduce((a, tp) => a + topicProgressOf(progress, tp.id).cleared, 0)}</b>/{TOPICS.length * STAGE_COUNT}</span>
-          <span>👑 {lang === "ja" ? "ボス" : "Bosses"} <b className="mono">{TOPICS.filter((tp) => topicProgressOf(progress, tp.id).cleared >= STAGE_COUNT).length}</b></span>
+          <span>👑 {lang === "ja" ? "制覇したボス" : "Bosses conquered"} <b className="mono">{TOPICS.filter((tp) => topicProgressOf(progress, tp.id).cleared >= STAGE_COUNT).length}</b></span>
         </div>
       </div>
 
@@ -175,6 +179,22 @@ export function HomeView({
         </div>
         <span className="continue-card-arrow">▶</span>
       </div>
+
+      {/* Today's game — one of the action games, a different one each day. */}
+      {(() => {
+        const g = todaysGame();
+        return (
+          <button className="today-game" style={{ background: g.tint }} onClick={() => onPlayGame(g.id)}>
+            <span className="today-game-icon" aria-hidden="true">{g.icon}</span>
+            <span className="today-game-body">
+              <span className="today-game-tag">{lang === "ja" ? "⭐ 今日のゲーム" : "⭐ TODAY'S GAME"}</span>
+              <span className="today-game-name">{lang === "ja" ? g.nameJa : g.name}</span>
+              <span className="today-game-sub">{lang === "ja" ? g.blurbJa : g.blurb}</span>
+            </span>
+            <span className="today-game-go">{lang === "ja" ? "あそぶ ▶" : "Play ▶"}</span>
+          </button>
+        );
+      })()}
 
       {dailyStreak > 0 && (
         <div className="streak-calendar">
@@ -401,6 +421,22 @@ export function HomeView({
                   <div className="node-label">{lang === "ja" ? tp.titleJa : tp.title}</div>
                 </div>
               </div>
+              {/* A bonus game stop every third topic, off to the side of the
+                  path. Which game it is changes every day. */}
+              {i % 3 === 2 && i < visibleTopics - 1 && (() => {
+                const g = bonusStopGame(Math.floor(i / 3));
+                const side = PATH_POS[i % PATH_POS.length] === "r" ? "left" : "right";
+                return (
+                  <div className={`bonus-row ${side}`}>
+                    <button className="bonus-stop" style={{ background: g.tint }} onClick={() => onPlayGame(g.id)}
+                      aria-label={lang === "ja" ? `ボーナス：${g.nameJa}` : `Bonus: ${g.name}`}>
+                      <span className="bonus-stop-icon">{g.icon}</span>
+                      <span className="bonus-stop-tag">{lang === "ja" ? "ボーナス" : "BONUS"}</span>
+                    </button>
+                    <span className="bonus-stop-name">{lang === "ja" ? g.nameJa : g.name}</span>
+                  </div>
+                );
+              })()}
             </div>
           );
         })}

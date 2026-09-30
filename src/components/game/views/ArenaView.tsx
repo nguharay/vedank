@@ -17,6 +17,7 @@ export function ArenaView({
   elapsed,
   bestMoves,
   solvedMap,
+  solvedNow,
   status,
   svgRef,
   onSlotClick,
@@ -34,6 +35,8 @@ export function ArenaView({
   elapsed: number;
   bestMoves: number | undefined;
   solvedMap: Record<string, boolean>;
+  /* solved in this attempt — only then is the answer text shown */
+  solvedNow: boolean;
   status: { text: string; color: string };
   svgRef: React.RefObject<SVGSVGElement | null>;
   onSlotClick: (loc: "board" | "tray", gi: number | null, slot: string | null, idx: number | null) => void;
@@ -134,7 +137,8 @@ export function ArenaView({
       const tipY = tipEnd === "start" ? y1 : y2;
       const isSel = selection && selection.loc === "board" && selection.gi === gi && selection.slot === slot;
       const isHintSrc = hintPair && hintPair.from.loc === "board" && hintPair.from.gi === gi && hintPair.from.slot === slot;
-      const isHintDst = hintPair && hintPair.to.loc === "board" && hintPair.to.gi === gi && hintPair.to.slot === slot;
+      /* the hint shows only which stick to move — never where it goes */
+      const isHintDst = false;
       const lineCls = `stick ${isSel ? "stick-selected" : on ? "stick-active" : "stick-inactive"}${isHintSrc || isHintDst ? " stick-hint" : ""}`;
       const tipCls = isSel ? "stick-tip sel-tip" : on ? "stick-tip" : "stick-tip-off";
       sticks.push(
@@ -194,7 +198,7 @@ export function ArenaView({
             return (
               <div
                 key={idx}
-                className={`tray-slot${on ? " filled" : ""}${isSel ? " sel" : ""}`}
+                className={`tray-slot${on ? " filled" : ""}${isSel ? " sel" : ""}${hintPair && hintPair.from.loc === "tray" && hintPair.from.idx === idx ? " hint" : ""}`}
                 data-drag-loc="tray"
                 data-drag-idx={idx}
                 onPointerDown={(e) => handlePointerDown(e, "tray", null, null, idx)}
@@ -215,11 +219,12 @@ export function ArenaView({
           what is wrong with the sum. */}
       <div className="story-chip">
         {(() => {
+          /* Only ever the first sentence (what is wrong with the sum). The rest
+             of the story is the solution, so it is never shown — the board and
+             the Hint's glowing sticks are the only help. */
           const story = t.arena.ja ? p.storyJa : p.story;
-          if (solvedMap[p.id]) return story;
           const wrong = t.arena.ja ? story.split("。")[0] + "。" : story.split(". ")[0] + ".";
-          /* after Hint the glowing sticks show the move — no need to say "tap Hint" */
-          if (hintPair) return wrong;
+          if (hintPair || solvedNow) return wrong;
           return `${wrong}${t.arena.ja ? "" : " "}${t.arena.stuck}`;
         })()}
       </div>

@@ -34,7 +34,7 @@ export function useLang(initialLang: LangCode = "en") {
 
 export type UIDict = {
   appName: string;
-  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string; blitz: string; tricks: string; daily: string; review: string; comp: string; match: string; games: string; bigger: string; odd: string; sortg: string; memory: string; quick: string; ttt: string; pop: string; runner: string; race: string };
+  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string; blitz: string; tricks: string; daily: string; review: string; comp: string; match: string; games: string; bigger: string; odd: string; sortg: string; memory: string; quick: string; ttt: string; pop: string; runner: string; race: string; sushi: string; castle: string };
   menu: {
     accountLabel: string; player: string; sound: string; on: string; off: string;
     theme: string; auto: string; light: string; dark: string; skins: string; language: string; signOut: string;
@@ -78,7 +78,7 @@ export type UIDict = {
 export const UI: Record<LangCode, UIDict> = {
   en: {
     appName: "Sutra Sprint",
-    headerTitles: { home: "Sutra Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Dojo", blitz: "Number Blitz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "Games", bigger: "Which is Bigger?", odd: "Odd One Out", sortg: "Smallest First", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race" },
+    headerTitles: { home: "Sutra Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Dojo", blitz: "Number Blitz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "Games", bigger: "Which is Bigger?", odd: "Odd One Out", sortg: "Smallest First", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense" },
     menu: {
       accountLabel: "Account menu",
       player: "Player",
@@ -179,7 +179,7 @@ export const UI: Record<LangCode, UIDict> = {
       reset: "↺ Reset",
       next: "Next →",
       alreadySolved: "You're already on the solution shape — place your move to win!",
-      hintText: "💡 Pick up the glowing stick, then place it on the glowing target.",
+      hintText: "💡 The glowing stick is the one to move. Where does it go? That part is up to you!",
       tapFirst: "Tap a lit stick first, then tap where it should go.",
       shapeInProgress: "Shape in progress: ",
       solvedPrefix: "🎉 Solved! ",
@@ -200,7 +200,7 @@ export const UI: Record<LangCode, UIDict> = {
       statBestStreak: "Best streak",
       statHearts: "Hearts",
       statBlitz: "Blitz best",
-      statBosses: "Bosses beaten",
+      statBosses: "Bosses conquered",
       statPuzzles: "Puzzles solved",
       blurb: (level, rank) => `I'm level ${level} — ${rank} — in Sutra Sprint! 🪔`,
       blitzBlurb: (score) => `I scored ${score} in Number Blitz on Sutra Sprint! ⚡ Can you beat it?`,
@@ -208,7 +208,7 @@ export const UI: Record<LangCode, UIDict> = {
   },
   ja: {
     appName: "スートラ・スプリント",
-    headerTitles: { home: "スートラ・スプリント", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒道場", blitz: "ナンバーブリッツ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "ゲーム", bigger: "どっちが大きい？", odd: "仲間はずれ", sortg: "小さい順", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース" },
+    headerTitles: { home: "スートラ・スプリント", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒道場", blitz: "ナンバーブリッツ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "ゲーム", bigger: "どっちが大きい？", odd: "仲間はずれ", sortg: "小さい順", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！" },
     menu: {
       accountLabel: "アカウントメニュー",
       player: "プレイヤー",
@@ -309,7 +309,7 @@ export const UI: Record<LangCode, UIDict> = {
       reset: "↺ リセット",
       next: "次へ →",
       alreadySolved: "もう正解の形になっています――そのまま動かして勝利！",
-      hintText: "💡 光っているマッチ棒を持ち上げて、光っている場所に置きましょう。",
+      hintText: "💡 光っているマッチ棒を動かそう。どこに置くかは自分で考えてね！",
       tapFirst: "まず光っているマッチ棒をタップし、次に置きたい場所をタップしてください。",
       shapeInProgress: "形を変えています：",
       solvedPrefix: "🎉 解けました！ ",
@@ -330,7 +330,7 @@ export const UI: Record<LangCode, UIDict> = {
       statBestStreak: "最高連続",
       statHearts: "ハート",
       statBlitz: "ブリッツ最高",
-      statBosses: "ボス撃破",
+      statBosses: "制覇したボス",
       statPuzzles: "パズル達成",
       blurb: (level, rank) => `ヴェダンク・アカデミーのスートラ・スプリントでレベル${level}「${rank}」になりました！🪔`,
       blitzBlurb: (score) => `ナンバーブリッツで${score}点を取りました！⚡ 挑戦してみませんか？`,

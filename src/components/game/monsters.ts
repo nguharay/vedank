@@ -2,7 +2,7 @@ import { TOPICS, STAGE_COUNT } from "@/lib/game/topics";
 
 /* Every topic is guarded by its own monster; stage 5 is its crowned king.
    Kept friendly — this is a children's maths game. */
-const ROSTER = [
+export const ROSTER = [
   { emoji: "👾", en: "Blip", ja: "ピコ" },
   { emoji: "🐙", en: "Tako", ja: "タコすけ" },
   { emoji: "🦖", en: "Rexy", ja: "ザウルス" },

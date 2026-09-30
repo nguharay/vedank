@@ -448,7 +448,11 @@ export function popPoints(combo: number): number {
 export type ChoiceRound = { prompt: string; answer: number; options: number[] };
 
 export function buildChoiceRound(streak: number): ChoiceRound {
-  const p = popSum(streak);
+  return choiceFor(popSum(streak));
+}
+/* Three answers for a sum: the right one and two near misses a hurried
+   player might pick (off by one, off by ten, digits swapped). */
+function choiceFor(p: { prompt: string; answer: number }): ChoiceRound {
   const swapped = Number(String(Math.abs(p.answer)).split("").reverse().join(""));
   const cands = [p.answer + 1, p.answer - 1, p.answer + 10, p.answer - 10, swapped, p.answer + 2, p.answer - 2];
   const decoys = new Set<number>();
@@ -525,4 +529,133 @@ export const RACE_ROOM_MAX = 4;
 export function raceQuestion(seed: number, i: number): ChoiceRound {
   const rand = seededRandom((seed ^ Math.imul(i + 1, 2654435761)) >>> 0);
   return withSeededRandom(rand, () => buildChoiceRound(i));
+}
+
+/* ---------- Sushi Shop ----------
+   A kaiten-zushi counter. Customers eat from the belt, stack their plates,
+   then call for the bill; you total it (or give change from a ¥1,000 note)
+   before they lose patience. The prices are chosen so the book's tricks do
+   the work: ¥110 plates are ×11, ¥99 plates are "below base 100", and change
+   from ¥1,000 is "all from 9, last from 10". */
+export type Plate = { id: string; yen: number; color: string; name: string; nameJa: string; sushi: string };
+export const PLATES: Plate[] = [
+  { id: "w", yen: 110, color: "#f4f1ea", name: "Tamago", nameJa: "たまご", sushi: "🍣" },
+  { id: "b", yen: 150, color: "#5b8fd9", name: "Salmon", nameJa: "サーモン", sushi: "🍣" },
+  { id: "r", yen: 99, color: "#d9534f", name: "Kappa maki", nameJa: "かっぱ巻き", sushi: "🥒" },
+  { id: "g", yen: 200, color: "#e2b53b", name: "Ebi", nameJa: "えび", sushi: "🍤" },
+  { id: "k", yen: 300, color: "#2d2d2d", name: "Toro", nameJa: "トロ", sushi: "🐟" },
+];
+const PLATE = (id: string) => PLATES.find((p) => p.id === id)!;
+
+export type SushiBill = {
+  plates: { plate: Plate; n: number }[];
+  kind: "total" | "change";
+  prompt: string;       /* the sum, e.g. "4 × ¥110" or "¥1,000 − ¥440" */
+  answer: number;
+  options: number[];
+};
+
+function yen(n: number) { return `¥${n.toLocaleString("en-US")}`; }
+
+/* How hard the bill is depends on how many customers you've served. */
+export function buildSushiBill(served: number): SushiBill {
+  const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const tier = served < 4 ? 0 : served < 10 ? 1 : 2;
+  let plates: { plate: Plate; n: number }[];
+  let kind: "total" | "change" = "total";
+  if (tier === 0) {
+    plates = [{ plate: PLATE(Math.random() < 0.6 ? "w" : "g"), n: ri(2, 5) }];
+  } else if (tier === 1) {
+    const k = ri(0, 2);
+    if (k === 0) plates = [{ plate: PLATE("r"), n: ri(2, 6) }];
+    else if (k === 1) plates = [{ plate: PLATE("w"), n: ri(2, 6) }, { plate: PLATE("g"), n: ri(1, 2) }];
+    else { plates = [{ plate: PLATE("w"), n: ri(2, 4) }]; kind = "change"; }
+  } else {
+    const k = ri(0, 3);
+    if (k === 0) plates = [{ plate: PLATE("w"), n: ri(3, 8) }, { plate: PLATE("b"), n: ri(1, 3) }];
+    else if (k === 1) plates = [{ plate: PLATE("r"), n: ri(3, 9) }];
+    else if (k === 2) plates = [{ plate: PLATE("k"), n: ri(1, 2) }, { plate: PLATE("w"), n: ri(1, 3) }];
+    else { plates = [{ plate: PLATE("r"), n: ri(2, 5) }]; kind = "change"; }
+  }
+  const total = plates.reduce((a, p) => a + p.plate.yen * p.n, 0);
+  if (kind === "change" && total >= 1000) kind = "total";
+  const answer = kind === "total" ? total : 1000 - total;
+  const prompt = kind === "total"
+    ? plates.map((p) => `${p.n} × ${yen(p.plate.yen)}`).join(" + ")
+    : `${yen(1000)} − ${yen(total)}`;
+  const cands = [answer + 10, answer - 10, answer + 100, answer - 100, answer + 1, answer - 1, answer + 110, answer + 50];
+  const decoys = new Set<number>();
+  for (const c of shuffle(cands)) { if (decoys.size >= 2) break; if (c > 0 && c !== answer) decoys.add(c); }
+  return { plates, kind, prompt, answer, options: shuffle([answer, ...decoys]) };
+}
+/* Seconds a customer waits for the bill before walking out. */
+export function sushiPatience(served: number): number {
+  return Math.max(9, 16 - served * 0.35);
+}
+
+/* ---------- Castle Defense ----------
+   Monsters march along the road to your castle, each carrying a sum. Answer
+   the front one to fire; a wave is a set number of monsters, every fifth
+   wave ends with a boss that takes three hits. */
+export type CastleWave = { count: number; gapMs: number; speed: number; boss: boolean };
+export function castleWave(n: number): CastleWave {
+  /* speed = fraction of the road per second */
+  return { count: 4 + n, gapMs: Math.max(1100, 2600 - n * 150), speed: Math.min(0.12, 0.05 + n * 0.006), boss: n % 5 === 0 };
+}
+export function castlePoints(wave: number, boss: boolean): number {
+  return (boss ? 50 : 10) + wave * 2;
+}
+
+/* Castle Defense sums, one step harder every wave — but every one is a
+   single mental step or one of the book's tricks, never paper work:
+     w1  single-digit + and −          w2  teens ± a digit, small tables
+     w3  full times tables, 2-digit + 1-digit
+     w4  2-digit ± tens, ×11 (no carry), ×10
+     w5+ 100 − x, 2-digit ×11, 15²–45², ×9, x + 29
+     w8+ 1000 − x, teens × teens (base 10), up to 95², ×5, 9-ending adds
+   Each wave also mixes in some of the previous tier so it never jumps. */
+export function castleQuestion(wave: number): ChoiceRound {
+  const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const tiers: (() => { prompt: string; answer: number })[][] = [
+    [
+      () => { const a = ri(1, 9), b = ri(1, 9); return { prompt: `${a} + ${b}`, answer: a + b }; },
+      () => { const a = ri(5, 10), b = ri(1, a - 1); return { prompt: `${a} − ${b}`, answer: a - b }; },
+    ],
+    [
+      () => { const a = ri(11, 19), b = ri(2, 9); return { prompt: `${a} + ${b}`, answer: a + b }; },
+      () => { const a = ri(11, 20), b = ri(2, 9); return { prompt: `${a} − ${b}`, answer: a - b }; },
+      () => { const a = ri(2, 5), b = ri(2, 5); return { prompt: `${a} × ${b}`, answer: a * b }; },
+    ],
+    [
+      () => { const a = ri(3, 9), b = ri(3, 9); return { prompt: `${a} × ${b}`, answer: a * b }; },
+      () => { const a = ri(21, 89), b = ri(2, 9); return { prompt: `${a} + ${b}`, answer: a + b }; },
+      () => { const a = ri(21, 60), b = ri(2, 9); return { prompt: `${a} − ${b}`, answer: a - b }; },
+    ],
+    [
+      () => { const a = ri(12, 70), b = ri(1, 3) * 10; return { prompt: `${a} + ${b}`, answer: a + b }; },
+      () => { const a = ri(40, 99), b = ri(1, 3) * 10; return { prompt: `${a} − ${b}`, answer: a - b }; },
+      () => { let n: number; do { n = ri(11, 72); } while (Math.floor(n / 10) + (n % 10) >= 10); return { prompt: `${n} × 11`, answer: n * 11 }; },
+      () => { const a = ri(12, 99); return { prompt: `${a} × 10`, answer: a * 10 }; },
+    ],
+    [
+      () => { const a = ri(11, 89); return { prompt: `100 − ${a}`, answer: 100 - a }; },
+      () => { const n = ri(12, 99); return { prompt: `${n} × 11`, answer: n * 11 }; },
+      () => { const a = ri(1, 4) * 10 + 5; return { prompt: `${a}²`, answer: a * a }; },
+      () => { const a = ri(3, 12); return { prompt: `${a} × 9`, answer: a * 9 }; },
+      () => { const a = ri(12, 60), b = ri(1, 3) * 10 + 9; return { prompt: `${a} + ${b}`, answer: a + b }; },
+    ],
+    [
+      () => { const a = ri(101, 899); return { prompt: `1000 − ${a}`, answer: 1000 - a }; },
+      () => { const a = ri(11, 15), b = ri(11, 15); return { prompt: `${a} × ${b}`, answer: a * b }; },
+      () => { const a = ri(5, 9) * 10 + 5; return { prompt: `${a}²`, answer: a * a }; },
+      () => { const a = ri(6, 40) * 2; return { prompt: `${a} × 5`, answer: a * 5 }; },
+      () => { const a = ri(120, 480), b = ri(1, 4) * 10 + 9; return { prompt: `${a} + ${b}`, answer: a + b }; },
+    ],
+  ];
+  /* w1→0, w2→1, w3→2, w4→3, w5-7→4, w8+→5 */
+  const top = wave <= 4 ? wave - 1 : wave <= 7 ? 4 : 5;
+  /* a third of the time, a sum from the tier below */
+  const tier = top > 0 && Math.random() < 0.33 ? top - 1 : top;
+  const gens = tiers[Math.max(0, tier)];
+  return choiceFor(gens[Math.floor(Math.random() * gens.length)]());
 }

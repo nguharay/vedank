@@ -739,8 +739,11 @@ main{ scroll-padding-top:104px; }
 .stick-selected{ stroke:#2B6FEA !important; filter:drop-shadow(0 0 8px rgba(43,111,234,.7)); animation:stickPulse 1s ease-in-out infinite; }
 circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 @keyframes stickPulse{ 0%,100%{ stroke-width:10; } 50%{ stroke-width:13; } }
-.stick-hint{ animation:hintPulse 1s ease-in-out infinite; }
-@keyframes hintPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.3; } }
+/* the hinted stick glows mint green — a colour no other stick state uses
+   (lit = orange, picked up = blue) — so it can't be mistaken for either */
+.stick-hint{ stroke:#2EE6A8 !important; filter:drop-shadow(0 0 7px rgba(46,230,168,.95)) drop-shadow(0 0 14px rgba(46,230,168,.6));
+  animation:hintPulse 1s ease-in-out infinite; }
+@keyframes hintPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
 
 .tray-wrap{ margin-top:14px; display:flex; align-items:center; gap:12px; background:var(--surface); border:2px solid var(--line);
   border-radius:16px; padding:12px 14px; }
@@ -2738,3 +2741,126 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   .footerbar.arena-foot > .back-footer-btn{ flex:0 0 auto; }
   .footerbar.arena-foot .back-word{ display:inline; }
 }
+
+/* ---------- 🍣 Sushi Shop ---------- */
+.sushi-shop{ position:relative; border-radius:22px; overflow:hidden; border:3px solid var(--ink); min-height:330px;
+  background:linear-gradient(#f7ead7 0 30%, #e9d3b3 30% 100%); }
+.sushi-noren{ display:flex; justify-content:center; gap:6px; padding:6px 0 0; }
+.sushi-noren span{ background:#23346b; color:#fff; font:800 13px/1 "Baloo 2",system-ui,sans-serif; padding:8px 12px 12px;
+  border-radius:0 0 10px 10px; letter-spacing:.12em; box-shadow:inset 0 -4px 0 rgba(0,0,0,.18); }
+.sushi-noren span + span{ background:#b8322e; }
+.sushi-belt{ margin:10px 0 0; height:58px; overflow:hidden; background:linear-gradient(#9aa3ad, #c7ced6 20%, #aab2bb 80%, #7d858f);
+  border-block:4px solid #6b7480; position:relative; }
+.sushi-belt-track{ display:flex; width:max-content; animation:sushi-belt 22s linear infinite; }
+.sushi-belt-half{ display:flex; gap:18px; padding-right:18px; }
+@keyframes sushi-belt{ to{ transform:translateX(-50%); } }
+.sushi-dish{ width:44px; height:44px; margin-top:3px; border-radius:50%; display:grid; place-items:center; font-size:24px;
+  background:radial-gradient(circle at 50% 50%, #fff 0 52%, var(--plate) 53% 100%); box-shadow:0 3px 0 rgba(0,0,0,.25); }
+.sushi-counter{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:14px 10px 14px; min-height:190px;
+  background:linear-gradient(#b98a57, #9c6f41); border-top:6px solid #7b532d; margin-top:10px; }
+.sushi-seat{ position:relative; height:150px; border-radius:16px; border:2px dashed rgba(255,255,255,.35); background:rgba(255,255,255,.08);
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding:6px 4px; font-family:inherit; cursor:default; color:#1d1b33; }
+.sushi-seat.waiting{ cursor:pointer; border:3px solid #ffcf3a; background:rgba(255,207,58,.18); animation:sushi-call 1s ease-in-out infinite; }
+.sushi-seat.sel{ border-color:#fff; background:rgba(255,255,255,.3); animation:none; box-shadow:0 0 0 3px #ff7a3d; }
+@keyframes sushi-call{ 50%{ transform:translateY(-3px); } }
+.sushi-stack{ position:absolute; left:6px; bottom:22px; display:flex; flex-direction:column-reverse; align-items:center; }
+.sushi-stack i{ display:block; width:26px; height:7px; margin-top:-2px; border-radius:50%; background:var(--plate);
+  border:1px solid rgba(0,0,0,.25); box-shadow:0 1px 0 rgba(255,255,255,.5) inset; }
+.sushi-face{ font-size:36px; line-height:1; margin:0 0 4px 18px; }
+.sushi-mood{ position:absolute; top:26px; right:6px; font-size:18px; }
+.sushi-bubble{ position:absolute; top:4px; left:50%; transform:translateX(-50%); white-space:nowrap; background:#fff; color:#1d1b33;
+  font-size:10.5px; font-weight:800; padding:3px 7px; border-radius:10px; box-shadow:0 2px 0 rgba(0,0,0,.2); }
+.sushi-bubble.call{ background:#ffcf3a; }
+.sushi-bubble.happy{ background:#7ED957; }
+.sushi-bubble.angry{ background:#FF7A7A; color:#fff; }
+.sushi-patience{ width:80%; height:6px; border-radius:4px; background:rgba(0,0,0,.25); overflow:hidden; margin-top:4px; }
+.sushi-patience i{ display:block; height:100%; background:linear-gradient(90deg,#ff4f4f,#ffcf3a 40%,#7ED957); transition:width .1s linear; }
+.sushi-empty{ font-size:28px; opacity:.5; }
+.sushi-seat.leaving{ animation:sushi-leave 1.3s ease-in forwards; }
+@keyframes sushi-leave{ 70%{ opacity:1; } to{ opacity:0; transform:translateY(12px); } }
+.sushi-chef{ position:absolute; top:44px; right:10px; width:46px; height:46px; }
+.sushi-chef span{ position:absolute; right:40px; top:4px; white-space:nowrap; background:#fff; font-size:10px; font-weight:800; padding:2px 6px; border-radius:8px; color:#1d1b33; }
+.sushi-menu{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 10px; margin:0 0 10px; font-size:12px; font-weight:800; }
+.sushi-menu span, .sushi-bill-lines span{ display:inline-flex; align-items:center; gap:4px; }
+.sushi-menu i, .sushi-bill-lines i{ width:14px; height:14px; border-radius:50%; background:var(--plate); border:1px solid rgba(0,0,0,.3); display:inline-block; }
+.sushi-bill{ margin-top:12px; background:var(--card, #fff); border:3px solid var(--ink); border-radius:18px; padding:12px; box-shadow:4px 4px 0 var(--ink-line); }
+.sushi-bill-head{ font-weight:800; font-size:14px; color:var(--ink); }
+.sushi-bill-lines{ display:flex; flex-wrap:wrap; gap:4px 12px; margin:6px 0 0; font-size:12.5px; font-weight:700; color:var(--muted); }
+.sushi-bill .race-q{ font-size:24px; }
+.sushi-bill .rg-ans{ font-size:19px; }
+
+/* ---------- 🏯 Castle Defense ---------- */
+.castle-scene{ position:relative; height:300px; border-radius:22px; overflow:hidden; border:3px solid var(--ink);
+  background:linear-gradient(#7fc4ff 0%, #bfe6ff 55%, #7cc85e 55% 62%, #c7a06a 62% 88%, #7cc85e 88%); }
+.castle-scene.frozen{ filter:hue-rotate(160deg) saturate(.7); }
+.castle-scene.frozen::after{ content:"❄️"; position:absolute; top:8px; right:12px; font-size:26px; }
+.castle-keep{ position:absolute; left:4px; bottom:30px; width:70px; z-index:3; text-align:center; }
+.castle-emoji{ font-size:62px; line-height:1; display:block; }
+.castle-archer{ position:absolute; left:18px; top:-26px; width:34px; height:34px; }
+.castle-road{ position:absolute; left:64px; right:0; bottom:34px; height:110px; }
+.castle-foe{ position:absolute; left:0; top:0; will-change:transform; display:flex; flex-direction:column; align-items:center; transform:translate3d(400px,0,0); }
+.castle-foe.row0{ top:6px; }
+.castle-foe.row1{ top:44px; }
+.castle-foe-emoji{ font-size:38px; line-height:1; animation:run-bob .35s ease-in-out infinite alternate; }
+.castle-foe.boss .castle-foe-emoji{ font-size:60px; }
+.castle-foe.boss{ top:-10px; }
+.castle-foe.target .castle-foe-emoji{ filter:drop-shadow(0 0 6px #ff3b3b); }
+.castle-foe-q{ position:absolute; bottom:100%; margin-bottom:2px; white-space:nowrap; background:#fff; color:#1d1b33; border:2px solid #1d1b33;
+  border-radius:10px; padding:2px 8px; font-size:15px; font-weight:800; box-shadow:0 2px 0 #1d1b33; }
+.castle-foe-hp{ font-size:11px; color:#e0457b; font-weight:900; letter-spacing:1px; }
+.castle-arrow{ position:absolute; left:0; top:40px; font-size:26px; color:#7b532d; animation:castle-arrow .22s linear forwards; }
+@keyframes castle-arrow{ from{ transform:translateX(0) rotate(-10deg); } to{ transform:translateX(var(--to)) rotate(0deg); opacity:.2; } }
+.castle-hearts{ font-size:12px; white-space:nowrap; }
+.castle-powers{ display:flex; gap:8px; align-items:center; justify-content:center; margin-top:10px; font-weight:800; }
+.castle-powers .btn{ padding:10px 12px; font-size:13px; }
+
+/* ---------- games on the Home tab ---------- */
+.today-game{ display:flex; align-items:center; gap:12px; width:100%; margin:12px 0; padding:14px 16px; border-radius:20px; cursor:pointer;
+  border:3px solid var(--ink-line); box-shadow:4px 4px 0 var(--ink-line); color:#fff; text-align:left; font-family:inherit; }
+.today-game:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink-line); }
+.today-game-icon{ font-size:40px; line-height:1; flex:none; animation:run-bob .5s ease-in-out infinite alternate; }
+.today-game-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.today-game-tag{ font-size:10.5px; font-weight:900; letter-spacing:.08em; opacity:.9; }
+.today-game-name{ font-family:"Baloo 2",system-ui,sans-serif; font-size:19px; font-weight:800; line-height:1.15; }
+.today-game-sub{ font-size:12px; font-weight:700; opacity:.92; line-height:1.35; }
+.today-game-go{ flex:none; background:#fff; color:#1d1b33; font-weight:900; font-size:12.5px; padding:8px 12px; border-radius:999px; box-shadow:0 3px 0 rgba(0,0,0,.25); }
+/* the stop sits at the map's edge, icon outermost, name toward the path */
+.bonus-row{ display:flex; align-items:center; gap:8px; margin:6px 0 18px; position:relative; z-index:1; padding:0 3%; justify-content:flex-start; }
+.bonus-row.left{ flex-direction:row; }
+.bonus-row.right{ flex-direction:row-reverse; }
+.bonus-row.right .bonus-stop-name{ text-align:right; }
+.bonus-stop{ position:relative; width:58px; height:58px; border-radius:50%; border:3px solid var(--ink-line); box-shadow:0 4px 0 var(--ink-line);
+  display:grid; place-items:center; cursor:pointer; animation:bonus-float 2.4s ease-in-out infinite; }
+.bonus-stop-icon{ font-size:28px; line-height:1; }
+.bonus-stop-tag{ position:absolute; bottom:-9px; left:50%; transform:translateX(-50%); background:#ffcf3a; color:#1d1b33; font-size:8.5px; font-weight:900;
+  padding:2px 6px; border-radius:999px; letter-spacing:.06em; white-space:nowrap; border:1.5px solid var(--ink-line); }
+.bonus-stop-name{ font-size:11.5px; font-weight:800; color:var(--muted); max-width:110px; line-height:1.25; }
+@keyframes bonus-float{ 50%{ transform:translateY(-5px) rotate(-4deg); } }
+@media (prefers-reduced-motion: reduce){ .today-game-icon, .bonus-stop{ animation:none; } }
+.boss-bonus{ display:flex; align-items:center; gap:10px; width:100%; margin:12px 0 4px; padding:12px 14px; border-radius:16px; cursor:pointer;
+  border:3px solid #1d1b33; box-shadow:0 4px 0 #1d1b33; color:#fff; text-align:left; font-family:inherit; animation:sushi-call 1.2s ease-in-out infinite; }
+.boss-bonus-icon{ font-size:30px; }
+.boss-bonus-body{ flex:1; display:flex; flex-direction:column; gap:1px; }
+.boss-bonus-tag{ font-size:10px; font-weight:900; letter-spacing:.06em; opacity:.9; }
+.boss-bonus-name{ font-size:14.5px; font-weight:800; }
+.boss-bonus-go{ font-size:16px; }
+/* shelf feature cards */
+.ttt-card.castle-feature{ background:linear-gradient(130deg,#5a3fb8,#2f6fd0 60%,#3f9dd8); }
+.ttt-card.sushi-feature{ background:linear-gradient(130deg,#b8322e,#e0773a 60%,#f2a93b); }
+.feature-art.castle{ background:linear-gradient(#7fc4ff 0 60%, #7cc85e 60% 68%, #c7a06a 68%); }
+.feature-art.sushi{ background:linear-gradient(#f7ead7 0 45%, #9aa3ad 45% 70%, #b98a57 70%); }
+.fa-castle{ left:2px; bottom:8px; font-size:26px; }
+.fa-foe{ right:4px; bottom:10px; font-size:17px; animation:fa-roll 1.8s linear infinite; }
+.fa-sushi{ left:6px; top:18px; font-size:18px; animation:fa-roll 2.2s linear infinite reverse; }
+.fa-guest{ right:5px; bottom:2px; font-size:18px; }
+.castle-sky{ position:absolute; inset:0; pointer-events:none; }
+.castle-cloud{ position:absolute; font-size:34px; opacity:.9; animation:castle-cloud 30s linear infinite; }
+.castle-cloud.c1{ top:18px; left:30%; }
+.castle-cloud.c2{ top:48px; left:70%; font-size:26px; animation-duration:44s; }
+@keyframes castle-cloud{ from{ transform:translateX(0); } to{ transform:translateX(-120px); } }
+.castle-hills{ position:absolute; left:18%; right:0; top:calc(55% - 52px); font-size:48px; line-height:1; display:flex; justify-content:space-around; opacity:.85; }
+.castle-hills b{ font-weight:400; font-size:56px; }
+.castle-trees{ position:absolute; left:70px; right:4px; top:calc(55% - 22px); font-size:20px; line-height:1; display:flex; justify-content:space-between; }
+@media (prefers-reduced-motion: reduce){ .castle-cloud{ animation:none; } }
+.tray-slot.hint{ border-color:#2EE6A8; box-shadow:0 0 0 3px rgba(46,230,168,.5), 0 0 12px rgba(46,230,168,.7); animation:sushi-call .8s ease-in-out infinite; }
+.hint-cost{ display:block; font-size:10px; line-height:1.1; opacity:.8; margin-top:1px; }
