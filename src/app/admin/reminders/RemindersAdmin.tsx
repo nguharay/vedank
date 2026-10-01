@@ -7,7 +7,9 @@ import { saveReminderAction, deleteReminderAction, sendTestReminderAction, sendR
 
 type Run = { slot: string; day: string; reminderId: number | null; sent: number; ranAt: string };
 
-const SLOT_LABEL: Record<string, string> = { morning: "🌅 Morning · 08:00 JST", evening: "🌙 Evening · 19:00 JST" };
+/* For now only the evening slot is scheduled (vercel.json): one notification
+   a day. Morning messages are kept but not sent until it is switched back on. */
+const SLOT_LABEL: Record<string, string> = { morning: "🌅 Morning · ⏸ paused (not sent)", evening: "🌙 Evening · 19:00 JST — the daily notification" };
 const AUD_LABEL: Record<string, string> = {
   all: "Everyone with notifications on (signed in + guests)",
   guests: "Guests only (not signed in) — good for 'save your progress' nudges",
@@ -78,8 +80,8 @@ export function RemindersAdmin({ rows: initial, runs, reach, adminEmail, pushOn 
           <div className="admin-stat"><b>{pushOn ? "✅" : "⚠️"}</b><span>{pushOn ? "push configured" : "push keys missing"}</span></div>
         </div>
         <p className="rem-help">
-          Two notifications go out a day — one <b>morning</b> (08:00 JST), one <b>evening</b> (19:00 JST). Each day one message per slot is sent,
-          cycling through the list in order, so write several and they rotate. Players receive the version in their language.
+          <b>One notification goes out a day, at 19:00 JST</b>, from the <b>evening</b> list. Each day the next message in that list is sent,
+          cycling through it in order, so write several and they rotate. The morning list is paused — its messages are kept but not sent. Players receive the version in their language.
           Keep titles under ~30 characters and bodies under ~80 so they fit on a lock screen.
         </p>
         {note && <div className="rem-note">{note}</div>}
