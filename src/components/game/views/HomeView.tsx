@@ -443,6 +443,17 @@ export function HomeView({
         })}
       </div>
 
+      {/* The end of the path: a promise that the adventure keeps going. */}
+      <div className="path-coming">
+        <div className="path-coming-icons" aria-hidden="true"><span>🎁</span><span>🗺️</span><span>✨</span></div>
+        <div className="path-coming-title">{lang === "ja" ? "この先も、まだまだ続くよ！" : "More is on the way!"}</div>
+        <div className="path-coming-sub">
+          {lang === "ja"
+            ? "ここまでぜんぶクリアしたら、新しい冒険がひらくよ。きっと楽しいよ！お楽しみに 🐉"
+            : "Finish everything here and a brand-new adventure opens up. It\u2019s going to be fun — stay tuned 🐉"}
+        </div>
+      </div>
+
       {onOpenClasses && (
         <button className="classes-card" onClick={onOpenClasses}>
           <span className="classes-card-icon classes-card-mascot"><Mascot mood="excited" /></span>
