@@ -117,38 +117,38 @@ import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, 
 
 /* The dragon's notification asks. One is picked each time the sheet opens
    (never the same one twice running), so it reads like the dragon talking,
-   not a system dialog. Every one says what is sent: two short notes a day. */
+   not a system dialog. None of them mention how often or when — by request. */
 const DRAGON_ASKS = [
-  { titleJa: "ドラゴンからのおねがい", bodyJa: "「おなかがすいたら、おしえてもいい？」\n1日2回だけ、ごはんの時間とストリークのお知らせをおくります。",
-    titleEn: "A request from your dragon", bodyEn: "\u201cCan I tell you when I\u2019m hungry?\u201d\nJust two short notes a day \u2014 meal time, and when your streak is about to end.",
+  { titleJa: "ドラゴンからのおねがい", bodyJa: "「おなかがすいたら、おしえてもいい？」\nごはんの時間や、ストリークが消えそうなときに声をかけるね。",
+    titleEn: "A request from your dragon", bodyEn: "\u201cCan I tell you when I\u2019m hungry?\u201d\nI\u2019ll call you at meal time, and when your streak is about to end.",
     yesJa: "いいよ、おしえて！", yesEn: "Yes, remind me!" },
-  { titleJa: "ドラゴンがのぞいてる…👀", bodyJa: "「ねえねえ、朝と夜に1回ずつ、声をかけてもいい？」\nストリークが消えそうなときも教えるよ。",
-    titleEn: "Your dragon is peeking… 👀", bodyEn: "\u201cPsst \u2014 can I call you once in the morning and once at night?\u201d\nI\u2019ll warn you before your streak runs out, too.",
+  { titleJa: "ドラゴンがのぞいてる…👀", bodyJa: "「ねえねえ、ときどき声をかけてもいい？」\nストリークが消えそうなときも教えるよ。",
+    titleEn: "Your dragon is peeking… 👀", bodyEn: "\u201cPsst \u2014 can I give you a shout now and then?\u201d\nI\u2019ll warn you before your streak runs out, too.",
     yesJa: "うん、よんでね！", yesEn: "Sure, call me!" },
-  { titleJa: "たまごがコトコト… 🥚", bodyJa: "「ひなになる日、いっしょにお祝いしたいな」\nごはんの時間に1日2回だけお知らせします。",
-    titleEn: "The egg is wobbling… 🥚", bodyEn: "\u201cI want you there when I hatch!\u201d\nTwo little meal-time notes a day, that\u2019s all.",
+  { titleJa: "たまごがコトコト… 🥚", bodyJa: "「ひなになる日、いっしょにお祝いしたいな」\nごはんの時間になったら知らせるね。",
+    titleEn: "The egg is wobbling… 🥚", bodyEn: "\u201cI want you there when I hatch!\u201d\nI\u2019ll let you know when it\u2019s meal time.",
     yesJa: "見のがさない！", yesEn: "Don\u2019t let me miss it!" },
-  { titleJa: "キングピコが動きだした ⚔️", bodyJa: "ドラゴン：「モンスターが来たら、すぐ知らせるね！」\nお知らせは1日2回まで。",
-    titleEn: "King Blip is on the move ⚔️", bodyEn: "Dragon: \u201cI\u2019ll shout the moment monsters show up!\u201d\nNo more than two notes a day.",
+  { titleJa: "キングピコが動きだした ⚔️", bodyJa: "ドラゴン：「モンスターが来たら、すぐ知らせるね！」\nお城を守るチャンスをのがさないで。",
+    titleEn: "King Blip is on the move ⚔️", bodyEn: "Dragon: \u201cI\u2019ll shout the moment monsters show up!\u201d\nNever miss a chance to defend your castle.",
     yesJa: "知らせて！", yesEn: "Warn me!" },
-  { titleJa: "ドラゴンからの手紙 💌", bodyJa: "「きみが来ない日は、ちょっとさみしい」\n朝と夜にそっとお知らせしてもいい？",
-    titleEn: "A letter from your dragon 💌", bodyEn: "\u201cDays without you are a bit lonely.\u201d\nMay I send a gentle note in the morning and evening?",
+  { titleJa: "ドラゴンからの手紙 💌", bodyJa: "「きみが来ない日は、ちょっとさみしい」\nそっとお知らせしてもいい？",
+    titleEn: "A letter from your dragon 💌", bodyEn: "\u201cDays without you are a bit lonely.\u201d\nMay I send you a gentle note?",
     yesJa: "いいよ 💛", yesEn: "Of course 💛" },
-  { titleJa: "ストリーク、守りたい？🔥", bodyJa: "ドラゴン：「0時になる前に、ぼくが起こしてあげる！」\n1日2回、短いお知らせだけ。",
-    titleEn: "Want to keep your streak? 🔥", bodyEn: "Dragon: \u201cI\u2019ll nudge you before midnight!\u201d\nJust two short notes a day.",
+  { titleJa: "ストリーク、守りたい？🔥", bodyJa: "ドラゴン：「ストリークが消える前に、ぼくが知らせてあげる！」",
+    titleEn: "Want to keep your streak? 🔥", bodyEn: "Dragon: \u201cI\u2019ll nudge you before your streak runs out!\u201d",
     yesJa: "守る！", yesEn: "Protect it!" },
 ];
 /* Guests get their own asks: the egg with no home, progress that lives only
-   on this phone — still the dragon talking, still two notes a day. */
+   on this phone — still the dragon talking. */
 const GUEST_ASKS: typeof DRAGON_ASKS = [
-  { titleJa: "たまごがあなたを見てる 🥚", bodyJa: "「ゲストでも、ぼくは待ってるよ」\n朝と夜に1回ずつ、ごはんの時間を知らせてもいい？",
-    titleEn: "The egg is watching you 🥚", bodyEn: "\u201cGuest or not, I\u2019ll be waiting.\u201d\nCan I tell you meal time, once in the morning and once at night?",
+  { titleJa: "たまごがあなたを見てる 🥚", bodyJa: "「ゲストでも、ぼくは待ってるよ」\nごはんの時間になったら知らせてもいい？",
+    titleEn: "The egg is watching you 🥚", bodyEn: "\u201cGuest or not, I\u2019ll be waiting.\u201d\nCan I tell you when it\u2019s meal time?",
     yesJa: "うん、知らせて！", yesEn: "Yes, tell me!" },
-  { titleJa: "ドラゴン、ひとりぼっち？🐉", bodyJa: "「このスマホの中で、きみを待ってるんだ」\n1日2回、そっと声をかけるね。",
-    titleEn: "Is your dragon all alone? 🐉", bodyEn: "\u201cI live right here on this phone, waiting for you.\u201d\nI\u2019ll call softly, twice a day.",
+  { titleJa: "ドラゴン、ひとりぼっち？🐉", bodyJa: "「このスマホの中で、きみを待ってるんだ」\nそっと声をかけるね。",
+    titleEn: "Is your dragon all alone? 🐉", bodyEn: "\u201cI live right here on this phone, waiting for you.\u201d\nI\u2019ll call you softly.",
     yesJa: "よんでいいよ", yesEn: "You can call me" },
-  { titleJa: "ちょっとだけ、おねがい 🙏", bodyJa: "ドラゴン：「きみの記録、なくしたくないな」\nお知らせで、続けるのを手伝うよ（1日2回まで）。",
-    titleEn: "One tiny favour 🙏", bodyEn: "Dragon: \u201cI don\u2019t want your progress to fade.\u201d\nA reminder or two a day keeps it going.",
+  { titleJa: "ちょっとだけ、おねがい 🙏", bodyJa: "ドラゴン：「きみの記録、なくしたくないな」\nお知らせで、続けるのを手伝うよ。",
+    titleEn: "One tiny favour 🙏", bodyEn: "Dragon: \u201cI don\u2019t want your progress to fade.\u201d\nA little reminder keeps it going.",
     yesJa: "手伝って！", yesEn: "Help me keep going!" },
 ];
 const asksFor = (guest: boolean) => (guest ? GUEST_ASKS : DRAGON_ASKS);
