@@ -3121,3 +3121,8 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .rem-modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
 .rem-modal-actions .primary{ background:#2E8B57; color:#fff; border-color:#2E8B57; }
 @media (max-width:600px){ .rem-grid, .rem-preview{ grid-template-columns:1fr; } .rem-grid label.wide{ grid-column:span 1; } .rem-item{ flex-direction:column; } .rem-actions{ max-width:none; justify-content:flex-start; } }
+/* the dragon asking for notification permission */
+.push-ask-dragon{ font-size:56px; line-height:1; text-align:center; animation:run-bob .9s ease-in-out infinite alternate; }
+.push-ask p{ white-space:pre-line; }
+.push-ask-steps{ text-align:left; margin:4px 0 12px; padding-left:22px; font-size:13.5px; font-weight:700; line-height:1.7; }
+.push-ask-ico{ display:inline-grid; place-items:center; width:22px; height:22px; border-radius:6px; background:#2B6FEA; color:#fff; font-size:13px; }

@@ -2630,6 +2630,56 @@ export function GameApp({
     }
   }
 
+  /* ---------- asking for notifications at the right moment ----------
+     The browser's permission dialog can only follow a tap, so the game asks
+     after the player's first stage win — a happy moment — with the dragon
+     doing the asking. "Not now" waits a week and asks once more, then stops.
+     On an iPhone that is not installed to the Home Screen push cannot work,
+     so the same sheet explains Add to Home Screen instead. */
+  const [pushAsk, setPushAsk] = useState<null | "push" | "ios">(null);
+  const pendingAskRef = useRef(false);
+  const isIosBrowser = () => {
+    if (typeof navigator === "undefined") return false;
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
+    return ios && !standalone;
+  };
+  function shouldAskPush(): null | "push" | "ios" {
+    if (guest) return null;
+    let asked: { n: number; at: number } = { n: 0, at: 0 };
+    try { asked = JSON.parse(localStorage.getItem("sutraSprint.pushAsked") || "null") || asked; } catch {}
+    if (asked.n >= 2 || (asked.n === 1 && Date.now() - asked.at < 7 * 86400_000)) return null;
+    if (isIosBrowser()) return "ios";
+    if (!pushKey || pushOn) return null;
+    if (typeof Notification === "undefined" || Notification.permission === "denied") return null;
+    return "push";
+  }
+  function markAsked() {
+    try {
+      const asked = JSON.parse(localStorage.getItem("sutraSprint.pushAsked") || "null") || { n: 0, at: 0 };
+      localStorage.setItem("sutraSprint.pushAsked", JSON.stringify({ n: asked.n + 1, at: Date.now() }));
+    } catch {}
+  }
+  /* eslint-disable react-hooks/set-state-in-effect -- the sheet opens in
+     response to the result card closing, an event sequence, not derived state */
+  useEffect(() => {
+    if (stageResult?.passed) { pendingAskRef.current = true; return; }
+    if (stageResult === null && pendingAskRef.current) {
+      pendingAskRef.current = false;
+      const kind = shouldAskPush();
+      if (kind) { setPushAsk(kind); markAsked(); }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stageResult]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+  /* dev only: ?askpush=push|ios shows the sheet for a look */
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const v = new URLSearchParams(window.location.search).get("askpush");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- dev-only preview switch
+    if (v === "push" || v === "ios") setPushAsk(v);
+  }, []);
+
   /* ---------- add to home screen ----------
      Chrome and Edge fire beforeinstallprompt and suppress their own banner if
      you call preventDefault; keeping the event lets the game offer the install
@@ -3092,6 +3142,40 @@ export function GameApp({
             <button className="btn btn-ghost lock-sheet-later" onClick={() => setLockOpen(null)}>
               {lang === "ja" ? "あとで" : "Not now"}
             </button>
+          </div>
+        </>
+      )}
+
+      {pushAsk && (
+        <>
+          <div className="menu-overlay" onClick={() => setPushAsk(null)} />
+          <div className="hint-sheet lock-sheet push-ask" role="dialog" aria-modal="true">
+            <div className="push-ask-dragon" aria-hidden="true">🐉</div>
+            {pushAsk === "push" ? (
+              <>
+                <h3>{ja ? "ドラゴンからのおねがい" : "A request from your dragon"}</h3>
+                <p>{ja
+                  ? "「おなかがすいたら、おしえてもいい？」\n1日2回だけ、ごはんの時間とストリークのお知らせをおくります。"
+                  : "\u201cCan I tell you when I\u2019m hungry?\u201d\nJust two short notes a day \u2014 meal time, and when your streak is about to end."}</p>
+                <button className="btn btn-primary auth-submit" onClick={() => { setPushAsk(null); void togglePush(); }} disabled={pushBusy}>
+                  🔔 {ja ? "いいよ、おしえて！" : "Yes, remind me!"}
+                </button>
+                <button className="btn btn-ghost lock-sheet-later" onClick={() => setPushAsk(null)}>{ja ? "あとで" : "Not now"}</button>
+              </>
+            ) : (
+              <>
+                <h3>{ja ? "ホーム画面に追加しよう" : "Add me to your Home Screen"}</h3>
+                <p>{ja
+                  ? "iPhoneでは、ホーム画面に追加するとドラゴンからのお知らせがとどくようになります（アプリみたいに使えるよ）。"
+                  : "On iPhone, the dragon can only send reminders once the game is on your Home Screen \u2014 it works like a real app then."}</p>
+                <ol className="push-ask-steps">
+                  <li>{ja ? "下の 共有ボタン" : "Tap the Share button"} <span className="push-ask-ico">⎙</span> {ja ? "をタップ" : "below"}</li>
+                  <li>{ja ? "「ホーム画面に追加」を選ぶ" : "Choose \u201cAdd to Home Screen\u201d"}</li>
+                  <li>{ja ? "ホーム画面のアイコンからひらく" : "Open the game from the new icon"}</li>
+                </ol>
+                <button className="btn btn-primary auth-submit" onClick={() => setPushAsk(null)}>{ja ? "わかった！" : "Got it!"}</button>
+              </>
+            )}
           </div>
         </>
       )}
