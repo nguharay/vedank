@@ -2630,14 +2630,13 @@ export function GameApp({
     }
   }
 
-  /* ---------- asking for notifications at the right moment ----------
-     The browser's permission dialog can only follow a tap, so the game asks
-     after the player's first stage win — a happy moment — with the dragon
-     doing the asking. "Not now" waits a week and asks once more, then stops.
-     On an iPhone that is not installed to the Home Screen push cannot work,
-     so the same sheet explains Add to Home Screen instead. */
+  /* ---------- asking for notifications when the app opens ----------
+     The browser's permission dialog can only follow a tap, so the dragon asks
+     with a pop-up shortly after the app opens; the player's "Yes" is the tap.
+     "Not now" waits a week and asks once more, then stops. On an iPhone that
+     is not installed to the Home Screen push cannot work, so the same sheet
+     explains Add to Home Screen instead. */
   const [pushAsk, setPushAsk] = useState<null | "push" | "ios">(null);
-  const pendingAskRef = useRef(false);
   const isIosBrowser = () => {
     if (typeof navigator === "undefined") return false;
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -2660,18 +2659,20 @@ export function GameApp({
       localStorage.setItem("sutraSprint.pushAsked", JSON.stringify({ n: asked.n + 1, at: Date.now() }));
     } catch {}
   }
-  /* eslint-disable react-hooks/set-state-in-effect -- the sheet opens in
-     response to the result card closing, an event sequence, not derived state */
+  /* A moment after opening, once the push status is known (pushKey is read
+     asynchronously), so the sheet does not flash on top of the first paint. */
+  const askedThisOpen = useRef(false);
   useEffect(() => {
-    if (stageResult?.passed) { pendingAskRef.current = true; return; }
-    if (stageResult === null && pendingAskRef.current) {
-      pendingAskRef.current = false;
+    if (guest || askedThisOpen.current) return;
+    if (!isIosBrowser() && !pushKey) return;        /* still loading the status */
+    askedThisOpen.current = true;
+    const id = setTimeout(() => {
       const kind = shouldAskPush();
       if (kind) { setPushAsk(kind); markAsked(); }
-    }
+    }, 1500);
+    return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stageResult]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  }, [guest, pushKey]);
   /* dev only: ?askpush=push|ios shows the sheet for a look */
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
