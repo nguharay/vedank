@@ -1,8 +1,8 @@
 import "server-only";
 import { and, asc, eq, inArray, sql as raw } from "drizzle-orm";
 import { getDb } from "@/db";
-import { reminders, reminderRuns, users, pushSubscriptions } from "@/db/schema";
-import { sendTo } from "./push";
+import { reminders, reminderRuns, users, pushSubscriptions, guestPush } from "@/db/schema";
+import { sendTo, sendToGuest } from "./push";
 
 /* ---------- daily reminder notifications ----------
    Admins (the marketing team) write the messages in /admin/reminders; two
@@ -11,9 +11,11 @@ import { sendTo } from "./push";
    running. A player gets the message in their own language. */
 
 export type Slot = "morning" | "evening";
-export type Audience = "all" | "not_played_today" | "streak_risk";
+/* all / not_played_today reach signed-in players AND guests; streak_risk is
+   signed-in only (a guest's streak lives in their browser); guests is guests only */
+export type Audience = "all" | "not_played_today" | "streak_risk" | "guests";
 export const SLOTS: Slot[] = ["morning", "evening"];
-export const AUDIENCES: Audience[] = ["all", "not_played_today", "streak_risk"];
+export const AUDIENCES: Audience[] = ["all", "not_played_today", "streak_risk", "guests"];
 
 export type Reminder = {
   id: number; slot: Slot; audience: Audience;
@@ -73,8 +75,27 @@ export async function pickForDay(slot: Slot, day: string): Promise<Reminder | nu
   return view(rows[dayNo % rows.length]);
 }
 
-/* Users who should get this message: those with a push subscription, then
-   narrowed by audience. */
+type Target =
+  | { kind: "user"; id: string; lang: string }
+  | { kind: "guest"; endpoint: string; p256dh: string; auth: string; lang: string };
+
+/* Everyone who should get this message: signed-in players with a push
+   subscription, plus guest browsers, each narrowed by audience. */
+async function audienceTargets(audience: Audience, day: string): Promise<Target[]> {
+  const out: Target[] = [];
+  if (audience !== "guests") {
+    for (const u of await audienceUserIds(audience, day)) out.push({ kind: "user", ...u });
+  }
+  if (audience === "all" || audience === "not_played_today" || audience === "guests") {
+    const gs = await getDb().select().from(guestPush);
+    for (const g of gs) {
+      if (audience === "not_played_today" && g.lastActiveDay === day) continue;
+      out.push({ kind: "guest", endpoint: g.endpoint, p256dh: g.p256dh, auth: g.auth, lang: g.lang });
+    }
+  }
+  return out;
+}
+
 async function audienceUserIds(audience: Audience, day: string): Promise<{ id: string; lang: string }[]> {
   const db = getDb();
   const subbed = db.selectDistinct({ userId: pushSubscriptions.userId }).from(pushSubscriptions);
@@ -91,15 +112,16 @@ async function audienceUserIds(audience: Audience, day: string): Promise<{ id: s
   });
 }
 
-async function sendReminderTo(r: Reminder, targets: { id: string; lang: string }[]): Promise<number> {
+async function sendReminderTo(r: Reminder, targets: Target[]): Promise<number> {
   let sent = 0;
   /* a few at a time, so a big list doesn't open hundreds of connections at once */
   for (let i = 0; i < targets.length; i += 20) {
     await Promise.all(targets.slice(i, i + 20).map(async (t) => {
       const ja = t.lang === "ja";
+      const note = { title: ja ? r.titleJa : r.titleEn, body: ja ? r.bodyJa : r.bodyEn, url: r.url, tag: `reminder-${r.slot}` };
       try {
-        await sendTo(t.id, { title: ja ? r.titleJa : r.titleEn, body: ja ? r.bodyJa : r.bodyEn, url: r.url, tag: `reminder-${r.slot}` });
-        sent++;
+        if (t.kind === "user") { await sendTo(t.id, note); sent++; }
+        else if (await sendToGuest(t, note)) sent++;
       } catch {}
     }));
   }
@@ -115,7 +137,7 @@ export async function runSlot(slot: Slot): Promise<{ day: string; picked: Remind
   if (!claimed.length) return { day, picked: null, targets: 0, sent: 0, skipped: "already ran today" };
   const picked = await pickForDay(slot, day);
   if (!picked) return { day, picked: null, targets: 0, sent: 0, skipped: "no enabled message in this slot" };
-  const targets = await audienceUserIds(picked.audience, day);
+  const targets = await audienceTargets(picked.audience, day);
   const sent = await sendReminderTo(picked, targets);
   await db.update(reminderRuns).set({ reminderId: picked.id, sent }).where(and(eq(reminderRuns.slot, slot), eq(reminderRuns.day, day)));
   return { day, picked, targets: targets.length, sent };
@@ -125,13 +147,13 @@ export async function runSlot(slot: Slot): Promise<{ day: string; picked: Remind
 export async function sendTest(reminderId: number, toUserId: string, lang: string): Promise<boolean> {
   const [r] = await getDb().select().from(reminders).where(eq(reminders.id, reminderId)).limit(1);
   if (!r) return false;
-  return (await sendReminderTo(view(r), [{ id: toUserId, lang }])) === 1;
+  return (await sendReminderTo(view(r), [{ kind: "user", id: toUserId, lang }])) === 1;
 }
 export async function sendNow(reminderId: number): Promise<{ targets: number; sent: number }> {
   const [r] = await getDb().select().from(reminders).where(eq(reminders.id, reminderId)).limit(1);
   if (!r) return { targets: 0, sent: 0 };
   const rem = view(r);
-  const targets = await audienceUserIds(rem.audience, jstDay());
+  const targets = await audienceTargets(rem.audience, jstDay());
   const sent = await sendReminderTo(rem, targets);
   await getDb().insert(reminderRuns).values({ slot: `manual-${Date.now()}`, day: jstDay(), reminderId: rem.id, sent }).onConflictDoNothing();
   return { targets: targets.length, sent };
@@ -141,7 +163,8 @@ export async function recentRuns(): Promise<{ slot: string; day: string; reminde
   return rows.map((r) => ({ slot: r.slot, day: String(r.day), reminderId: r.reminderId, sent: r.sent, ranAt: r.ranAt.toISOString() }));
 }
 /* how many players can receive pushes at all */
-export async function reachCount(): Promise<number> {
+export async function reachCount(): Promise<{ players: number; guests: number }> {
   const [r] = await getDb().select({ n: raw<number>`count(distinct ${pushSubscriptions.userId})` }).from(pushSubscriptions);
-  return Number(r?.n ?? 0);
+  const [g] = await getDb().select({ n: raw<number>`count(*)` }).from(guestPush);
+  return { players: Number(r?.n ?? 0), guests: Number(g?.n ?? 0) };
 }

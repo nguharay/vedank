@@ -5,7 +5,7 @@
 import "server-only";
 import { eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
-import { pushSubscriptions } from "@/db/schema";
+import { pushSubscriptions, guestPush } from "@/db/schema";
 import { deliver } from "./webpush";
 
 /* Web Push.
@@ -85,3 +85,34 @@ export async function sendTo(userId: string, note: Notification): Promise<void> 
 }
 
 /* notification keys configured Oct 2 2026 — see /api/push-status */
+
+/* ---------- guests ----------
+   A guest browser's subscription, stored without a user. The endpoint must
+   be an https push-service URL; anything else is refused. */
+const okEndpoint = (e: string) => /^https:\/\/[a-z0-9.-]+\//i.test(e) && e.length < 1000;
+
+export async function saveGuestSubscription(sub: PushSub, lang: string, day: string): Promise<{ ok: boolean }> {
+  if (!sub?.endpoint || !okEndpoint(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) return { ok: false };
+  const l = lang === "en" ? "en" : "ja";
+  await getDb().insert(guestPush)
+    .values({ endpoint: sub.endpoint, p256dh: sub.keys.p256dh.slice(0, 200), auth: sub.keys.auth.slice(0, 200), lang: l, lastActiveDay: day })
+    .onConflictDoUpdate({ target: guestPush.endpoint, set: { p256dh: sub.keys.p256dh.slice(0, 200), auth: sub.keys.auth.slice(0, 200), lang: l, lastActiveDay: day } });
+  return { ok: true };
+}
+export async function touchGuest(endpoint: string, lang: string, day: string): Promise<void> {
+  if (!okEndpoint(endpoint)) return;
+  await getDb().update(guestPush).set({ lastActiveDay: day, lang: lang === "en" ? "en" : "ja" }).where(eq(guestPush.endpoint, endpoint));
+}
+export async function removeGuestSubscription(endpoint: string): Promise<void> {
+  if (!endpoint) return;
+  await getDb().delete(guestPush).where(eq(guestPush.endpoint, endpoint));
+}
+/* Send to one guest browser; a retired endpoint (404/410) is deleted. */
+export async function sendToGuest(row: { endpoint: string; p256dh: string; auth: string }, note: Notification): Promise<boolean> {
+  if (!pushConfigured()) return false;
+  try {
+    const status = await deliver({ endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } }, JSON.stringify(note), PUBLIC_KEY, PRIVATE_KEY);
+    if (status === 404 || status === 410) { await removeGuestSubscription(row.endpoint); return false; }
+    return status >= 200 && status < 300;
+  } catch { return false; }
+}
