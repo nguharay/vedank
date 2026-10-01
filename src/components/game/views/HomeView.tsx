@@ -450,7 +450,7 @@ export function HomeView({
         <div className="path-coming-sub">
           {lang === "ja"
             ? "ここまでぜんぶクリアしたら、新しい冒険がひらくよ。きっと楽しいよ！お楽しみに 🐉"
-            : "Finish everything here and a brand-new adventure opens up. It\u2019s going to be fun — stay tuned 🐉"}
+            : "Finish everything here and a brand-new adventure opens up. It\u2019s going to be fun, so stay tuned 🐉"}
         </div>
       </div>
 
