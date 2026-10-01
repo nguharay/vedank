@@ -22,6 +22,7 @@ const EXPECTED: { table: string; column: string; feature: string }[] = [
   { table: "ttt_rooms", column: "state", feature: "online tic-tac-toe" },
   { table: "race_rooms", column: "state", feature: "online math race" },
   { table: "towns", column: "gifts", feature: "visiting friends' towns" },
+  { table: "reminders", column: "slot", feature: "daily reminder notifications" },
 ];
 
 export async function GET() {

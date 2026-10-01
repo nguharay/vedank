@@ -1,14 +1,15 @@
 import {
-  pgTable,
-  uuid,
-  text,
-  integer,
   boolean,
-  jsonb,
-  timestamp,
   date,
-  primaryKey,
   index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  serial,
+  text,
+  timestamp,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -356,3 +357,29 @@ export const towns = pgTable("towns", {
   stickers: jsonb("stickers").notNull().default([]),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const reminders = pgTable("reminders", {
+  id: serial("id").primaryKey(),
+  slot: text("slot").notNull().default("evening"),
+  audience: text("audience").notNull().default("not_played_today"),
+  titleJa: text("title_ja").notNull(),
+  bodyJa: text("body_ja").notNull(),
+  titleEn: text("title_en").notNull(),
+  bodyEn: text("body_en").notNull(),
+  url: text("url").notNull().default("/"),
+  enabled: boolean("enabled").notNull().default(true),
+  sort: integer("sort").notNull().default(0),
+  updatedBy: text("updated_by"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+export const reminderRuns = pgTable(
+  "reminder_runs",
+  {
+    slot: text("slot").notNull(),
+    day: date("day").notNull(),
+    reminderId: integer("reminder_id"),
+    sent: integer("sent").notNull().default(0),
+    ranAt: timestamp("ran_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.slot, t.day] })]
+);
