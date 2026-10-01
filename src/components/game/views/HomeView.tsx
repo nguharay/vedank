@@ -179,7 +179,7 @@ export function HomeView({
 
       <DragonCard lang={lang} />
 
-      <HomeTownCard lang={lang} onOpen={onOpenTown} />
+      <HomeTownCard lang={lang} onOpen={onOpenTown} guest={guest} />
 
       {/* Today's game — one of the action games, a different one each day. */}
       {(() => {
@@ -471,7 +471,7 @@ export function HomeView({
 }
 
 /* Math Town on Home: coins in the bank and the town's rank, one tap away. */
-function HomeTownCard({ lang, onOpen }: { lang: "en" | "ja"; onOpen: () => void }) {
+function HomeTownCard({ lang, onOpen, guest }: { lang: "en" | "ja"; onOpen: () => void; guest: boolean }) {
   const town = useTown();
   const r = RANKS[townRank(town) - 1];
   const built = town.plots.filter(Boolean).length;
@@ -485,6 +485,7 @@ function HomeTownCard({ lang, onOpen }: { lang: "en" | "ja"; onOpen: () => void 
             ? (lang === "ja" ? "正解1問 = 1🪙。まちをつくろう！" : "1 right answer = 1🪙. Start building!")
             : (lang === "ja" ? `${built}つの建物 · タップして建てる` : `${built} buildings · tap to build more`)}
         </span>
+        {!guest && <span className="town-card-friends">{lang === "ja" ? "👫 友だちのまちにも遊びに行けるよ" : "👫 Visit your friends' towns too"}</span>}
       </span>
       <span className="town-card-coins mono">🪙 {town.coins}</span>
     </button>
@@ -518,6 +519,7 @@ function DragonCard({ lang }: { lang: "en" | "ja" }) {
         {mood === "hungry" && <span className="dragon-fx">💭🍖</span>}
       </div>
       <div className="dragon-body">
+        <span className="dragon-tag">{ja ? "🐉 ドラゴンペット" : "🐉 DRAGON PET"}</span>
         <div className="dragon-top">
           {naming ? (
             <form className="dragon-name-form" onSubmit={(e) => { e.preventDefault(); nameDragon(draft); setNaming(false); }}>

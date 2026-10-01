@@ -26,6 +26,9 @@ import { saveOverride } from "@/lib/game/overrides";
 import { createRoom, joinRoom, getRoom, moveRoom, rematchRoom } from "@/lib/game/tttOnline";
 import { createRaceRoom, joinRaceRoom, getRaceRoom, startRaceRoom, answerRaceRoom } from "@/lib/game/raceOnline";
 import { jstDay } from "@/lib/game/reminders";
+import { getDb } from "@/db";
+import { users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { saveTown, friendTowns, visitTown, buyFromTown, leaveSticker, collectGifts, type TownSnapshot } from "@/lib/game/townOnline";
 import { getAdminSession } from "@/lib/admin";
 import { TOPIC_BY_ID } from "@/lib/game/topics";
@@ -298,6 +301,14 @@ export async function pushStatusAction() {
 export async function savePushSubscriptionAction(sub: unknown) {
   const userId = await requireUserId();
   return saveSubscription(userId, sub as Parameters<typeof saveSubscription>[1]);
+}
+
+/* The language a signed-in player last used — what their notifications are
+   written in. Saved whenever they switch in the app. */
+export async function savePreferredLangAction(lang: string) {
+  const userId = await requireUserId();
+  await getDb().update(users).set({ preferredLang: lang === "ja" ? "ja" : "en" }).where(eq(users.id, userId));
+  return { ok: true as const };
 }
 
 /* Guests: no session, so these only ever touch guest_push rows. */
