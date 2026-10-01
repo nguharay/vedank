@@ -1,7 +1,6 @@
 {
   "framework": "nextjs",
   "crons": [
-    { "path": "/api/cron/reminders?slot=morning", "schedule": "0 23 * * *" },
     { "path": "/api/cron/reminders?slot=evening", "schedule": "0 10 * * *" }
   ]
 }
