@@ -83,3 +83,5 @@ export async function sendTo(userId: string, note: Notification): Promise<void> 
     await db.delete(pushSubscriptions).where(inArray(pushSubscriptions.endpoint, dead));
   }
 }
+
+/* notification keys configured Oct 2 2026 — see /api/push-status */
