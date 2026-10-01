@@ -836,3 +836,28 @@ export function peelDepth(n: number, blanks: number[]): number {
   }
   return rounds;
 }
+
+/* ---------- 🥷 Ninja Slice ----------
+   Fruit is tossed up carrying numbers; swipe through the ones that equal
+   the sum and leave the bombs alone. A wave is one sum with a few fruit
+   tossed in a spread: 1–2 carry the answer, the rest are near misses, and
+   from the second wave on, a bomb. Sums come from the Castle ladder (all
+   mental maths), one tier harder every NINJA_WAVES_PER_TIER waves. */
+export const NINJA_WAVES_PER_TIER = 5;
+export type NinjaWave = { prompt: string; answer: number; items: { value: number | null; bomb: boolean }[] };
+const FRUIT_DECOYS = (ans: number) => [ans + 1, ans - 1, ans + 10, ans - 10, ans + 2, ans - 2, ans + 100, Number(String(Math.abs(ans)).split("").reverse().join(""))];
+export function buildNinjaWave(wave: number): NinjaWave {
+  const tier = 1 + Math.floor(wave / NINJA_WAVES_PER_TIER);
+  const q = castleQuestion(Math.min(8, tier));
+  const n = Math.min(6, 3 + Math.floor(wave / 3));            /* fruit per wave */
+  const good = wave >= 6 && Math.random() < 0.4 ? 2 : 1;      /* sometimes two right fruit */
+  const bombs = wave >= 1 ? (wave >= 10 && Math.random() < 0.3 ? 2 : 1) : 0;
+  const decoys = new Set<number>();
+  for (const c of shuffle(FRUIT_DECOYS(q.answer))) { if (decoys.size >= n - good - bombs) break; if (c > 0 && c !== q.answer) decoys.add(c); }
+  const items: NinjaWave["items"] = [
+    ...Array.from({ length: good }, () => ({ value: q.answer, bomb: false })),
+    ...[...decoys].map((v) => ({ value: v, bomb: false })),
+    ...Array.from({ length: bombs }, () => ({ value: null, bomb: true })),
+  ];
+  return { prompt: q.prompt, answer: q.answer, items: shuffle(items) };
+}

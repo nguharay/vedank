@@ -123,3 +123,17 @@ export function claimWelcome() {
   if (s.welcome) return;
   write({ ...s, welcome: true, coins: s.coins + WELCOME_GIFT });
 }
+
+/* spend coins in a friend's shop; false if you can't afford it */
+export function spendTownCoins(n: number): boolean {
+  const s = read();
+  if (n <= 0 || s.coins < n) return false;
+  write({ ...s, coins: s.coins - n });
+  return true;
+}
+/* what a visitor pays in a shop building (a snack, a ride, a ticket) */
+export function shopPrice(id: string): number {
+  const b = BUILDING(id);
+  return b ? Math.min(8, Math.max(3, Math.round(b.cost / 20))) : 3;
+}
+export const STICKERS = ["👍", "⭐", "❤️", "🎉", "🍣", "🏯", "😍", "🔥"];

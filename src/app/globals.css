@@ -1732,6 +1732,13 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .buddy-hide{ align-self:flex-end; font:800 10.5px/1 inherit; font-family:inherit; color:var(--muted); background:var(--surface-2, #f3f1fb);
   border:1.5px solid var(--line, #d8d4ea); border-radius:999px; padding:5px 9px; cursor:pointer; }
 .buddy-hide:active{ transform:scale(.95); }
+/* a clear ✕ in the bubble's corner; the text keeps room for it */
+.buddy-bubble{ position:relative; }
+.buddy-bubble-text{ padding-right:18px; }
+.buddy-close{ position:absolute; top:5px; right:5px; width:22px; height:22px; border-radius:50%; border:1.5px solid var(--line, #d8d4ea);
+  background:var(--surface-2, #f3f1fb); color:var(--muted); font:900 11px/1 system-ui,sans-serif; display:grid; place-items:center; cursor:pointer; padding:0; }
+.buddy-close:hover{ color:var(--ink); }
+.buddy-close:active{ transform:scale(.9); }
 .buddy-dock.dragging .buddy-tap{ animation:none; cursor:grabbing; transform:scale(1.08); }
 .buddy-dock.dragging .buddy-bubble{ opacity:.35; }
 .buddy-tap{ cursor:grab; touch-action:none; }
@@ -3004,3 +3011,77 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .feature-art.rhythm{ background:radial-gradient(ellipse at 50% 120%, #ff4f9a, #6a3fb8 60%, #1b1440); }
 .fa-note1{ left:8px; top:8px; font-size:16px; animation:run-bob .3s ease-in-out infinite alternate; }
 .fa-note2{ right:8px; top:22px; font-size:16px; animation:run-bob .4s ease-in-out infinite alternate; }
+
+/* ---------- 🥷 Ninja Slice ---------- */
+.ninja-arena{ position:relative; height:440px; border-radius:22px; overflow:hidden; border:3px solid var(--ink); touch-action:none; user-select:none; cursor:crosshair;
+  background:linear-gradient(#1a1740 0%, #3b2a6e 50%, #6a3f8a 100%); }
+.ninja-bg{ position:absolute; inset:0; pointer-events:none; }
+.ninja-moon{ position:absolute; top:22px; right:26px; width:54px; height:54px; border-radius:50%; background:#fff5c2; box-shadow:0 0 30px rgba(255,245,194,.6); }
+.ninja-hills{ position:absolute; left:-10%; right:-10%; bottom:0; height:90px;
+  background:radial-gradient(ellipse 160px 90px at 25% 100%, #2a2250 98%, transparent), radial-gradient(ellipse 200px 80px at 75% 100%, #231c48 98%, transparent); }
+.ninja-q{ position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:3; white-space:nowrap; font-size:24px; font-weight:800; color:#1d1b33;
+  background:rgba(255,255,255,.94); border:3px solid #1d1b33; border-radius:16px; padding:4px 16px 6px; box-shadow:0 4px 0 #1d1b33; text-align:center; }
+.ninja-wave{ display:block; font-size:10px; font-weight:800; color:#6a6688; letter-spacing:.06em; }
+.ninja-fruit{ position:absolute; left:0; top:0; width:56px; height:56px; will-change:transform; display:grid; place-items:center; pointer-events:none; }
+.ninja-emoji{ font-size:46px; line-height:1; filter:drop-shadow(0 3px 2px rgba(0,0,0,.35)); display:block; will-change:transform; }
+.ninja-num{ position:absolute; bottom:-6px; background:#fff; color:#1d1b33; border:2px solid #1d1b33; border-radius:10px; padding:1px 7px; font-size:14px; font-weight:900; }
+.ninja-fruit.sliced{ opacity:.0; transition:opacity .5s ease-out; }
+.ninja-fruit.sliced .ninja-emoji{ filter:blur(1px) brightness(1.3); }
+.ninja-trail{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:4; }
+.ninja-trail polyline{ fill:none; stroke:#fff; stroke-width:5; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 6px #fff); opacity:.9; }
+.ninja-pop{ position:absolute; z-index:5; transform:translate(-50%,-50%); font:900 20px/1 "Baloo 2",system-ui,sans-serif; pointer-events:none; animation:run-pop .7s ease-out forwards; text-shadow:0 2px 0 #1d1b33; }
+.ninja-pop.good{ color:#7ED957; } .ninja-pop.bad{ color:#FF7A7A; }
+.ninja-sensei{ position:absolute; left:6px; bottom:4px; width:46px; height:46px; z-index:1; }
+.ttt-card.ninja-feature{ background:linear-gradient(130deg,#1a1740,#3b2a6e 55%,#6a3f8a); }
+.feature-art.ninja{ background:radial-gradient(circle at 70% 25%, #fff5c2 0 8px, transparent 9px), linear-gradient(#1a1740, #3b2a6e); }
+.fa-fruit{ left:10px; bottom:8px; font-size:26px; animation:run-bob .5s ease-in-out infinite alternate; }
+.fa-slash{ right:4px; top:10px; font-size:30px; color:#fff; text-shadow:0 0 8px #fff; }
+
+/* ---------- 🐉 Dragon Pet ---------- */
+.dragon-card{ display:flex; gap:12px; align-items:center; margin:12px 0; padding:12px 14px; border-radius:20px; border:3px solid var(--ink-line);
+  box-shadow:4px 4px 0 var(--ink-line); background:linear-gradient(130deg,#e8f7ee,#d2f0e8 60%,#cfe6ff); color:var(--ink); }
+.dragon-card.mood-sad{ background:linear-gradient(130deg,#eceaf3,#dcd9ea); }
+.dragon-card.mood-full{ background:linear-gradient(130deg,#fff3c4,#ffe29a 60%,#ffd1a6); }
+.dragon-card.golden{ background:linear-gradient(130deg,#fff1b8,#ffd86b 60%,#ffb347); }
+.dragon-pet{ position:relative; flex:none; width:74px; height:74px; display:grid; place-items:center; border-radius:50%; background:rgba(255,255,255,.55); }
+.dragon-emoji{ font-size:46px; line-height:1; animation:run-bob .9s ease-in-out infinite alternate; }
+.dragon-card.golden .dragon-emoji{ filter:sepia(1) saturate(4) hue-rotate(-15deg) drop-shadow(0 0 6px #ffd54a); }
+.dragon-card.mood-sad .dragon-emoji{ animation:none; filter:grayscale(.3); }
+.dragon-fx{ position:absolute; top:-4px; right:-8px; font-size:18px; white-space:nowrap; }
+.dragon-fx.tear{ top:auto; bottom:4px; right:6px; }
+.dragon-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.dragon-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.dragon-name{ all:unset; cursor:pointer; font:800 16px/1.1 "Baloo 2",system-ui,sans-serif; color:var(--ink); }
+.dragon-edit{ font-size:11px; opacity:.6; }
+.dragon-name-form{ display:flex; gap:6px; }
+.dragon-name-form input{ width:110px; padding:4px 8px; border-radius:8px; border:2px solid var(--ink-line); font:800 14px inherit; font-family:inherit; }
+.dragon-name-form .btn{ padding:4px 10px; font-size:12px; }
+.dragon-streak{ font-size:12px; font-weight:900; background:#fff; border-radius:999px; padding:2px 8px; white-space:nowrap; }
+.dragon-line{ font-size:12.5px; font-weight:700; color:var(--ink); }
+.dragon-bar{ position:relative; height:14px; border-radius:8px; background:rgba(0,0,0,.12); overflow:hidden; }
+.dragon-bar i{ display:block; height:100%; background:linear-gradient(90deg,#2E8B57,#7ED957); transition:width .4s; }
+.dragon-bar b{ position:absolute; inset:0; display:grid; place-items:center; font-size:10px; color:#1d1b33; }
+.dragon-sub{ font-size:11px; font-weight:700; color:var(--muted); }
+
+/* ---------- Math Town: friends ---------- */
+.town-gift-banner{ margin-top:10px; padding:10px 12px; border-radius:14px; background:#fff3c4; border:2px solid #e2b53b; font-size:13px; font-weight:800; color:#6b4a00; }
+.town-friends{ margin-top:14px; }
+.town-friends-head{ font:800 16px/1.2 "Baloo 2",system-ui,sans-serif; color:var(--ink); margin-bottom:8px; }
+.town-friends-list{ display:grid; gap:8px; }
+.town-friend{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:16px; border:2px solid var(--line); background:var(--surface); cursor:pointer; font-family:inherit; text-align:left; color:var(--ink); }
+.town-friend-art{ display:flex; gap:0; font-size:22px; }
+.town-friend-art i{ font-style:normal; margin-right:-6px; }
+.town-friend-body{ flex:1; display:flex; flex-direction:column; gap:1px; }
+.town-friend-name{ font-weight:900; font-size:14.5px; }
+.town-friend-sub{ font-size:11px; font-weight:700; color:var(--muted); }
+.town-plot.shop{ cursor:pointer; box-shadow:0 0 0 2px #ffcf3a inset; }
+.town-plot:disabled{ cursor:default; }
+.town-price{ position:absolute; bottom:2px; right:4px; font-size:9.5px; font-weight:900; background:#ffcf3a; border-radius:999px; padding:1px 5px; color:#1d1b33; }
+.town-plot{ position:relative; }
+.town-note{ text-align:center; margin-top:8px; }
+.town-stickers-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:12px; font-size:12px; font-weight:800; color:var(--muted); }
+.town-sticker-btn{ width:36px; height:36px; border-radius:50%; border:2px solid var(--line); background:var(--surface); font-size:18px; cursor:pointer; }
+.town-sticker-btn:active{ transform:scale(.9); }
+.town-stickers{ list-style:none; padding:0; margin:8px 0 0; display:flex; flex-wrap:wrap; gap:6px; }
+.town-stickers li{ background:var(--surface); border:2px solid var(--line); border-radius:999px; padding:3px 10px 3px 6px; font-size:12px; font-weight:800; color:var(--ink); }
+.town-stickers li b{ font-size:14px; }

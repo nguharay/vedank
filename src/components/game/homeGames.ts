@@ -3,12 +3,13 @@ import { seedFromKey, todayKey } from "@/lib/game/daily";
 /* The games that also live on the Home tab: today's game card, the bonus
    stops along the map, and the bonus round after a boss. They rotate by
    date, so Home looks a little different every day. */
-export type HomeGameId = "runner" | "race" | "sushi" | "castle" | "pop" | "ttt" | "konbini" | "crossword" | "rhythm";
+export type HomeGameId = "runner" | "race" | "sushi" | "castle" | "pop" | "ttt" | "konbini" | "crossword" | "rhythm" | "ninja";
 export type HomeGame = { id: HomeGameId; icon: string; name: string; nameJa: string; blurb: string; blurbJa: string; tint: string };
 
 export const HOME_GAMES: HomeGame[] = [
   { id: "castle", icon: "🏯", name: "Castle Defense", nameJa: "お城をまもれ！", blurb: "Answer to fire arrows at the marching monsters.", blurbJa: "答えて矢をうて！モンスターからお城をまもろう。", tint: "linear-gradient(130deg,#5a3fb8,#2f6fd0)" },
   { id: "sushi", icon: "🍣", name: "Sushi Shop", nameJa: "おすし屋さん", blurb: "Total the plates before your customers lose patience.", blurbJa: "お皿の合計を計算してお会計！", tint: "linear-gradient(130deg,#b8322e,#e0773a)" },
+  { id: "ninja", icon: "🥷", name: "Ninja Slice", nameJa: "忍者スライス", blurb: "Swipe to slice the right fruit!", blurbJa: "答えのフルーツをスワイプで切れ！", tint: "linear-gradient(130deg,#1a1740,#6a3f8a)" },
   { id: "rhythm", icon: "🎵", name: "Rhythm Tap", nameJa: "リズムタップ", blurb: "Tap the answers to the beat!", blurbJa: "音楽にあわせて答えをタップ！", tint: "linear-gradient(130deg,#1b1440,#ff4f9a)" },
   { id: "konbini", icon: "🏪", name: "Konbini Cashier", nameJa: "コンビニのレジ", blurb: "Give every customer the right change.", blurbJa: "お客さんにおつりをわたそう。", tint: "linear-gradient(130deg,#2E8B57,#f2a93b)" },
   { id: "crossword", icon: "🧩", name: "Number Crossword", nameJa: "数字クロスワード", blurb: "Make every row and column add up.", blurbJa: "たて・よこの合計をあわせよう。", tint: "linear-gradient(130deg,#6a3fb8,#b84a9a)" },
@@ -31,6 +32,6 @@ export function bonusStopGame(k: number): HomeGame {
 }
 /* The bonus round offered after beating a topic's boss. */
 export function bossBonusGame(topicIdx: number): HomeGame {
-  const action = HOME_GAMES.filter((g) => ["castle", "runner", "race", "sushi", "konbini"].includes(g.id));
+  const action = HOME_GAMES.filter((g) => ["castle", "runner", "race", "sushi", "konbini", "ninja"].includes(g.id));
   return action[(dayIndex() + topicIdx) % action.length];
 }
