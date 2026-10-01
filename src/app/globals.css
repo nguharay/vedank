@@ -3126,3 +3126,13 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .push-ask p{ white-space:pre-line; }
 .push-ask-steps{ text-align:left; margin:4px 0 12px; padding-left:22px; font-size:13.5px; font-weight:700; line-height:1.7; }
 .push-ask-ico{ display:inline-grid; place-items:center; width:22px; height:22px; border-radius:6px; background:#2B6FEA; color:#fff; font-size:13px; }
+/* the "more coming" card at the end of the Home path */
+.path-coming{ position:relative; z-index:1; margin:6px auto 18px; max-width:420px; text-align:center; padding:16px 14px 18px;
+  border-radius:22px; border:3px dashed #b9b4d6; background:linear-gradient(135deg, #fff7e8, #f3ecff); color:var(--ink); }
+.path-coming-icons{ display:flex; justify-content:center; gap:10px; font-size:28px; margin-bottom:6px; }
+.path-coming-icons span{ animation:bonus-float 2.4s ease-in-out infinite; }
+.path-coming-icons span:nth-child(2){ animation-delay:.4s; }
+.path-coming-icons span:nth-child(3){ animation-delay:.8s; }
+.path-coming-title{ font:800 18px/1.2 "Baloo 2",system-ui,sans-serif; }
+.path-coming-sub{ margin-top:4px; font-size:13px; font-weight:700; color:var(--muted); line-height:1.5; }
+@media (prefers-reduced-motion: reduce){ .path-coming-icons span{ animation:none; } }
