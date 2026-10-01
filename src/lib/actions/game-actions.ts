@@ -21,10 +21,11 @@ import {
   createCompetition, createFriendCompetition, endCompetition, visibleCompetitions, competitionsForClass,
   startCompetition, submitCompetition, leaderboard,
 } from "@/lib/game/competition";
-import { pushConfigured, saveSubscription, removeSubscription, sendTo } from "@/lib/game/push";
+import { pushConfigured, saveSubscription, removeSubscription, sendTo, saveGuestSubscription, touchGuest, removeGuestSubscription } from "@/lib/game/push";
 import { saveOverride } from "@/lib/game/overrides";
 import { createRoom, joinRoom, getRoom, moveRoom, rematchRoom } from "@/lib/game/tttOnline";
 import { createRaceRoom, joinRaceRoom, getRaceRoom, startRaceRoom, answerRaceRoom } from "@/lib/game/raceOnline";
+import { jstDay } from "@/lib/game/reminders";
 import { saveTown, friendTowns, visitTown, buyFromTown, leaveSticker, collectGifts, type TownSnapshot } from "@/lib/game/townOnline";
 import { getAdminSession } from "@/lib/admin";
 import { TOPIC_BY_ID } from "@/lib/game/topics";
@@ -297,6 +298,19 @@ export async function pushStatusAction() {
 export async function savePushSubscriptionAction(sub: unknown) {
   const userId = await requireUserId();
   return saveSubscription(userId, sub as Parameters<typeof saveSubscription>[1]);
+}
+
+/* Guests: no session, so these only ever touch guest_push rows. */
+export async function saveGuestPushAction(sub: unknown, lang: string) {
+  return saveGuestSubscription(sub as Parameters<typeof saveGuestSubscription>[0], String(lang ?? "ja"), jstDay());
+}
+export async function touchGuestPushAction(endpoint: string, lang: string) {
+  await touchGuest(String(endpoint ?? ""), String(lang ?? "ja"), jstDay());
+  return { ok: true as const };
+}
+export async function removeGuestPushAction(endpoint: string) {
+  await removeGuestSubscription(String(endpoint ?? ""));
+  return { ok: true as const };
 }
 
 export async function removePushSubscriptionAction(endpoint: string) {

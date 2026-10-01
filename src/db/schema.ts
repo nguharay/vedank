@@ -383,3 +383,13 @@ export const reminderRuns = pgTable(
   },
   (t) => [primaryKey({ columns: [t.slot, t.day] })]
 );
+
+/* Guest browsers that turned notifications on (no account to attach to). */
+export const guestPush = pgTable("guest_push", {
+  endpoint: text("endpoint").primaryKey(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  lang: text("lang").notNull().default("ja"),
+  lastActiveDay: date("last_active_day"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});

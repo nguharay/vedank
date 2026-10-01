@@ -53,6 +53,7 @@ import {
   competitionsAction, startCompetitionAction, submitCompetitionAction, competitionBoardAction,
   createFriendCompetitionAction, endCompetitionAction, saveTopicOverrideAction,
   pushStatusAction, savePushSubscriptionAction, removePushSubscriptionAction,
+  saveGuestPushAction, touchGuestPushAction, removeGuestPushAction,
   tttCreateAction, tttJoinAction, tttRoomAction, tttMoveAction, tttRematchAction, tttChallengeFriendAction,
 } from "@/lib/actions/game-actions";
 import type { CompetitionSummary, CompQuestion, CompRow } from "@/lib/game/competition";
@@ -113,6 +114,54 @@ import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, 
 
 /* "tomorrow" / "in 3 days" — a date stamp would mean nothing to a child, and
    the exact hour is noise when reviews land at the start of a day. */
+
+/* The dragon's notification asks. One is picked each time the sheet opens
+   (never the same one twice running), so it reads like the dragon talking,
+   not a system dialog. Every one says what is sent: two short notes a day. */
+const DRAGON_ASKS = [
+  { titleJa: "ドラゴンからのおねがい", bodyJa: "「おなかがすいたら、おしえてもいい？」\n1日2回だけ、ごはんの時間とストリークのお知らせをおくります。",
+    titleEn: "A request from your dragon", bodyEn: "\u201cCan I tell you when I\u2019m hungry?\u201d\nJust two short notes a day \u2014 meal time, and when your streak is about to end.",
+    yesJa: "いいよ、おしえて！", yesEn: "Yes, remind me!" },
+  { titleJa: "ドラゴンがのぞいてる…👀", bodyJa: "「ねえねえ、朝と夜に1回ずつ、声をかけてもいい？」\nストリークが消えそうなときも教えるよ。",
+    titleEn: "Your dragon is peeking… 👀", bodyEn: "\u201cPsst \u2014 can I call you once in the morning and once at night?\u201d\nI\u2019ll warn you before your streak runs out, too.",
+    yesJa: "うん、よんでね！", yesEn: "Sure, call me!" },
+  { titleJa: "たまごがコトコト… 🥚", bodyJa: "「ひなになる日、いっしょにお祝いしたいな」\nごはんの時間に1日2回だけお知らせします。",
+    titleEn: "The egg is wobbling… 🥚", bodyEn: "\u201cI want you there when I hatch!\u201d\nTwo little meal-time notes a day, that\u2019s all.",
+    yesJa: "見のがさない！", yesEn: "Don\u2019t let me miss it!" },
+  { titleJa: "キングピコが動きだした ⚔️", bodyJa: "ドラゴン：「モンスターが来たら、すぐ知らせるね！」\nお知らせは1日2回まで。",
+    titleEn: "King Blip is on the move ⚔️", bodyEn: "Dragon: \u201cI\u2019ll shout the moment monsters show up!\u201d\nNo more than two notes a day.",
+    yesJa: "知らせて！", yesEn: "Warn me!" },
+  { titleJa: "ドラゴンからの手紙 💌", bodyJa: "「きみが来ない日は、ちょっとさみしい」\n朝と夜にそっとお知らせしてもいい？",
+    titleEn: "A letter from your dragon 💌", bodyEn: "\u201cDays without you are a bit lonely.\u201d\nMay I send a gentle note in the morning and evening?",
+    yesJa: "いいよ 💛", yesEn: "Of course 💛" },
+  { titleJa: "ストリーク、守りたい？🔥", bodyJa: "ドラゴン：「0時になる前に、ぼくが起こしてあげる！」\n1日2回、短いお知らせだけ。",
+    titleEn: "Want to keep your streak? 🔥", bodyEn: "Dragon: \u201cI\u2019ll nudge you before midnight!\u201d\nJust two short notes a day.",
+    yesJa: "守る！", yesEn: "Protect it!" },
+];
+/* Guests get their own asks: the egg with no home, progress that lives only
+   on this phone — still the dragon talking, still two notes a day. */
+const GUEST_ASKS: typeof DRAGON_ASKS = [
+  { titleJa: "たまごがあなたを見てる 🥚", bodyJa: "「ゲストでも、ぼくは待ってるよ」\n朝と夜に1回ずつ、ごはんの時間を知らせてもいい？",
+    titleEn: "The egg is watching you 🥚", bodyEn: "\u201cGuest or not, I\u2019ll be waiting.\u201d\nCan I tell you meal time, once in the morning and once at night?",
+    yesJa: "うん、知らせて！", yesEn: "Yes, tell me!" },
+  { titleJa: "ドラゴン、ひとりぼっち？🐉", bodyJa: "「このスマホの中で、きみを待ってるんだ」\n1日2回、そっと声をかけるね。",
+    titleEn: "Is your dragon all alone? 🐉", bodyEn: "\u201cI live right here on this phone, waiting for you.\u201d\nI\u2019ll call softly, twice a day.",
+    yesJa: "よんでいいよ", yesEn: "You can call me" },
+  { titleJa: "ちょっとだけ、おねがい 🙏", bodyJa: "ドラゴン：「きみの記録、なくしたくないな」\nお知らせで、続けるのを手伝うよ（1日2回まで）。",
+    titleEn: "One tiny favour 🙏", bodyEn: "Dragon: \u201cI don\u2019t want your progress to fade.\u201d\nA reminder or two a day keeps it going.",
+    yesJa: "手伝って！", yesEn: "Help me keep going!" },
+];
+const asksFor = (guest: boolean) => (guest ? GUEST_ASKS : DRAGON_ASKS);
+/* a different ask from the last one shown */
+function pickAskLine(guest: boolean): number {
+  const list = asksFor(guest);
+  let last = -1;
+  try { last = Number(localStorage.getItem("sutraSprint.askLine") ?? -1); } catch {}
+  let n = Math.floor(Math.random() * list.length);
+  if (n === last) n = (n + 1) % list.length;
+  try { localStorage.setItem("sutraSprint.askLine", String(n)); } catch {}
+  return n;
+}
 
 export function GameApp({
   initialProgress,
@@ -2582,7 +2631,6 @@ export function GameApp({
   const [pushBusy, setPushBusy] = useState(false);
 
   useEffect(() => {
-    if (guest) return;
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
     (async () => {
       try {
@@ -2590,7 +2638,16 @@ export function GameApp({
         if (!st.configured || !st.publicKey) return;
         setPushKey(st.publicKey);
         const reg = await navigator.serviceWorker.ready;
-        setPushOn(!!(await reg.pushManager.getSubscription()));
+        const sub = await reg.pushManager.getSubscription();
+        setPushOn(!!sub);
+        if (!sub) return;
+        if (guest) {
+          /* tells the evening reminder this guest already played today */
+          void touchGuestPushAction(sub.endpoint, langRef.current);
+        } else {
+          /* a guest who signed up: move this browser onto the account */
+          void savePushSubscriptionAction(sub.toJSON()).then(() => removeGuestPushAction(sub.endpoint)).catch(() => {});
+        }
       } catch {}
     })();
   }, [guest]);
@@ -2602,7 +2659,8 @@ export function GameApp({
       const reg = await navigator.serviceWorker.ready;
       const existing = await reg.pushManager.getSubscription();
       if (existing) {
-        await removePushSubscriptionAction(existing.endpoint);
+        if (guest) await removeGuestPushAction(existing.endpoint);
+        else await removePushSubscriptionAction(existing.endpoint);
         await existing.unsubscribe();
         setPushOn(false);
       } else {
@@ -2615,7 +2673,7 @@ export function GameApp({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(pushKey),
         });
-        const res = await savePushSubscriptionAction(sub.toJSON());
+        const res = guest ? await saveGuestPushAction(sub.toJSON(), lang) : await savePushSubscriptionAction(sub.toJSON());
         if (res.ok) {
           setPushOn(true);
           spawnToast(lang === "ja" ? "通知をオンにしました" : "Notifications on", null);
@@ -2637,6 +2695,9 @@ export function GameApp({
      is not installed to the Home Screen push cannot work, so the same sheet
      explains Add to Home Screen instead. */
   const [pushAsk, setPushAsk] = useState<null | "push" | "ios">(null);
+  /* which of the dragon's asks to show — picked when the sheet opens, so it
+     differs from one time to the next */
+  const [askLine, setAskLine] = useState(0);
   const isIosBrowser = () => {
     if (typeof navigator === "undefined") return false;
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -2644,7 +2705,6 @@ export function GameApp({
     return ios && !standalone;
   };
   function shouldAskPush(): null | "push" | "ios" {
-    if (guest) return null;
     let asked: { n: number; at: number } = { n: 0, at: 0 };
     try { asked = JSON.parse(localStorage.getItem("sutraSprint.pushAsked") || "null") || asked; } catch {}
     if (asked.n >= 2 || (asked.n === 1 && Date.now() - asked.at < 7 * 86400_000)) return null;
@@ -2663,12 +2723,12 @@ export function GameApp({
      asynchronously), so the sheet does not flash on top of the first paint. */
   const askedThisOpen = useRef(false);
   useEffect(() => {
-    if (guest || askedThisOpen.current) return;
+    if (askedThisOpen.current) return;
     if (!isIosBrowser() && !pushKey) return;        /* still loading the status */
     askedThisOpen.current = true;
     const id = setTimeout(() => {
       const kind = shouldAskPush();
-      if (kind) { setPushAsk(kind); markAsked(); }
+      if (kind) { setAskLine(pickAskLine(guest)); setPushAsk(kind); markAsked(); }
     }, 1500);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2678,7 +2738,7 @@ export function GameApp({
     if (process.env.NODE_ENV === "production") return;
     const v = new URLSearchParams(window.location.search).get("askpush");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- dev-only preview switch
-    if (v === "push" || v === "ios") setPushAsk(v);
+    if (v === "push" || v === "ios") { setAskLine(pickAskLine(guest)); setPushAsk(v); }
   }, []);
 
   /* ---------- add to home screen ----------
@@ -3154,12 +3214,10 @@ export function GameApp({
             <div className="push-ask-dragon" aria-hidden="true">🐉</div>
             {pushAsk === "push" ? (
               <>
-                <h3>{ja ? "ドラゴンからのおねがい" : "A request from your dragon"}</h3>
-                <p>{ja
-                  ? "「おなかがすいたら、おしえてもいい？」\n1日2回だけ、ごはんの時間とストリークのお知らせをおくります。"
-                  : "\u201cCan I tell you when I\u2019m hungry?\u201d\nJust two short notes a day \u2014 meal time, and when your streak is about to end."}</p>
+                <h3>{ja ? asksFor(guest)[askLine].titleJa : asksFor(guest)[askLine].titleEn}</h3>
+                <p>{ja ? asksFor(guest)[askLine].bodyJa : asksFor(guest)[askLine].bodyEn}</p>
                 <button className="btn btn-primary auth-submit" onClick={() => { setPushAsk(null); void togglePush(); }} disabled={pushBusy}>
-                  🔔 {ja ? "いいよ、おしえて！" : "Yes, remind me!"}
+                  🔔 {ja ? asksFor(guest)[askLine].yesJa : asksFor(guest)[askLine].yesEn}
                 </button>
                 <button className="btn btn-ghost lock-sheet-later" onClick={() => setPushAsk(null)}>{ja ? "あとで" : "Not now"}</button>
               </>

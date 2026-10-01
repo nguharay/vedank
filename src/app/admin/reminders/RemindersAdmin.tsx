@@ -9,14 +9,15 @@ type Run = { slot: string; day: string; reminderId: number | null; sent: number;
 
 const SLOT_LABEL: Record<string, string> = { morning: "🌅 Morning · 08:00 JST", evening: "🌙 Evening · 19:00 JST" };
 const AUD_LABEL: Record<string, string> = {
-  all: "Everyone with notifications on",
+  all: "Everyone with notifications on (signed in + guests)",
+  guests: "Guests only (not signed in) — good for 'save your progress' nudges",
   not_played_today: "Hasn't played today",
   streak_risk: "Has a streak and hasn't played today",
 };
 const BLANK: ReminderInput = { slot: "evening", audience: "not_played_today", titleJa: "", bodyJa: "", titleEn: "", bodyEn: "", url: "/", enabled: true, sort: 0 };
 
 export function RemindersAdmin({ rows: initial, runs, reach, adminEmail, pushOn }: {
-  rows: Reminder[]; runs: Run[]; reach: number; adminEmail: string; pushOn: boolean;
+  rows: Reminder[]; runs: Run[]; reach: { players: number; guests: number }; adminEmail: string; pushOn: boolean;
 }) {
   const [rows, setRows] = useState(initial);
   const [editing, setEditing] = useState<ReminderInput | null>(null);
@@ -71,7 +72,8 @@ export function RemindersAdmin({ rows: initial, runs, reach, adminEmail, pushOn 
       </header>
       <main className="admin-main rem-main">
         <div className="admin-stats">
-          <div className="admin-stat"><b className="mono">{reach}</b><span>players reachable</span></div>
+          <div className="admin-stat"><b className="mono">{reach.players}</b><span>signed-in players reachable</span></div>
+          <div className="admin-stat"><b className="mono">{reach.guests}</b><span>guests reachable</span></div>
           <div className="admin-stat"><b className="mono">{rows.filter((r) => r.enabled).length}</b><span>messages on</span></div>
           <div className="admin-stat"><b>{pushOn ? "✅" : "⚠️"}</b><span>{pushOn ? "push configured" : "push keys missing"}</span></div>
         </div>
