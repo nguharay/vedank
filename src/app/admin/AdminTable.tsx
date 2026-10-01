@@ -122,6 +122,7 @@ export function AdminTable({ rows, summary, adminEmail }: { rows: SignupRow[]; s
           <h1>Signups</h1>
           <div className="admin-whoami">{adminEmail}</div>
         </div>
+        <Link className="admin-back" href="/admin/reminders">🔔 Reminders</Link>
         <Link className="admin-back" href="/">← Game</Link>
       </header>
 

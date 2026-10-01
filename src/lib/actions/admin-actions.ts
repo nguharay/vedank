@@ -6,6 +6,8 @@ import { getAdminSession } from "@/lib/admin";
 import { COUNTRIES } from "@/lib/countries";
 import { rankFor } from "@/lib/game/topics";
 import { weekStartKey } from "@/lib/game/daily";
+import { saveReminder, deleteReminder, sendTest, sendNow, type ReminderInput } from "@/lib/game/reminders";
+import { eq } from "drizzle-orm";
 
 export type SignupRow = {
   id: string;
@@ -145,4 +147,33 @@ export async function listSignups(): Promise<
   };
 
   return { ok: true, rows, summary };
+}
+
+/* ---------- daily reminders (admins only) ---------- */
+
+export async function saveReminderAction(input: ReminderInput) {
+  const admin = await getAdminSession();
+  if (!admin) return { ok: false as const, error: "Not allowed." };
+  try { return { ok: true as const, row: await saveReminder(input, admin.email) }; }
+  catch (e) { return { ok: false as const, error: e instanceof Error ? e.message : "Could not save." }; }
+}
+export async function deleteReminderAction(id: number) {
+  const admin = await getAdminSession();
+  if (!admin) return { ok: false as const, error: "Not allowed." };
+  await deleteReminder(Number(id));
+  return { ok: true as const };
+}
+export async function sendTestReminderAction(id: number) {
+  const admin = await getAdminSession();
+  if (!admin) return { ok: false as const, error: "Not allowed." };
+  const [me] = await getDb().select({ id: users.id, lang: users.preferredLang }).from(users).where(eq(users.email, admin.email)).limit(1);
+  if (!me) return { ok: false as const, error: "Your admin account has no player row." };
+  const ok = await sendTest(Number(id), me.id, me.lang);
+  return ok ? { ok: true as const } : { ok: false as const, error: "Nothing was sent — is 🔔 Notifications on for your account?" };
+}
+export async function sendReminderNowAction(id: number) {
+  const admin = await getAdminSession();
+  if (!admin) return { ok: false as const, error: "Not allowed." };
+  const r = await sendNow(Number(id));
+  return { ok: true as const, ...r };
 }
