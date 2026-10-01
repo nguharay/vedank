@@ -3,6 +3,7 @@
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
 import { todaysGame, bonusStopGame, type HomeGameId } from "../homeGames";
 import { useTown, townRank, RANKS } from "../town";
+import { useDragon, stageOf, nextStage, moodOf, nameDragon, DAILY_GOAL } from "../dragon";
 import { Mandala, Mascot } from "../Mascot";
 import { monsterFor } from "../monsters";
 import type { ShareFocus } from "../ShareCard";
@@ -182,6 +183,8 @@ export function HomeView({
         </div>
         <span className="continue-card-arrow">▶</span>
       </div>
+
+      <DragonCard lang={lang} />
 
       <HomeTownCard lang={lang} onOpen={onOpenTown} />
 
@@ -489,5 +492,55 @@ function HomeTownCard({ lang, onOpen }: { lang: "en" | "ja"; onOpen: () => void 
       </span>
       <span className="town-card-coins mono">🪙 {town.coins}</span>
     </button>
+  );
+}
+
+/* The dragon pet: how fed it is today, its streak, and what it will grow
+   into. Tap the name to rename it. */
+function DragonCard({ lang }: { lang: "en" | "ja" }) {
+  const ja = lang === "ja";
+  const d = useDragon();
+  const stage = stageOf(d.bites);
+  const next = nextStage(d.bites);
+  const mood = moodOf(d);
+  const pct = Math.min(100, (d.fedToday / DAILY_GOAL) * 100);
+  const golden = stage.min >= 500;
+  const [naming, setNaming] = useState(false);
+  const [draft, setDraft] = useState("");
+  const name = d.name ?? (ja ? stage.nameJa : stage.name);
+  const line =
+    mood === "full" ? (ja ? "おなかいっぱい！また明日ね" : "Full and happy — see you tomorrow!")
+    : mood === "sad" ? (ja ? "昨日ごはんがなかった…今日はたべさせて！" : "Missed a meal yesterday… feed me today!")
+    : mood === "happy" ? (ja ? `あと${DAILY_GOAL - d.fedToday}問で満腹！` : `${DAILY_GOAL - d.fedToday} more to fill me up!`)
+    : (ja ? `おなかすいた！正解${DAILY_GOAL}問がごはん` : `Hungry! ${DAILY_GOAL} right answers is a meal`);
+  return (
+    <div className={`dragon-card mood-${mood}${golden ? " golden" : ""}`}>
+      <div className="dragon-pet" aria-hidden="true">
+        <span className="dragon-emoji">{stage.emoji}</span>
+        {mood === "full" && <span className="dragon-fx">✨</span>}
+        {mood === "sad" && <span className="dragon-fx tear">💧</span>}
+        {mood === "hungry" && <span className="dragon-fx">💭🍖</span>}
+      </div>
+      <div className="dragon-body">
+        <div className="dragon-top">
+          {naming ? (
+            <form className="dragon-name-form" onSubmit={(e) => { e.preventDefault(); nameDragon(draft); setNaming(false); }}>
+              <input autoFocus maxLength={14} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={ja ? "なまえ" : "Name"} aria-label={ja ? "ドラゴンのなまえ" : "Dragon's name"} />
+              <button type="submit" className="btn btn-primary">OK</button>
+            </form>
+          ) : (
+            <button className="dragon-name" onClick={() => { setDraft(d.name ?? ""); setNaming(true); }} title={ja ? "なまえをつける" : "Name your dragon"}>
+              {stage.emoji} {name} <span className="dragon-edit">✏️</span>
+            </button>
+          )}
+          {d.streak > 0 && <span className="dragon-streak">🔥 {d.streak}{ja ? "日" : "d"}</span>}
+        </div>
+        <div className="dragon-line">{line}</div>
+        <div className="dragon-bar"><i style={{ width: `${pct}%` }} /><b className="mono">{Math.min(d.fedToday, DAILY_GOAL)}/{DAILY_GOAL}</b></div>
+        <div className="dragon-sub mono">
+          {next ? (ja ? `${next.emoji} ${next.nameJa}まで あと${next.min - d.bites}口` : `${next.min - d.bites} bites to ${next.emoji} ${next.name}`) : (ja ? "✨ 最終形態！" : "✨ Final form!")}
+        </div>
+      </div>
+    </div>
   );
 }

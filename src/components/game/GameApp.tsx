@@ -89,8 +89,10 @@ const KonbiniCashier = dynamic(() => import("./views/TownGames").then((m) => m.K
 const NumberCrossword = dynamic(() => import("./views/TownGames").then((m) => m.NumberCrossword), { ssr: false });
 const RhythmTap = dynamic(() => import("./views/RhythmTap").then((m) => m.RhythmTap), { ssr: false });
 const TownView = dynamic(() => import("./views/TownView").then((m) => m.TownView), { ssr: false });
+const NinjaSlice = dynamic(() => import("./views/NinjaSlice").then((m) => m.NinjaSlice), { ssr: false });
 import { bossBonusGame, type HomeGameId } from "./homeGames";
 import { addTownCoins, useTown } from "./town";
+import { feedDragon, stageOf } from "./dragon";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
@@ -144,7 +146,7 @@ export function GameApp({
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
   const [view, setView] = useState<View>("home");
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "rhythm", "town"];
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "rhythm", "town", "ninja"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
@@ -439,8 +441,18 @@ export function GameApp({
 
   /* Fire-and-forget: a quest that fails to record must never break gameplay. */
   function fireQuest(event: QuestEvent, amount = 1) {
-    /* every right answer, in any game, also pays into Math Town — guests too */
-    if (event === "correct_answer") addTownCoins(amount);
+    /* every right answer, in any game, also pays into Math Town and feeds
+       the dragon — guests too */
+    if (event === "correct_answer") {
+      addTownCoins(amount);
+      const fed = feedDragon(amount);
+      if (fed.grew) {
+        spawnToast(ja ? `${fed.grew.emoji} ドラゴンが${fed.grew.nameJa}に成長した！` : `${fed.grew.emoji} Your dragon grew into a ${fed.grew.name.toLowerCase()}!`, null);
+        confetti.burstCenter(80, 0.4);
+      } else if (fed.fedNow) {
+        spawnToast(ja ? "🐉 今日のごはん、おなかいっぱい！" : "🐉 Dragon fed for today!", null);
+      }
+    }
     if (guest) return;
     reportQuestAction(event, amount)
       .then((r) => setQuests(r.quests))
@@ -836,7 +848,7 @@ export function GameApp({
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
   const GUEST_TOPICS = 2;
-  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "rhythm", "town"]);
+  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "rhythm", "town", "ninja"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   /* a room code from a shared ?rr= link, handed to the race view once */
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
@@ -1855,6 +1867,7 @@ export function GameApp({
         konbini: Number(localStorage.getItem("sutraSprint.konbiniBest") || 0),
         crossword: Number(localStorage.getItem("sutraSprint.crossBest") || 0),
         rhythm: Number(localStorage.getItem("sutraSprint.rhythmBest") || 0),
+        ninja: Number(localStorage.getItem("sutraSprint.ninjaBest") || 0),
         ...Object.fromEntries(QUICK_GAMES.map((g) => [g.id, Number(localStorage.getItem(`sutraSprint.quick.${g.id}`) || 0)])),
       });
     } catch {}
@@ -1879,7 +1892,7 @@ export function GameApp({
       runner: () => setView("runner"), race: () => setView("race"),
       sushi: () => setView("sushi"), castle: () => setView("castle"),
       konbini: () => setView("konbini"), crossword: () => setView("crossword"),
-      rhythm: () => setView("rhythm"),
+      rhythm: () => setView("rhythm"), ninja: () => setView("ninja"),
       pop: startPop, ttt: openTtt,
     };
     /* from the town, "back" returns to the town (gameFromTownRef); otherwise Home */
@@ -4033,6 +4046,15 @@ export function GameApp({
               </span>
               <span className="town-card-coins mono">🪙 {townState.coins}</span>
             </button>
+            <button className="ttt-card ninja-feature" onClick={shelf(() => setView("ninja"), "ninja")}>
+              <span className="feature-art ninja" aria-hidden="true"><b className="fa-fruit">🍉</b><b className="fa-slash">／</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🥷 忍者スライス" : "🥷 Ninja Slice"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "答えのフルーツをスワイプで切れ！ばくだん注意。" : "Swipe to slice the fruit with the answer. Mind the bombs!"}</span>
+                {(gameBests.ninja ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.ninja}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
             <button className="ttt-card rhythm-feature" onClick={shelf(() => setView("rhythm"), "rhythm")}>
               <span className="feature-art rhythm" aria-hidden="true"><b className="fa-note1">🎵</b><b className="fa-note2">🎶</b></span>
               <span className="ttt-card-body">
@@ -4127,6 +4149,12 @@ export function GameApp({
               onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}
+        {view === "ninja" && (
+          <section className="view active">
+            <NinjaSlice lang={lang} sound={sound} celebrate={() => confetti.burstCenter(80, 0.35)}
+              onCorrect={(n) => fireQuest("correct_answer", n)} />
+          </section>
+        )}
         {view === "rhythm" && (
           <section className="view active">
             <RhythmTap lang={lang} sound={sound} celebrate={() => confetti.burstCenter(80, 0.35)}
@@ -4135,7 +4163,7 @@ export function GameApp({
         )}
         {view === "town" && (
           <section className="view active">
-            <TownView lang={lang} sound={sound} celebrate={() => confetti.burstCenter(90, 0.35)}
+            <TownView lang={lang} sound={sound} guest={guest} celebrate={() => confetti.burstCenter(90, 0.35)}
               onPlay={(gid) => { gameFromTownRef.current = true; playGame(gid as HomeGameId); }} />
           </section>
         )}
@@ -4850,6 +4878,7 @@ export function GameApp({
         >
           {buddy.say && (
             <div className={`buddy-bubble${quoteBy ? " quoting" : ""}`}>
+              <button className="buddy-close" aria-label={ja ? "閉じる" : "Close"} onClick={() => { buddy.quiet(); setQuoteBy(null); }}>✕</button>
               <button className="buddy-bubble-text" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
                 {buddy.say.text}
                 {quoteBy && <span className="buddy-cite">— {quoteBy}</span>}

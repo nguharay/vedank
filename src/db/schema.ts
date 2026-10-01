@@ -347,3 +347,12 @@ export const raceRooms = pgTable("race_rooms", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const towns = pgTable("towns", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  state: jsonb("state").notNull(),
+  gifts: integer("gifts").notNull().default(0),
+  visits: integer("visits").notNull().default(0),
+  stickers: jsonb("stickers").notNull().default([]),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
