@@ -53,7 +53,7 @@ import {
   competitionsAction, startCompetitionAction, submitCompetitionAction, competitionBoardAction,
   createFriendCompetitionAction, endCompetitionAction, saveTopicOverrideAction,
   pushStatusAction, savePushSubscriptionAction, removePushSubscriptionAction,
-  saveGuestPushAction, touchGuestPushAction, removeGuestPushAction,
+  saveGuestPushAction, touchGuestPushAction, removeGuestPushAction, savePreferredLangAction,
   tttCreateAction, tttJoinAction, tttRoomAction, tttMoveAction, tttRematchAction, tttChallengeFriendAction,
 } from "@/lib/actions/game-actions";
 import type { CompetitionSummary, CompQuestion, CompRow } from "@/lib/game/competition";
@@ -2687,6 +2687,20 @@ export function GameApp({
       setPushBusy(false);
     }
   }
+
+  /* Notifications are written in the player's language: keep the server's
+     copy in step when they switch (signed-in → their account; guest → their
+     browser's subscription). The first render is the language it already has. */
+  const langSynced = useRef<string | null>(null);
+  useEffect(() => {
+    if (langSynced.current === null) { langSynced.current = lang; return; }
+    if (langSynced.current === lang) return;
+    langSynced.current = lang;
+    if (!guest) { void savePreferredLangAction(lang).catch(() => {}); return; }
+    if (!("serviceWorker" in navigator)) return;
+    void navigator.serviceWorker.ready.then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => { if (sub) void touchGuestPushAction(sub.endpoint, lang); }).catch(() => {});
+  }, [lang, guest]);
 
   /* ---------- asking for notifications when the app opens ----------
      The browser's permission dialog can only follow a tap, so the dragon asks
