@@ -3,7 +3,7 @@
    Node-only code from there breaks the build. Reaching this module from the
    browser now fails loudly instead. */
 import "server-only";
-import { eq, inArray, lt, sql as raw } from "drizzle-orm";
+import { eq, inArray, lt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { pushSubscriptions, guestPush } from "@/db/schema";
 import { deliver } from "./webpush";
@@ -104,14 +104,11 @@ export function okEndpoint(e: string): boolean {
     return u.protocol === "https:" && !u.port && PUSH_HOSTS.some((h) => h.test(u.hostname));
   } catch { return false; }
 }
-/* Stops the table being filled with junk by the open guest endpoint. */
-const MAX_GUESTS = 50_000;
+
 
 export async function saveGuestSubscription(sub: PushSub, lang: string, day: string): Promise<{ ok: boolean }> {
   if (!sub?.endpoint || !okEndpoint(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) return { ok: false };
   const l = lang === "en" ? "en" : "ja";
-  const [{ n }] = await getDb().select({ n: raw<number>`count(*)` }).from(guestPush);
-  if (Number(n) >= MAX_GUESTS) return { ok: false };
   await getDb().insert(guestPush)
     .values({ endpoint: sub.endpoint, p256dh: sub.keys.p256dh.slice(0, 200), auth: sub.keys.auth.slice(0, 200), lang: l, lastActiveDay: day })
     .onConflictDoUpdate({ target: guestPush.endpoint, set: { p256dh: sub.keys.p256dh.slice(0, 200), auth: sub.keys.auth.slice(0, 200), lang: l, lastActiveDay: day } });
