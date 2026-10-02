@@ -3,7 +3,7 @@
    Node-only code from there breaks the build. Reaching this module from the
    browser now fails loudly instead. */
 import "server-only";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, lt, sql as raw } from "drizzle-orm";
 import { getDb } from "@/db";
 import { pushSubscriptions, guestPush } from "@/db/schema";
 import { deliver } from "./webpush";
@@ -28,7 +28,7 @@ export function pushConfigured(): boolean {
 export type PushSub = { endpoint: string; keys: { p256dh: string; auth: string } };
 
 export async function saveSubscription(userId: string, sub: PushSub): Promise<{ ok: boolean }> {
-  if (!sub?.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) return { ok: false };
+  if (!sub?.endpoint || !okEndpoint(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) return { ok: false };
   const db = getDb();
   /* The endpoint is the key, so re-subscribing the same browser moves it to
      this account rather than leaving a row pointed at the old one. */
@@ -89,11 +89,29 @@ export async function sendTo(userId: string, note: Notification): Promise<void> 
 /* ---------- guests ----------
    A guest browser's subscription, stored without a user. The endpoint must
    be an https push-service URL; anything else is refused. */
-const okEndpoint = (e: string) => /^https:\/\/[a-z0-9.-]+\//i.test(e) && e.length < 1000;
+/* Only the real browser push services. A subscription is just a URL the server
+   will POST to, so accepting any https address would let anyone point our
+   server at a site of their choosing. These are the hosts Chrome/Edge/Opera
+   (FCM), Firefox, Safari/iOS and old Edge (WNS) actually use. */
+const PUSH_HOSTS = [
+  /(^|\.)fcm\.googleapis\.com$/, /(^|\.)push\.services\.mozilla\.com$/,
+  /(^|\.)web\.push\.apple\.com$/, /(^|\.)push\.apple\.com$/, /(^|\.)notify\.windows\.com$/,
+];
+export function okEndpoint(e: string): boolean {
+  if (typeof e !== "string" || e.length > 1000) return false;
+  try {
+    const u = new URL(e);
+    return u.protocol === "https:" && !u.port && PUSH_HOSTS.some((h) => h.test(u.hostname));
+  } catch { return false; }
+}
+/* Stops the table being filled with junk by the open guest endpoint. */
+const MAX_GUESTS = 50_000;
 
 export async function saveGuestSubscription(sub: PushSub, lang: string, day: string): Promise<{ ok: boolean }> {
   if (!sub?.endpoint || !okEndpoint(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) return { ok: false };
   const l = lang === "en" ? "en" : "ja";
+  const [{ n }] = await getDb().select({ n: raw<number>`count(*)` }).from(guestPush);
+  if (Number(n) >= MAX_GUESTS) return { ok: false };
   await getDb().insert(guestPush)
     .values({ endpoint: sub.endpoint, p256dh: sub.keys.p256dh.slice(0, 200), auth: sub.keys.auth.slice(0, 200), lang: l, lastActiveDay: day })
     .onConflictDoUpdate({ target: guestPush.endpoint, set: { p256dh: sub.keys.p256dh.slice(0, 200), auth: sub.keys.auth.slice(0, 200), lang: l, lastActiveDay: day } });
@@ -115,4 +133,12 @@ export async function sendToGuest(row: { endpoint: string; p256dh: string; auth:
     if (status === 404 || status === 410) { await removeGuestSubscription(row.endpoint); return false; }
     return status >= 200 && status < 300;
   } catch { return false; }
+}
+
+/* Guests who have not opened the game in 60 days stop receiving anything and
+   are removed — a reminder to someone who has left is just spam. */
+export async function pruneStaleGuests(day: string): Promise<number> {
+  const cutoff = new Date(Date.parse(day) - 60 * 86400_000).toISOString().slice(0, 10);
+  const gone = await getDb().delete(guestPush).where(lt(guestPush.lastActiveDay, cutoff)).returning({ e: guestPush.endpoint });
+  return gone.length;
 }

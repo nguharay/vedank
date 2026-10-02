@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, eq, inArray, sql as raw } from "drizzle-orm";
 import { getDb } from "@/db";
 import { reminders, reminderRuns, users, pushSubscriptions, guestPush } from "@/db/schema";
-import { sendTo, sendToGuest } from "./push";
+import { sendTo, sendToGuest, pruneStaleGuests } from "./push";
 
 /* ---------- daily reminder notifications ----------
    Admins (the marketing team) write the messages in /admin/reminders; two
@@ -133,6 +133,7 @@ async function sendReminderTo(r: Reminder, targets: Target[]): Promise<number> {
 export async function runSlot(slot: Slot): Promise<{ day: string; picked: Reminder | null; targets: number; sent: number; skipped?: string }> {
   const day = jstDay();
   const db = getDb();
+  try { await pruneStaleGuests(day); } catch {}
   const claimed = await db.insert(reminderRuns).values({ slot, day }).onConflictDoNothing().returning({ slot: reminderRuns.slot });
   if (!claimed.length) return { day, picked: null, targets: 0, sent: 0, skipped: "already ran today" };
   const picked = await pickForDay(slot, day);
