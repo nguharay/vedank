@@ -94,6 +94,7 @@ const NinjaSlice = dynamic(() => import("./views/NinjaSlice").then((m) => m.Ninj
 import { bossBonusGame, type HomeGameId } from "./homeGames";
 import { addTownCoins, useTown } from "./town";
 import { feedDragon, stageOf } from "./dragon";
+import { StoryIntro } from "./StoryIntro";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
@@ -2741,11 +2742,26 @@ export function GameApp({
       localStorage.setItem("sutraSprint.pushAsked", JSON.stringify({ n: asked.n + 1, at: Date.now() }));
     } catch {}
   }
+  /* The picture-story plays the first time the game opens; the menu replays it.
+     The notification ask waits until it is closed. */
+  const [storyOpen, setStoryOpen] = useState(false);
+  /* eslint-disable react-hooks/set-state-in-effect -- first-open check needs localStorage, so it runs after mount */
+  useEffect(() => {
+    let seen = false;
+    try { seen = !!localStorage.getItem("sutraSprint.storySeen"); } catch {}
+    if (!seen) setStoryOpen(true);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
+  function closeStory() {
+    setStoryOpen(false);
+    try { localStorage.setItem("sutraSprint.storySeen", "1"); } catch {}
+  }
+
   /* A moment after opening, once the push status is known (pushKey is read
      asynchronously), so the sheet does not flash on top of the first paint. */
   const askedThisOpen = useRef(false);
   useEffect(() => {
-    if (askedThisOpen.current) return;
+    if (askedThisOpen.current || storyOpen) return;
     if (!isIosBrowser() && !pushKey) return;        /* still loading the status */
     askedThisOpen.current = true;
     const id = setTimeout(() => {
@@ -2754,7 +2770,7 @@ export function GameApp({
     }, 1500);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guest, pushKey]);
+  }, [guest, pushKey, storyOpen]);
   /* dev only: ?askpush=push|ios shows the sheet for a look */
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -2923,8 +2939,10 @@ export function GameApp({
         )}
         <button
           className="header-home"
-          onClick={goHome}
-          aria-label={ja ? "ホームへ" : "Go to home"}
+          /* the logo: on Home it reloads the page (fresh data, back to the Learn
+             tab); anywhere else it goes to Home */
+          onClick={() => { if (view === "home") window.location.reload(); else goHome(); }}
+          aria-label={view === "home" ? (ja ? "ページを更新" : "Refresh") : (ja ? "ホームへ" : "Go to home")}
         >
           <img src="/brand/vedank-mark.png" alt="" className="header-mark" />
         </button>
@@ -2988,6 +3006,10 @@ export function GameApp({
               <span className="menu-row-val">
                 {enrolled.length ? enrolled[0].name : ja ? "未参加" : "Not joined"}
               </span>
+            </button>
+            <button className="menu-row" onClick={() => { setMenuOpen(false); setStoryOpen(true); }}>
+              <span>📖 {lang === "ja" ? "ものがたりを見る" : "Watch the story"}</span>
+              <span className="menu-row-val">▶</span>
             </button>
             <button className="menu-row" onClick={() => { setMenuOpen(false); setAchievementsOpen(true); }}>
               <span>🏅 {lang === "ja" ? "実績バッジ" : "Badges"}</span>
@@ -3250,6 +3272,8 @@ export function GameApp({
           </div>
         </>
       )}
+
+      {storyOpen && <StoryIntro lang={lang} onDone={closeStory} />}
 
       {pushAsk && (
         <>
@@ -3869,6 +3893,7 @@ export function GameApp({
             onOpenClasses={classesEnabled && lang === "ja" ? () => setClassesFrom("home") : undefined}
             onPlayGame={playGame}
             onOpenTown={() => openTown(true)}
+            onOpenGames={openGames}
             lang={lang}
             t={t}
           />
@@ -4222,6 +4247,24 @@ export function GameApp({
                 ? "計算を使ったミニゲーム。アカウントがなくても、オフラインでも遊べます。"
                 : "Quick games built on the same maths. No account needed, and they work offline."}
             </p>
+            <button className="ttt-card ninja-feature" onClick={shelf(() => setView("ninja"), "ninja")}>
+              <span className="feature-art ninja" aria-hidden="true"><b className="fa-fruit">🍉</b><b className="fa-slash">／</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🥷 忍者スライス" : "🥷 Ninja Slice"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "答えのフルーツをスワイプで切れ！ばくだん注意。" : "Swipe to slice the fruit with the answer. Mind the bombs!"}</span>
+                {(gameBests.ninja ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.ninja}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
+            <button className="ttt-card run-feature" onClick={shelf(() => setView("runner"), "runner")}>
+              <span className="feature-art runner" aria-hidden="true"><b className="fa-boy"><Mascot animated={false} /></b><b className="fa-rock">🪨</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🏃 計算ランナー" : "🏃 Math Runner"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "答えをタップしてジャンプ！どこまで走れるかな？" : "Answer to jump the rocks and logs. How far can you run?"}</span>
+                {(gameBests.runner ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.runner}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
             {/* One board a day, the same for everyone — the bit worth telling
                 a friend about. */}
             {/* Kept at the top: the one game that is as good with a friend as alone. */}
@@ -4245,15 +4288,6 @@ export function GameApp({
                 <span className="town-card-sub">{lang === "ja" ? "ゲームのコインで自分のまちをつくろう" : "Build your own town with coins from every game"}</span>
               </span>
               <span className="town-card-coins mono">🪙 {townState.coins}</span>
-            </button>
-            <button className="ttt-card ninja-feature" onClick={shelf(() => setView("ninja"), "ninja")}>
-              <span className="feature-art ninja" aria-hidden="true"><b className="fa-fruit">🍉</b><b className="fa-slash">／</b></span>
-              <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🥷 忍者スライス" : "🥷 Ninja Slice"}</span>
-                <span className="ttt-card-sub">{lang === "ja" ? "答えのフルーツをスワイプで切れ！ばくだん注意。" : "Swipe to slice the fruit with the answer. Mind the bombs!"}</span>
-                {(gameBests.ninja ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.ninja}</span>}
-              </span>
-              <span className="game-card-go">›</span>
             </button>
             <button className="ttt-card rhythm-feature" onClick={shelf(() => setView("rhythm"), "rhythm")}>
               <span className="feature-art rhythm" aria-hidden="true"><b className="fa-note1">🎵</b><b className="fa-note2">🎶</b></span>
@@ -4279,15 +4313,6 @@ export function GameApp({
                 <span className="ttt-card-name">{lang === "ja" ? "🍣 おすし屋さん" : "🍣 Sushi Shop"}</span>
                 <span className="ttt-card-sub">{lang === "ja" ? "回転寿司のお会計！お皿の合計を計算しよう。" : "Run a conveyor-belt sushi bar. Total the plates fast!"}</span>
                 {(gameBests.sushi ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "売上ベスト" : "Best day"} ¥{gameBests.sushi.toLocaleString("en-US")}</span>}
-              </span>
-              <span className="game-card-go">›</span>
-            </button>
-            <button className="ttt-card run-feature" onClick={shelf(() => setView("runner"), "runner")}>
-              <span className="feature-art runner" aria-hidden="true"><b className="fa-boy"><Mascot animated={false} /></b><b className="fa-rock">🪨</b></span>
-              <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🏃 計算ランナー" : "🏃 Math Runner"}</span>
-                <span className="ttt-card-sub">{lang === "ja" ? "答えをタップしてジャンプ！どこまで走れるかな？" : "Answer to jump the rocks and logs. How far can you run?"}</span>
-                {(gameBests.runner ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.runner}</span>}
               </span>
               <span className="game-card-go">›</span>
             </button>

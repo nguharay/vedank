@@ -20,6 +20,8 @@ type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect
    pointer trail; a fruit is sliced when the finger passes within its radius
    while moving fast enough to count as a swipe rather than a rest. */
 const NINJA_KEY = "sutraSprint.ninjaBest";
+const DEMO_KEY = "sutraSprint.ninjaDemo";
+const DEMO_MS = 4200;
 const FRUITS = ["🍉", "🍊", "🍎", "🍐", "🍑", "🥝", "🍋", "🍇"];
 const GRAVITY = 620;              /* px/s² — gentle, so a sum can be read and found in the air */
 const READ_MS = 900;              /* the sum is shown this long before its fruit is tossed */
@@ -40,7 +42,8 @@ const pickFruit = () => FRUITS[Math.floor(Math.random() * FRUITS.length)];
 
 export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
   const ja = lang === "ja";
-  const [phase, setPhase] = useState<"ready" | "play" | "over">("ready");
+  const [phase, setPhase] = useState<"ready" | "demo" | "demoDone" | "play" | "over">("ready");
+  const demoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [fruits, setFruits] = useState<Fruit[]>([]);
   const [wave, setWave] = useState<Wave | null>(null);
   const [score, setScore] = useState(0);
@@ -63,7 +66,7 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
   });
 
   function stopAll() { cancelAnimationFrame(s.current.raf); }
-  useEffect(() => () => stopAll(), []);
+  useEffect(() => () => { stopAll(); if (demoTimer.current) clearTimeout(demoTimer.current); }, []);
 
   function size() {
     const el = arenaRef.current;
@@ -216,7 +219,29 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
     arenaRef.current?.releasePointerCapture?.(e.pointerId);
   }
 
+  /* The first few times, Begin plays a 4-second demo before the real run:
+     fruit flies up, a finger swipes through the right one, a bomb is left
+     alone. Skippable. After three demos it goes straight to the game. */
+  function begin() {
+    let seen = 0;
+    try { seen = Number(localStorage.getItem(DEMO_KEY) || 0); } catch {}
+    if (seen >= 3) { start(); return; }
+    try { localStorage.setItem(DEMO_KEY, String(seen + 1)); } catch {}
+    playDemo();
+  }
+  /* when the demo ends, the player chooses to start (or watch it again) */
+  function playDemo() {
+    if (demoTimer.current) clearTimeout(demoTimer.current);
+    setPhase("demo");
+    demoTimer.current = setTimeout(() => setPhase("demoDone"), DEMO_MS);
+  }
+  function skipDemo() {
+    if (demoTimer.current) clearTimeout(demoTimer.current);
+    start();
+  }
+
   function start() {
+    if (demoTimer.current) { clearTimeout(demoTimer.current); demoTimer.current = null; }
     stopAll();
     const st = s.current;
     Object.assign(st, { fruits: [], nextId: 1, waveNo: 0, wave: null, nextToss: 0, score: 0, combo: 0, lives: LIVES, over: false, trail: [], pointerDown: false, queued: [], launchAt: 0 });
@@ -263,6 +288,32 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
         {tierBanner && <div key={tierBanner} className="sushi-levelup"><b>{ja ? `レベル ${tierBanner}！` : `Level ${tierBanner}!`}</b><span>{ja ? "計算がむずかしくなる！" : "Harder sums!"}</span></div>}
         <span className="ninja-sensei" aria-hidden="true"><Mascot animated={phase === "play"} mood="excited" /></span>
 
+        {phase === "demo" && (
+          <div className="ninja-demo" aria-live="polite">
+            <div className="ninja-q mono demo">5 − 2 = ?</div>
+            <div className="demo-fruit f1"><span className="ninja-emoji">🍊</span><span className="ninja-num mono">7</span></div>
+            <div className="demo-fruit f2"><span className="ninja-emoji demo-cut">🍉</span><span className="ninja-num mono demo-cut">3</span></div>
+            <div className="demo-fruit f3"><span className="ninja-emoji">💣</span></div>
+            <div className="demo-fruit f4"><span className="ninja-emoji">🍎</span><span className="ninja-num mono">9</span></div>
+            <span className="demo-trail" aria-hidden="true" />
+            <span className="demo-finger" aria-hidden="true">👆</span>
+            <span className="demo-pop">+10</span>
+            <div className="demo-caption">
+              <span className="c1">{ja ? "👀 見ててね" : "👀 Watch"}</span>
+              <span className="c2">{ja ? "✋ 答えをスワイプ！" : "✋ Swipe the answer!"}</span>
+              <span className="c3">{ja ? "💣 ばくだんは さわらない" : "💣 Never touch a bomb"}</span>
+            </div>
+            <button className="demo-skip" onClick={skipDemo}>{ja ? "スキップ ▶" : "Skip ▶"}</button>
+          </div>
+        )}
+        {phase === "demoDone" && (
+          <div className="rg-card">
+            <div className="rg-card-title">{ja ? "🥷 こんどは きみの番！" : "🥷 Your turn!"}</div>
+            <p className="rg-card-sub">{ja ? "答えのフルーツだけをスワイプ。ばくだんはさわらないでね。" : "Swipe only the fruit with the answer. Keep away from bombs."}</p>
+            <button className="btn btn-primary" onClick={start}>{ja ? "ゲームをはじめる ▶" : "Start the real game ▶"}</button>
+            <button className="btn btn-ghost" style={{ marginTop: 6 }} onClick={playDemo}>{ja ? "↺ もう一度見る" : "↺ Watch again"}</button>
+          </div>
+        )}
         {phase === "ready" && (
           <div className="rg-card">
             <div className="rg-card-title">{ja ? "🥷 忍者スライス" : "🥷 Ninja Slice"}</div>
@@ -270,7 +321,7 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
               {ja ? "数字のついたフルーツが飛んでくる！答えのフルーツを指でスパッと切ろう。ばくだんはさわらないで！"
                   : "Fruit flies up with numbers on it. Swipe through the fruit that equals the sum — and don't touch the bombs!"}
             </p>
-            <button className="btn btn-primary" onClick={start}>{ja ? "いざ、参る！" : "Begin!"}</button>
+            <button className="btn btn-primary" onClick={begin}>{ja ? "いざ、参る！" : "Begin!"}</button>
           </div>
         )}
         {phase === "over" && (
