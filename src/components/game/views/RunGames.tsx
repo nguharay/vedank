@@ -56,14 +56,10 @@ function Answers({ round, onPick, picked, disabled }: {
    written per frame — nothing that triggers layout. */
 const OBSTACLES = ["🪨", "🪵", "🌵", "🦔", "🧱"];
 const RUNNER_KEY = "sutraSprint.runnerBest";
-const RUNNER_DEMO_KEY = "sutraSprint.runnerDemo";
-const RUNNER_DEMO_MS = 4200;
 /* Kept outside the components: they are only ever called from event handlers
    and animation frames, never during render. */
 const clock = () => performance.now();
 const randomObstacle = () => OBSTACLES[Math.floor(Math.random() * OBSTACLES.length)];
-const chance = (p: number) => Math.random() < p;
-const between = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 /* one half of the scrolling tree line; drawn twice so the loop is seamless */
 const TREES = ["🌳", "🌲", "🌳", "🌷", "🌲", "🌳"];
 /* background tile widths in px — must match the CSS background-size */
@@ -74,11 +70,8 @@ type RunState = "approach" | "cleared" | "wrong" | "crashed";
 
 export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
   const ja = lang === "ja";
-  const [phase, setPhase] = useState<"ready" | "demo" | "demoDone" | "run" | "over">("ready");
+  const [phase, setPhase] = useState<"ready" | "run" | "over">("ready");
   const [round, setRound] = useState<ChoiceRound | null>(null);
-  /* false while a "late" sum is still hidden — see spawn() */
-  const [revealed, setRevealed] = useState(true);
-  const demoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [obs, setObs] = useState(OBSTACLES[0]);
   const [picked, setPicked] = useState<number | null>(null);
   const [anim, setAnim] = useState<"run" | "jump" | "trip">("run");
@@ -97,7 +90,7 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
   const groundRef = useRef<HTMLDivElement | null>(null);
   const s = useRef({
     raf: 0, last: 0, world: 0, v: 0, target: 0, base: 0, obsX: 0,
-    state: "approach" as RunState, jumped: false, over: false, revealGap: Infinity, revealed: true,
+    state: "approach" as RunState, jumped: false, over: false,
     streak: 0, lives: 3, score: 0, timer: 0 as unknown as ReturnType<typeof setTimeout>,
   });
 
@@ -105,7 +98,7 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
     cancelAnimationFrame(s.current.raf);
     clearTimeout(s.current.timer);
   }
-  useEffect(() => () => { stopAll(); if (demoTimer.current) clearTimeout(demoTimer.current); }, []);
+  useEffect(() => () => stopAll(), []);
 
   const width = () => sceneRef.current?.clientWidth ?? 360;
   const boyX = () => width() * 0.14 + 32;
@@ -119,14 +112,6 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
     /* the answer window is the time the obstacle takes to reach him */
     st.base = (st.obsX - boyX()) / (runnerWindowMs(st.streak) / 1000);
     st.target = st.base;
-    /* Not every sum is shown the moment the obstacle appears: once the player
-       has a streak going, about 2 in 5 stay hidden ("?") until the obstacle is
-       well on its way, leaving a shorter — but always fair, 1.6 s or more —
-       window to answer. Keeps a fast player on their toes. */
-    const win = runnerWindowMs(st.streak) / 1000;
-    st.revealGap = st.streak >= 2 && win > 2.4 && chance(0.4) ? st.base * Math.max(1.6, win * between(0.38, 0.55)) : Infinity;
-    st.revealed = st.revealGap === Infinity;
-    setRevealed(st.revealed);
     setRound(buildChoiceRound(st.streak));
     setObs(randomObstacle());
     setPicked(null); setAnim("run");
@@ -152,7 +137,6 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
     tx(obsRef.current, st.obsX - OBS_HALF);
 
     const gap = st.obsX - boyX();
-    if (!st.revealed && gap <= st.revealGap) { st.revealed = true; setRevealed(true); sound.click(); }
     if (st.state === "cleared" && !st.jumped && gap <= st.v * 0.3) {
       /* the jump peaks ~0.3 s in — start it so the peak is over the obstacle */
       st.jumped = true; setAnim("jump"); sound.hit();
@@ -178,7 +162,7 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
 
   function pick(v: number) {
     const st = s.current;
-    if (!round || st.state !== "approach" || phase !== "run" || !st.revealed) return;
+    if (!round || st.state !== "approach" || phase !== "run") return;
     setPicked(v);
     if (v !== round.answer) {
       /* the obstacle rushes in and he trips on it */
@@ -196,25 +180,8 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
     if (st.streak % 10 === 0) celebrate();
   }
 
-  /* The first three times, Start plays a 4-second demo (a sum, a finger
-     tapping the answer, the boy jumping the rock), then asks the player to
-     start the real run or watch again. */
-  function begin() {
-    let seen = 0;
-    try { seen = Number(localStorage.getItem(RUNNER_DEMO_KEY) || 0); } catch {}
-    if (seen >= 3) { start(); return; }
-    try { localStorage.setItem(RUNNER_DEMO_KEY, String(seen + 1)); } catch {}
-    playDemo();
-  }
-  function playDemo() {
-    if (demoTimer.current) clearTimeout(demoTimer.current);
-    setPhase("demo");
-    demoTimer.current = setTimeout(() => setPhase("demoDone"), RUNNER_DEMO_MS);
-  }
-
   function start() {
     stopAll();
-    if (demoTimer.current) { clearTimeout(demoTimer.current); demoTimer.current = null; }
     const st = s.current;
     st.streak = 0; st.lives = 3; st.score = 0; st.over = false;
     setStreak(0); setLives(3); setScore(0); setNewBest(false);
@@ -244,7 +211,7 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
         <div className="match-stat"><span className="match-stat-k">{ja ? "ライフ" : "Lives"}</span><span className="match-stat-v">{"❤️".repeat(Math.max(0, lives))}{"🖤".repeat(3 - Math.max(0, lives))}</span></div>
       </div>
 
-      <div className={`run-scene${phase === "demo" ? " demo" : ""}`} ref={sceneRef}>
+      <div className="run-scene" ref={sceneRef}>
         <div className="run-sun" aria-hidden="true" />
         <div className="run-clouds" ref={cloudsRef} aria-hidden="true" />
         <div className="run-hills" ref={hillsRef} aria-hidden="true" />
@@ -252,42 +219,19 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
           {[0, 1].map((h) => <span key={h}>{TREES.map((t, i) => <b key={i}>{t}</b>)}</span>)}
         </div>
         <div className="run-ground" ref={groundRef} aria-hidden="true" />
-        <div className={`run-boy ${phase === "run" ? anim : phase === "demo" ? "demo-run" : "idle"}`} aria-hidden="true">
+        <div className={`run-boy ${phase === "run" ? anim : "idle"}`} aria-hidden="true">
           <Mascot mood={anim === "trip" ? "sad" : anim === "jump" ? "excited" : "happy"} animated={false} />
         </div>
         {phase === "run" && <div className="run-obs" ref={obsRef} aria-hidden="true">{obs}</div>}
         {pop && phase === "run" && <div key={pop.k} className="run-pop mono">{pop.text}</div>}
         {phase === "run" && round && (
-          revealed
-            ? <div key={round.prompt} className="run-q mono reveal" aria-live="polite">{round.prompt} = ?</div>
-            : <div className="run-q mono hidden-q" aria-label={ja ? "問題はもうすぐ" : "Sum coming"}>？ ？ ？</div>
-        )}
-        {phase === "demo" && (
-          <div className="runner-demo">
-            <div className="run-q mono">4 + 3 = ?</div>
-            <span className="demo-rock" aria-hidden="true">🪨</span>
-            <span className="demo-run-pop mono">+12</span>
-            <div className="demo-caption">
-              <span className="c1">{ja ? "👀 見ててね" : "👀 Watch"}</span>
-              <span className="c2">{ja ? "👆 答えをタップ！" : "👆 Tap the answer!"}</span>
-              <span className="c3">{ja ? "🦘 ジャンプでよける！" : "🦘 He jumps it!"}</span>
-            </div>
-            <button className="demo-skip" onClick={start}>{ja ? "スキップ ▶" : "Skip ▶"}</button>
-          </div>
-        )}
-        {phase === "demoDone" && (
-          <div className="rg-card">
-            <div className="rg-card-title">{ja ? "🏃 こんどは きみの番！" : "🏃 Your turn!"}</div>
-            <p className="rg-card-sub">{ja ? "じゃまものが来る前に、正しい答えをタップ。問題がおそく出ることもあるよ！" : "Tap the right answer before the obstacle reaches you. Sometimes the sum shows up late!"}</p>
-            <button className="btn btn-primary" onClick={start}>{ja ? "ゲームをはじめる ▶" : "Start the real game ▶"}</button>
-            <button className="btn btn-ghost" style={{ marginTop: 6 }} onClick={playDemo}>{ja ? "↺ もう一度見る" : "↺ Watch again"}</button>
-          </div>
+          <div className="run-q mono" aria-live="polite">{round.prompt} = ?</div>
         )}
         {phase === "ready" && (
           <div className="rg-card">
             <div className="rg-card-title">{ja ? "🏃 計算ランナー" : "🏃 Math Runner"}</div>
             <p className="rg-card-sub">{ja ? "じゃまものが来る前に答えをタップしてジャンプ！まちがえるところぶよ。" : "Tap the answer before the obstacle reaches you and you jump it. Miss and you trip!"}</p>
-            <button className="btn btn-primary" onClick={begin}>{ja ? "スタート！" : "Start!"}</button>
+            <button className="btn btn-primary" onClick={start}>{ja ? "スタート！" : "Start!"}</button>
           </div>
         )}
         {phase === "over" && (
@@ -300,17 +244,7 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
       </div>
 
       {phase === "run" && round && (
-        revealed
-          ? <Answers round={round} onPick={pick} picked={picked} disabled={anim === "trip" || picked !== null} />
-          : <div className="rg-answers" aria-hidden="true">{[0, 1, 2].map((i) => <button key={i} className="rg-ans mono waiting" disabled>？</button>)}</div>
-      )}
-      {phase === "demo" && (
-        <div className="rg-answers runner-demo-answers" aria-hidden="true">
-          <button className="rg-ans mono" disabled>6</button>
-          <button className="rg-ans mono demo-right" disabled>7</button>
-          <button className="rg-ans mono" disabled>8</button>
-          <span className="demo-tap">👆</span>
-        </div>
+        <Answers round={round} onPick={pick} picked={picked} disabled={anim === "trip" || picked !== null} />
       )}
       {phase === "run" && <p className="match-hint">{ja ? "正しい答えでジャンプ！" : "Right answer = jump!"}</p>}
     </div>
