@@ -2788,8 +2788,8 @@ export function GameApp({
     setCanInstall(false);
   }
 
-  /* ---------- "install the app" banner on Home (signed-in only) ----------
-     Shown at the top of Home after login whenever the game is still running in
+  /* ---------- "install the app" banner on Home ----------
+     Shown at the top of Home, for guests and signed-in players alike, whenever the game is still running in
      a browser tab: on Android/desktop Chrome a button runs the real install
      prompt; on iPhone it opens the Add-to-Home-Screen steps (Safari has no
      install prompt). Dismissing hides it for 5 days; an installed app never
@@ -2797,13 +2797,12 @@ export function GameApp({
   const [installBanner, setInstallBanner] = useState(false);
   /* eslint-disable react-hooks/set-state-in-effect -- needs window/localStorage, so it can only be decided after mount */
   useEffect(() => {
-    if (guest) return;
     const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
     if (standalone) { setInstallBanner(false); return; }
     let until = 0;
     try { until = Number(localStorage.getItem("sutraSprint.installHideUntil") || 0); } catch {}
     setInstallBanner(Date.now() > until && (canInstall || isIosBrowser()));
-  }, [guest, canInstall]);
+  }, [canInstall]);
   /* eslint-enable react-hooks/set-state-in-effect */
   function hideInstallBanner() {
     setInstallBanner(false);
@@ -3810,7 +3809,7 @@ export function GameApp({
             </a>
           </div>
         )}
-        {!guest && view === "home" && installBanner && (
+        {view === "home" && installBanner && (
           <div className="install-banner" role="region" aria-label={lang === "ja" ? "アプリをインストール" : "Install the app"}>
             <span className="install-banner-ico" aria-hidden="true">📲</span>
             <div className="install-banner-body">
