@@ -3045,12 +3045,9 @@ export function GameApp({
             <div className="menu-divider" />
             {guest ? (
               <>
-                <a className="menu-row menu-row-link" href="/login?from=%2F">
-                  <span>🔑 {lang === "ja" ? "ログイン" : "Sign in"}</span>
-                  <span className="menu-row-val">→</span>
-                </a>
+                {/* one door: the sign-up page links to sign-in for anyone who has an account */}
                 <a className="menu-row menu-row-link menu-row-signup" href="/signup?from=%2F">
-                  <span>✨ {lang === "ja" ? "無料で登録（記録を保存）" : "Create a free account"}</span>
+                  <span>✨ {lang === "ja" ? "ログイン / 無料で登録" : "Sign in / Create a free account"}</span>
                   <span className="menu-row-val">→</span>
                 </a>
               </>
@@ -3231,10 +3228,7 @@ export function GameApp({
                 : "Guests can play the first two topics and a few games. A free account opens every topic, every game, the Daily Challenge and the Matchstick Dojo — and keeps the progress you've made so far."}
             </p>
             <a className="btn btn-primary auth-submit" href="/signup?from=%2F">
-              {lang === "ja" ? "無料でアカウントを作る" : "Create a free account"}
-            </a>
-            <a className="btn btn-ghost auth-submit lock-sheet-signin" href="/login?from=%2F">
-              {lang === "ja" ? "アカウントがある人はサインイン" : "Already have an account? Sign in"}
+              {lang === "ja" ? "ログイン / 無料で登録" : "Sign in / Create a free account"}
             </a>
             <button className="btn btn-ghost lock-sheet-later" onClick={() => setLockOpen(null)}>
               {lang === "ja" ? "あとで" : "Not now"}
