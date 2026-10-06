@@ -144,6 +144,8 @@ export function HomeView({
     };
   }, [progress, lang]);
 
+  const totalCleared = TOPICS.reduce((acc, tp) => acc + topicProgressOf(progress, tp.id).cleared, 0);
+
   return (
     <section className="view active home-view">
       <div className="unit-banner">
@@ -166,6 +168,27 @@ export function HomeView({
         </div>
       </div>
 
+      {/* A brand-new player gets a plain-words intro: what this is, in three steps. */}
+      {totalCleared === 0 && (
+        <div className="howto">
+          <div className="howto-title">{lang === "ja" ? "このゲームって？" : "What is this game?"}</div>
+          <p className="howto-text">
+            {lang === "ja"
+              ? "インド式計算の「ひらめき」を、モンスターとのバトルで楽しく身につけよう。"
+              : "Learn the clever shortcuts of Indian maths by battling monsters, playing games and raising your own dragon."}
+          </p>
+          <div className="howto-steps">
+            <span><b>⚔️</b>{lang === "ja" ? "たたかう" : "Battle"}</span>
+            <i aria-hidden="true">➜</i>
+            <span><b>🎮</b>{lang === "ja" ? "あそぶ" : "Play"}</span>
+            <i aria-hidden="true">➜</i>
+            <span><b>🐉</b>{lang === "ja" ? "そだてる" : "Grow"}</span>
+          </div>
+        </div>
+      )}
+
+      <SectionHead icon="⚔️" title={lang === "ja" ? "まなぶ" : "Learn"} sub={lang === "ja" ? "モンスターをたおして、インド式計算のコツをおぼえよう" : "Beat monsters to learn Indian maths tricks"} />
+
       <div className="continue-card" style={{ background: gradCss(continueTopic.grad) }} onClick={() => onContinue(continueTopic.id, continueStageN)}>
         <div className="continue-card-label">{lang === "ja" ? "⚔️ つぎのバトル" : "⚔️ Next battle"}</div>
         <div className="continue-card-title">
@@ -176,65 +199,6 @@ export function HomeView({
         </div>
         <span className="continue-card-arrow">▶</span>
       </div>
-
-      <DragonCard lang={lang} />
-
-      <HomeTownCard lang={lang} onOpen={onOpenTown} guest={guest} />
-
-      {/* Today's game — one of the action games, a different one each day. */}
-      {(() => {
-        const g = todaysGame();
-        return (
-          <button className="today-game" style={{ background: g.tint }} onClick={() => onPlayGame(g.id)}>
-            <span className="today-game-icon" aria-hidden="true">{g.icon}</span>
-            <span className="today-game-body">
-              <span className="today-game-tag">{lang === "ja" ? "⭐ 今日のゲーム" : "⭐ TODAY'S GAME"}</span>
-              <span className="today-game-name">{lang === "ja" ? g.nameJa : g.name}</span>
-              <span className="today-game-sub">{lang === "ja" ? g.blurbJa : g.blurb}</span>
-            </span>
-            <span className="today-game-go">{lang === "ja" ? "あそぶ ▶" : "Play ▶"}</span>
-          </button>
-        );
-      })()}
-
-      {dailyStreak > 0 && (
-        <div className="streak-calendar">
-          <span className="streak-calendar-label">🔥 {dailyStreak}{t.home.streakSuffix}</span>
-          <div className="streak-days">
-            {Array.from({ length: 7 }, (_, i) => i).map((daysAgo) => (
-              <span key={daysAgo} className={`streak-day${daysAgo < dailyStreak ? " lit" : ""}`}>
-                🔥
-              </span>
-            ))}
-          </div>
-          {resetHours < 6 && (
-            <div className="streak-urgent">
-              ⏳ {lang === "ja" ? `あと${resetHours}時間${resetMins}分でリセット！` : `Resets in ${resetHours}h ${resetMins}m — play today!`}
-            </div>
-          )}
-        </div>
-      )}
-
-      {liveComps.length > 0 && (
-        <div className="duel-card comp-card">
-          <div className="duel-card-head">
-            🏅 {lang === "ja" ? "コンペティション開催中" : "Competition open"}
-          </div>
-          {liveComps.slice(0, 2).map((c) => (
-            <button key={c.id} className="duel-card-row" onClick={() => onEnterComp(c)}>
-              <span className="duel-card-avatar">🏅</span>
-              <span className="duel-card-info">
-                <span className="duel-card-name">{c.name}</span>
-                <span className="duel-card-sub">
-                  {c.levelName} · {c.questionCount} {lang === "ja" ? "問" : "Qs"} ·{" "}
-                  {Math.round(c.durationSec / 60)} {lang === "ja" ? "分" : "min"}
-                </span>
-              </span>
-              <span className="duel-card-go">{lang === "ja" ? "参加" : "Enter"} ›</span>
-            </button>
-          ))}
-        </div>
-      )}
 
       {assignment && assignedTopic && (
         <button className="assign-card" onClick={() => onOpenTopic(assignedTopic.id)}>
@@ -252,43 +216,6 @@ export function HomeView({
           </span>
           <span className="assign-card-go">›</span>
         </button>
-      )}
-
-      {openDuels.length > 0 && (
-        <div className="duel-card">
-          <div className="duel-card-head">
-            ⚔️ {lang === "ja" ? "対戦の申し込み" : "Duels waiting"}
-          </div>
-          {openDuels.slice(0, 3).map((d) => (
-            <button key={d.id} className="duel-card-row" onClick={() => onAcceptDuel(d)}>
-              <span className="duel-card-avatar">{d.opponentName[0]?.toUpperCase() ?? "?"}</span>
-              <span className="duel-card-info">
-                <span className="duel-card-name">{d.opponentName}</span>
-                <span className="duel-card-sub">
-                  {lang === "ja" ? `ブリッツ ${d.fromScore}点に挑戦` : `Scored ${d.fromScore} in Blitz`}
-                </span>
-              </span>
-              <span className="duel-card-go">{lang === "ja" ? "挑む" : "Beat it"} ›</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Quests used to have a full card here, but they already have their own
-          nav tab with a badge — the same list twice was just scroll. Shop and
-          Friends are not in the nav, so they keep a slim row of their own.
-          A guest has neither a gem balance nor friends, so the row would be
-          two buttons that open empty drawers. */}
-      {!guest && (
-        <div className="home-quick">
-          <button className="home-quick-btn" onClick={onOpenShop}>
-            🛍️ {lang === "ja" ? "ショップ" : "Shop"}
-            <span className="mono"> · 💎 {gemBalance ?? "…"}</span>
-          </button>
-          <button className="home-quick-btn home-quick-friends" onClick={onOpenFriends}>
-            👥 {lang === "ja" ? "フレンド" : "Friends"}
-          </button>
-        </div>
       )}
 
       {reviewCount > 0 ? (
@@ -333,14 +260,25 @@ export function HomeView({
         </div>
       ) : null}
 
-      <div className="blitz-cta" onClick={onOpenBlitz}>
-        <div className="blitz-cta-icon">⚡</div>
-        <div className="blitz-cta-info">
-          <div className="blitz-cta-title">{t.home.blitzTitle}</div>
-          <div className="blitz-cta-sub">{t.home.blitzSub}</div>
+      <SectionHead icon="📅" title={lang === "ja" ? "きょうのミッション" : "Today"} sub={lang === "ja" ? "1日1回。ストリークをのばそう" : "Once a day. Keep your streak alive"} />
+
+      {dailyStreak > 0 && (
+        <div className="streak-calendar">
+          <span className="streak-calendar-label">🔥 {dailyStreak}{t.home.streakSuffix}</span>
+          <div className="streak-days">
+            {Array.from({ length: 7 }, (_, i) => i).map((daysAgo) => (
+              <span key={daysAgo} className={`streak-day${daysAgo < dailyStreak ? " lit" : ""}`}>
+                🔥
+              </span>
+            ))}
+          </div>
+          {resetHours < 6 && (
+            <div className="streak-urgent">
+              ⏳ {lang === "ja" ? `あと${resetHours}時間${resetMins}分でリセット！` : `Resets in ${resetHours}h ${resetMins}m — play today!`}
+            </div>
+          )}
         </div>
-        <span className="blitz-cta-arrow">›</span>
-      </div>
+      )}
 
       <div className={`blitz-cta daily-cta${dailyPlayed ? " played" : ""}`} onClick={onOpenDaily}>
         <div className="blitz-cta-icon">{dailyPlayed ? "✅" : "🗓️"}</div>
@@ -359,6 +297,74 @@ export function HomeView({
         <span className="blitz-cta-arrow">›</span>
       </div>
 
+      {liveComps.length > 0 && (
+        <div className="duel-card comp-card">
+          <div className="duel-card-head">
+            🏅 {lang === "ja" ? "コンペティション開催中" : "Competition open"}
+          </div>
+          {liveComps.slice(0, 2).map((c) => (
+            <button key={c.id} className="duel-card-row" onClick={() => onEnterComp(c)}>
+              <span className="duel-card-avatar">🏅</span>
+              <span className="duel-card-info">
+                <span className="duel-card-name">{c.name}</span>
+                <span className="duel-card-sub">
+                  {c.levelName} · {c.questionCount} {lang === "ja" ? "問" : "Qs"} ·{" "}
+                  {Math.round(c.durationSec / 60)} {lang === "ja" ? "分" : "min"}
+                </span>
+              </span>
+              <span className="duel-card-go">{lang === "ja" ? "参加" : "Enter"} ›</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {openDuels.length > 0 && (
+        <div className="duel-card">
+          <div className="duel-card-head">
+            ⚔️ {lang === "ja" ? "対戦の申し込み" : "Duels waiting"}
+          </div>
+          {openDuels.slice(0, 3).map((d) => (
+            <button key={d.id} className="duel-card-row" onClick={() => onAcceptDuel(d)}>
+              <span className="duel-card-avatar">{d.opponentName[0]?.toUpperCase() ?? "?"}</span>
+              <span className="duel-card-info">
+                <span className="duel-card-name">{d.opponentName}</span>
+                <span className="duel-card-sub">
+                  {lang === "ja" ? `ブリッツ ${d.fromScore}点に挑戦` : `Scored ${d.fromScore} in Blitz`}
+                </span>
+              </span>
+              <span className="duel-card-go">{lang === "ja" ? "挑む" : "Beat it"} ›</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <SectionHead icon="🎮" title={lang === "ja" ? "あそぼう" : "Play"} sub={lang === "ja" ? "計算がとくいになるミニゲーム" : "Mini-games that sharpen your maths"} />
+
+      {/* Today's game — one of the action games, a different one each day. */}
+      {(() => {
+        const g = todaysGame();
+        return (
+          <button className="today-game" style={{ background: g.tint }} onClick={() => onPlayGame(g.id)}>
+            <span className="today-game-icon" aria-hidden="true">{g.icon}</span>
+            <span className="today-game-body">
+              <span className="today-game-tag">{lang === "ja" ? "⭐ 今日のゲーム" : "⭐ TODAY'S GAME"}</span>
+              <span className="today-game-name">{lang === "ja" ? g.nameJa : g.name}</span>
+              <span className="today-game-sub">{lang === "ja" ? g.blurbJa : g.blurb}</span>
+            </span>
+            <span className="today-game-go">{lang === "ja" ? "あそぶ ▶" : "Play ▶"}</span>
+          </button>
+        );
+      })()}
+
+      <div className="blitz-cta" onClick={onOpenBlitz}>
+        <div className="blitz-cta-icon">⚡</div>
+        <div className="blitz-cta-info">
+          <div className="blitz-cta-title">{t.home.blitzTitle}</div>
+          <div className="blitz-cta-sub">{t.home.blitzSub}</div>
+        </div>
+        <span className="blitz-cta-arrow">›</span>
+      </div>
+
       <div className="blitz-cta trick-cta" onClick={onOpenTricks}>
         <div className="blitz-cta-icon">🔮</div>
         <div className="blitz-cta-info">
@@ -369,6 +375,31 @@ export function HomeView({
         </div>
         <span className="blitz-cta-arrow">›</span>
       </div>
+
+      <SectionHead icon="🏙️" title={lang === "ja" ? "マイワールド" : "My world"} sub={lang === "ja" ? "正解でドラゴンが育ち、まちが発展する" : "Right answers grow your dragon and build your town"} />
+
+      <DragonCard lang={lang} />
+
+      <HomeTownCard lang={lang} onOpen={onOpenTown} guest={guest} />
+
+      {/* Quests used to have a full card here, but they already have their own
+          nav tab with a badge — the same list twice was just scroll. Shop and
+          Friends are not in the nav, so they keep a slim row of their own.
+          A guest has neither a gem balance nor friends, so the row would be
+          two buttons that open empty drawers. */}
+      {!guest && (
+        <div className="home-quick">
+          <button className="home-quick-btn" onClick={onOpenShop}>
+            🛍️ {lang === "ja" ? "ショップ" : "Shop"}
+            <span className="mono"> · 💎 {gemBalance ?? "…"}</span>
+          </button>
+          <button className="home-quick-btn home-quick-friends" onClick={onOpenFriends}>
+            👥 {lang === "ja" ? "フレンド" : "Friends"}
+          </button>
+        </div>
+      )}
+
+      <SectionHead icon="🗺️" title={lang === "ja" ? "学びのマップ" : "Learning map"} sub={lang === "ja" ? "トピックを順番にクリアして、先へ進もう" : "Clear topics in order to move ahead"} />
 
       <div className="path-wrap" ref={pathWrapRef}>
         {mapGeo.d && (
@@ -539,6 +570,16 @@ function DragonCard({ lang }: { lang: "en" | "ja" }) {
           {next ? (ja ? `${next.emoji} ${next.nameJa}まで あと${next.min - d.bites}口` : `${next.min - d.bites} bites to ${next.emoji} ${next.name}`) : (ja ? "✨ 最終形態！" : "✨ Final form!")}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* A short labelled heading that tells a new player what the cards below it are for. */
+function SectionHead({ icon, title, sub }: { icon: string; title: string; sub: string }) {
+  return (
+    <div className="home-sec">
+      <div className="home-sec-title"><span aria-hidden="true">{icon}</span> {title}</div>
+      <div className="home-sec-sub">{sub}</div>
     </div>
   );
 }

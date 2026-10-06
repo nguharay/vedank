@@ -3149,3 +3149,40 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .install-banner-cta{ flex:none; padding:8px 14px; border-radius:999px; border:2px solid var(--ink-line); background:#2B6FEA; color:#fff; font:900 13px/1 inherit; font-family:inherit; cursor:pointer; box-shadow:0 3px 0 var(--ink-line); }
 .install-banner-cta:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--ink-line); }
 .install-banner-x{ flex:none; width:24px; height:24px; border-radius:50%; border:none; background:rgba(0,0,0,.08); color:var(--muted); font-size:11px; font-weight:900; cursor:pointer; padding:0; }
+
+/* ---------- the home dock ----------
+   Not a flat strip: a floating rounded bar with a raised PLAY button in the
+   middle. The game is the big thing; the rest sits around it. */
+.footerbar.home-dock{ background:transparent; border-top:none; padding:0 10px calc(8px + env(safe-area-inset-bottom,0px)); pointer-events:none; }
+.dock-bar{ pointer-events:auto; position:relative; display:flex; align-items:flex-end; width:100%; max-width:520px; margin:0 auto;
+  padding:8px 8px 6px; border-radius:30px; background:var(--surface); border:3px solid var(--ink-line);
+  box-shadow:0 5px 0 var(--ink-line), 0 14px 24px rgba(20,20,50,.18); }
+.dock-bar .bottomnav-item{ flex:1 1 0; min-width:0; }
+/* the raised centre: a ring the colour of the page cuts a notch into the bar */
+.dock-play{ flex:0 0 92px; position:relative; display:flex; flex-direction:column; align-items:center; gap:1px; background:none; border:none; padding:0; cursor:pointer; margin-top:-38px; font-family:inherit; }
+.dock-play-ico{ display:grid; place-items:center; width:70px; height:70px; border-radius:50%; font-size:34px; line-height:1;
+  background:radial-gradient(circle at 30% 25%, #ffe27a, #ff9a3d 45%, #ff3d77 100%); border:3px solid var(--ink-line);
+  box-shadow:0 0 0 7px var(--bg, #f3f1fb), 0 6px 0 var(--ink-line), 0 10px 18px rgba(255,61,119,.4);
+  animation:dock-bounce 2.2s ease-in-out infinite; transition:transform .12s; }
+.dock-play:active .dock-play-ico{ transform:scale(.93) translateY(3px); animation:none; }
+.dock-play-label{ font:900 12px/1 "Baloo 2",system-ui,sans-serif; letter-spacing:.1em; color:#ff3d77; margin-top:6px; }
+@keyframes dock-bounce{ 0%,100%{ transform:translateY(0) rotate(-3deg); } 50%{ transform:translateY(-5px) rotate(3deg); } }
+@media (prefers-reduced-motion: reduce){ .dock-play-ico{ animation:none; } }
+.dock-save{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 4px; border-radius:12px;
+  font-size:10.5px; font-weight:800; color:var(--gold-dk, #b45309); text-decoration:none; }
+.dock-save .bottomnav-icon{ font-size:20px; }
+/* the buddy and toasts sit above the taller dock */
+body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(safe-area-inset-bottom,0px)); }
+
+/* ---------- Home sections: say what each group of cards is for ---------- */
+.home-sec{ margin:22px 2px 8px; }
+.home-sec-title{ font:800 19px/1.15 "Baloo 2",system-ui,sans-serif; color:var(--ink); }
+.home-sec-sub{ font-size:12.5px; font-weight:700; color:var(--muted); margin-top:1px; line-height:1.4; }
+.howto{ margin:14px 0 4px; padding:14px; border-radius:20px; border:3px solid var(--ink-line); background:linear-gradient(135deg,#fff7e8,#f3ecff); }
+.howto-title{ font:800 18px/1.15 "Baloo 2",system-ui,sans-serif; color:var(--ink); }
+.howto-text{ margin:4px 0 10px; font-size:13px; font-weight:700; color:var(--muted); line-height:1.5; }
+.howto-steps{ display:flex; align-items:center; justify-content:space-between; gap:4px; }
+.howto-steps span{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:12px; font-weight:900; color:var(--ink);
+  background:#fff; border:2px solid var(--line); border-radius:14px; padding:8px 4px; }
+.howto-steps b{ font-size:24px; line-height:1; font-weight:400; }
+.howto-steps i{ font-style:normal; font-weight:900; color:#ff7a3d; font-size:16px; }
