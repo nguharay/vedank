@@ -3199,3 +3199,130 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .home-tabdesc{ margin:4px 2px 10px; font-size:12.5px; font-weight:700; color:var(--muted); line-height:1.4; }
 /* a tighter hero on Home, so the tabs and the first lesson are not a screen away */
 .home-view .home-byline{ display:none; }
+
+/* "there are many more games" card at the end of the Play tab */
+.arcade-card{ position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:100%; margin:4px 0 12px; padding:14px 16px 16px;
+  border-radius:20px; border:3px solid var(--ink-line); box-shadow:4px 4px 0 var(--ink-line); cursor:pointer; text-align:left; font-family:inherit; color:#fff;
+  background:radial-gradient(circle at 85% 20%, rgba(255,255,255,.18) 0 40px, transparent 41px), linear-gradient(130deg,#1b1440,#4b2a8a 55%,#ff4f9a); }
+.arcade-card:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink-line); }
+.arcade-card-art{ font-size:24px; letter-spacing:2px; line-height:1.2; }
+.arcade-card-title{ font:800 19px/1.15 "Baloo 2",system-ui,sans-serif; }
+.arcade-card-sub{ font-size:12.5px; font-weight:700; opacity:.92; line-height:1.4; }
+.arcade-card-lock{ margin-top:4px; font-size:11.5px; font-weight:800; background:rgba(255,255,255,.18); border-radius:999px; padding:3px 10px; }
+.arcade-card-go{ align-self:flex-end; margin-top:6px; background:#fff; color:#1d1b33; font-weight:900; font-size:12.5px; padding:7px 12px; border-radius:999px; box-shadow:0 3px 0 rgba(0,0,0,.3); }
+
+/* ---------- Ninja Slice demo: a 4-second scripted "how to play" ---------- */
+.ninja-demo{ position:absolute; inset:0; z-index:6; pointer-events:none; }
+.ninja-q.demo{ animation:none; }
+.demo-fruit{ position:absolute; top:440px; width:56px; height:56px; display:grid; place-items:center; animation:demoArc 3.4s .15s both; }
+.demo-fruit.f1{ left:12%; animation-duration:3.2s; animation-delay:.35s; }
+.demo-fruit.f2{ left:calc(42% - 28px); }
+.demo-fruit.f3{ left:64%; animation-duration:3.6s; animation-delay:.6s; }
+.demo-fruit.f4{ left:80%; animation-duration:3.3s; animation-delay:.25s; }
+@keyframes demoArc{
+  0%{ transform:translateY(0); animation-timing-function:cubic-bezier(.25,.65,.4,1); }
+  45%{ transform:translateY(-330px); animation-timing-function:cubic-bezier(.6,0,.8,.45); }
+  100%{ transform:translateY(60px); } }
+/* the right fruit is cut just after the swipe passes through it */
+.demo-cut{ animation:demoCut 4.2s both; }
+@keyframes demoCut{ 0%,41%{ opacity:1; transform:none; filter:none; } 46%{ opacity:1; transform:scale(1.35) rotate(18deg); filter:brightness(1.6); } 56%,100%{ opacity:0; transform:scale(.5) rotate(40deg); } }
+/* finger + slash, crossing the right fruit at its apex (≈ 1.68 s) */
+/* the line runs through the fruit centre (42%, 138px): from 80px left/60px below to 80px right/60px above */
+.demo-finger{ position:absolute; left:42%; top:138px; font-size:40px; line-height:1; z-index:7; animation:demoFinger 4.2s both; }
+@keyframes demoFinger{
+  0%,24%{ opacity:0; transform:translate(-98px,58px); }
+  30%{ opacity:1; transform:translate(-98px,58px); }
+  42%{ opacity:1; transform:translate(62px,-62px); }
+  52%,100%{ opacity:0; transform:translate(78px,-74px); } }
+.demo-trail{ position:absolute; left:calc(42% - 80px); top:195px; width:200px; height:6px; border-radius:6px; background:#fff; box-shadow:0 0 12px #fff;
+  transform-origin:left center; transform:rotate(-37deg) scaleX(0); opacity:0; animation:demoTrail 4.2s both; z-index:6; }
+@keyframes demoTrail{ 0%,30%{ opacity:0; transform:rotate(-37deg) scaleX(0); } 31%{ opacity:.95; } 42%{ opacity:.95; transform:rotate(-37deg) scaleX(1); } 52%,100%{ opacity:0; transform:rotate(-37deg) scaleX(1); } }
+.demo-pop{ position:absolute; left:42%; top:96px; font:900 22px/1 "Baloo 2",system-ui,sans-serif; color:#7ED957; text-shadow:0 2px 0 #1d1b33; opacity:0; animation:demoPop 4.2s both; }
+@keyframes demoPop{ 0%,43%{ opacity:0; transform:translateY(0); } 48%{ opacity:1; } 64%,100%{ opacity:0; transform:translateY(-40px); } }
+/* three short captions, one after another */
+.demo-caption{ position:absolute; left:0; right:0; bottom:66px; text-align:center; }
+.demo-caption span{ position:absolute; left:50%; transform:translateX(-50%); white-space:nowrap; background:rgba(255,255,255,.95); color:#1d1b33;
+  font-weight:900; font-size:15px; padding:6px 14px; border-radius:999px; border:2px solid #1d1b33; opacity:0; }
+.demo-caption .c1{ animation:demoCap1 4.2s both; }
+.demo-caption .c2{ animation:demoCap2 4.2s both; }
+.demo-caption .c3{ animation:demoCap3 4.2s both; }
+@keyframes demoCap1{ 0%,2%{ opacity:0; } 6%,26%{ opacity:1; } 30%,100%{ opacity:0; } }
+@keyframes demoCap2{ 0%,28%{ opacity:0; } 32%,60%{ opacity:1; } 64%,100%{ opacity:0; } }
+@keyframes demoCap3{ 0%,62%{ opacity:0; } 66%,100%{ opacity:1; } }
+.demo-skip{ pointer-events:auto; position:absolute; right:10px; bottom:10px; z-index:8; font:900 12.5px/1 inherit; font-family:inherit; padding:8px 12px; border-radius:999px;
+  border:2px solid #fff; background:rgba(0,0,0,.35); color:#fff; cursor:pointer; }
+
+/* ---------- the story intro (pictures, not paragraphs) ---------- */
+.story{ position:fixed; inset:0; z-index:80; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;
+  background:radial-gradient(ellipse at 50% 30%, #3b2a6e, #1a1740 70%); color:#fff; overflow:hidden; }
+.story-scene{ position:relative; width:min(420px, 100vw); height:min(560px, 78vh); animation:storyIn .5s ease-out both; }
+@keyframes storyIn{ from{ opacity:0; transform:scale(.96); } }
+.story-cap{ position:absolute; left:0; right:0; bottom:8%; text-align:center; font:800 26px/1.2 "Baloo 2",system-ui,sans-serif; text-shadow:0 3px 0 rgba(0,0,0,.4);
+  animation:capIn .6s .5s both; }
+@keyframes capIn{ from{ opacity:0; transform:translateY(12px); } }
+.story-skip{ position:absolute; top:max(14px, env(safe-area-inset-top)); right:14px; z-index:2; font:800 13px/1 inherit; font-family:inherit; color:#fff;
+  background:rgba(255,255,255,.15); border:2px solid rgba(255,255,255,.5); border-radius:999px; padding:8px 14px; cursor:pointer; }
+.story-dots{ position:absolute; bottom:max(22px, env(safe-area-inset-bottom)); display:flex; gap:8px; }
+.story-dots i{ width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,.3); }
+.story-dots i.on{ background:#ffcf3a; width:26px; border-radius:6px; }
+.story-dots i.done{ background:rgba(255,255,255,.7); }
+.story-go{ position:absolute; bottom:max(56px, calc(env(safe-area-inset-bottom) + 40px)); font:900 18px/1 "Baloo 2",system-ui,sans-serif; color:#1d1b33;
+  background:linear-gradient(135deg,#ffe27a,#ff9a3d); border:3px solid #1d1b33; border-radius:999px; padding:14px 30px; box-shadow:0 5px 0 #1d1b33; cursor:pointer;
+  animation:capIn .5s 1.6s both, dock-bounce 2s 2.2s ease-in-out infinite; }
+.story-scene > span{ position:absolute; line-height:1; }
+/* 1 · the Number Kingdom, then the monsters */
+.st-stars{ inset:0; background:radial-gradient(2px 2px at 20% 20%, #fff 50%, transparent), radial-gradient(2px 2px at 70% 12%, #fff 50%, transparent),
+  radial-gradient(1.5px 1.5px at 85% 40%, #fff 50%, transparent), radial-gradient(1.5px 1.5px at 35% 55%, #fff 50%, transparent); opacity:.8; }
+.st-num{ font:900 40px/1 "Baloo 2",system-ui,sans-serif; color:#ffe27a; text-shadow:0 0 14px rgba(255,226,122,.7); animation:numFloat 1.6s ease-in-out infinite alternate, numGrab 3.6s both; }
+.st-num.n1{ left:12%; top:22%; } .st-num.n2{ left:40%; top:14%; animation-delay:.2s, 0s; } .st-num.n3{ left:70%; top:24%; animation-delay:.4s, 0s; }
+.st-num.n4{ left:22%; top:44%; animation-delay:.1s, 0s; } .st-num.n5{ left:55%; top:40%; animation-delay:.3s, 0s; } .st-num.n6{ left:80%; top:52%; animation-delay:.5s, 0s; }
+.st-num.n7{ left:38%; top:60%; animation-delay:.25s, 0s; }
+@keyframes numFloat{ to{ transform:translateY(-10px); } }
+@keyframes numGrab{ 0%,45%{ opacity:1; filter:none; } 70%,100%{ opacity:.25; filter:grayscale(1); } }
+.st-monster{ font-size:56px; }
+.st-monster.m1{ top:20%; animation:swoopL 3.6s both; } .st-monster.m2{ top:48%; animation:swoopR 3.6s both; }
+@keyframes swoopL{ 0%,35%{ left:-25%; } 65%,100%{ left:58%; } }
+@keyframes swoopR{ 0%,40%{ left:110%; } 70%,100%{ left:18%; } }
+/* 2 · the scroll */
+.st-moon{ top:8%; right:12%; width:60px; height:60px; border-radius:50%; background:#fff5c2; box-shadow:0 0 40px rgba(255,245,194,.6); }
+.st-ground{ left:-10%; right:-10%; bottom:0; height:28%; border-radius:50% 50% 0 0; background:#231c48; }
+.st-scroll{ left:50%; bottom:30%; font-size:70px; transform:translateX(-50%); animation:scrollRise 3.6s both; }
+@keyframes scrollRise{ 0%{ transform:translate(-50%, 80px) scale(.6); opacity:0; } 40%,100%{ transform:translate(-50%, -40px) scale(1.1); opacity:1; } }
+.st-glow{ left:50%; bottom:30%; width:180px; height:180px; margin-left:-90px; margin-bottom:-30px; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,122,.55), transparent 70%); animation:glow 1.4s ease-in-out infinite alternate; }
+@keyframes glow{ from{ opacity:.4; transform:scale(.9); } to{ opacity:1; transform:scale(1.15); } }
+.st-spark{ font-size:22px; animation:spark 1.6s ease-out infinite; }
+.st-spark.k0{ left:30%; bottom:52%; } .st-spark.k1{ left:66%; bottom:56%; animation-delay:.3s; } .st-spark.k2{ left:44%; bottom:66%; animation-delay:.6s; }
+.st-spark.k3{ left:58%; bottom:46%; animation-delay:.9s; } .st-spark.k4{ left:36%; bottom:40%; animation-delay:1.1s; } .st-spark.k5{ left:52%; bottom:72%; animation-delay:1.3s; }
+@keyframes spark{ 0%{ opacity:0; transform:scale(.4); } 30%{ opacity:1; } 100%{ opacity:0; transform:scale(1.2) translateY(-20px); } }
+.st-boy{ width:96px; height:96px; }
+.st-boy.look{ left:10%; bottom:20%; animation:boyIn 1s .4s both; }
+@keyframes boyIn{ from{ transform:translateX(-80px); opacity:0; } }
+/* 3 · the trick beats the monster */
+.st-boy.run{ left:6%; bottom:24%; animation:boyRun 3.6s both; }
+@keyframes boyRun{ 0%{ transform:translateX(-60px); } 40%,100%{ transform:translateX(30px); } }
+.st-sum{ left:50%; top:22%; transform:translateX(-50%); font-size:34px; font-weight:900; color:#1d1b33; background:#fff; border:3px solid #1d1b33; border-radius:14px;
+  padding:6px 14px; box-shadow:0 4px 0 #1d1b33; animation:sumPop 3.6s both; }
+@keyframes sumPop{ 0%,20%{ opacity:0; transform:translateX(-50%) scale(.6); } 30%,60%{ opacity:1; transform:translateX(-50%) scale(1); } 70%,100%{ opacity:0; transform:translateX(-50%) scale(1.2); } }
+.st-bolt{ left:46%; top:38%; font-size:64px; animation:bolt 3.6s both; }
+@keyframes bolt{ 0%,48%{ opacity:0; transform:scale(.3) rotate(-20deg); } 54%{ opacity:1; transform:scale(1.4); } 64%,100%{ opacity:0; transform:scale(.9); } }
+.st-monster.m3{ right:12%; bottom:26%; animation:mGone 3.6s both; }
+@keyframes mGone{ 0%,52%{ opacity:1; transform:none; } 58%,100%{ opacity:0; transform:scale(.2) rotate(40deg); } }
+.st-burst{ right:12%; bottom:26%; font-size:72px; opacity:0; animation:burst 3.6s both; }
+@keyframes burst{ 0%,52%{ opacity:0; transform:scale(.3); } 58%{ opacity:1; transform:scale(1.3); } 72%,100%{ opacity:0; transform:scale(1.6); } }
+.st-home{ right:16%; bottom:40%; font-size:34px; font-weight:900; color:#ffe27a; text-shadow:0 0 14px rgba(255,226,122,.8); opacity:0; animation:homeFly 3.6s both; }
+@keyframes homeFly{ 0%,62%{ opacity:0; transform:none; } 70%{ opacity:1; } 100%{ opacity:1; transform:translate(-120px,-180px) scale(1.3); } }
+/* 4 · the egg hatches, the adventure begins */
+.story-scene.s4{ background:linear-gradient(#7fc4ff 0%, #c9ecff 60%, transparent 61%); border-radius:24px; }
+.st-sun{ top:8%; right:14%; width:66px; height:66px; border-radius:50%; background:radial-gradient(#fff6a8,#ffcf3a); box-shadow:0 0 0 10px rgba(255,214,70,.25); }
+.st-hill{ left:-10%; right:-10%; bottom:16%; height:32%; border-radius:50% 50% 0 0; background:#7cc85e; }
+.st-town{ left:50%; bottom:44%; transform:translateX(-50%); font-size:30px; letter-spacing:4px; white-space:nowrap; animation:townGrow 3.6s both; }
+@keyframes townGrow{ 0%,40%{ opacity:0; transform:translateX(-50%) scale(.4); } 70%,100%{ opacity:1; transform:translateX(-50%) scale(1); } }
+.st-egg{ left:50%; bottom:28%; margin-left:-30px; font-size:60px; animation:egg 3.6s both; }
+@keyframes egg{ 0%{ transform:rotate(0); } 8%{ transform:rotate(-12deg); } 16%{ transform:rotate(12deg); } 24%{ transform:rotate(-12deg); } 30%{ opacity:1; transform:rotate(0) scale(1); } 34%,100%{ opacity:0; transform:scale(1.4); } }
+.st-hatch{ left:50%; bottom:28%; margin-left:-30px; font-size:60px; opacity:0; animation:hatch 3.6s both; }
+@keyframes hatch{ 0%,33%{ opacity:0; transform:scale(.4); } 38%,55%{ opacity:1; transform:scale(1); } 60%,100%{ opacity:0; transform:scale(1.3); } }
+.st-dragon{ left:50%; bottom:26%; margin-left:-40px; font-size:80px; opacity:0; animation:dragonIn 3.6s both; }
+@keyframes dragonIn{ 0%,58%{ opacity:0; transform:scale(.3) translateY(20px); } 66%{ opacity:1; transform:scale(1.15); } 74%,100%{ opacity:1; transform:scale(1) translateY(-6px); } }
+.st-boy.wave{ left:8%; bottom:22%; animation:boyIn .8s both; }
+@media (prefers-reduced-motion: reduce){ .story *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; } }

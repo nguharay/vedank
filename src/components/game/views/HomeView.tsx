@@ -51,6 +51,7 @@ export function HomeView({
   onOpenClasses,
   onPlayGame,
   onOpenTown,
+  onOpenGames,
   lang,
   t,
 }: {
@@ -86,6 +87,8 @@ export function HomeView({
   /* opens one of the action games (today's card, map bonus stops) */
   onPlayGame: (id: HomeGameId) => void;
   onOpenTown: () => void;
+  /* the full Games shelf (the arcade) */
+  onOpenGames: () => void;
   lang: Lang;
   t: UIDict;
 }) {
@@ -283,7 +286,7 @@ export function HomeView({
         </div>
       ) : null}
 
-      <SectionHead icon="🗺️" title={lang === "ja" ? "学びのマップ" : "Learning map"} sub={lang === "ja" ? "トピックを順番にクリアして、先へ進もう" : "Clear topics in order to move ahead"} />
+      <SectionHead icon="🗺️" title={lang === "ja" ? "インド式数学の学びのマップ" : "Learning map for Vedic Math"} sub={lang === "ja" ? "トピックを順番にクリアして、先へ進もう" : "Clear topics in order to move ahead"} />
 
       <div className="path-wrap" ref={pathWrapRef}>
         {mapGeo.d && (
@@ -501,6 +504,20 @@ export function HomeView({
         </div>
         <span className="blitz-cta-arrow">›</span>
       </div>
+      {/* The Play tab shows three games; this says there are many more. */}
+      <button className="arcade-card" onClick={onOpenGames}>
+        <span className="arcade-card-art" aria-hidden="true">🥷🏃🍣🏯🎵🏪</span>
+        <span className="arcade-card-title">{lang === "ja" ? "🕹️ ゲームセンターへ" : "🕹️ Enter the arcade"}</span>
+        <span className="arcade-card-sub">
+          {lang === "ja" ? "忍者スライス、計算ランナー、おすし屋さん…20以上のアーケードゲーム！" : "Ninja Slice, Math Runner, Sushi Shop… 20+ arcade games!"}
+        </span>
+        {guest && (
+          <span className="arcade-card-lock">
+            🔒 {lang === "ja" ? "多くのゲームは無料アカウントで遊べるよ" : "Many of them open with a free account"}
+          </span>
+        )}
+        <span className="arcade-card-go">{lang === "ja" ? "ぜんぶ見る ▶" : "See all ▶"}</span>
+      </button>
         </>
       )}
       {tab === "world" && (
