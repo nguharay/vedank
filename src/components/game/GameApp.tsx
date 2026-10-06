@@ -2788,6 +2788,28 @@ export function GameApp({
     setCanInstall(false);
   }
 
+  /* ---------- "install the app" banner on Home (signed-in only) ----------
+     Shown at the top of Home after login whenever the game is still running in
+     a browser tab: on Android/desktop Chrome a button runs the real install
+     prompt; on iPhone it opens the Add-to-Home-Screen steps (Safari has no
+     install prompt). Dismissing hides it for 5 days; an installed app never
+     sees it. Hidden until mounted so server and client render the same. */
+  const [installBanner, setInstallBanner] = useState(false);
+  /* eslint-disable react-hooks/set-state-in-effect -- needs window/localStorage, so it can only be decided after mount */
+  useEffect(() => {
+    if (guest) return;
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
+    if (standalone) { setInstallBanner(false); return; }
+    let until = 0;
+    try { until = Number(localStorage.getItem("sutraSprint.installHideUntil") || 0); } catch {}
+    setInstallBanner(Date.now() > until && (canInstall || isIosBrowser()));
+  }, [guest, canInstall]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+  function hideInstallBanner() {
+    setInstallBanner(false);
+    try { localStorage.setItem("sutraSprint.installHideUntil", String(Date.now() + 5 * 86400_000)); } catch {}
+  }
+
   /* ---------- keyboard play ----------
      On a laptop the whole game was mouse-only: you could type an answer but
      not pick a tile, and Blitz is a speed mode where reaching for the mouse
@@ -3792,6 +3814,19 @@ export function GameApp({
             <a className="guest-banner-cta" href="/signup?from=%2F">
               {lang === "ja" ? "保存" : "Save"}
             </a>
+          </div>
+        )}
+        {!guest && view === "home" && installBanner && (
+          <div className="install-banner" role="region" aria-label={lang === "ja" ? "アプリをインストール" : "Install the app"}>
+            <span className="install-banner-ico" aria-hidden="true">📲</span>
+            <div className="install-banner-body">
+              <strong>{lang === "ja" ? "アプリにすると、もっと楽しい！" : "It\u2019s even better as an app!"}</strong>
+              <span>{lang === "ja" ? "ホーム画面から1タップ。ドラゴンのお知らせもとどくよ。" : "One tap from your Home Screen, and your dragon can reach you."}</span>
+            </div>
+            <button className="install-banner-cta" onClick={() => { if (canInstall) void onInstall(); else setPushAsk("ios"); }}>
+              {lang === "ja" ? "入れる" : "Install"}
+            </button>
+            <button className="install-banner-x" aria-label={lang === "ja" ? "閉じる" : "Dismiss"} onClick={hideInstallBanner}>✕</button>
           </div>
         )}
         {view === "home" && (

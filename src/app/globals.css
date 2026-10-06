@@ -3138,3 +3138,14 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 @media (prefers-reduced-motion: reduce){ .path-coming-icons span{ animation:none; } }
 .dragon-tag{ align-self:flex-start; font-size:10.5px; font-weight:900; letter-spacing:.06em; background:#1d1b33; color:#fff; border-radius:999px; padding:3px 9px; }
 .town-card-friends{ font-size:11.5px; font-weight:800; color:#1d4ed8; margin-top:1px; }
+
+/* "install the app" banner at the top of Home (signed-in, not installed) */
+.install-banner{ display:flex; align-items:center; gap:10px; margin:0 0 14px; padding:10px 10px 10px 12px; border-radius:16px;
+  border:3px solid var(--ink-line); background:linear-gradient(130deg,#e6f0ff,#e9e2ff); box-shadow:3px 3px 0 var(--ink-line); }
+.install-banner-ico{ font-size:26px; line-height:1; flex:none; }
+.install-banner-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.install-banner-body strong{ font-size:13px; color:var(--ink); }
+.install-banner-body span{ font-size:11.5px; font-weight:700; color:var(--muted); line-height:1.35; }
+.install-banner-cta{ flex:none; padding:8px 14px; border-radius:999px; border:2px solid var(--ink-line); background:#2B6FEA; color:#fff; font:900 13px/1 inherit; font-family:inherit; cursor:pointer; box-shadow:0 3px 0 var(--ink-line); }
+.install-banner-cta:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--ink-line); }
+.install-banner-x{ flex:none; width:24px; height:24px; border-radius:50%; border:none; background:rgba(0,0,0,.08); color:var(--muted); font-size:11px; font-weight:900; cursor:pointer; padding:0; }
