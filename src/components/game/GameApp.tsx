@@ -907,6 +907,14 @@ export function GameApp({
     return true;
   }
 
+  /* Every screen opens at its top. The page is one long scroll, so without
+     this a lesson opened from the bottom of Home opened scrolled to its own
+     bottom. Reset both the window and <main>, whichever is the scroller. */
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.querySelector("main")?.scrollTo(0, 0);
+  }, [view, currentTopicId]);
+
   function handleBack() {
     if (view === "practice") { openStageMap(currentTopicId!); }
     else if (view === "stagemap") { openTopic(currentTopicId!); }
@@ -2981,6 +2989,10 @@ export function GameApp({
                 {enrolled.length ? enrolled[0].name : ja ? "未参加" : "Not joined"}
               </span>
             </button>
+            <button className="menu-row" onClick={() => { setMenuOpen(false); setAchievementsOpen(true); }}>
+              <span>🏅 {lang === "ja" ? "実績バッジ" : "Badges"}</span>
+              <span className="menu-row-val">→</span>
+            </button>
             <button className="menu-row" onClick={() => { setMenuOpen(false); openFriends(); }}>
               <span>👥 {lang === "ja" ? "フレンド" : "Friends"}</span>
               <span className="menu-row-val">
@@ -4733,23 +4745,27 @@ export function GameApp({
         </div>
       )}
 
-      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}`} style={{ display: "flex" }}>
+      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" ? " home-dock" : ""}`} style={{ display: "flex" }}>
         {view === "home" && guest ? (
-          <>
+          /* The home dock: a floating rounded bar with the games as a big raised
+             PLAY button in the middle — the game is the point, everything else
+             sits around it. For a guest, Save is a small chip, not a rival. */
+          <div className="dock-bar">
             <button className="bottomnav-item active" onClick={goHome}>
               <span className="bottomnav-icon">🏠</span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
-            <button className="bottomnav-item" onClick={openGames}>
-              <span className="bottomnav-icon">🎮</span>
-              <span>{lang === "ja" ? "ゲーム" : "Games"}</span>
+            <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
+              <span className="dock-play-ico" aria-hidden="true">🎮</span>
+              <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
             </button>
-            <a className="btn btn-primary guest-save-btn" href="/signup?from=%2F">
-              {lang === "ja" ? "保存" : "Save"}
+            <a className="dock-save" href="/signup?from=%2F">
+              <span className="bottomnav-icon" aria-hidden="true">💾</span>
+              <span>{lang === "ja" ? "保存" : "Save"}</span>
             </a>
-          </>
+          </div>
         ) : view === "home" ? (
-          <>
+          <div className="dock-bar">
             <button className="bottomnav-item active" onClick={goHome}>
               <span className="bottomnav-icon">🏠</span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
@@ -4761,6 +4777,10 @@ export function GameApp({
               </span>
               <span>{lang === "ja" ? "クエスト" : "Quests"}</span>
             </button>
+            <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
+              <span className="dock-play-ico" aria-hidden="true">🎮</span>
+              <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
+            </button>
             <button className="bottomnav-item" onClick={toggleLeague}>
               <span className="bottomnav-icon">🏆</span>
               <span>{lang === "ja" ? "リーグ" : "League"}</span>
@@ -4769,18 +4789,7 @@ export function GameApp({
               <span className="bottomnav-icon">🌍</span>
               <span>{lang === "ja" ? "ランク" : "Rank"}</span>
             </button>
-            <button className="bottomnav-item" onClick={() => setAchievementsOpen((o) => !o)}>
-              <span className="bottomnav-icon">🏅</span>
-              <span>{lang === "ja" ? "実績" : "Badges"}</span>
-            </button>
-            {/* Profile moved out: the header avatar already opens the same
-                account menu, and this slot is better spent on something to
-                play than on a second door to settings. */}
-            <button className="bottomnav-item" onClick={openGames}>
-              <span className="bottomnav-icon">🎮</span>
-              <span>{lang === "ja" ? "ゲーム" : "Games"}</span>
-            </button>
-          </>
+          </div>
         ) : (
           <>
             <button className="btn btn-ghost back-footer-btn" aria-label="Back" onClick={handleBack}>
