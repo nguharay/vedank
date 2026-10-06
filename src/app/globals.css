@@ -3326,32 +3326,3 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 @keyframes dragonIn{ 0%,58%{ opacity:0; transform:scale(.3) translateY(20px); } 66%{ opacity:1; transform:scale(1.15); } 74%,100%{ opacity:1; transform:scale(1) translateY(-6px); } }
 .st-boy.wave{ left:8%; bottom:22%; animation:boyIn .8s both; }
 @media (prefers-reduced-motion: reduce){ .story *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
-
-/* ---------- Math Runner: late sums + the demo ---------- */
-.run-q.hidden-q{ color:#8a86a8; letter-spacing:.2em; animation:hiddenQ 1s ease-in-out infinite; }
-@keyframes hiddenQ{ 50%{ transform:translateX(-50%) scale(1.06); } }
-.run-q.reveal{ animation:revealQ .35s cubic-bezier(.2,1.6,.4,1); }
-@keyframes revealQ{ from{ transform:translateX(-50%) scale(.6); opacity:.2; } }
-.rg-ans.waiting{ color:#b4b0cc; }
-/* demo: the world scrolls by CSS (there is no game loop yet) */
-.run-scene.demo .run-ground{ animation:demoGround .9s linear infinite; }
-.run-scene.demo .run-trees{ animation:demoTrees 7s linear infinite; }
-.run-scene.demo .run-hills{ animation:demoHills 12s linear infinite; }
-@keyframes demoGround{ from{ transform:translate3d(0,0,0); } to{ transform:translate3d(-88px,0,0); } }
-@keyframes demoTrees{ from{ transform:translate3d(0,0,0); } to{ transform:translate3d(-50%,0,0); } }
-@keyframes demoHills{ from{ transform:translate3d(0,0,0); } to{ transform:translate3d(-340px,0,0); } }
-.runner-demo{ position:absolute; inset:0; z-index:5; pointer-events:none; }
-.runner-demo .demo-skip{ pointer-events:auto; }
-.runner-demo .demo-caption{ bottom:auto; top:64px; }
-.demo-rock{ position:absolute; bottom:44px; font-size:36px; line-height:1; animation:demoRock 4.2s linear both; }
-/* the rock comes in slowly, speeds up once the answer is tapped, and passes under the jump */
-@keyframes demoRock{ 0%{ left:104%; } 38%{ left:64%; animation-timing-function:ease-in; } 57%{ left:calc(14% + 14px); } 78%,100%{ left:-20%; } }
-.run-boy.demo-run{ animation:demoBoy 4.2s both; }
-@keyframes demoBoy{ 0%,48%{ transform:none; } 57%{ transform:translateY(-92px) rotate(-10deg); } 66%,100%{ transform:none; } }
-.demo-run-pop{ position:absolute; left:14%; bottom:150px; font-size:20px; font-weight:800; color:#ff9d00; text-shadow:0 2px 0 #1d1b33; opacity:0; animation:demoPop 4.2s both; }
-.runner-demo-answers{ position:relative; }
-.runner-demo-answers .rg-ans:disabled{ opacity:1; }
-.demo-right{ animation:demoRight 4.2s both; }
-@keyframes demoRight{ 0%,38%{ background:var(--card,#fff); } 40%,100%{ background:#7ED957; color:#10300a; transform:scale(1.05); } }
-.demo-tap{ position:absolute; left:50%; top:30px; font-size:38px; line-height:1; animation:demoTap 4.2s both; }
-@keyframes demoTap{ 0%,22%{ opacity:0; transform:translate(-10px,40px); } 30%{ opacity:1; transform:translate(-10px,30px); } 38%{ opacity:1; transform:translate(-10px,4px) scale(.9); } 42%{ opacity:1; transform:translate(-10px,12px); } 50%,100%{ opacity:0; transform:translate(-10px,20px); } }
