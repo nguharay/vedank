@@ -2795,10 +2795,13 @@ export function GameApp({
      install prompt). Dismissing hides it for 5 days; an installed app never
      sees it. Hidden until mounted so server and client render the same. */
   const [installBanner, setInstallBanner] = useState(false);
+  /* installable at all (ignores the banner's dismissal): drives the menu row */
+  const [installable, setInstallable] = useState(false);
   /* eslint-disable react-hooks/set-state-in-effect -- needs window/localStorage, so it can only be decided after mount */
   useEffect(() => {
     const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
-    if (standalone) { setInstallBanner(false); return; }
+    if (standalone) { setInstallBanner(false); setInstallable(false); return; }
+    setInstallable(canInstall || isIosBrowser());
     let until = 0;
     try { until = Number(localStorage.getItem("sutraSprint.installHideUntil") || 0); } catch {}
     setInstallBanner(Date.now() > until && (canInstall || isIosBrowser()));
@@ -2942,8 +2945,8 @@ export function GameApp({
                 <div className="account-email">{guest ? (lang === "ja" ? "このブラウザにだけ保存中" : "Saved in this browser only") : user.email}</div>
               </div>
             </div>
-            {canInstall && (
-              <button className="menu-row menu-row-install" onClick={onInstall}>
+            {installable && (
+              <button className="menu-row menu-row-install" onClick={() => { if (canInstall) void onInstall(); else { setMenuOpen(false); setPushAsk("ios"); } }}>
                 <span>📲 {lang === "ja" ? "ホーム画面に追加" : "Add to home screen"}</span>
                 <span className="menu-row-val">{lang === "ja" ? "インストール" : "Install"}</span>
               </button>
@@ -3046,7 +3049,7 @@ export function GameApp({
               <>
                 {/* one door: the sign-up page links to sign-in for anyone who has an account */}
                 <a className="menu-row menu-row-link menu-row-signup" href="/signup?from=%2F">
-                  <span>✨ {lang === "ja" ? "ログイン / 無料で登録" : "Sign in / Create a free account"}</span>
+                  <span>✨ {lang === "ja" ? "無料アカウントにログイン" : "Sign in to your free account"}</span>
                   <span className="menu-row-val">→</span>
                 </a>
               </>
@@ -3227,7 +3230,7 @@ export function GameApp({
                 : "Guests can play the first two topics and a few games. A free account opens every topic, every game, the Daily Challenge and the Matchstick Dojo — and keeps the progress you've made so far."}
             </p>
             <a className="btn btn-primary auth-submit" href="/signup?from=%2F">
-              {lang === "ja" ? "ログイン / 無料で登録" : "Sign in / Create a free account"}
+              {lang === "ja" ? "無料アカウントにログイン" : "Sign in to your free account"}
             </a>
             <button className="btn btn-ghost lock-sheet-later" onClick={() => setLockOpen(null)}>
               {lang === "ja" ? "あとで" : "Not now"}
