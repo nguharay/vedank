@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { RunResults } from "./RunResults";
 import { Mascot } from "../Mascot";
 import { fmt, haptic } from "../util";
 import type { useSound } from "../useSound";
@@ -363,6 +364,7 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
             <button className="btn btn-primary" onClick={begin}>{ja ? "いざ、参る！" : "Begin!"}</button>
           </div>
         )}
+        {phase === "over" && <RunResults game="ninja" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} detail={ja ? `ウェーブ ${waveNo}` : `Wave ${waveNo}`} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && score > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "修行おわり" : "Training over")}</div>

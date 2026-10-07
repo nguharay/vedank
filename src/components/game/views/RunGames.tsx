@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { RunResults } from "./RunResults";
 import { Mascot } from "../Mascot";
 import { fmt, haptic } from "../util";
 import type { useSound } from "../useSound";
@@ -241,6 +242,7 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect, autoStart }: Pro
             <button className="btn btn-primary" onClick={start}>{ja ? "スタート！" : "Start!"}</button>
           </div>
         )}
+        {phase === "over" && <RunResults game="runner" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && score > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "ゴール！" : "Run over!")}</div>
