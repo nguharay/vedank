@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LangCode, UIDict } from "./i18n";
+import { SITE_URL } from "@/lib/site";
 
 export type ShareStats = {
   level: number;
@@ -103,7 +104,7 @@ export function ShareSheet({
     return p.toString();
   }, [focus, tiles, stats.level, stats.rank, t.share.statLevel, lang]);
 
-  const shareUrl = origin ? `${origin}/s?${cardParams}` : "";
+  const shareUrl = origin ? `${SITE_URL}/s?${cardParams}` : "";
   const shareText = `${blurb}`;
   const copied = copiedFor === focus;
 
