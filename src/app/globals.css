@@ -3326,3 +3326,348 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 @keyframes dragonIn{ 0%,58%{ opacity:0; transform:scale(.3) translateY(20px); } 66%{ opacity:1; transform:scale(1.15); } 74%,100%{ opacity:1; transform:scale(1) translateY(-6px); } }
 .st-boy.wave{ left:8%; bottom:22%; animation:boyIn .8s both; }
 @media (prefers-reduced-motion: reduce){ .story *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
+/* The Add-to-Home-Screen sheet floats in the middle: on iPhone the browser's
+   toolbar overlaps the bottom of the page, which hid the "Got it" button. */
+.hint-sheet.push-ask{ bottom:auto; top:50%; transform:translate(-50%,-50%); width:calc(100% - 24px); border-radius:24px;
+  border-bottom:3px solid var(--ink-line); max-height:86dvh; padding-bottom:18px; }
+.push-ask.ios .push-ask-dragon{ font-size:44px; }
+.push-ask.ios .push-ask-ok{ margin:6px 0 10px; }
+.push-ask-steps li{ margin-bottom:6px; }
+.push-ask-steps small{ display:block; font-size:11.5px; font-weight:700; color:var(--muted); line-height:1.4; }
+.push-ask-ico{ display:inline-grid; place-items:center; width:26px; height:26px; border-radius:7px; background:#2B6FEA; color:#fff; vertical-align:middle; }
+.push-ask-share{ width:18px; height:18px; }
+
+/* ======== Ninja Slice, illustrated: a wooden dojo ======== */
+.ninja-arena.dojo{ height:480px; background:#5a3a22; border-color:#2b1a0e; }
+.dojo-bg{ position:absolute; inset:0; pointer-events:none;
+  /* vertical planks with grain and gaps */
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.28) 0 2px, transparent 2px 64px),
+    repeating-linear-gradient(90deg, transparent 0 18px, rgba(255,255,255,.035) 18px 20px, transparent 20px 44px, rgba(0,0,0,.05) 44px 47px, transparent 47px 64px),
+    linear-gradient(180deg, #7a4f2e 0%, #6b4327 55%, #4f301b 100%); }
+.dojo-beam{ position:absolute; left:0; right:0; top:84px; height:22px; background:linear-gradient(#3e2614, #2b1a0e); box-shadow:0 6px 10px rgba(0,0,0,.35); }
+.dojo-floor{ position:absolute; left:0; right:0; bottom:0; height:96px;
+  background:repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 2px, transparent 2px 90px), linear-gradient(#8a5a33, #6b4327); border-top:4px solid #3e2614; }
+.dojo-light{ position:absolute; inset:0; background:radial-gradient(ellipse at 50% 40%, rgba(255,214,140,.32), transparent 60%), radial-gradient(ellipse at 50% 120%, rgba(0,0,0,.45), transparent 60%); }
+/* HUD across the top */
+.ninja-hud{ position:absolute; left:8px; right:8px; top:8px; z-index:4; display:flex; align-items:center; gap:8px; pointer-events:none; }
+.ninja-coins{ display:flex; align-items:center; gap:6px; padding:3px 12px 3px 4px; border-radius:999px; background:rgba(0,0,0,.45); color:#fff; font-size:18px; font-weight:900; }
+.ninja-coins b{ font-size:22px; font-weight:400; }
+.ninja-gauge{ position:relative; flex:1; height:14px; border-radius:8px; background:rgba(0,0,0,.45); overflow:hidden; border:2px solid rgba(0,0,0,.35); }
+.ninja-gauge i{ position:absolute; left:0; top:0; bottom:0; border-radius:8px; background:linear-gradient(#ffe27a, #ff9a1f); transition:width .25s; }
+.ninja-gauge em{ position:absolute; right:6px; top:-2px; font-style:normal; font-size:11px; font-weight:900; color:#fff; }
+.ninja-lives{ font-size:14px; letter-spacing:-2px; }
+.ninja-title{ position:absolute; left:0; top:40px; z-index:3; pointer-events:none; padding:4px 26px 4px 12px; color:#fff; font:900 20px/1 "Baloo 2",system-ui,sans-serif; letter-spacing:.06em;
+  background:linear-gradient(90deg, #111 0 80%, transparent); clip-path:polygon(0 0, 100% 8%, 92% 100%, 0 92%); text-shadow:0 2px 0 #000; }
+/* the sum, on a hanging wooden plaque */
+.ninja-plaque{ position:absolute; left:50%; top:96px; transform:translateX(-50%); z-index:3; pointer-events:none; white-space:nowrap; text-align:center;
+  font-size:26px; font-weight:900; color:#3e2614; padding:6px 18px 8px; border-radius:10px; border:3px solid #2b1a0e;
+  background:repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 3px, transparent 3px 12px), linear-gradient(#f6d79a, #e2b56b); box-shadow:0 5px 0 #2b1a0e, 0 10px 18px rgba(0,0,0,.35); }
+.ninja-plaque::before, .ninja-plaque::after{ content:""; position:absolute; top:-14px; width:3px; height:14px; background:#2b1a0e; }
+.ninja-plaque::before{ left:18%; } .ninja-plaque::after{ right:18%; }
+.ninja-plaque .ninja-wave{ color:#7a4f2e; }
+/* bigger fruit with a white number tag */
+.dojo .ninja-fruit{ width:72px; height:72px; }
+.dojo .ninja-emoji{ font-size:60px; filter:drop-shadow(0 6px 4px rgba(0,0,0,.4)); }
+.dojo .ninja-num{ bottom:-8px; font-size:16px; padding:2px 9px; border-radius:9px; border:2.5px solid #2b1a0e; background:#fff; box-shadow:0 2px 0 #2b1a0e; }
+.dojo .ninja-fruit.sliced{ opacity:0; transition:none; }
+/* the blade: a white core inside a green glow */
+.ninja-trail polyline{ fill:none; stroke-linecap:round; stroke-linejoin:round; }
+.ninja-trail polyline.glow{ stroke:#7dffb0; stroke-width:16; opacity:.55; filter:drop-shadow(0 0 10px #7dffb0); }
+.ninja-trail polyline:not(.glow){ stroke:#fff; stroke-width:5; filter:none; opacity:1; }
+/* slice effect: two halves split along the cut, juice drops, sparks, a comic word */
+.slice-fx{ position:absolute; z-index:5; width:0; height:0; pointer-events:none; }
+.slice-fx .half{ position:absolute; left:-36px; top:-36px; width:72px; height:72px; transform:rotate(var(--ang)); }
+.slice-fx .half > span{ display:grid; place-items:center; width:72px; height:72px; font-size:60px; line-height:1; transform:rotate(calc(-1 * var(--ang))); filter:drop-shadow(0 6px 4px rgba(0,0,0,.4)); }
+.slice-fx .half.top{ clip-path:inset(0 0 50% 0); animation:halfA .8s cubic-bezier(.2,.7,.4,1) forwards; }
+.slice-fx .half.bottom{ clip-path:inset(50% 0 0 0); animation:halfB .8s cubic-bezier(.2,.7,.4,1) forwards; }
+@keyframes halfA{ to{ transform:rotate(var(--ang)) translateY(-26px) rotate(-24deg) translateY(40px); opacity:0; } }
+@keyframes halfB{ to{ transform:rotate(var(--ang)) translateY(30px) rotate(24deg) translateY(60px); opacity:0; } }
+.slice-fx .drop{ position:absolute; left:-5px; top:-5px; width:10px; height:10px; border-radius:50%; background:var(--juice); box-shadow:0 0 6px var(--juice); animation:drop .7s ease-out forwards; }
+.slice-fx .d0{ --dx:-60px; --dy:-30px; } .slice-fx .d1{ --dx:55px; --dy:-40px; } .slice-fx .d2{ --dx:-40px; --dy:40px; } .slice-fx .d3{ --dx:45px; --dy:35px; }
+.slice-fx .d4{ --dx:-75px; --dy:5px; width:7px; height:7px; } .slice-fx .d5{ --dx:72px; --dy:0px; width:7px; height:7px; } .slice-fx .d6{ --dx:-15px; --dy:-62px; width:8px; height:8px; } .slice-fx .d7{ --dx:20px; --dy:60px; width:8px; height:8px; }
+@keyframes drop{ from{ transform:translate(0,0) scale(1); opacity:1; } to{ transform:translate(var(--dx), calc(var(--dy) + 30px)) scale(.4); opacity:0; } }
+.slice-fx .spark{ position:absolute; left:0; top:-1px; width:34px; height:3px; border-radius:2px; background:linear-gradient(90deg, #fff7c2, #ffb52e); transform-origin:0 50%; animation:spark2 .45s ease-out forwards; }
+.slice-fx .s0{ --r:-20deg; } .slice-fx .s1{ --r:40deg; } .slice-fx .s2{ --r:100deg; } .slice-fx .s3{ --r:160deg; } .slice-fx .s4{ --r:220deg; } .slice-fx .s5{ --r:290deg; }
+@keyframes spark2{ from{ transform:rotate(var(--r)) translateX(6px) scaleX(.3); opacity:1; } to{ transform:rotate(var(--r)) translateX(46px) scaleX(1); opacity:0; } }
+.slice-fx .boom-ring{ position:absolute; left:-44px; top:-44px; font-size:88px; line-height:1; animation:burst .7s ease-out forwards; }
+.slice-fx .sfx-word{ position:absolute; left:-60px; top:-92px; width:140px; text-align:center; white-space:nowrap; font:900 32px/1 "Baloo 2",system-ui,sans-serif;
+  color:#ffb52e; -webkit-text-stroke:3px #3e1a00; paint-order:stroke fill; text-shadow:0 4px 0 #3e1a00; transform:rotate(-10deg); animation:sfx .8s cubic-bezier(.2,1.6,.4,1) forwards; }
+.slice-fx.boom .sfx-word{ color:#ff5a3d; }
+@keyframes sfx{ 0%{ transform:rotate(-10deg) scale(.3); opacity:0; } 25%{ transform:rotate(-10deg) scale(1.15); opacity:1; } 70%{ opacity:1; } 100%{ transform:rotate(-10deg) scale(1) translateY(-14px); opacity:0; } }
+/* the player's portrait, bottom-left, like a character card */
+.dojo .ninja-sensei{ left:8px; bottom:8px; width:62px; height:62px; z-index:3; border-radius:16px; border:3px solid #fff; background:linear-gradient(#5ab2ff, #2b6fea); box-shadow:0 4px 0 rgba(0,0,0,.35); overflow:visible; }
+.dojo .ninja-sensei em{ position:absolute; left:50%; bottom:-10px; transform:translateX(-50%); font-style:normal; font-size:10px; font-weight:900; color:#1d1b33; background:#ffcf3a; border-radius:999px; padding:2px 8px; border:2px solid #1d1b33; }
+/* the demo uses the same dojo */
+.dojo .demo-fruit{ width:72px; height:72px; }
+/* layering in the dojo: plaque < fruit < HUD < slice effects */
+.dojo .ninja-plaque{ z-index:2; }
+.dojo .ninja-fruit{ z-index:3; }
+/* demo geometry for the taller dojo (480px): fruit centre line 42%, apex centre 186px */
+.dojo .ninja-q.demo{ top:96px; font-size:26px; }
+.dojo .demo-fruit{ top:480px; }
+.dojo .demo-fruit.f2{ left:calc(42% - 36px); }
+.dojo .demo-finger{ top:186px; }
+.dojo .demo-trail{ top:243px; height:8px; background:#fff; box-shadow:0 0 14px #7dffb0, 0 0 4px #fff; }
+.dojo .demo-pop{ top:144px; }
+
+/* ======== Math Race, illustrated: a stadium and a road in perspective ======== */
+.race-track.r3d{ display:block; height:440px; background:linear-gradient(#5fb4ff 0%, #a9dcff 38%, #c8ecff 44%, #7cc85e 44%, #69b84c 100%); perspective:520px; }
+.r3d-sky{ position:absolute; inset:0; pointer-events:none; }
+.r3d-sky > span{ position:absolute; line-height:1; }
+.r3d-cloud{ font-size:38px; opacity:.95; animation:castle-cloud 26s linear infinite; }
+.r3d-cloud.c1{ top:6%; left:58%; } .r3d-cloud.c2{ top:14%; left:22%; font-size:28px; animation-duration:38s; }
+.r3d-mtn{ bottom:56%; width:0; height:0; border-left:70px solid transparent; border-right:70px solid transparent; border-bottom:70px solid #6f8fb8; }
+.r3d-mtn.m1{ left:4%; } .r3d-mtn.m2{ left:34%; border-bottom-color:#5d7ca6; border-left-width:90px; border-right-width:90px; border-bottom-width:84px; } .r3d-mtn.m3{ right:2%; border-bottom-color:#7c9cc4; }
+/* the grandstand on the left */
+.r3d-stand{ left:-4px; top:30%; width:30%; height:22%; display:flex; flex-direction:column; justify-content:center; gap:2px; padding:4px 4px 4px 8px;
+  background:linear-gradient(#b8c2cc, #8d98a3); border:3px solid #4b5563; border-left:none; border-radius:0 10px 10px 0; transform:skewY(-6deg); overflow:hidden; }
+.r3d-stand::before{ content:""; position:absolute; left:0; right:-10px; top:-14px; height:14px; background:#4b5563; }
+.r3d-stand i{ font-style:normal; font-size:13px; letter-spacing:-2px; white-space:nowrap; animation:cheer .6s ease-in-out infinite alternate; }
+.r3d-stand i + i{ animation-delay:.3s; }
+@keyframes cheer{ to{ transform:translateY(-2px); } }
+.r3d-trees{ right:3%; top:33%; font-size:26px; }
+.r3d-arch{ left:50%; top:30%; transform:translateX(-50%); width:56%; height:32px; border-radius:6px; display:grid; place-items:center;
+  background:repeating-conic-gradient(#1d1b33 0 25%, #fff 0 50%) 0 0/14px 14px; border:3px solid #1d1b33; }
+.r3d-arch b{ background:#ff4f7a; color:#fff; font:900 13px/1 "Baloo 2",system-ui,sans-serif; letter-spacing:.12em; padding:4px 12px; border-radius:6px; border:2px solid #1d1b33; }
+.r3d-arch::before, .r3d-arch::after{ content:""; position:absolute; top:100%; width:5px; height:60px; background:#1d1b33; }
+.r3d-arch::before{ left:4px; } .r3d-arch::after{ right:4px; }
+/* the road: a long plane tilted away from the viewer; runners stand up on it */
+.r3d .race-road{ position:absolute; left:12%; right:12%; bottom:-6px; height:560px; flex:none; transform-origin:50% 100%;
+  transform:rotateX(62deg); transform-style:preserve-3d; border-left:8px solid #fff; border-right:8px solid #fff;
+  box-shadow:-10px 0 0 #e8443a, 10px 0 0 #e8443a, -18px 0 0 #fff, 18px 0 0 #fff; }
+.r3d .race-lane{ transform-style:preserve-3d; }
+.r3d .race-runner{ transform:translateX(-50%) rotateX(-62deg); transform-origin:50% 100%; }
+.r3d .race-boy{ width:64px; height:64px; }
+.r3d .race-emoji{ font-size:46px; }
+.r3d .race-finish{ top:5%; height:22px; background-size:22px 22px; }
+.r3d .race-finish span{ display:none; }
+/* boost flame behind the player on a right answer */
+.race-boost{ position:absolute; left:50%; bottom:-4px; width:36px; height:46px; margin-left:-18px; z-index:-1; border-radius:50% 50% 40% 40%;
+  background:radial-gradient(ellipse at 50% 20%, #fff7c2, #ffb52e 40%, #ff5a3d 75%, transparent 76%); filter:blur(.5px); transform-origin:50% 0;
+  animation:boost .55s ease-out forwards; }
+@keyframes boost{ from{ transform:translateY(20px) scaleY(1.6); opacity:1; } to{ transform:translateY(46px) scaleY(.4); opacity:0; } }
+/* progress bar across the top with every racer on it */
+.race-progress{ position:absolute; left:12px; right:40px; top:12px; z-index:4; height:30px; }
+.race-progress-bar{ position:absolute; left:0; right:0; top:12px; height:10px; border-radius:6px; background:rgba(29,27,51,.55); border:2px solid #1d1b33; overflow:hidden; }
+.race-progress-bar i{ position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#7ED957,#2E8B57); transition:width .35s; }
+.race-progress-flag{ position:absolute; right:-30px; top:0; font-size:24px; }
+.race-mark{ position:absolute; top:-4px; transform:translateX(-50%); font-size:20px; line-height:1; }
+.race-mark.me{ top:-8px; font:900 10px/1 "Baloo 2",system-ui,sans-serif; background:#ffcf3a; color:#1d1b33; border:2px solid #1d1b33; border-radius:999px; padding:4px 7px; z-index:1; transition:left .35s; }
+/* the comic word */
+.race-sfx{ position:absolute; left:50%; top:24%; z-index:5; transform:translateX(-50%) rotate(-8deg); white-space:nowrap; pointer-events:none;
+  font:900 36px/1 "Baloo 2",system-ui,sans-serif; color:#ffcf3a; -webkit-text-stroke:3px #3e1a00; paint-order:stroke fill; text-shadow:0 4px 0 #3e1a00;
+  animation:raceSfx .7s cubic-bezier(.2,1.6,.4,1) forwards; }
+.race-sfx.bad{ color:#ff7a7a; }
+@keyframes raceSfx{ 0%{ transform:translateX(-50%) rotate(-8deg) scale(.3); opacity:0; } 25%{ transform:translateX(-50%) rotate(-8deg) scale(1.1); opacity:1; } 75%{ opacity:1; } 100%{ transform:translateX(-50%) rotate(-8deg) translateY(-16px); opacity:0; } }
+
+/* ======== Sushi Shop, illustrated: a kaiten-zushi counter ======== */
+.sushi-shop.illus{ background:linear-gradient(#f3e3c4 0 34%, #d9b98a 34% 100%); border-color:#3e2614; }
+.sushi-wall{ position:relative; height:118px; background:
+  repeating-linear-gradient(90deg, rgba(120,80,40,.10) 0 2px, transparent 2px 46px), linear-gradient(#f6e9cf, #ead5ad); border-bottom:6px solid #7b532d; }
+.illus .sushi-noren{ position:absolute; left:0; right:0; top:0; display:flex; justify-content:center; gap:4px; padding:0; }
+.illus .sushi-noren span{ background:linear-gradient(#23346b, #1b2856); color:#fff; font:900 15px/1 "Baloo 2",system-ui,sans-serif; padding:10px 10px 18px; border-radius:0 0 8px 8px;
+  box-shadow:inset 0 -5px 0 rgba(0,0,0,.25); writing-mode:horizontal-tb; }
+.illus .sushi-noren span:first-child, .illus .sushi-noren span:last-child{ background:linear-gradient(#b8322e, #8f2420); font-size:18px; }
+/* hanging wooden price tags */
+.sushi-tags{ position:absolute; left:8px; right:8px; bottom:6px; display:flex; justify-content:space-between; gap:4px; }
+.sushi-tags span{ flex:1; display:flex; flex-direction:column; align-items:center; gap:1px; padding:4px 2px; border-radius:4px; font-size:9.5px; font-weight:900; color:#3e2614;
+  background:linear-gradient(#f6d79a, #e2b56b); border:2px solid #7b532d; box-shadow:0 2px 0 #7b532d; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sushi-tags span i{ width:12px; height:12px; border-radius:50%; background:var(--plate); border:1px solid rgba(0,0,0,.35); }
+.sushi-tags span b{ font-size:10.5px; color:#b8322e; }
+.sushi-lamp{ position:absolute; top:44px; width:22px; height:26px; border-radius:50% 50% 40% 40%; background:radial-gradient(circle at 50% 35%, #fff4c2, #f2a93b); box-shadow:0 0 18px 6px rgba(255,200,90,.45); }
+.sushi-lamp.l1{ left:10%; } .sushi-lamp.l2{ right:10%; }
+.illus .sushi-chef{ top:40px; z-index:2; }
+/* the conveyor: a steel belt with links, plates riding on it */
+.illus .sushi-belt{ margin:0; height:66px; border-block:5px solid #59616b; background:
+  repeating-linear-gradient(90deg, rgba(0,0,0,.18) 0 2px, transparent 2px 22px), linear-gradient(#aeb6bf, #e3e8ed 30%, #b7bfc8 75%, #8b939c); }
+.illus .sushi-dish{ width:52px; height:52px; margin-top:5px; font-size:30px; filter:drop-shadow(0 4px 2px rgba(0,0,0,.35)); }
+/* the counter: thick wood with grain; customers sit on round stools */
+.illus .sushi-counter{ position:relative; margin-top:0; background:
+  repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 3px, transparent 3px 30px), linear-gradient(#c9945c, #a8743f); border-top:10px solid #8a5a2e; box-shadow:inset 0 8px 10px rgba(0,0,0,.18); }
+.illus .sushi-seat{ border:none; background:radial-gradient(ellipse at 50% 96%, rgba(0,0,0,.28) 0 30%, transparent 31%); }
+.illus .sushi-seat.waiting{ background:radial-gradient(ellipse at 50% 96%, rgba(0,0,0,.28) 0 30%, transparent 31%), rgba(255,207,58,.22); box-shadow:inset 0 0 0 3px #ffcf3a; }
+.illus .sushi-seat.sel{ box-shadow:inset 0 0 0 3px #fff, 0 0 0 3px #ff7a3d; }
+.illus .sushi-face{ width:64px; height:64px; }
+/* comic speech bubbles with a tail */
+.illus .sushi-bubble{ font-size:11.5px; padding:5px 9px; border-radius:12px; border:2px solid #1d1b33; box-shadow:0 2px 0 #1d1b33; }
+.illus .sushi-bubble::after{ content:""; position:absolute; left:50%; bottom:-8px; margin-left:-6px; border:6px solid transparent; border-top-color:#1d1b33; }
+.illus .sushi-bubble.call{ background:#ffcf3a; font-weight:900; }
+.sushi-tags{ right:62px; }
+.illus .sushi-seat{ background:radial-gradient(ellipse 34% 8% at 50% 95%, rgba(0,0,0,.3), transparent); }
+.illus .sushi-seat.waiting{ background:radial-gradient(ellipse 34% 8% at 50% 95%, rgba(0,0,0,.3), transparent), rgba(255,207,58,.22); }
+
+/* ======== Math Town, illustrated: an island in a river ======== */
+.town-map{ padding:18px 14px 26px; border-color:#1d4e7a; gap:8px;
+  background:
+    radial-gradient(ellipse 46% 9% at 50% 2%, #7cc85e 98%, transparent) ,
+    linear-gradient(118deg, transparent 0 58%, #5fb4ff 58% 66%, transparent 66%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 10px, transparent 10px 20px),
+    linear-gradient(#8fd16a, #7cc85e); }
+/* water all round the island: a blue ring with a sandy shore */
+.town-map{ box-shadow:inset 0 0 0 10px #4aa3e8, inset 0 0 0 14px #f0d8a0, inset 0 0 0 16px rgba(0,0,0,.08); }
+/* empty lots: fenced dirt with a little signpost; built lots: a shadow under the building */
+.town-plot{ border:2px dashed rgba(122,79,46,.55); background:linear-gradient(#e8cf9a, #d9b97c); box-shadow:inset 0 -3px 0 rgba(0,0,0,.08); }
+.town-plot .town-empty{ color:#7a4f2e; font-size:16px; }
+.town-plot.built{ background:radial-gradient(ellipse 60% 18% at 50% 88%, rgba(0,0,0,.28), transparent); border:none; box-shadow:none; }
+.town-bld{ font-size:clamp(30px, 10vw, 46px); filter:drop-shadow(0 4px 0 rgba(0,0,0,.18)); }
+/* a few scenery bits drawn on the map */
+.town-map::after{ content:"⛵"; position:absolute; right:10px; bottom:4px; font-size:22px; animation:townBoat 6s ease-in-out infinite alternate; }
+@keyframes townBoat{ to{ transform:translateX(-40px) rotate(-4deg); } }
+
+/* ======== painted backgrounds (public/games/*.jpg) ======== */
+/* Ninja Slice: the dojo painting, with the warm vignette on top */
+.dojo-bg{ background:url(/games/dojo.jpg) center 40% / cover; }
+.dojo-beam, .dojo-floor{ display:none; }
+/* Math Race: the stadium painting; the drawn sky, stand and arch step aside */
+.race-track.r3d{ background:url(/games/race.jpg) center var(--race-bg-y, 0px) / 100% auto no-repeat, #5d9d45; }
+.r3d-sky > span{ display:none; }
+/* Sushi Shop: the back wall is the painting (noren, lanterns, the chef's area) */
+.illus .sushi-wall{ height:200px; background:url(/games/sushi.jpg) center 28% / cover; }
+.illus .sushi-noren, .sushi-lamp{ display:none; }
+.illus .sushi-chef{ top:142px; }
+/* Math Town: the island painting under the plots */
+.town-map{ background:url(/games/town.jpg) center / 100% 100% no-repeat; box-shadow:none; padding:9% 11% 10%; }
+.town-map::after{ display:none; }
+.town-plot:not(.built){ background:rgba(255,248,225,.22); border:2px dashed rgba(255,255,255,.9); box-shadow:0 1px 4px rgba(0,0,0,.18); }
+.town-plot:not(.built) .town-empty{ color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5); }
+/* line the painted horizon (GOAL arch) up with the far end of the road (≈200px down):
+   the painting is 900×1610 shown at the track's width; its horizon sits at 55.6% */
+.rg:has(.race-track.r3d){ container-type:inline-size; }
+.race-track.r3d{ --race-bg-y:calc(200px - 98.5cqw); }
+
+/* ======== "watch first" game demos (GameDemo.tsx) ======== */
+.dm-wrap{ position:fixed; inset:0; z-index:85; display:grid; place-items:center; padding:16px; background:rgba(20,16,40,.62); backdrop-filter:blur(3px); animation:dm-fade .25s both; }
+@keyframes dm-fade{ from{ opacity:0 } }
+.dm-box{ width:min(340px, 100%); background:#fffaf0; color:#1d1b33; border:3px solid #1d1b33; border-radius:24px; box-shadow:0 8px 0 #1d1b33; padding:12px 12px 14px; position:relative; }
+.dm-head{ display:flex; align-items:baseline; gap:8px; padding:0 30px 8px 4px; }
+.dm-head b{ font:900 18px/1.2 "Baloo 2",system-ui,sans-serif; }
+.dm-head span{ font-size:12px; font-weight:800; color:#7a6f8f; }
+.dm-x{ position:absolute; right:10px; top:8px; width:30px; height:30px; border-radius:50%; border:2px solid #1d1b33; background:#fff; font:900 18px/1 inherit; font-family:inherit; cursor:pointer; color:#1d1b33; }
+.dm-stage{ position:relative; width:300px; height:260px; margin:0 auto; border-radius:18px; overflow:hidden; border:3px solid #1d1b33;
+  background:linear-gradient(#fdf3dd, #f3e2bf); }
+.dm-prompt{ position:absolute; left:50%; top:10px; transform:translateX(-50%); z-index:3; white-space:nowrap; background:#fff; border:3px solid #1d1b33; border-radius:14px; padding:4px 14px; font:900 22px/1.2 "Baloo 2",system-ui,sans-serif; box-shadow:0 3px 0 #1d1b33; animation:dm-in .35s both; }
+@keyframes dm-in{ from{ opacity:0; transform:translate(-50%, -8px) } }
+.dm-tile{ position:absolute; display:grid; place-items:center; z-index:2; transition:left .5s ease, top .5s ease, transform .15s, background .2s; }
+.dm-tile i{ font-style:normal; }
+.dm-ans{ background:#fff; border:3px solid #1d1b33; border-radius:14px; box-shadow:0 4px 0 #1d1b33; font:800 20px/1 "Baloo 2",system-ui,sans-serif; }
+.dm-ans.hit, .dm-card.hit, .dm-key.hit{ background:#7ED957; transform:translateY(3px); box-shadow:0 1px 0 #1d1b33; }
+.dm-card{ background:#fff; border:3px solid #1d1b33; border-radius:16px; box-shadow:0 4px 0 #1d1b33; font:800 21px/1 "Baloo 2",system-ui,sans-serif; }
+.dm-card.back .dm-front{ opacity:0; }
+.dm-card.back .dm-rear{ position:absolute; inset:0; display:grid; place-items:center; border-radius:12px; color:#fff; font-size:26px;
+  background:repeating-linear-gradient(45deg, #7a58c0 0 8px, #6a48b0 8px 16px); }
+.dm-card.back.hit .dm-front{ opacity:1; }
+.dm-card.back.hit .dm-rear{ display:none; }
+.dm-badge{ position:absolute; right:-8px; top:-8px; width:24px; height:24px; border-radius:50%; background:#ff7a1a; color:#fff; border:2px solid #1d1b33; font:900 13px/20px inherit; font-style:normal; text-align:center; }
+.dm-finger{ position:absolute; z-index:6; font-size:36px; line-height:1; transition:left .55s cubic-bezier(.4,.1,.3,1), top .55s cubic-bezier(.4,.1,.3,1), transform .12s; filter:drop-shadow(0 3px 2px rgba(0,0,0,.35)); pointer-events:none; }
+.dm-finger.press{ transform:scale(.82); }
+.dm-plus{ position:absolute; z-index:5; right:22px; top:52px; font:900 26px/1 "Baloo 2",system-ui,sans-serif; color:#3fbf2a; text-shadow:0 2px 0 #1d1b33; animation:dm-plus 1.2s both; }
+@keyframes dm-plus{ from{ opacity:0; transform:translateY(14px) scale(.6) } 30%{ opacity:1; transform:none } }
+.dm-ans.big{ font-size:34px; }
+.dm-note-ans{ position:absolute; z-index:5; left:50%; top:62px; transform:translateX(-50%); white-space:nowrap; background:#1d1b33; color:#fff; border-radius:10px; padding:4px 10px; font-size:13px; font-weight:800; animation:dm-in .3s both; }
+.dm-caps{ min-height:42px; margin:10px 4px 0; display:grid; place-items:center; text-align:center; font-weight:900; font-size:14.5px; line-height:1.3; }
+.dm-skip{ display:block; margin:6px auto 0; border:2px solid #1d1b33; background:#fff; border-radius:999px; padding:7px 16px; font:900 13px/1 inherit; font-family:inherit; cursor:pointer; color:#1d1b33; }
+.dm-turn{ text-align:center; margin-top:6px; animation:dm-fade .3s both; }
+.dm-turn b{ font:900 20px/1.2 "Baloo 2",system-ui,sans-serif; }
+.dm-turn p{ margin:4px 0 10px; font-size:13.5px; color:#4a4466; }
+.dm-turn .btn{ width:100%; }
+.dm-turn .btn + .btn{ margin-top:6px; }
+
+/* runner */
+.dm-run{ background:linear-gradient(#bfe6ff 0 52%, #8fd16b 52% 70%, #f3e2bf 70%); }
+.dm-ground{ position:absolute; left:0; right:0; top:150px; height:8px; background:#6aa84f; }
+.dm-hero{ position:absolute; left:26px; top:92px; width:58px; height:58px; z-index:2; }
+.dm-hero svg{ width:100%; height:100%; }
+.dm-rock{ position:absolute; top:118px; left:300px; font-size:30px; animation:dm-rock 2.6s linear both; }
+@keyframes dm-rock{ to{ left:-40px } }
+.dm-run.win .dm-hero{ animation:dm-jump .7s ease-out both; }
+@keyframes dm-jump{ 50%{ transform:translateY(-58px) rotate(-8deg) } }
+/* race */
+.dm-race{ background:linear-gradient(#bfe6ff 0 26%, #c86b3c 26% 74%, #f3e2bf 74%); }
+.dm-lane{ position:absolute; left:0; right:0; height:2px; background:rgba(255,255,255,.7); }
+.dm-lane.l1{ top:96px } .dm-lane.l2{ top:136px } .dm-lane.l3{ top:176px }
+.dm-goal{ position:absolute; right:8px; top:64px; height:124px; width:30px; display:grid; place-items:center; writing-mode:vertical-rl; font:900 13px/1 inherit; color:#1d1b33;
+  background:repeating-linear-gradient(#fff 0 10px, #1d1b33 10px 20px); border:2px solid #1d1b33; }
+.dm-goal{ color:transparent; }
+.dm-racer{ position:absolute; left:20px; width:40px; height:40px; transition:left .6s ease-out; }
+.dm-racer svg{ width:100%; height:100%; }
+.dm-racer.r1{ top:58px; left:44px; } .dm-racer.r2{ top:98px; } .dm-racer.r3{ top:138px; left:38px; }
+.dm-race.win .dm-racer.me{ left:130px; }
+.dm-dash{ position:absolute; left:96px; top:106px; font-size:24px; opacity:0; }
+.dm-race.win .dm-dash{ animation:dm-plus .8s both; }
+/* sushi */
+.dm-sushi{ background:linear-gradient(#5b3a26 0 14%, #e9d3a8 14% 66%, #c98c55 66%); }
+.dm-belt{ position:absolute; left:0; right:0; top:36px; height:30px; background:#cfd6dc; border-block:3px solid #8a949c; font-size:20px; line-height:26px; white-space:nowrap; padding-left:10px; animation:dm-belt 4s linear infinite; }
+@keyframes dm-belt{ to{ padding-left:60px } }
+.dm-who{ background:none; }
+.dm-who.hit{ filter:drop-shadow(0 0 8px #ffcf3a); }
+.dm-plate{ position:absolute; top:122px; background:#fff; border:2px solid #1d1b33; border-radius:999px; padding:3px 8px; font:900 13px/1 inherit; }
+.dm-plate.p1{ left:120px } .dm-plate.p2{ left:184px }
+.dm-bubble{ position:absolute; left:92px; top:58px; font-size:24px; animation:dm-wave .6s ease-in-out infinite alternate; }
+@keyframes dm-wave{ to{ transform:rotate(-14deg) } }
+.dm-heart{ position:absolute; left:100px; top:66px; font:900 18px/1 inherit; color:#e63946; animation:dm-plus 1s both; }
+.dm-sushi .dm-prompt{ top:150px; font-size:18px; }
+/* castle */
+.dm-castle{ background:linear-gradient(#bfe6ff 0 58%, #8fd16b 58% 72%, #f3e2bf 72%); }
+.dm-castle .dm-ground{ top:150px; }
+.dm-keep{ position:absolute; left:8px; top:86px; font-size:56px; line-height:1; }
+.dm-mon{ position:absolute; top:108px; left:300px; font-size:36px; line-height:1; animation:dm-march 1.6s ease-out both; }
+.dm-mon em{ position:absolute; left:50%; top:-24px; transform:translateX(-50%); font:900 13px/1 inherit; font-style:normal; background:#fff; border:2px solid #1d1b33; border-radius:8px; padding:2px 6px; white-space:nowrap; }
+@keyframes dm-march{ to{ left:180px } }
+.dm-arrow{ position:absolute; left:70px; top:112px; font-size:28px; opacity:0; transform:rotate(45deg); }
+.dm-poof{ position:absolute; left:180px; top:104px; font-size:40px; opacity:0; }
+.dm-castle.win .dm-arrow{ animation:dm-shoot .35s linear both; }
+.dm-castle.win .dm-mon{ animation:dm-march 1.6s ease-out both, dm-gone .2s .35s both; }
+.dm-castle.win .dm-poof{ animation:dm-poof .6s .32s both; }
+@keyframes dm-shoot{ from{ opacity:1 } 92%{ opacity:1; left:176px } to{ opacity:0; left:180px } }
+@keyframes dm-gone{ to{ opacity:0 } }
+@keyframes dm-poof{ 0%{ opacity:0; transform:scale(.4) } 30%{ opacity:1; transform:scale(1.2) } 100%{ opacity:0; transform:scale(1.4) } }
+/* konbini */
+.dm-shop{ background:linear-gradient(#e8f6ff 0 62%, #f3e2bf 62%); }
+.dm-counter{ position:absolute; left:0; right:0; top:150px; height:20px; background:#c98c55; border-top:3px solid #1d1b33; }
+.dm-who-fixed{ position:absolute; left:26px; top:74px; width:76px; height:76px; }
+.dm-say{ position:absolute; left:110px; top:84px; background:#fff; border:2px solid #1d1b33; border-radius:12px; padding:4px 8px; font:900 14px/1 inherit; }
+.dm-price{ position:absolute; right:20px; top:112px; background:#1d1b33; color:#7fffa0; border-radius:8px; padding:5px 9px; font:900 15px/1 monospace; }
+.dm-shop .dm-prompt{ top:44px; font-size:18px; }
+/* crossword */
+.dm-cell{ background:#fff; border:3px solid #1d1b33; border-radius:10px; font:900 22px/1 "Baloo 2",system-ui,sans-serif; }
+.dm-cell.blank{ background:#fff7d6; border-style:dashed; }
+.dm-cell.blank.hit{ border-style:solid; box-shadow:0 0 0 3px #ffcf3a; }
+.dm-cross.win .dm-cell{ background:#c8f5b5; }
+.dm-sum{ position:absolute; font:900 18px/1 "Baloo 2",system-ui,sans-serif; color:#7a58c0; }
+.dm-key{ background:#fff; border:3px solid #1d1b33; border-radius:12px; box-shadow:0 4px 0 #1d1b33; font:900 20px/1 "Baloo 2",system-ui,sans-serif; }
+.dm-key.go{ background:#ffcf3a; font-size:15px; }
+.dm-ok{ position:absolute; right:22px; top:60px; font:900 40px/1 inherit; color:#3fbf2a; animation:dm-plus .8s both; }
+/* rhythm */
+.dm-rhythm{ background:linear-gradient(#2a1f5c, #4b2f8f); }
+.dm-line{ position:absolute; left:0; right:0; top:168px; height:4px; background:#ffcf3a; box-shadow:0 0 10px #ffcf3a; }
+.dm-note{ position:absolute; top:-40px; width:56px; height:34px; border-radius:12px; display:grid; place-items:center; background:#fff; border:3px solid #1d1b33; font:900 18px/1 "Baloo 2",system-ui,sans-serif; animation:dm-fall 1.3s linear forwards; }
+.dm-note.n0{ left:28px } .dm-note.n1{ left:122px; animation-duration:1.7s } .dm-note.n2{ left:216px; animation-duration:2.1s }
+@keyframes dm-fall{ to{ top:153px } }
+.dm-rhythm.win .dm-note.n0{ animation:dm-fall 1.3s linear forwards, dm-gone .2s both; }
+.dm-perfect{ position:absolute; left:14px; top:120px; font:900 18px/1 "Baloo 2",system-ui,sans-serif; color:#ffcf3a; opacity:0; }
+.dm-rhythm.win .dm-perfect{ animation:dm-plus 1s both; }
+.dm-rhythm .dm-prompt{ top:60px; }
+.dm-pad{ border:3px solid #1d1b33; border-radius:14px; box-shadow:0 4px 0 #1d1b33; }
+.dm-pad.p0{ background:#ff6b8b } .dm-pad.p1{ background:#4fc3f7 } .dm-pad.p2{ background:#7ED957 }
+.dm-pad.hit{ transform:translateY(3px); box-shadow:0 1px 0 #1d1b33; filter:brightness(1.25); }
+/* pop */
+.dm-sky{ background:linear-gradient(#9ed8ff, #e4f5ff); }
+.dm-balloon{ border-radius:50% 50% 46% 46%; border:3px solid #1d1b33; color:#fff; font:900 22px/1 "Baloo 2",system-ui,sans-serif; text-shadow:0 2px 0 rgba(0,0,0,.3); animation:dm-rise 1s ease-out both; }
+.dm-balloon::after{ content:""; position:absolute; left:50%; top:100%; width:2px; height:44px; background:#1d1b33; }
+.dm-balloon.b0{ background:#ff6b8b } .dm-balloon.b1{ background:#ffb020; animation-delay:.1s } .dm-balloon.b2{ background:#7a58c0; animation-delay:.2s }
+@keyframes dm-rise{ from{ transform:translateY(200px) } }
+.dm-balloon.hit{ animation:dm-burst .3s both; }
+@keyframes dm-burst{ to{ transform:scale(1.5); opacity:0 } }
+/* matchsticks */
+.dm-sticks{ background:radial-gradient(circle at 50% 40%, #3c2a6b, #1d1440); }
+.dm-digit{ position:absolute; width:32px; height:58px; }
+.dm-digit .sg, .dm-stick, .dm-minus, .dm-eq{ position:absolute; background:#ffcf3a; border-radius:3px; box-shadow:0 0 0 1px #8a5b10 inset; }
+.dm-digit .sg.a{ left:4px; top:0; width:24px; height:6px } .dm-digit .sg.d{ left:4px; bottom:0; width:24px; height:6px } .dm-digit .sg.g{ left:4px; top:26px; width:24px; height:6px }
+.dm-digit .sg.b{ right:0; top:4px; width:6px; height:23px } .dm-digit .sg.c{ right:0; top:31px; width:6px; height:23px }
+.dm-digit .sg.f{ left:0; top:4px; width:6px; height:23px } .dm-digit .sg.e{ left:0; top:31px; width:6px; height:23px }
+.dm-minus{ width:30px; height:6px; } .dm-eq{ width:26px; height:6px; }
+.dm-stick{ border:none; border-radius:3px; background:#ffcf3a; box-shadow:0 0 10px 3px #ff4fd8; }
+.dm-stick.hit{ box-shadow:0 0 12px 4px #7dffb0; }
+.dm-sticks .dm-ok{ top:30px; }
+.dm-sticks .dm-note-ans{ top:180px; }

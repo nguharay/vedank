@@ -22,6 +22,13 @@ type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect
 const NINJA_KEY = "sutraSprint.ninjaBest";
 const DEMO_KEY = "sutraSprint.ninjaDemo";
 const DEMO_MS = 4200;
+const FRUIT_HALF = 36;             /* fruit are 72px; positions are their centres */
+/* juice colour per fruit, for the splash */
+const JUICE: Record<string, string> = { "🍉": "#ff4d6d", "🍊": "#ff9a1f", "🍎": "#e63946", "🍐": "#b5d96b", "🍑": "#ffb08a", "🥝": "#8bc34a", "🍋": "#ffd60a", "🍇": "#9b5de5" };
+type Fx = { k: number; x: number; y: number; emoji: string; ang: number; kind: "cut" | "boom"; word: string; color: string };
+const WORDS_JA = ["スパッ！", "ズバッ！", "シュパッ！", "スパーン！"];
+const WORDS_EN = ["SLICE!", "SWISH!", "CHOP!", "ZING!"];
+const pickWord = (ja: boolean) => { const w = ja ? WORDS_JA : WORDS_EN; return w[Math.floor(Math.random() * w.length)]; };
 const FRUITS = ["🍉", "🍊", "🍎", "🍐", "🍑", "🥝", "🍋", "🍇"];
 const GRAVITY = 620;              /* px/s² — gentle, so a sum can be read and found in the air */
 const READ_MS = 900;              /* the sum is shown this long before its fruit is tossed */
@@ -54,9 +61,13 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
   const [newBest, setNewBest] = useState(false);
   const [pop, setPop] = useState<{ k: number; x: number; y: number; text: string; cls: string } | null>(null);
   const [tierBanner, setTierBanner] = useState<number | null>(null);
+  /* one-shot slice effects: the fruit's two halves, juice, sparks and a comic
+     sound word, each removed after its animation */
+  const [fx, setFx] = useState<Fx[]>([]);
 
   const arenaRef = useRef<HTMLDivElement | null>(null);
   const trailRef = useRef<SVGPolylineElement | null>(null);
+  const trailGlowRef = useRef<SVGPolylineElement | null>(null);
   const fruitEls = useRef(new Map<number, HTMLDivElement>());
   const s = useRef({
     raf: 0, last: 0, fruits: [] as Fruit[], nextId: 1, waveNo: 0, wave: null as Wave | null,
@@ -120,7 +131,7 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
       const el = fruitEls.current.get(f.id);
       if (el) {
         /* the fruit spins; its number label stays upright and readable */
-        el.style.transform = `translate3d(${f.x - 28}px,${f.y - 28}px,0)${f.sliced ? " scale(.6)" : ""}`;
+        el.style.transform = `translate3d(${f.x - FRUIT_HALF}px,${f.y - FRUIT_HALF}px,0)`;
         const emoji = el.firstElementChild as HTMLElement | null;
         if (emoji) emoji.style.transform = `rotate(${f.rot}deg)`;
       }
@@ -149,7 +160,9 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
     if (now >= st.nextToss) toss();
     /* trail fades: keep the last 120 ms */
     st.trail = st.trail.filter((p) => now - p.t < 120);
-    if (trailRef.current) trailRef.current.setAttribute("points", st.trail.map((p) => `${p.x},${p.y}`).join(" "));
+    const pts = st.trail.map((p) => `${p.x},${p.y}`).join(" ");
+    if (trailRef.current) trailRef.current.setAttribute("points", pts);
+    if (trailGlowRef.current) trailGlowRef.current.setAttribute("points", pts);
     if (st.lives <= 0) { end(); return; }
     st.raf = requestAnimationFrame(frame);
   }
@@ -166,11 +179,21 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
     sound.wrong(); haptic(40);
   }
 
-  function slice(f: Fruit, now: number) {
+  function addFx(e: Omit<Fx, "k">) {
+    const k = ++s.current.popK;
+    setFx((list) => [...list, { ...e, k }]);
+    setTimeout(() => setFx((list) => list.filter((x) => x.k !== k)), 900);
+  }
+
+  function slice(f: Fruit, now: number, ang: number) {
     const st = s.current;
     f.sliced = true; f.sliceAt = now;
     f.vy = -200; f.vx *= 0.5;
-    if (f.bomb) { loseLife(f.x, f.y, ja ? "ばくだん！" : "BOMB!"); return; }
+    if (f.bomb) {
+      addFx({ x: f.x, y: f.y, emoji: f.emoji, ang, kind: "boom", word: ja ? "ドカーン！" : "BOOM!", color: "#ff7a3d" });
+      loseLife(f.x, f.y, ja ? "ばくだん！" : "BOMB!"); return;
+    }
+    addFx({ x: f.x, y: f.y, emoji: f.emoji, ang, kind: "cut", word: pickWord(ja), color: JUICE[f.emoji] ?? "#ff9a1f" });
     if (!st.wave || f.wave !== st.wave.id || f.value !== st.wave.answer) { loseLife(f.x, f.y, ja ? "ちがう！" : "Wrong!"); return; }
     st.wave.pending -= 1;
     st.combo += 1; setCombo(st.combo);
@@ -209,7 +232,7 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
     /* any un-sliced fruit the segment prev→p passes near */
     for (const f of st.fruits) {
       if (f.sliced) continue;
-      if (segDist(prev.x, prev.y, p.x, p.y, f.x, f.y) < 30) slice(f, p.t);
+      if (segDist(prev.x, prev.y, p.x, p.y, f.x, f.y) < FRUIT_HALF + 6) slice(f, p.t, Math.atan2(p.y - prev.y, p.x - prev.x) * 180 / Math.PI);
     }
   }
   function onUp(e: React.PointerEvent) {
@@ -265,16 +288,17 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
 
   return (
     <div className="rg">
-      <div className="match-head">
-        <div className="match-stat"><span className="match-stat-k">{ja ? "スコア" : "Score"}</span><span className="match-stat-v mono">{score}</span></div>
-        <div className="match-stat"><span className="match-stat-k">{ja ? "コンボ" : "Combo"}</span><span className="match-stat-v mono">{combo > 1 ? `×${combo}` : "–"}</span></div>
-        <div className="match-stat"><span className="match-stat-k">{ja ? "ライフ" : "Lives"}</span><span className="match-stat-v castle-hearts">{"❤️".repeat(Math.max(0, lives))}{"🖤".repeat(LIVES - Math.max(0, lives))}</span></div>
-      </div>
-
-      <div className="ninja-arena" ref={arenaRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-        <div className="ninja-bg" aria-hidden="true"><span className="ninja-moon" /><span className="ninja-hills" /></div>
+      <div className="ninja-arena dojo" ref={arenaRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+        {/* a wooden dojo: plank wall, a beam, a lit floor */}
+        <div className="dojo-bg" aria-hidden="true"><span className="dojo-beam" /><span className="dojo-floor" /><span className="dojo-light" /></div>
+        <div className="ninja-hud">
+          <span className="ninja-coins mono"><b>🪙</b>{score}</span>
+          <span className="ninja-gauge" aria-label={ja ? "コンボ" : "Combo"}><i style={{ width: `${Math.min(100, (combo % 10) * 10 + (combo >= 10 ? 100 : 0))}%` }} />{combo > 1 && <em className="mono">×{combo}</em>}</span>
+          <span className="ninja-lives">{"❤️".repeat(Math.max(0, lives))}{"🖤".repeat(LIVES - Math.max(0, lives))}</span>
+        </div>
+        <div className="ninja-title" aria-hidden="true">NINJA SLICE</div>
         {phase === "play" && wave && (
-          <div className="ninja-q mono">{wave.prompt} = ?<span className="ninja-wave">{ja ? `ウェーブ ${waveNo}` : `Wave ${waveNo}`}</span></div>
+          <div className="ninja-plaque mono">{wave.prompt} = ?<span className="ninja-wave">{ja ? `ウェーブ ${waveNo}` : `Wave ${waveNo}`}</span></div>
         )}
         {fruits.map((f) => (
           <div key={f.id} className={`ninja-fruit${f.sliced ? " sliced" : ""}${f.bomb ? " bomb" : ""}`}
@@ -283,10 +307,25 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
             {!f.bomb && <span className="ninja-num mono">{fmt(f.value ?? 0)}</span>}
           </div>
         ))}
-        <svg className="ninja-trail" aria-hidden="true"><polyline ref={trailRef} points="" /></svg>
+        {fx.map((e) => (
+          <div key={e.k} className={`slice-fx ${e.kind}`} style={{ left: e.x, top: e.y, ["--ang" as string]: `${e.ang}deg`, ["--juice" as string]: e.color }} aria-hidden="true">
+            {e.kind === "cut" ? (
+              <>
+                <span className="half top"><span>{e.emoji}</span></span>
+                <span className="half bottom"><span>{e.emoji}</span></span>
+                {Array.from({ length: 8 }, (_, i) => <i key={i} className={`drop d${i}`} />)}
+                {Array.from({ length: 6 }, (_, i) => <b key={i} className={`spark s${i}`} />)}
+              </>
+            ) : (
+              <span className="boom-ring">💥</span>
+            )}
+            <span className="sfx-word">{e.word}</span>
+          </div>
+        ))}
+        <svg className="ninja-trail" aria-hidden="true"><polyline className="glow" ref={trailGlowRef} points="" /><polyline ref={trailRef} points="" /></svg>
         {pop && <span key={pop.k} className={`ninja-pop ${pop.cls}`} style={{ left: pop.x, top: pop.y }}>{pop.text}</span>}
         {tierBanner && <div key={tierBanner} className="sushi-levelup"><b>{ja ? `レベル ${tierBanner}！` : `Level ${tierBanner}!`}</b><span>{ja ? "計算がむずかしくなる！" : "Harder sums!"}</span></div>}
-        <span className="ninja-sensei" aria-hidden="true"><Mascot animated={phase === "play"} mood="excited" /></span>
+        <span className="ninja-sensei" aria-hidden="true"><Mascot animated={phase === "play"} mood="excited" /><em>{ja ? "きみ" : "YOU"}</em></span>
 
         {phase === "demo" && (
           <div className="ninja-demo" aria-live="polite">

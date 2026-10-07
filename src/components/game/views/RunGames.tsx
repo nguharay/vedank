@@ -14,7 +14,7 @@ import {
 } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
-type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect?: (n: number) => void };
+type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect?: (n: number) => void; autoStart?: boolean };
 
 function readBest(key: string) {
   try { return Number(localStorage.getItem(key) || 0); } catch { return 0; }
@@ -68,7 +68,7 @@ const OBS_HALF = 20;
 
 type RunState = "approach" | "cleared" | "wrong" | "crashed";
 
-export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
+export function RunnerGame({ lang, sound, celebrate, onCorrect, autoStart }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "run" | "over">("ready");
   const [round, setRound] = useState<ChoiceRound | null>(null);
@@ -203,6 +203,13 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect }: Props) {
     setPhase("over");
   }
 
+  /* opened from its "watch first" demo: skip the ready card */
+  useEffect(() => {
+    if (!autoStart) return;
+    const t = setTimeout(() => start(), 0);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="rg">
       <div className="match-head">
@@ -278,6 +285,11 @@ function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOn
   const level = raceLevel(lvId);
 
   const rivalRefs = useRef<(HTMLDivElement | null)[]>([]);
+  /* the progress bar's rival markers, moved in the same frame as the runners */
+  const markerRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  /* a burst behind the player and a comic word on each answer */
+  const [dash, setDash] = useState<{ k: number; word: string; ok: boolean } | null>(null);
+  const dashK = useRef(0);
   const timeRef = useRef<HTMLSpanElement | null>(null);
   const s = useRef({ raf: 0, t0: 0, done: 0, streak: 0, over: false, timer: 0 as unknown as ReturnType<typeof setTimeout>, place: 1, lv: 1 });
 
@@ -302,6 +314,8 @@ function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOn
       if (p > mine) ahead++;
       const el = rivalRefs.current[i];
       if (el) el.style.bottom = at(p);
+      const mk = markerRefs.current[i];
+      if (mk) mk.style.left = `${Math.min(1, p) * 100}%`;
     });
     if (timeRef.current) timeRef.current.textContent = secs.toFixed(1);
     const place = 1 + ahead;
@@ -337,11 +351,14 @@ function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOn
     setPicked(v);
     if (v !== round.answer) {
       setStumble(true); sound.wrong(); haptic(34); st.streak = 0;
+      setDash({ k: ++dashK.current, word: ja ? "あわわ！" : "Oops!", ok: false });
       st.timer = setTimeout(() => { setStumble(false); setPicked(null); setRound(buildChoiceRound(st.streak)); }, 800);
       return;
     }
     sound.correct(); haptic(12); onCorrect?.(1);
     st.done += 1; st.streak += 1; setDone(st.done);
+    const words = ja ? ["ダッシュ！", "いけー！", "ぐんぐん！", "ビュン！"] : ["DASH!", "GO GO!", "ZOOM!", "WHOOSH!"];
+    setDash({ k: ++dashK.current, word: words[st.done % words.length], ok: true });
     if (st.done >= RACE_GOAL) { finish(); return; }
     st.timer = setTimeout(() => { setPicked(null); setRound(buildChoiceRound(st.streak)); }, 180);
   }
@@ -382,8 +399,25 @@ function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOn
         <div className="match-stat"><span className="match-stat-k">{ja ? "タイム" : "Time"}</span><span className="match-stat-v mono"><span ref={timeRef}>0.0</span>s</span></div>
       </div>
 
-      <div className={`race-track${phase === "race" ? " moving" : ""}`}>
-        <div className="race-side left" aria-hidden="true">🌳<br />🌷<br />🌲<br />🌼<br />🌳</div>
+      <div className={`race-track r3d${phase === "race" ? " moving" : ""}`}>
+        {/* the stadium: sky, mountains, a stand full of fans, and a road that
+            runs away from you in perspective */}
+        <div className="r3d-sky" aria-hidden="true">
+          <span className="r3d-cloud c1">☁️</span><span className="r3d-cloud c2">☁️</span>
+          <span className="r3d-mtn m1" /><span className="r3d-mtn m2" /><span className="r3d-mtn m3" />
+          <span className="r3d-stand"><i>🧒👧👦🧑👩👨👧🧒</i><i>👦🧑👧👨🧒👩👦👧</i></span>
+          <span className="r3d-trees">🌳🌲🌳</span>
+          <span className="r3d-arch"><b>GOAL</b></span>
+        </div>
+        <div className="race-progress" aria-hidden="true">
+          <span className="race-progress-bar"><i style={{ width: `${(done / RACE_GOAL) * 100}%` }} /></span>
+          <span className="race-progress-flag">🏁</span>
+          {level.rivals.map((r, i) => (
+            <span key={r.id} className="race-mark rival" ref={(el) => { markerRefs.current[i] = el; }} style={{ left: "0%" }}>{r.emoji}</span>
+          ))}
+          <span className="race-mark me" style={{ left: `${(done / RACE_GOAL) * 100}%` }}>{ja ? "きみ" : "YOU"}</span>
+        </div>
+        {dash && <span key={dash.k} className={`race-sfx${dash.ok ? "" : " bad"}`} aria-hidden="true">{dash.word}</span>}
         <div className="race-road">
           <div className="race-finish" aria-hidden="true"><span>GOAL</span></div>
           <div className="race-lane" style={{ left: "16.6%" }}>
@@ -394,6 +428,7 @@ function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOn
           </div>
           <div className="race-lane" style={{ left: "50%" }}>
             <div className={`race-runner me${stumble ? " stumble" : ""}`} style={{ bottom: at(done / RACE_GOAL) }}>
+              {dash?.ok && <span key={dash.k} className="race-boost" aria-hidden="true" />}
               <span className="race-boy"><Mascot mood={stumble ? "sad" : "excited"} animated={false} /></span>
               <span className="race-name you">{ja ? "きみ" : "You"}</span>
             </div>
@@ -405,7 +440,6 @@ function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOn
             </div>
           </div>
         </div>
-        <div className="race-side right" aria-hidden="true">🌲<br />🌻<br />🌳<br />🌷<br />🌲</div>
 
         {phase === "count" && <div key={count} className="race-count mono">{count}</div>}
         {phase === "ready" && (

@@ -11,7 +11,7 @@ import {
 } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
-type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect?: (n: number) => void };
+type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect?: (n: number) => void; autoStart?: boolean };
 
 function readBest(key: string) {
   try { return Number(localStorage.getItem(key) || 0); } catch { return 0; }
@@ -48,7 +48,7 @@ const KONBINI_NOTES: Record<number, { en: string; ja: string }> = {
   6: { en: "Customers add coins to get round change", ja: "小銭をたしてキリのいいおつりに" },
 };
 
-export function KonbiniCashier({ lang, sound, celebrate, onCorrect }: Props) {
+export function KonbiniCashier({ lang, sound, celebrate, onCorrect, autoStart }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "play" | "over">("ready");
   const [q, setQ] = useState<KonbiniQ | null>(null);
@@ -139,6 +139,13 @@ export function KonbiniCashier({ lang, sound, celebrate, onCorrect }: Props) {
   }
 
   const front = queue[0];
+  /* opened from its "watch first" demo: skip the ready card */
+  useEffect(() => {
+    if (!autoStart) return;
+    const t = setTimeout(() => start(), 0);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="rg">
       <div className="match-head">
