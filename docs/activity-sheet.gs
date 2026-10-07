@@ -209,6 +209,10 @@ function setupSummary() {
   sh.setFrozenRows(2);
   // QUERY returns dates as plain numbers — show those columns as dates
   ['A', 'D', 'G', 'J', 'R', 'AK', 'AO', 'AV', 'BE'].forEach(function (c) { sh.getRange(c + '3:' + c).setNumberFormat('yyyy-mm-dd'); });
+  sh.getRange('BF3:BF').setNumberFormat('hh:mm');                                   // visit start time
+  ['L', 'M', 'V', 'BB', 'BH'].forEach(function (c) { sh.getRange(c + '3:' + c).setNumberFormat('0.0'); });   // minutes
+  ['AC', 'AD', 'BC'].forEach(function (c) { sh.getRange(c + '3:' + c).setNumberFormat('0'); });             // scores, seconds
+  ['AE', 'AI'].forEach(function (c) { sh.getRange(c + '3:' + c).setNumberFormat('0.0'); });                 // average stars
   arrangeTabs(ss);
 }
 
@@ -228,7 +232,9 @@ function buildPlayers() {
     installed: col('Installed'), lang: col('Lang'), email: col('Email'), os: col('OS'), browser: col('Browser'), dev: col('Device ID'),
     screen: col('Screen'), tz: col('Timezone') };
   const get = function (r, k) { return c[k] >= 0 ? r[c[k]] : ''; };
-  const day = function (v) { return v instanceof Date ? Utilities.formatDate(v, 'Asia/Tokyo', 'yyyy-MM-dd') : String(v || ''); };
+  // dates/times in the sheet are read in the sheet's own timezone, so format them in it too
+  const tz = ss.getSpreadsheetTimeZone();
+  const day = function (v) { return v instanceof Date ? Utilities.formatDate(v, tz, 'yyyy-MM-dd') : String(v || ''); };
 
   // registration details by email
   const regSheet = regTab(ss);
@@ -254,7 +260,7 @@ function buildPlayers() {
       devIds: {}, screens: {}, tz: '', newDevice: false,
     });
     const d = day(get(r, 'date'));
-    const t = get(r, 'time') instanceof Date ? Utilities.formatDate(get(r, 'time'), 'Asia/Tokyo', 'HH:mm') : String(get(r, 'time') || '').slice(0, 5);
+    const t = get(r, 'time') instanceof Date ? Utilities.formatDate(get(r, 'time'), tz, 'HH:mm') : String(get(r, 'time') || '').replace(/^(\d):/, '0$1:').slice(0, 5);
     const stamp = d + ' ' + t;
     if (!p.first || stamp < p.first) p.first = stamp;
     if (!p.last || stamp > p.last) p.last = stamp;
