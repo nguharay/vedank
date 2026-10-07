@@ -11,7 +11,12 @@
 
 type Params = Record<string, string | number | boolean | undefined>;
 type W = Window & { gtag?: (...a: unknown[]) => void; clarity?: (...a: unknown[]) => void };
-type Ev = { ev: string; at: number; game?: string; topic?: string; score?: number; stars?: number; detail?: string };
+type Section = { n: string; s: number; r?: string };
+type Ev = {
+  ev: string; at: number; game?: string; topic?: string; score?: number; stars?: number; detail?: string;
+  /* visit_end only: when the visit began, this device's visit number, and every section in order */
+  start?: number; vno?: number; sections?: Section[];
+};
 
 /* GA4 / Clarity load only when these are set (see components/Analytics.tsx) */
 export const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "";
@@ -24,9 +29,11 @@ let wired = false;
 /* the current stretch of play: since the app was opened or last came back.
    `trail` is the screens visited in order with the time on each — it rides
    on the one visit_end row instead of being a row per screen. */
-const visit = { since: 0, active: 0, games: 0, finished: 0 };
-const trail: { screen: string; ms: number }[] = [];
-let onScreen: { screen: string; since: number } | null = null;
+/* start: when this visit began; since: when it last came on screen (0 while
+   hidden); active: on-screen time banked so far */
+const visit = { start: 0, since: 0, active: 0, games: 0, finished: 0 };
+const trail: { screen: string; ms: number; results: string[] }[] = [];
+let onScreen: { screen: string; since: number; results: string[] } | null = null;
 const gameOpenedAt: Record<string, number> = {};
 
 const dur = (ms: number) => (ms >= 60000 ? `${Math.round(ms / 6000) / 10}m` : `${Math.round(ms / 1000)}s`);
@@ -34,9 +41,41 @@ function closeScreen(now = Date.now()) {
   if (!onScreen) return;
   const ms = now - onScreen.since;
   const last = trail[trail.length - 1];
-  if (last && last.screen === onScreen.screen) last.ms += ms;
-  else if (trail.length < 40) trail.push({ screen: onScreen.screen, ms });
-  onScreen = { screen: onScreen.screen, since: now };
+  if (last && last.screen === onScreen.screen) { last.ms += ms; last.results.push(...onScreen.results); }
+  else if (trail.length < 60) trail.push({ screen: onScreen.screen, ms, results: onScreen.results });
+  onScreen = { screen: onScreen.screen, since: now, results: [] };
+}
+
+/* the result of a game or stage, attached to the section it was played in */
+function noteResult(name: string, p: Params) {
+  if (!onScreen) return;
+  let r = "";
+  if (name === "game_end") {
+    const unit = p.unit === "secs" ? "s" : p.unit === "turns" ? " turns" : " pts";
+    r = `${p.score ?? 0}${unit}${typeof p.stars === "number" ? ` ★${p.stars}` : ""}${p.place ? ` place ${p.place}` : ""}${p.new_best ? " NEW BEST" : ""}`;
+  } else if (name === "lesson_stage_end") {
+    r = `★${p.stars ?? 0} ${p.correct ?? "?"}/${p.questions ?? "?"}${p.passed ? "" : " not passed"}`;
+  } else if (name === "daily_done") {
+    r = `${p.correct ?? "?"}/${p.questions ?? "?"} correct, ${p.score ?? 0} pts`;
+  } else return;
+  if (onScreen.results.length < 12) onScreen.results.push(r);
+}
+
+/* The visit number on this device. Coming back within 2 minutes of the last
+   send is the same visit (a glance at a message is not a new visit): it keeps
+   the number, and the sheet merges it into that visit's row. */
+const SAME_VISIT_MS = 120_000;
+function visitNo(stretchStart: number, now: number): number {
+  try {
+    const last = Number(localStorage.getItem("sutraSprint.visitLast") || 0);
+    let n = Number(localStorage.getItem("sutraSprint.visitNo") || 0);
+    if (!n || stretchStart - last > SAME_VISIT_MS) n += 1;
+    localStorage.setItem("sutraSprint.visitNo", String(n));
+    localStorage.setItem("sutraSprint.visitLast", String(now));
+    return n;
+  } catch {
+    return 0;
+  }
 }
 
 function deviceId(): { id: string; isNew: boolean } {
@@ -57,7 +96,11 @@ function info() {
   const ua = navigator.userAgent;
   const kind = /iPad|Tablet/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? "tablet" : /Mobi|Android|iPhone/i.test(ua) ? "phone" : "desktop";
   const installed = matchMedia?.("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
-  return { kind, installed, lang: document.documentElement.lang || "" };
+  const os = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? "iOS" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Mac OS X/.test(ua) ? "Mac" : /CrOS/.test(ua) ? "ChromeOS" : /Linux/.test(ua) ? "Linux" : "other";
+  const browser = /Edg\//.test(ua) ? "Edge" : /SamsungBrowser/.test(ua) ? "Samsung" : /Line\//.test(ua) ? "LINE" : /FBAN|FBAV|Instagram/.test(ua) ? "in-app" : /CriOS|Chrome\//.test(ua) ? "Chrome" : /FxiOS|Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "other";
+  let tz = "";
+  try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch {}
+  return { kind, installed, lang: document.documentElement.lang || "", os, browser, screen: `${screen.width}x${screen.height}`, tz };
 }
 
 function gaClarity(name: string, params: Params) {
@@ -69,14 +112,29 @@ function gaClarity(name: string, params: Params) {
 /* close the current stretch of play into one "visit_end" row */
 function endStretch() {
   if (!visit.since) return;
-  const mins = Math.round(((visit.active + (Date.now() - visit.since)) / 60000) * 10) / 10;
+  const now = Date.now();
+  visit.active += now - visit.since;
   visit.since = 0;
+  closeScreen(now);
+  /* a glance away (under 10s, nothing played) doesn't end the visit — it
+     carries on when the app comes back */
+  const played = trail.some((t) => t.results.length) || visit.games > 0;
+  if (visit.active < 10000 && !played) return;
+  const start = visit.start || now;
+  const activeSecs = Math.round(visit.active / 1000);
+  const mins = Math.round((activeSecs / 60) * 10) / 10;
+  visit.start = 0;
   visit.active = 0;
-  closeScreen();
-  const path = trail.filter((t) => t.ms >= 1000).map((t) => `${t.screen} ${dur(t.ms)}`).join(" › ");
+  const sections: Section[] = trail
+    .filter((t) => t.ms >= 1000 || t.results.length)
+    .map((t) => ({ n: t.screen, s: Math.round(t.ms / 1000), r: t.results.join(", ") || undefined }));
+  const path = sections.map((x) => `${x.n} ${dur(x.s * 1000)}`).join(" › ");
   trail.length = 0;
-  if (mins < 0.1 && !visit.games) return;
-  push("visit_end", { score: Math.round(mins * 60), detail: `mins=${mins} games=${visit.games} finished=${visit.finished} path: ${path}` });
+  const vno = visitNo(start, now);
+  queue.push({
+    ev: "visit_end", at: now, score: activeSecs, start, vno, sections,
+    detail: `mins=${mins} games=${visit.games} finished=${visit.finished} path: ${path}`,
+  });
   gaClarity("visit_end", { minutes: mins, games: visit.games, finished: visit.finished });
   visit.games = 0;
   visit.finished = 0;
@@ -95,10 +153,15 @@ export function flush() {
 function wire() {
   if (wired || typeof window === "undefined") return;
   wired = true;
-  visit.since = Date.now();
+  visit.start = visit.since = Date.now();
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") { endStretch(); flush(); }
-    else if (!visit.since) { visit.since = Date.now(); if (onScreen) onScreen.since = Date.now(); }
+    else if (!visit.since) {
+      const now = Date.now();
+      if (!visit.start) visit.start = now;
+      visit.since = now;
+      if (onScreen) onScreen.since = now;
+    }
   });
   window.addEventListener("pagehide", () => { endStretch(); flush(); });
 }
@@ -129,21 +192,22 @@ export function track(name: string, params: Params = {}) {
     if (g && gameOpenedAt[g] && params.play_secs === undefined) params = { ...params, play_secs: Math.round((Date.now() - gameOpenedAt[g]) / 1000) };
     if (g) gameOpenedAt[g] = Date.now();
   }
+  noteResult(name, params);
   gaClarity(name, params);
   push(name, params);
 }
 
 /* a screen inside the single-page game — GA4 and Clarity only */
-export function trackScreen(screen: string, topic?: string) {
+export function trackScreen(screen: string) {
   if (typeof window === "undefined") return;
   wire();
-  const name = topic ? `${screen}:${topic}` : screen;
-  if (!onScreen || onScreen.screen !== name) { closeScreen(); onScreen = { screen: name, since: Date.now() }; }
+  const name = screen;
+  if (!onScreen || onScreen.screen !== name) { closeScreen(); onScreen = { screen: name, since: Date.now(), results: [] }; }
   const w = window as W;
   try {
     w.gtag?.("event", "page_view", {
-      page_title: topic ? `${screen}: ${topic}` : screen,
-      page_location: `${location.origin}/${screen}${topic ? `/${topic}` : ""}`,
+      page_title: screen,
+      page_location: `${location.origin}/${screen.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
     });
   } catch {}
   try { w.clarity?.("set", "screen", screen); } catch {}

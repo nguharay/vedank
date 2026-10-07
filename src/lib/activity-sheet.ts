@@ -13,14 +13,18 @@ export function activitySheetOn(): boolean {
   return !!process.env.ACTIVITY_WEBHOOK_URL;
 }
 
-export async function appendRows(tab: "Activity", rows: SheetRow[]): Promise<boolean> {
+export type SheetTab = "Activity" | "Visits" | "Sections";
+
+/* one request, several tabs: { batches: [{ tab, rows }] } */
+export async function appendBatches(batches: { tab: SheetTab; rows: SheetRow[] }[]): Promise<boolean> {
   const url = process.env.ACTIVITY_WEBHOOK_URL;
-  if (!url || !rows.length) return false;
+  const live = batches.filter((b) => b.rows.length);
+  if (!url || !live.length) return false;
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ secret: process.env.ACTIVITY_WEBHOOK_SECRET || process.env.SHEET_WEBHOOK_SECRET || "", tab, rows }),
+      body: JSON.stringify({ secret: process.env.ACTIVITY_WEBHOOK_SECRET || process.env.SHEET_WEBHOOK_SECRET || "", batches: live }),
       redirect: "follow",
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
@@ -35,6 +39,10 @@ export async function appendRows(tab: "Activity", rows: SheetRow[]): Promise<boo
     console.error("[activity] sheet error", e);
     return false;
   }
+}
+
+export function appendRows(tab: SheetTab, rows: SheetRow[]): Promise<boolean> {
+  return appendBatches([{ tab, rows }]);
 }
 
 /* Japan time, as the sheet's readers see it */
