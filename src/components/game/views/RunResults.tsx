@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { RollUp } from "../util";
 import { addTownCoins } from "../town";
+import { track } from "@/lib/analytics";
 
 /* ---------- the end-of-run results screen, shared by the arcade games ----------
    What makes "one more go" irresistible, in one place:
@@ -91,11 +92,12 @@ export function RunResults({
   useEffect(() => {
     if (saved.current) return;
     saved.current = true;
+    track("game_end", { game, score, stars: run.stars, new_best: newBest, mastery_level: masteryOf(run.after).level });
     try {
       localStorage.setItem(XP_KEY(game), String(run.after));
       if (run.stars > readBestStars(game)) localStorage.setItem(STARS_KEY(game), String(run.stars));
     } catch {}
-  }, [game, run]);
+  }, [game, run, score, newBest]);
 
   if (!shown) return null;
 
@@ -124,6 +126,7 @@ export function RunResults({
     if (jackpot) coins *= 3;
     if (hot) coins *= 2;
     addTownCoins(coins);
+    track("chest_open", { game, coins, jackpot, hot_game: hot });
     sound?.correct();
     setChest({ coins, jackpot });
   }

@@ -98,6 +98,7 @@ import { feedDragon, stageOf } from "./dragon";
 import { StoryIntro } from "./StoryIntro";
 import { GameDemo, demoDue, markDemoSeen } from "./GameDemo";
 import { ArcadeMarks } from "./views/RunResults";
+import { track, trackAppOpen, setAudience, trackScreen } from "@/lib/analytics";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
@@ -284,6 +285,7 @@ export function GameApp({
         const elapsed = Date.now() - dailyStartRef.current;
         const res = await submitDailyAction(nextCorrect, elapsed);
         fireQuest("daily_played");
+        track("daily_done", { score: res.points, correct: res.correct, questions: dailyQs.length, secs: Math.round(elapsed / 1000) });
         setDailyDone({ points: res.points, correct: res.correct });
         setDailyStatus({ day: todayKey(), played: true, correct: res.correct, total: dailyQs.length, points: res.points });
         setLeague(null);
@@ -560,6 +562,7 @@ export function GameApp({
     if (!classCode.trim()) return;
     const res = await joinClassAction(classCode);
     if (res.ok) {
+      track("join_class", { method: "code" });
       setClassCode("");
       setClassNote(ja ? `${res.name} に参加しました！` : `Joined ${res.name}!`);
       sound.correct();
@@ -883,7 +886,8 @@ export function GameApp({
     setView("home");
   }
   function openTopic(id: string) {
-    if (guest && TOPICS.findIndex((t) => t.id === id) >= GUEST_TOPICS) { setLockOpen("topic"); return; }
+    if (guest && TOPICS.findIndex((t) => t.id === id) >= GUEST_TOPICS) { setLockOpen("topic"); track("locked_tap", { topic: id }); return; }
+    track("topic_open", { topic: id });
     setCurrentTopicId(id);
     setView("topic");
   }
@@ -918,6 +922,12 @@ export function GameApp({
     window.scrollTo(0, 0);
     document.querySelector("main")?.scrollTo(0, 0);
   }, [view, currentTopicId]);
+
+  /* activity sheet: one "app_open" row per visit */
+  useEffect(() => { trackAppOpen({ level: li.level, gems, streak: dailyStreak }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /* every screen change goes to GA4 / Clarity (too chatty for the sheet) */
+  useEffect(() => { trackScreen(view, currentTopicId && ["topic", "stagemap", "practice"].includes(view) ? currentTopicId : undefined); }, [view, currentTopicId]);
+  useEffect(() => { setAudience({ signed_in: !guest, lang }); }, [guest, lang]);
 
   function handleBack() {
     if (view === "practice") { openStageMap(currentTopicId!); }
@@ -1414,6 +1424,7 @@ export function GameApp({
     }
     setChestOpen(false);
     setStageResult({ passed: result.passed, stars: result.stars, correct, gemsGained: result.gemsGained, n, isBoss: wasBoss });
+    track("lesson_stage_end", { topic: currentTopicId ?? "", passed: result.passed, stars: result.stars, correct, questions: n, boss: wasBoss });
     if (result.passed) {
       confetti.burstCenter(wasBoss ? 160 : 100, wasBoss ? 0.55 : 0.4);
       if (wasBoss) sound.bossFanfare();
@@ -1940,10 +1951,11 @@ export function GameApp({
   /* Tapping a shelf card is a free play, never the day's board. */
   const shelf = (fn: () => void, id?: string) => () => {
     isDailyRef.current = false;
-    if (id && guest && !GUEST_GAMES.has(id)) { setLockOpen("game"); return; }
+    if (id && guest && !GUEST_GAMES.has(id)) { setLockOpen("game"); track("locked_tap", { game: id }); return; }
     /* the first few times, a short demo plays first (Ninja Slice has its own) */
-    if (id && demoDue(id)) { markDemoSeen(id); setGameDemo({ id, go: fn }); return; }
+    if (id && demoDue(id)) { markDemoSeen(id); setGameDemo({ id, go: fn }); track("demo_view", { game: id }); return; }
     setAutoStartFor(null);
+    if (id) track("game_open", { game: id });
     fn();
   };
   /* a game opened from its demo starts at once instead of showing its ready card */
@@ -2411,6 +2423,16 @@ export function GameApp({
      view: sprintRef says "we are sprinting", checkSolved consults it. */
   const sprintRef = useRef<{ order: number[]; at: number; started: number } | null>(null);
   const [sprintOver, setSprintOver] = useState<{ secs: number; best: boolean } | null>(null);
+
+  /* activity: the end of each small game, once, when its result appears */
+  useEffect(() => { if (matchResult) track("game_end", { game: "match", score: matchResult.score, secs: matchResult.secs, new_best: matchResult.best }); }, [matchResult]);
+  useEffect(() => { if (popOver) track("game_end", { game: "pop", score: popOver.score, new_best: popOver.best }); }, [popOver]);
+  useEffect(() => { if (bigOver) track("game_end", { game: "bigger", score: bigOver.streak, new_best: bigOver.best }); }, [bigOver]);
+  useEffect(() => { if (oddOver) track("game_end", { game: "odd", score: oddOver.streak, new_best: oddOver.best }); }, [oddOver]);
+  useEffect(() => { if (sortOver) track("game_end", { game: "sortg", score: sortOver.streak, new_best: sortOver.best }); }, [sortOver]);
+  useEffect(() => { if (memOver) track("game_end", { game: "memory", score: memOver.turns, new_best: memOver.best, unit: "turns" }); }, [memOver]);
+  useEffect(() => { if (quickOver) track("game_end", { game: quickId ?? "quick", score: quickOver.streak, new_best: quickOver.best }); }, [quickOver]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (sprintOver) track("game_end", { game: "sprint", score: sprintOver.secs, new_best: sprintOver.best, unit: "secs" }); }, [sprintOver]);
   const [sprintBest, setSprintBest] = useState(0);
   const [sprintAt, setSprintAt] = useState(0);
 
@@ -2566,6 +2588,7 @@ export function GameApp({
     if (classFlag && !guest) {
       raceHandledRef.current = true;
       window.history.replaceState({}, "", window.location.pathname);
+      track("join_class", { method: "link" });
       setClassOpen(true); setClassNote(null); void refreshClasses();
       return;
     }
@@ -2692,6 +2715,7 @@ export function GameApp({
         setPushOn(false);
       } else {
         const perm = await Notification.requestPermission();
+        track("push_permission", { result: perm });
         if (perm !== "granted") {
           spawnToast(lang === "ja" ? "通知はブロックされています" : "Notifications are blocked", null);
           return;
@@ -2825,7 +2849,12 @@ export function GameApp({
   async function onInstall() {
     const evt = installEvtRef.current as (Event & { prompt?: () => Promise<void> }) | null;
     if (!evt?.prompt) return;
+    track("install_click");
     await evt.prompt();
+    try {
+      const choice = await (evt as Event & { userChoice?: Promise<{ outcome: string }> }).userChoice;
+      if (choice) track("install_result", { outcome: choice.outcome });
+    } catch {}
     installEvtRef.current = null;
     setCanInstall(false);
   }
@@ -3333,7 +3362,7 @@ export function GameApp({
       {storyOpen && <StoryIntro lang={lang} onDone={closeStory} />}
       {gameDemo && (
         <GameDemo id={gameDemo.id} lang={lang} onClose={() => setGameDemo(null)}
-          onStart={() => { const { id, go } = gameDemo; setGameDemo(null); setAutoStartFor(id); go(); }} />
+          onStart={() => { const { id, go } = gameDemo; setGameDemo(null); setAutoStartFor(id); track("game_open", { game: id, after_demo: true }); go(); }} />
       )}
 
       {pushAsk && (

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { RunResults } from "./RunResults";
+import { track } from "@/lib/analytics";
 import { Mascot } from "../Mascot";
 import { fmt, haptic } from "../util";
 import type { useSound } from "../useSound";
@@ -372,6 +373,7 @@ function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOn
     const secs = Math.round(((clock() - st.t0) / 1000) * 10) / 10;
     const lv = raceLevel(st.lv);
     const place = racePlace(lv, secs);
+    track("game_end", { game: "race", score: secs, unit: "secs", level: lv.id, place, won: place === 1 });
     const prev = readBest(raceBestKey(lv.id));
     const isBest = prev === 0 || secs < prev;
     if (isBest) { writeBest(raceBestKey(lv.id), secs); setBest(secs); } else setBest(prev);
