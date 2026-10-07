@@ -16,6 +16,7 @@ import {
 import {
   createClassroom, myClassrooms, joinClassroom, leaveClassroom, myClassMemberships,
   classRoster, setAssignment, setClassOpen, removeStudent,
+  classGroupsFor, makeGroups, moveToGroup, addGroup, updateGroup, deleteGroup, clearGroups,
 } from "@/lib/game/classroom";
 import {
   createCompetition, createFriendCompetition, endCompetition, visibleCompetitions, competitionsForClass,
@@ -204,6 +205,29 @@ export async function joinClassAction(code: string) {
 export async function leaveClassAction(classId: string) {
   const userId = await requireUserId();
   await leaveClassroom(userId, classId);
+}
+
+/* groups (teams) — every one re-checks that the class is the caller's */
+export async function classGroupsAction(classId: string) {
+  return classGroupsFor(await requireUserId(), classId);
+}
+export async function makeGroupsAction(classId: string, count: number, mode: "random" | "mixed") {
+  return makeGroups(await requireUserId(), classId, count, mode === "mixed" ? "mixed" : "random");
+}
+export async function moveToGroupAction(classId: string, studentId: string, groupId: string | null) {
+  return moveToGroup(await requireUserId(), classId, studentId, groupId);
+}
+export async function addGroupAction(classId: string) {
+  return addGroup(await requireUserId(), classId);
+}
+export async function updateGroupAction(classId: string, groupId: string, patch: { name?: string; starsDelta?: number; resetStars?: boolean }) {
+  return updateGroup(await requireUserId(), classId, groupId, patch);
+}
+export async function deleteGroupAction(classId: string, groupId: string) {
+  return deleteGroup(await requireUserId(), classId, groupId);
+}
+export async function clearGroupsAction(classId: string) {
+  return clearGroups(await requireUserId(), classId);
 }
 
 export async function rosterAction(classId: string) {

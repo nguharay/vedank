@@ -49,6 +49,7 @@ import {
 } from "@/lib/actions/game-actions";
 import type { Friend, ChallengeRow } from "@/lib/game/friends";
 import { myClassesAction, joinClassAction, leaveClassAction } from "@/lib/actions/game-actions";
+import type { Membership } from "@/lib/game/classroom";
 import {
   competitionsAction, startCompetitionAction, submitCompetitionAction, competitionBoardAction,
   createFriendCompetitionAction, endCompetitionAction, saveTopicOverrideAction,
@@ -539,7 +540,7 @@ export function GameApp({
   }
 
   /* ---------- classroom (the child's side) ---------- */
-  type Enrolled = { id: string; name: string; teacherName: string; assignedTopicId: string | null; assignedNote: string | null };
+  type Enrolled = Membership;
   const [classOpen, setClassOpen] = useState(false);
   const [enrolled, setEnrolled] = useState<Enrolled[]>([]);
   const [teachingCount, setTeachingCount] = useState(0);
@@ -2558,6 +2559,15 @@ export function GameApp({
       setRaceJoinCode(rrCode); setView("race");
       return;
     }
+    /* ?class=joined — back from a class join link (/c/CODE): show the class */
+    let classFlag: string | null = null;
+    try { classFlag = new URLSearchParams(window.location.search).get("class"); } catch {}
+    if (classFlag && !guest) {
+      raceHandledRef.current = true;
+      window.history.replaceState({}, "", window.location.pathname);
+      setClassOpen(true); setClassNote(null); void refreshClasses();
+      return;
+    }
     let tttCode: string | null = null;
     try { tttCode = new URLSearchParams(window.location.search).get("ttt"); } catch {}
     if (tttCode) {
@@ -3202,25 +3212,64 @@ export function GameApp({
             {classNote && <div className="friend-note">{classNote}</div>}
 
             <div className="friend-list">
-              {enrolled.map((e) => (
-                <div key={e.id} className="friend-row">
-                  <span className="friend-avatar">🏫</span>
-                  <div className="friend-body">
-                    <div className="friend-name">{e.name}</div>
-                    <div className="friend-sub">{e.teacherName}</div>
+              {enrolled.map((e) => {
+                const ranked = [...e.groups].sort((a, b) => b.stars - a.stars);
+                const myRank = e.group ? ranked.findIndex((g) => g.id === e.group!.id) + 1 : 0;
+                return (
+                  <div key={e.id} className="my-class">
+                    <div className="friend-row">
+                      <span className="friend-avatar">🏫</span>
+                      <div className="friend-body">
+                        <div className="friend-name">{e.name}</div>
+                        <div className="friend-sub">{e.teacherName}{ja ? " 先生" : ""}</div>
+                      </div>
+                      <button
+                        className="friend-remove"
+                        aria-label={ja ? "退出" : "Leave"}
+                        onClick={async () => {
+                          if (!confirm(ja ? `「${e.name}」から退出しますか？` : `Leave ${e.name}?`)) return;
+                          await leaveClassAction(e.id);
+                          refreshClasses();
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {e.group ? (
+                      <div className="my-team" style={{ ["--gc" as string]: e.group.color }}>
+                        <div className="my-team-head">
+                          <span className="my-team-emoji">{e.group.emoji}</span>
+                          <div className="my-team-body">
+                            <div className="my-team-label">{ja ? "きみのチーム" : "Your team"}</div>
+                            <div className="my-team-name">{e.group.name}</div>
+                          </div>
+                          <div className="my-team-stars">
+                            <b className="mono">⭐ {e.group.stars}</b>
+                            {e.groups.length > 1 && <small>{myRank === 1 && e.group.stars > 0 ? (ja ? "👑 1位！" : "👑 1st!") : (ja ? `${myRank}位` : `#${myRank}`)}</small>}
+                          </div>
+                        </div>
+                        {e.group.mates.length > 0 && (
+                          <div className="my-team-mates">
+                            {e.group.mates.map((m, i) => <span key={i}>{m}</span>)}
+                          </div>
+                        )}
+                        {e.groups.length > 1 && (
+                          <div className="my-team-table">
+                            {ranked.map((g) => (
+                              <div key={g.id} className={g.id === e.group!.id ? "me" : ""}>
+                                <span>{g.emoji} {g.name}</span><b className="mono">⭐ {g.stars}</b>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="my-team-tip">{ja ? "がんばると先生がチームに⭐をくれるよ！" : "Your teacher gives your team ⭐ for great work!"}</div>
+                      </div>
+                    ) : (
+                      e.groups.length > 0 && <div className="friend-note">{ja ? "まだチームに入っていません。先生が決めてくれるよ。" : "You're not in a team yet — your teacher will put you in one."}</div>
+                    )}
                   </div>
-                  <button
-                    className="friend-remove"
-                    aria-label={ja ? "退出" : "Leave"}
-                    onClick={async () => {
-                      await leaveClassAction(e.id);
-                      refreshClasses();
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                );
+              })}
               {enrolled.length === 0 && (
                 <div className="friend-empty">
                   {ja
