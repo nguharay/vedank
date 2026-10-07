@@ -249,9 +249,26 @@ export const classMembers = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
+    /* the child's group (team) in this class, if the teacher has made groups */
+    groupId: uuid("group_id").references(() => classGroups.id, { onDelete: "set null" }),
   },
   (t) => [primaryKey({ columns: [t.classId, t.userId] })]
 );
+
+/* Groups (teams) inside a class — made by the teacher, with stars the
+   teacher awards. See migrations/010-class-groups.sql. */
+export const classGroups = pgTable("class_groups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  classId: uuid("class_id")
+    .notNull()
+    .references(() => classrooms.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  emoji: text("emoji").notNull().default("⭐"),
+  color: text("color").notNull().default("#7a58c0"),
+  stars: integer("stars").notNull().default(0),
+  sort: integer("sort").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 /* ---------- classroom competitions ----------
    A timed quiz a teacher runs for one class. The question set is derived from
