@@ -207,8 +207,8 @@ export const UI: Record<LangCode, UIDict> = {
     },
   },
   ja: {
-    appName: "スートラ・スプリント",
-    headerTitles: { home: "スートラ・スプリント", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒道場", blitz: "ナンバーブリッツ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "ゲーム", bigger: "どっちが大きい？", odd: "仲間はずれ", sortg: "小さい順", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！", konbini: "コンビニのレジ", crossword: "数字クロスワード", rhythm: "リズムタップ", town: "計算タウン", ninja: "忍者スライス" },
+    appName: "インド式数学",
+    headerTitles: { home: "インド式数学", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒道場", blitz: "ナンバーブリッツ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "ゲーム", bigger: "どっちが大きい？", odd: "仲間はずれ", sortg: "小さい順", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！", konbini: "コンビニのレジ", crossword: "数字クロスワード", rhythm: "リズムタップ", town: "計算タウン", ninja: "忍者スライス" },
     menu: {
       accountLabel: "アカウントメニュー",
       player: "プレイヤー",
@@ -332,7 +332,7 @@ export const UI: Record<LangCode, UIDict> = {
       statBlitz: "ブリッツ最高",
       statBosses: "制覇したボス",
       statPuzzles: "パズル達成",
-      blurb: (level, rank) => `ヴェダンク・アカデミーのスートラ・スプリントでレベル${level}「${rank}」になりました！🪔`,
+      blurb: (level, rank) => `ヴェダンク・アカデミーのインド式数学ゲームでレベル${level}「${rank}」になりました！🪔`,
       blitzBlurb: (score) => `ナンバーブリッツで${score}点を取りました！⚡ 挑戦してみませんか？`,
     },
   },

@@ -171,6 +171,12 @@ export function RunResults({
         <button className="btn btn-primary rr-again" onClick={() => { setShown(false); onAgain(); }}>
           {ja ? "もう一回 ▶" : "Play again ▶"}
         </button>
+        <button className="rr-challenge" onClick={() => {
+          const name = ja ? NAMES[game][1] : NAMES[game][0];
+          window.dispatchEvent(new CustomEvent("vedank:invite", { detail: { extra: ja ? `「${name}」で ${fmtScore(game, score)} 点！きみはこえられる？` : `I scored ${fmtScore(game, score)} in ${name}. Can you beat me?` } }));
+        }}>
+          👥 {ja ? "友だちに挑戦！" : "Challenge a friend"}
+        </button>
       </div>
     </div>
   );

@@ -97,6 +97,7 @@ import { addTownCoins, useTown } from "./town";
 import { feedDragon, stageOf } from "./dragon";
 import { StoryIntro } from "./StoryIntro";
 import { GameDemo, demoDue, markDemoSeen } from "./GameDemo";
+import { InviteSheet } from "./InviteSheet";
 import { ArcadeMarks } from "./views/RunResults";
 import { track, trackAppOpen, setAudience, trackScreen } from "@/lib/analytics";
 import { useTheme } from "./useTheme";
@@ -1959,6 +1960,13 @@ export function GameApp({
   /* a game opened from its demo starts at once instead of showing its ready card */
   const [autoStartFor, setAutoStartFor] = useState<string | null>(null);
   const [gameDemo, setGameDemo] = useState<{ id: string; go: () => void } | null>(null);
+  /* invite friends: opened from the menu, Home, or a results screen (event) */
+  const [invite, setInvite] = useState<{ extra?: string } | null>(null);
+  useEffect(() => {
+    const on = (e: Event) => { setInvite({ extra: (e as CustomEvent<{ extra?: string }>).detail?.extra }); track("invite_open"); };
+    window.addEventListener("vedank:invite", on);
+    return () => window.removeEventListener("vedank:invite", on);
+  }, []);
   const gameLocked = (id: string) => guest && !GUEST_GAMES.has(id);
   const townState = useTown();
   /* The Home tab's way into a game. Guest gating is the shelf's. */
@@ -3066,6 +3074,10 @@ export function GameApp({
               <span>🧮 Ray先生と学ぶ（授業）</span>
               <span className="menu-row-val">›</span>
             </button>}
+            <button className="menu-row menu-row-invite" onClick={() => { setMenuOpen(false); setInvite({}); track("invite_open"); }}>
+              <span>🎁 {ja ? "友だちを招待" : "Invite friends"}</span>
+              <span className="menu-row-val">{ja ? "シェア" : "Share"}</span>
+            </button>
             <button className="menu-row" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
               <span>🏫 {ja ? "クラス" : "Class"}</span>
               <span className="menu-row-val">
@@ -3378,6 +3390,7 @@ export function GameApp({
       )}
 
       {storyOpen && <StoryIntro lang={lang} onDone={closeStory} />}
+      {invite && <InviteSheet lang={lang} extra={invite.extra} onClose={() => setInvite(null)} />}
       {gameDemo && (
         <GameDemo id={gameDemo.id} lang={lang} onClose={() => setGameDemo(null)}
           onStart={() => { const { id, go } = gameDemo; setGameDemo(null); setAutoStartFor(id); track("game_open", { game: id, after_demo: true }); go(); }} />

@@ -223,7 +223,7 @@ export function trackAppOpen(player: { level?: number; gems?: number; streak?: n
   let source = "direct";
   try {
     const q = new URLSearchParams(location.search);
-    if (q.get("utm_source")) source = `utm:${q.get("utm_source")}`.slice(0, 30);
+    if (q.get("utm_source")) source = `${q.get("utm_source")}${q.get("utm_medium") ? `/${q.get("utm_medium")}` : ""}`.slice(0, 30);
     else if (q.get("class")) source = "class-link";
     else if (q.get("race") || q.get("rr") || q.get("ttt")) source = "game-invite";
     else if (document.referrer && new URL(document.referrer).origin !== location.origin) source = new URL(document.referrer).hostname.slice(0, 30);

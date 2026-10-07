@@ -41,7 +41,7 @@ function blurbFor(focus: ShareFocus, s: ShareStats, t: UIDict, lang: LangCode): 
       return t.share.blitzBlurb(s.blitzBest);
     case "streak":
       return ja
-        ? `スートラ・スプリントを${s.bestStreakEver}日連続で学習中です！🔥`
+        ? `インド式数学ゲームを${s.bestStreakEver}日連続で学習中です！🔥`
         : `I'm on a ${s.bestStreakEver}-day streak on Sutra Sprint! 🔥`;
     case "gems":
       return ja
@@ -49,7 +49,7 @@ function blurbFor(focus: ShareFocus, s: ShareStats, t: UIDict, lang: LangCode): 
         : `I've earned ${s.gems} gems doing Vedic math on Sutra Sprint! 💎`;
     case "bosses":
       return ja
-        ? `スートラ・スプリントでボスを${s.bossClears}体倒しました！👹`
+        ? `インド式数学ゲームでボスを${s.bossClears}体倒しました！👹`
         : `I've conquered ${s.bossClears} boss stages on Sutra Sprint! 👹`;
     case "puzzles":
       return ja

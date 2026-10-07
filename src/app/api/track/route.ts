@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 const EVENTS = new Set([
   "app_open", "visit_end", "game_open", "demo_view", "game_end", "chest_open",
   "topic_open", "lesson_stage_end", "daily_done", "locked_tap", "join_class",
-  "notification_open", "push_permission", "install_click", "install_result",
+  "notification_open", "push_permission", "install_click", "install_result", "invite_open", "invite_share",
 ]);
 const MAX_EVENTS = 60;
 const clip = (v: unknown, n = 40) => (typeof v === "string" ? v.slice(0, n) : "");

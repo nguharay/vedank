@@ -524,6 +524,7 @@ export function HomeView({
         )}
         <span className="arcade-card-go">{lang === "ja" ? "ぜんぶ見る ▶" : "See all ▶"}</span>
       </button>
+      <InviteCard lang={lang} />
         </>
       )}
       {tab === "world" && (
@@ -532,6 +533,7 @@ export function HomeView({
       <DragonCard lang={lang} />
 
       <HomeTownCard lang={lang} onOpen={onOpenTown} guest={guest} />
+      <InviteCard lang={lang} />
 
       {/* Quests used to have a full card here, but they already have their own
           nav tab with a badge — the same list twice was just scroll. Shop and
@@ -635,5 +637,24 @@ function SectionHead({ icon, title, sub }: { icon: string; title: string; sub: s
       <div className="home-sec-title"><span aria-hidden="true">{icon}</span> {title}</div>
       <div className="home-sec-sub">{sub}</div>
     </div>
+  );
+}
+
+/* opens the invite sheet (GameApp listens for this event) */
+export function openInvite(extra?: string) {
+  window.dispatchEvent(new CustomEvent("vedank:invite", { detail: { extra } }));
+}
+
+function InviteCard({ lang }: { lang: "en" | "ja" }) {
+  const ja = lang === "ja";
+  return (
+    <button className="invite-card" onClick={() => openInvite()}>
+      <span className="invite-card-ico" aria-hidden="true">🎁</span>
+      <span className="invite-card-body">
+        <b>{ja ? "友だちを招待しよう" : "Invite your friends"}</b>
+        <span>{ja ? "LINE・メッセージ・QRコードでかんたんにシェア" : "Share in a tap — LINE, WhatsApp, messages or a QR code"}</span>
+      </span>
+      <span className="invite-card-go">{ja ? "招待 ▶" : "Invite ▶"}</span>
+    </button>
   );
 }
