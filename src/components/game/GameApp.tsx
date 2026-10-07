@@ -97,6 +97,7 @@ import { addTownCoins, useTown } from "./town";
 import { feedDragon, stageOf } from "./dragon";
 import { StoryIntro } from "./StoryIntro";
 import { GameDemo, demoDue, markDemoSeen } from "./GameDemo";
+import { ArcadeMarks } from "./views/RunResults";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
@@ -4312,7 +4313,7 @@ export function GameApp({
             <button className="ttt-card ninja-feature" onClick={shelf(() => setView("ninja"), "ninja")}>
               <span className="feature-art ninja" aria-hidden="true"><b className="fa-fruit">🍉</b><b className="fa-slash">／</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🥷 忍者スライス" : "🥷 Ninja Slice"}</span>
+                <span className="ttt-card-name">{lang === "ja" ? "🥷 忍者スライス" : "🥷 Ninja Slice"}<ArcadeMarks id="ninja" lang={lang} /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "答えのフルーツをスワイプで切れ！ばくだん注意。" : "Swipe to slice the fruit with the answer. Mind the bombs!"}</span>
                 {(gameBests.ninja ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.ninja}</span>}
               </span>
@@ -4321,7 +4322,7 @@ export function GameApp({
             <button className="ttt-card run-feature" onClick={shelf(() => setView("runner"), "runner")}>
               <span className="feature-art runner" aria-hidden="true"><b className="fa-boy"><Mascot animated={false} /></b><b className="fa-rock">🪨</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🏃 計算ランナー" : "🏃 Math Runner"}</span>
+                <span className="ttt-card-name">{lang === "ja" ? "🏃 計算ランナー" : "🏃 Math Runner"}<ArcadeMarks id="runner" lang={lang} /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "答えをタップしてジャンプ！どこまで走れるかな？" : "Answer to jump the rocks and logs. How far can you run?"}</span>
                 {(gameBests.runner ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.runner}</span>}
               </span>
@@ -4354,7 +4355,7 @@ export function GameApp({
             <button className="ttt-card rhythm-feature" onClick={shelf(() => setView("rhythm"), "rhythm")}>
               <span className="feature-art rhythm" aria-hidden="true"><b className="fa-note1">🎵</b><b className="fa-note2">🎶</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🎵 リズムタップ" : "🎵 Rhythm Tap"}</span>
+                <span className="ttt-card-name">{lang === "ja" ? "🎵 リズムタップ" : "🎵 Rhythm Tap"}<ArcadeMarks id="rhythm" lang={lang} /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "音楽にあわせて答えをタップ！" : "Tap the answers to the beat of the music!"}</span>
                 {(gameBests.rhythm ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.rhythm}</span>}
               </span>
@@ -4363,7 +4364,7 @@ export function GameApp({
             <button className="ttt-card castle-feature" onClick={shelf(() => setView("castle"), "castle")}>
               <span className="feature-art castle" aria-hidden="true"><b className="fa-castle">🏯</b><b className="fa-foe">👾</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🏯 お城をまもれ！" : "🏯 Castle Defense"}</span>
+                <span className="ttt-card-name">{lang === "ja" ? "🏯 お城をまもれ！" : "🏯 Castle Defense"}<ArcadeMarks id="castle" lang={lang} /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "答えて矢をうて！モンスターからお城をまもろう。" : "Answer to fire arrows. Hold off the monster waves!"}</span>
                 {(gameBests.castle ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.castle}</span>}
               </span>
@@ -4372,7 +4373,7 @@ export function GameApp({
             <button className="ttt-card sushi-feature" onClick={shelf(() => setView("sushi"), "sushi")}>
               <span className="feature-art sushi" aria-hidden="true"><b className="fa-sushi">🍣</b><b className="fa-guest">🙋</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🍣 おすし屋さん" : "🍣 Sushi Shop"}</span>
+                <span className="ttt-card-name">{lang === "ja" ? "🍣 おすし屋さん" : "🍣 Sushi Shop"}<ArcadeMarks id="sushi" lang={lang} /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "回転寿司のお会計！お皿の合計を計算しよう。" : "Run a conveyor-belt sushi bar. Total the plates fast!"}</span>
                 {(gameBests.sushi ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "売上ベスト" : "Best day"} ¥{gameBests.sushi.toLocaleString("en-US")}</span>}
               </span>
@@ -4411,7 +4412,7 @@ export function GameApp({
                 <button key={g.id} className={`game-card${gameLocked(g.id) ? " locked" : ""}`} onClick={g.start} style={{ ["--g" as string]: g.tint }}>
                   <span className="game-card-icon">{g.icon}</span>
                   <span className="game-card-body">
-                    <span className="game-card-name">{lang === "ja" ? g.nameJa : g.name}</span>
+                    <span className="game-card-name">{lang === "ja" ? g.nameJa : g.name}{g.id === "konbini" && <ArcadeMarks id="konbini" lang={lang} />}</span>
                     <span className="game-card-blurb">{lang === "ja" ? g.blurbJa : g.blurb}</span>
                   </span>
                   {gameLocked(g.id) && <span className="game-card-lock" aria-label="locked">🔒</span>}

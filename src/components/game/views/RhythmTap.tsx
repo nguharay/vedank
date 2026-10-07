@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { RunResults } from "./RunResults";
 import { Mascot } from "../Mascot";
 import { fmt, haptic } from "../util";
 import type { useSound } from "../useSound";
@@ -294,6 +295,7 @@ export function RhythmTap({ lang, sound, celebrate, onCorrect }: Props) {
             <button className="btn btn-primary" onClick={start}>{ja ? "スタート ♪" : "Start ♪"}</button>
           </div>
         )}
+        {phase === "over" && <RunResults game="rhythm" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} detail={ja ? `ステージ ${stage}` : `Stage ${stage}`} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && score > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "演奏おわり" : "Song over")}</div>

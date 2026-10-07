@@ -3803,3 +3803,46 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .my-team-table div{ display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; color:var(--ink-dim); padding:3px 8px; border-radius:8px; }
 .my-team-table div.me{ background:var(--surface); color:var(--ink); font-weight:900; }
 .my-team-tip{ margin-top:8px; font-size:11.5px; font-weight:700; color:var(--muted); }
+
+/* ======== end-of-run results (RunResults.tsx) ======== */
+.rr-wrap{ position:fixed; inset:0; z-index:84; display:grid; place-items:center; padding:16px; background:rgba(20,16,40,.6); backdrop-filter:blur(3px); animation:dm-fade .25s both; }
+.rr-card{ position:relative; width:min(340px,100%); text-align:center; background:#fffaf0; color:#1d1b33; border:3px solid #1d1b33; border-radius:26px; padding:16px 16px 14px; box-shadow:0 8px 0 #1d1b33; animation:rr-in .45s cubic-bezier(.2,1.4,.4,1) both; }
+.rr-card.best{ background:linear-gradient(#fff4c8, #fffaf0 40%); }
+@keyframes rr-in{ from{ transform:translateY(30px) scale(.9); opacity:0 } }
+.rr-x{ position:absolute; right:10px; top:8px; width:30px; height:30px; border-radius:50%; border:2px solid #1d1b33; background:#fff; font:900 18px/1 inherit; font-family:inherit; cursor:pointer; color:#1d1b33; }
+.rr-game{ font-size:13px; font-weight:900; color:#7a6f8f; display:flex; justify-content:center; align-items:center; gap:6px; }
+.rr-hot{ font-size:11px; background:#ff5a36; color:#fff; border-radius:999px; padding:2px 8px; }
+.rr-ribbon{ display:inline-block; margin-top:6px; background:#ff3d7f; color:#fff; font:900 15px/1 "Baloo 2",system-ui,sans-serif; padding:6px 14px; border-radius:999px; animation:rr-wiggle 1s .2s ease-in-out 2; }
+@keyframes rr-wiggle{ 25%{ transform:rotate(-4deg) scale(1.06) } 75%{ transform:rotate(4deg) scale(1.06) } }
+.rr-stars{ display:flex; justify-content:center; gap:6px; margin:8px 0 0; }
+.rr-stars span{ font-size:46px; line-height:1; color:#ddd6c4; text-shadow:0 3px 0 #b9ae95; }
+.rr-stars span:nth-child(2){ font-size:56px; transform:translateY(-8px); }
+.rr-stars span.on{ color:#ffc21a; text-shadow:0 3px 0 #c98a00, 0 0 18px rgba(255,194,26,.7); animation:rr-star .5s cubic-bezier(.2,1.8,.4,1) both; }
+@keyframes rr-star{ from{ transform:scale(0) rotate(-40deg); opacity:0 } }
+.rr-stars span:nth-child(2).on{ animation-name:rr-star2; }
+@keyframes rr-star2{ from{ transform:translateY(-8px) scale(0) rotate(-40deg); opacity:0 } to{ transform:translateY(-8px) } }
+.rr-score{ font:900 44px/1.1 "Baloo 2",system-ui,sans-serif; margin-top:2px; }
+.rr-detail{ font-size:12.5px; font-weight:800; color:#7a6f8f; }
+.rr-nudge{ margin:10px 0 0; font-size:14px; font-weight:900; color:#c43a00; background:#fff0e6; border-radius:12px; padding:8px 10px; }
+.rr-mastery{ margin-top:10px; text-align:left; }
+.rr-mastery-top{ display:flex; justify-content:space-between; font-size:13px; font-weight:900; }
+.rr-mastery-top span{ color:#3fbf2a; }
+.rr-bar{ height:12px; border-radius:999px; background:#e9e1cf; border:2px solid #1d1b33; overflow:hidden; margin-top:4px; }
+.rr-bar i{ display:block; height:100%; background:linear-gradient(90deg, #7a58c0, #b06cff); border-radius:999px; animation:rr-fill 1s .5s ease-out both; }
+@keyframes rr-fill{ from{ width:var(--from) } }
+.rr-chest{ margin:12px auto 0; display:flex; align-items:center; justify-content:center; gap:10px; width:100%; font-family:inherit; font-size:14px; font-weight:900; color:#1d1b33; cursor:pointer;
+  background:#ffe7a3; border:3px dashed #c98a00; border-radius:16px; padding:8px; }
+.rr-chest-box{ font-size:34px; line-height:1; animation:rr-shake 1.2s ease-in-out infinite; }
+@keyframes rr-shake{ 0%,60%,100%{ transform:none } 70%{ transform:rotate(-12deg) } 80%{ transform:rotate(12deg) } 90%{ transform:rotate(-8deg) } }
+.rr-loot{ margin:12px 0 0; display:flex; flex-direction:column; align-items:center; background:#e6ffd9; border:3px solid #3fbf2a; border-radius:16px; padding:8px; animation:rr-in .4s cubic-bezier(.2,1.6,.4,1) both; }
+.rr-loot span{ font:900 30px/1.1 "Baloo 2",system-ui,sans-serif; color:#1d6b10; }
+.rr-loot small{ font-size:11.5px; font-weight:800; color:#4a7a40; }
+.rr-loot b{ color:#ff3d7f; font-size:15px; }
+.rr-loot.jackpot{ background:#fff0c2; border-color:#ff3d7f; }
+.rr-again{ width:100%; margin-top:12px; animation:rr-pulse 1.6s 1.5s ease-in-out infinite; }
+@keyframes rr-pulse{ 50%{ transform:scale(1.04) } }
+
+/* mastery + hot-game marks on the game cards */
+.arc-badge{ display:inline-flex; align-items:center; gap:4px; margin-left:6px; vertical-align:middle; font-size:11px; font-weight:900; padding:2px 7px; border-radius:999px; background:rgba(255,255,255,.9); color:#1d1b33; }
+.arc-badge .st{ color:#ffb400; letter-spacing:-1px; }
+.arc-hot{ display:inline-block; margin-left:6px; vertical-align:middle; font-size:11px; font-weight:900; padding:2px 8px; border-radius:999px; background:#ff5a36; color:#fff; animation:rr-wiggle 2s ease-in-out infinite; }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { RunResults } from "./RunResults";
 import { Mascot } from "../Mascot";
 import { Person, type PersonMood } from "../Person";
 import { fmt, haptic } from "../util";
@@ -255,6 +256,7 @@ export function SushiShop({ lang, sound, celebrate, onCorrect, autoStart }: Prop
             <button className="btn btn-primary" onClick={open}>{ja ? "開店！" : "Open the shop!"}</button>
           </div>
         )}
+        {phase === "closed" && <RunResults game="sushi" score={sales} prevBest={best} newBest={newBest} lang={lang} onAgain={open} sound={sound} detail={ja ? `${served}人` : `${served} served`} />}
         {phase === "closed" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && sales > 0 ? (ja ? "売上ベスト更新！" : "Best day ever!") : (ja ? "閉店です" : "Closing time")}</div>
@@ -524,6 +526,7 @@ export function CastleDefense({ lang, sound, celebrate, onCorrect, autoStart }: 
             <button className="btn btn-primary" onClick={() => startWave(wave + 1)}>{ja ? `ウェーブ ${wave + 1} へ` : `Wave ${wave + 1}`}</button>
           </div>
         )}
+        {phase === "over" && <RunResults game="castle" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} detail={ja ? `ウェーブ ${wave}` : `Wave ${wave}`} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && score > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "お城がおちた…" : "The castle fell…")}</div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { RunResults } from "./RunResults";
 import { Mascot } from "../Mascot";
 import { Person } from "../Person";
 import { haptic } from "../util";
@@ -196,6 +197,7 @@ export function KonbiniCashier({ lang, sound, celebrate, onCorrect, autoStart }:
             <button className="btn btn-primary" onClick={start}>{ja ? "レジに入る" : "Open the register"}</button>
           </div>
         )}
+        {phase === "over" && <RunResults game="konbini" score={served} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} detail={ja ? "おきゃくさん" : "customers"} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && served > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "閉店です" : "Store closed")}</div>
