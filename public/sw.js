@@ -9,7 +9,7 @@
    there merges into their account the next time they sign in.
 
    Bump VERSION to retire every old cache on the next activate. */
-const VERSION = "v3";
+const VERSION = "v4";
 const CACHE = `sutra-${VERSION}`;
 
 /* /offline.html is a plain file with inline styles and no script: a fallback
@@ -117,8 +117,16 @@ self.addEventListener("push", (e) => {
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   const target = (e.notification.data && e.notification.data.url) || "/";
-  e.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+  /* count the tap in the activity sheet (the sign-in cookie says who) */
+  const logged = fetch("/api/track", {
+    method: "POST",
+    credentials: "include",
+    keepalive: true,
+    body: JSON.stringify({ device: "push", events: [{ ev: "notification_open", at: Date.now(), detail: String(e.notification.title || "").slice(0, 80) }] }),
+  }).catch(() => {});
+  /* open the app straight away (browsers only allow it right after the tap);
+     the log runs alongside */
+  const opened = self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
       for (const w of wins) {
         if (new URL(w.url).origin === self.location.origin && "focus" in w) {
           w.navigate(target).catch(() => {});
@@ -126,6 +134,6 @@ self.addEventListener("notificationclick", (e) => {
         }
       }
       return self.clients.openWindow(target);
-    })
-  );
+    });
+  e.waitUntil(Promise.all([opened, logged]));
 });
