@@ -52,6 +52,7 @@ export function HomeView({
   onPlayGame,
   onOpenTown,
   onOpenGames,
+  onTabChange,
   lang,
   t,
 }: {
@@ -89,6 +90,8 @@ export function HomeView({
   onOpenTown: () => void;
   /* the full Games shelf (the arcade) */
   onOpenGames: () => void;
+  /* which Home tab is showing — for the activity log */
+  onTabChange?: (tab: "learn" | "today" | "play" | "world") => void;
   lang: Lang;
   t: UIDict;
 }) {
@@ -111,8 +114,11 @@ export function HomeView({
   const pathWrapRef = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<"learn" | "today" | "play" | "world">("learn");
   const tabsRef = useRef<HTMLDivElement | null>(null);
+  /* Home always opens on Learn — say so, so the activity log doesn't keep a stale tab */
+  useEffect(() => { onTabChange?.("learn"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   function pickTab(id: "learn" | "today" | "play" | "world") {
     setTab(id);
+    onTabChange?.(id);
     /* bring the tab bar to the top so the new page starts at its beginning */
     requestAnimationFrame(() => tabsRef.current?.scrollIntoView({ block: "start" }));
   }

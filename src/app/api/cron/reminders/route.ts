@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     if (result.picked) {
       const { date, time } = jst(Date.now());
       await appendRows("Activity", [{
-        Date: date, Time: time, Player: "(all players)", "Player ID": "", "Signed in": "",
+        Date: date, Time: time, Player: "(all players)", "Player ID": "", "Signed in": "", Email: "",
         Event: "notification_sent", Game: "", Topic: "", Score: result.sent, Stars: "",
         Detail: `${result.picked.titleJa} / ${result.picked.titleEn} · audience=${result.picked.audience} targets=${result.targets} sent=${result.sent}`,
         Device: "", Installed: "", Lang: "",

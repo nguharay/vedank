@@ -49,8 +49,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja">
+    /* translate="no": browser auto-translation (Chrome's Google Translate)
+       rewrote the numbers inside the maths games — "22" became "twenty two"
+       and crossword totals came out wrong. The app has its own 日本語 /
+       English switch, so the page opts out of machine translation. */
+    <html lang="ja" translate="no">
       <head>
+        <meta name="google" content="notranslate" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

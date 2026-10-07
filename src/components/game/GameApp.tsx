@@ -887,7 +887,7 @@ export function GameApp({
   }
   function openTopic(id: string) {
     if (guest && TOPICS.findIndex((t) => t.id === id) >= GUEST_TOPICS) { setLockOpen("topic"); track("locked_tap", { topic: id }); return; }
-    track("topic_open", { topic: id });
+    track("topic_open", { topic: TOPICS.find((t) => t.id === id)?.title ?? id });
     setCurrentTopicId(id);
     setView("topic");
   }
@@ -925,8 +925,6 @@ export function GameApp({
 
   /* activity sheet: one "app_open" row per visit */
   useEffect(() => { trackAppOpen({ level: li.level, gems, streak: dailyStreak }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  /* every screen change goes to GA4 / Clarity (too chatty for the sheet) */
-  useEffect(() => { trackScreen(view, currentTopicId && ["topic", "stagemap", "practice"].includes(view) ? currentTopicId : undefined); }, [view, currentTopicId]);
   useEffect(() => { setAudience({ signed_in: !guest, lang }); }, [guest, lang]);
 
   function handleBack() {
@@ -1424,7 +1422,7 @@ export function GameApp({
     }
     setChestOpen(false);
     setStageResult({ passed: result.passed, stars: result.stars, correct, gemsGained: result.gemsGained, n, isBoss: wasBoss });
-    track("lesson_stage_end", { topic: currentTopicId ?? "", passed: result.passed, stars: result.stars, correct, questions: n, boss: wasBoss });
+    track("lesson_stage_end", { topic: currentTopic.title, stage: n, passed: result.passed, stars: result.stars, correct, questions: QUESTIONS_PER_STAGE, boss: wasBoss });
     if (result.passed) {
       confetti.burstCenter(wasBoss ? 160 : 100, wasBoss ? 0.55 : 0.4);
       if (wasBoss) sound.bossFanfare();
@@ -2423,6 +2421,26 @@ export function GameApp({
      view: sprintRef says "we are sprinting", checkSolved consults it. */
   const sprintRef = useRef<{ order: number[]; at: number; started: number } | null>(null);
   const [sprintOver, setSprintOver] = useState<{ secs: number; best: boolean } | null>(null);
+
+  /* the section the player is in, by its real name — each visit's row in
+     the sheet lists these in order with the time spent and the score on each */
+  const [homeTab, setHomeTab] = useState<"learn" | "today" | "play" | "world">("learn");
+  const sectionName = (() => {
+    const EN = UI.en.headerTitles;
+    const topic = currentTopic ? currentTopic.title : "";
+    switch (view) {
+      case "home": return `Home · ${homeTab[0].toUpperCase()}${homeTab.slice(1)}`;
+      case "topic": return `Lesson · ${topic} · Intro`;
+      case "stagemap": return `Lesson · ${topic} · Stage map`;
+      case "practice": return `Lesson · ${topic} · ${curStage.n === STAGE_COUNT ? "Boss stage" : `Stage ${curStage.n}`}`;
+      case "arena": return `Matchsticks · Puzzle ${puzIdx + 1}`;
+      case "quick": return `Game · ${quickGame(quickId)?.name ?? "Quick game"}`;
+      case "games": return "Games list";
+      case "town": return "Math Town";
+      default: return GAME_VIEWS.includes(view) ? `Game · ${EN[view]}` : EN[view];
+    }
+  })();
+  useEffect(() => { trackScreen(sectionName); }, [sectionName]);
 
   /* activity: the end of each small game, once, when its result appears */
   useEffect(() => { if (matchResult) track("game_end", { game: "match", score: matchResult.score, secs: matchResult.secs, new_best: matchResult.best }); }, [matchResult]);
@@ -3955,6 +3973,7 @@ export function GameApp({
         )}
         {view === "home" && (
           <HomeView
+            onTabChange={setHomeTab}
             guest={guest}
             guestTopicLimit={guest ? GUEST_TOPICS : Infinity}
             progress={progress}
