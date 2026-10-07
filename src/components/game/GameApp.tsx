@@ -95,6 +95,7 @@ import { bossBonusGame, type HomeGameId } from "./homeGames";
 import { addTownCoins, useTown } from "./town";
 import { feedDragon, stageOf } from "./dragon";
 import { StoryIntro } from "./StoryIntro";
+import { GameDemo, demoDue, markDemoSeen } from "./GameDemo";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
@@ -1938,8 +1939,14 @@ export function GameApp({
   const shelf = (fn: () => void, id?: string) => () => {
     isDailyRef.current = false;
     if (id && guest && !GUEST_GAMES.has(id)) { setLockOpen("game"); return; }
+    /* the first few times, a short demo plays first (Ninja Slice has its own) */
+    if (id && demoDue(id)) { markDemoSeen(id); setGameDemo({ id, go: fn }); return; }
+    setAutoStartFor(null);
     fn();
   };
+  /* a game opened from its demo starts at once instead of showing its ready card */
+  const [autoStartFor, setAutoStartFor] = useState<string | null>(null);
+  const [gameDemo, setGameDemo] = useState<{ id: string; go: () => void } | null>(null);
   const gameLocked = (id: string) => guest && !GUEST_GAMES.has(id);
   const townState = useTown();
   /* The Home tab's way into a game. Guest gating is the shelf's. */
@@ -3274,11 +3281,15 @@ export function GameApp({
       )}
 
       {storyOpen && <StoryIntro lang={lang} onDone={closeStory} />}
+      {gameDemo && (
+        <GameDemo id={gameDemo.id} lang={lang} onClose={() => setGameDemo(null)}
+          onStart={() => { const { id, go } = gameDemo; setGameDemo(null); setAutoStartFor(id); go(); }} />
+      )}
 
       {pushAsk && (
         <>
           <div className="menu-overlay" onClick={() => setPushAsk(null)} />
-          <div className="hint-sheet lock-sheet push-ask" role="dialog" aria-modal="true">
+          <div className={`hint-sheet lock-sheet push-ask${pushAsk === "ios" ? " ios" : ""}`} role="dialog" aria-modal="true">
             <div className="push-ask-dragon" aria-hidden="true">🐉</div>
             {pushAsk === "push" ? (
               <>
@@ -3292,15 +3303,17 @@ export function GameApp({
             ) : (
               <>
                 <h3>{ja ? "ホーム画面に追加しよう" : "Add me to your Home Screen"}</h3>
-                <p>{ja
-                  ? "iPhoneでは、ホーム画面に追加するとドラゴンからのお知らせがとどくようになります（アプリみたいに使えるよ）。"
-                  : "On iPhone, the dragon can only send reminders once the game is on your Home Screen \u2014 it works like a real app then."}</p>
+                {/* the button comes first so it is never hidden under the browser's toolbar */}
+                <button className="btn btn-primary auth-submit push-ask-ok" onClick={() => { setPushAsk(null); hideInstallBanner(); }}>{ja ? "わかった！" : "Got it!"}</button>
                 <ol className="push-ask-steps">
-                  <li>{ja ? "下の 共有ボタン" : "Tap the Share button"} <span className="push-ask-ico">⎙</span> {ja ? "をタップ" : "below"}</li>
-                  <li>{ja ? "「ホーム画面に追加」を選ぶ" : "Choose \u201cAdd to Home Screen\u201d"}</li>
-                  <li>{ja ? "ホーム画面のアイコンからひらく" : "Open the game from the new icon"}</li>
+                  <li>
+                    {ja ? "共有ボタン" : "Tap the Share button"} <span className="push-ask-ico"><svg className="push-ask-share" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M12 3l-4 4M12 3l4 4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 10H6.5A1.5 1.5 0 0 0 5 11.5v8A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 17.5 10H16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/></svg></span> {ja ? "をタップ" : ""}
+                    <small>{ja ? "Safari：画面の下 ／ Chrome：右上のアドレスバー" : "Safari: bottom bar · Chrome: top-right, in the address bar"}</small>
+                  </li>
+                  <li>{ja ? "「ホーム画面に追加」を選ぶ" : "Choose \u201cAdd to Home Screen\u201d"}<small>{ja ? "見えないときは、メニューを下にスクロール" : "Not there? Scroll down the menu"}</small></li>
+                  <li>{ja ? "ホーム画面の「Sutra Sprint」アイコンからひらく" : "Open \u201cSutra Sprint\u201d from your Home Screen"}</li>
+                  <li>{ja ? "アプリの中でもう一度ログイン（アプリは別にログインを覚えます）" : "Sign in once inside the app (it keeps its own login)"}</li>
                 </ol>
-                <button className="btn btn-primary auth-submit" onClick={() => setPushAsk(null)}>{ja ? "わかった！" : "Got it!"}</button>
               </>
             )}
           </div>
@@ -4370,7 +4383,7 @@ export function GameApp({
 
         {view === "runner" && (
           <section className="view active">
-            <RunnerGame lang={lang} sound={sound} celebrate={() => confetti.burstCenter(60, 0.35)}
+            <RunnerGame lang={lang} sound={sound} autoStart={autoStartFor === "runner"} celebrate={() => confetti.burstCenter(60, 0.35)}
               onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}
@@ -4394,7 +4407,7 @@ export function GameApp({
         )}
         {view === "konbini" && (
           <section className="view active">
-            <KonbiniCashier lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
+            <KonbiniCashier lang={lang} sound={sound} autoStart={autoStartFor === "konbini"} celebrate={() => confetti.burstCenter(70, 0.35)}
               onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}
@@ -4406,13 +4419,13 @@ export function GameApp({
         )}
         {view === "sushi" && (
           <section className="view active">
-            <SushiShop lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
+            <SushiShop lang={lang} sound={sound} autoStart={autoStartFor === "sushi"} celebrate={() => confetti.burstCenter(70, 0.35)}
               onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}
         {view === "castle" && (
           <section className="view active">
-            <CastleDefense lang={lang} sound={sound} celebrate={() => confetti.burstCenter(80, 0.35)}
+            <CastleDefense lang={lang} sound={sound} autoStart={autoStartFor === "castle"} celebrate={() => confetti.burstCenter(80, 0.35)}
               onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}
