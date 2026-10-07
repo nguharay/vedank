@@ -111,6 +111,7 @@ import { useLang, UI } from "./i18n";
 import { ri, shuffle, weightedPick, urlBase64ToUint8Array, RollUp, fmt, sameLoc, haptic, rankLabel, SPRINT_LEN, BLITZ_DEFAULT_LEVEL, BLITZ_BOOST_MS } from "./util";
 import type { View, Mode, Loc } from "./util";
 import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, TricksView, BlitzView } from "./views";
+import { SITE_URL } from "@/lib/site";
 
 /* A reward that snaps into place reads as a label. One that climbs reads as
    something you earned — the whole difference is ~600ms. */
@@ -620,7 +621,7 @@ export function GameApp({
 
   const [copiedRace, setCopiedRace] = useState<string | null>(null);
   async function onShareRace(id: string) {
-    const url = `${window.location.origin}/r/${id}`;
+    const url = `${SITE_URL}/r/${id}`;
     const text = lang === "ja" ? "レースに参加してね！" : "Race me on Sutra Sprint!";
     /* The native sheet where there is one — on a phone this is the difference
        between sharing and copy-then-hunt-for-the-app. */
@@ -2381,7 +2382,7 @@ export function GameApp({
   }, [view, tttMode, tttRoom?.code]);
   async function shareTttRoom() {
     if (!tttRoom) return;
-    const url = `${window.location.origin}/?ttt=${tttRoom.code}`;
+    const url = `${SITE_URL}/?ttt=${tttRoom.code}`;
     try { if (navigator.share) { await navigator.share({ title: "Sutra Sprint", text: lang === "ja" ? "○×で対決しよう！" : "Tic-tac-toe me!", url }); return; } } catch { return; }
     try { await navigator.clipboard.writeText(url); spawnToast(lang === "ja" ? "リンクをコピーしました" : "Link copied", null); } catch {}
   }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { RunResults } from "./RunResults";
 import { track } from "@/lib/analytics";
+import { SITE_URL } from "@/lib/site";
 import { Mascot } from "../Mascot";
 import { fmt, haptic } from "../util";
 import type { useSound } from "../useSound";
@@ -608,7 +609,7 @@ function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onB
 
   async function share() {
     if (!room) return;
-    const url = `${window.location.origin}/?rr=${room.code}`;
+    const url = `${SITE_URL}/?rr=${room.code}`;
     try { if (navigator.share) { await navigator.share({ title: "Sutra Sprint", text: ja ? "計算レースで勝負しよう！" : "Race me in Math Race!", url }); return; } } catch { return; }
     try { await navigator.clipboard.writeText(url); setNote(ja ? "リンクをコピーしました" : "Link copied"); } catch {}
   }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { track } from "@/lib/analytics";
+import { SITE_URL } from "@/lib/site";
 
 /* ---------- invite a friend ----------
    The app's link, sent any way the player likes: the phone's own share menu
@@ -31,12 +32,12 @@ export function InviteSheet({ lang, onClose, extra }: { lang: "en" | "ja"; onClo
 
   const linkFor = (channel: string) => (origin ? `${origin}/?utm_source=invite&utm_medium=${channel}` : "");
   const text = (ja
-    ? "インド式数学のゲームで一緒にあそぼう！🐉 暗算でモンスターをたおすよ。無料だよ👇"
-    : "Play this Vedic maths game with me! 🐉 Beat monsters with mental maths — it's free 👇")
+    ? "インド式数学のゲームで一緒にあそぼう！🐉 暗算でモンスターをたおすよ。\n✨ 完全無料！今すぐ無料登録してはじめよう👇"
+    : "Play this Vedic maths game with me! 🐉 Beat monsters with mental maths.\n✨ It's 100% free — sign up free and start now 👇")
     + (extra ? `\n${extra}` : "");
 
   useEffect(() => {
-    const o = window.location.origin;
+    const o = SITE_URL;
     let live = true;
     QRCode.toString(`${o}/?utm_source=invite&utm_medium=qr`, { type: "svg", margin: 1, errorCorrectionLevel: "M", color: { dark: "#1d1b33", light: "#ffffff" } })
       .then((svg) => { if (live) { setQr(svg); setOrigin(o); } })

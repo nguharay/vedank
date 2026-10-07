@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { Analytics } from "@/components/Analytics";
+import { SITE_URL } from "@/lib/site";
 
 /* The link preview is the first thing a Japanese player sees — it has to sell
    the idea before they ever reach the login screen, so the copy here is
@@ -13,7 +14,7 @@ const DESCRIPTION =
   "A game that doesn't just teach Indian calculation methods — it teaches you to see mathematics differently.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://vedank.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   title: TITLE,
   description: DESCRIPTION,
   icons: {

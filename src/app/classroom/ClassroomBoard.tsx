@@ -12,6 +12,7 @@ import {
 import { COMP_LEVELS, type CompetitionSummary, type CompRow } from "@/lib/game/competition";
 import type { ClassSummary, ClassStudent, ClassGroup } from "@/lib/game/classroom";
 import { TOPICS } from "@/lib/game/topics";
+import { SITE_URL } from "@/lib/site";
 
 function fmtDate(d: string | null) {
   if (!d) return "—";
@@ -86,7 +87,7 @@ export function ClassroomBoard({
   const openCode = open?.joinCode ?? null;
   useEffect(() => {
     if (!openCode) return;
-    const url = `${window.location.origin}/c/${openCode}`;
+    const url = `${SITE_URL}/c/${openCode}`;
     let live = true;
     QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M", color: { dark: "#1d1b33", light: "#ffffff" } })
       .then((svg) => { if (live) { setQrSvg(svg); setInviteUrl(url); } })
