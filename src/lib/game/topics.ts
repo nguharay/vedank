@@ -1411,7 +1411,7 @@ export const RANKS_JA: Record<string, string> = {
   Apprentice: "見習い",
   Ganitin: "ガニティン",
   "Sutra Sādhaka": "スートラ修行者",
-  "Vedic Scholar": "ヴェーダ学者",
+  "Vedic Scholar": "インド式数学の学者",
   "Base Master": "基準法の達人",
   "Crosswise Adept": "たすきがけの達人",
   "Vinculum Keeper": "ヴィンキュラムの守り手",

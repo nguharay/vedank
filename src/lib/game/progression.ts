@@ -26,7 +26,7 @@ export type Card = {
 export const CARDS: Card[] = [
   /* ---- legendary ---- */
   { id: "tirtha", name: "Bharati Krishna Tirtha", nameJa: "バーラティー・クリシュナ・ティールタ", years: "1884–1960", glyph: "🕉", color: "#E07B39", rarity: "legendary", quote: false,
-    line: "Wrote the book “Vedic Mathematics” — the 16 sutras this app is built on.", lineJa: "『ヴェーダ数学』を書いた人。このアプリの16のスートラはここから。" },
+    line: "Wrote the book “Vedic Mathematics” — the 16 sutras this app is built on.", lineJa: "インド式数学の本『Vedic Mathematics』を書いた人。このアプリの16のスートラはここから。" },
   { id: "ramanujan", name: "Srinivasa Ramanujan", nameJa: "シュリニヴァーサ・ラマヌジャン", years: "1887–1920", glyph: "∞", color: "#B84A6E", rarity: "legendary", quote: true,
     line: "An equation for me has no meaning, unless it expresses a thought of God.", lineJa: "数式は、神の思いを表していなければ意味がない。" },
   { id: "aryabhata", name: "Aryabhata", nameJa: "アーリヤバタ", years: "476–550", glyph: "π", color: "#7A58C0", rarity: "legendary", quote: false,

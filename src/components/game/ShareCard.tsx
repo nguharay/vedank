@@ -46,7 +46,7 @@ function blurbFor(focus: ShareFocus, s: ShareStats, t: UIDict, lang: LangCode): 
         : `I'm on a ${s.bestStreakEver}-day streak on Sutra Sprint! 🔥`;
     case "gems":
       return ja
-        ? `ヴェーダ数学で${s.gems}ジェムを集めました！💎`
+        ? `インド式数学で${s.gems}ジェムを集めました！💎`
         : `I've earned ${s.gems} gems doing Vedic math on Sutra Sprint! 💎`;
     case "bosses":
       return ja
