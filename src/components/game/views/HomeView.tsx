@@ -17,6 +17,7 @@ import type { ProgressState } from "@/lib/game/state";
 import { RANKS_JA, STAGE_COUNT, TOPICS, gradCss } from "@/lib/game/topics";
 import type { Lang, Topic } from "@/lib/game/topics";
 import { useEffect, useRef, useState } from "react";
+import { CollectionCard } from "../Rewards";
 
 /* ================= sub-views ================= */
 
@@ -395,6 +396,7 @@ export function HomeView({
       {tab === "today" && (
         <>
       <p className="home-tabdesc">{lang === "ja" ? "1日1回のおたのしみ。ストリークをのばそう！" : "Once-a-day fun. Keep your streak alive!"}</p>
+      <CollectionCard lang={lang} />
       {dailyStreak > 0 && (
         <div className="streak-calendar">
           <span className="streak-calendar-label">🔥 {dailyStreak}{t.home.streakSuffix}</span>
@@ -530,6 +532,7 @@ export function HomeView({
       {tab === "world" && (
         <>
       <p className="home-tabdesc">{lang === "ja" ? "正解でドラゴンが育ち、まちが発展する" : "Right answers grow your dragon and build your town"}</p>
+      <CollectionCard lang={lang} />
       <DragonCard lang={lang} />
 
       <HomeTownCard lang={lang} onOpen={onOpenTown} guest={guest} />

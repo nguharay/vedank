@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { RollUp } from "../util";
 import { addTownCoins } from "../town";
 import { track } from "@/lib/analytics";
+import { isUnlocked } from "@/lib/game/progression";
 
 /* ---------- the end-of-run results screen, shared by the arcade games ----------
    What makes "one more go" irresistible, in one place:
@@ -187,7 +188,7 @@ const noSub = () => () => {};
 export function ArcadeMarks({ id, lang }: { id: ArcadeId; lang: "en" | "ja" }) {
   const xp = useSyncExternalStore(noSub, () => readMastery(id), () => 0);
   const stars = useSyncExternalStore(noSub, () => readBestStars(id), () => 0);
-  const hot = useSyncExternalStore(noSub, () => hotGame() === id, () => false);
+  const hot = useSyncExternalStore(noSub, () => hotGame() === id && isUnlocked(id), () => false);
   return (
     <>
       {xp > 0 && (
