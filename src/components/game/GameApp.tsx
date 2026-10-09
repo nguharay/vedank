@@ -2454,7 +2454,7 @@ export function GameApp({
 
   /* the section the player is in, by its real name — each visit's row in
      the sheet lists these in order with the time spent and the score on each */
-  const [homeTab, setHomeTab] = useState<"learn" | "today" | "play" | "world">("learn");
+  const [homeTab, setHomeTab] = useState<"learn" | "today" | "play" | "world">("play");
   const sectionName = (() => {
     const EN = UI.en.headerTitles;
     const topic = currentTopic ? currentTopic.title : "";

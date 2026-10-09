@@ -113,10 +113,10 @@ export function HomeView({
   const resetMins = Math.floor((resetIn % 3600000) / 60000);
 
   const pathWrapRef = useRef<HTMLDivElement | null>(null);
-  const [tab, setTab] = useState<"learn" | "today" | "play" | "world">("learn");
+  const [tab, setTab] = useState<"learn" | "today" | "play" | "world">("play");
   const tabsRef = useRef<HTMLDivElement | null>(null);
-  /* Home always opens on Learn — say so, so the activity log doesn't keep a stale tab */
-  useEffect(() => { onTabChange?.("learn"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /* Home always opens on Play (games first) — say so, so the activity log doesn't keep a stale tab */
+  useEffect(() => { onTabChange?.("play"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   function pickTab(id: "learn" | "today" | "play" | "world") {
     setTab(id);
     onTabChange?.(id);
