@@ -9,6 +9,8 @@
    Never pass anything that identifies a child — only game ids, numbers and
    yes/no flags. Who the player is, the server takes from the sign-in cookie. */
 
+import { notePlay } from "./game/progression";
+
 type Params = Record<string, string | number | boolean | undefined>;
 type W = Window & { gtag?: (...a: unknown[]) => void; clarity?: (...a: unknown[]) => void };
 type Section = { n: string; s: number; r?: string };
@@ -195,6 +197,8 @@ export function track(name: string, params: Params = {}) {
   noteResult(name, params);
   gaClarity(name, params);
   push(name, params);
+  /* game unlocks, first-finish cards and "try another game" nudges */
+  if ((name === "game_open" || name === "game_end") && typeof params.game === "string") notePlay(name === "game_open" ? "open" : "end", params.game);
 }
 
 /* a screen inside the single-page game — GA4 and Clarity only */
