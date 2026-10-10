@@ -1984,6 +1984,8 @@ export function GameApp({
   }, []);
   /* invite friends: opened from the menu, Home, or a results screen (event) */
   const [invite, setInvite] = useState<{ extra?: string } | null>(null);
+  /* which group of the account menu is open */
+  const [menuGroup, setMenuGroup] = useState<"settings" | "watch" | "contact" | null>(null);
   useEffect(() => {
     const on = (e: Event) => { setInvite({ extra: (e as CustomEvent<{ extra?: string }>).detail?.extra }); track("invite_open"); };
     window.addEventListener("vedank:invite", on);
@@ -2851,7 +2853,7 @@ export function GameApp({
   const [tourOpen, setTourOpen] = useState(false);
   const tourChecked = useRef(false);
   useEffect(() => {
-    if (tourChecked.current || storyOpen || view !== "home") return;
+    if (tourChecked.current || storyOpen || menuOpen || view !== "home") return;
     let done = false;
     try { done = !!localStorage.getItem(TOUR_KEY); } catch {}
     if (done) { tourChecked.current = true; return; }
@@ -2859,7 +2861,7 @@ export function GameApp({
        still settling must not cancel it for good */
     const t = setTimeout(() => { tourChecked.current = true; setTourOpen(true); }, 900);
     return () => clearTimeout(t);
-  }, [storyOpen, view]);
+  }, [storyOpen, view, menuOpen]);
 
   /* A moment after opening, once the push status is known (pushKey is read
      asynchronously), so the sheet does not flash on top of the first paint. */
@@ -3094,22 +3096,77 @@ export function GameApp({
                 </span>
               </button>
             )}
-            <button className="menu-row" onClick={sound.toggle}>
-              <span>{sound.on ? "🔊" : "🔇"} {t.menu.sound}</span>
-              <span className="menu-row-val">{sound.on ? t.menu.on : t.menu.off}</span>
+            {/* grouped rows: tap a heading to open it */}
+            <button className={`menu-row menu-group${menuGroup === "settings" ? " open" : ""}`} onClick={() => setMenuGroup((g) => (g === "settings" ? null : "settings"))} aria-expanded={menuGroup === "settings"}>
+              <span>⚙️ {ja ? "設定" : "Settings"}</span>
+              <span className="menu-row-val">{sound.on ? "🔊" : "🔇"} · {lang === "ja" ? "日本語" : "EN"} <i className="menu-chev">›</i></span>
             </button>
-            <button className="menu-row" onClick={theme.cycle}>
-              <span>{theme.theme === "dark" ? "🌙" : theme.theme === "light" ? "☀️" : "🖥️"} {t.menu.theme}</span>
-              <span className="menu-row-val">{theme.theme === "system" ? t.menu.auto : theme.theme === "light" ? t.menu.light : t.menu.dark}</span>
+            {menuGroup === "settings" && (
+              <div className="menu-sub-list">
+              <button className="menu-row menu-sub" onClick={sound.toggle}>
+                <span>{sound.on ? "🔊" : "🔇"} {t.menu.sound}</span>
+                <span className="menu-row-val">{sound.on ? t.menu.on : t.menu.off}</span>
+              </button>
+              <button className="menu-row menu-sub" onClick={theme.cycle}>
+                <span>{theme.theme === "dark" ? "🌙" : theme.theme === "light" ? "☀️" : "🖥️"} {t.menu.theme}</span>
+                <span className="menu-row-val">{theme.theme === "system" ? t.menu.auto : theme.theme === "light" ? t.menu.light : t.menu.dark}</span>
+              </button>
+              <button className="menu-row menu-sub" onClick={langHook.toggle}>
+                <span>🌐 {t.menu.language}</span>
+                <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
+              </button>
+              <button className="menu-row menu-sub" onClick={buddy.toggleHidden}>
+                <span>🧚 {ja ? "バディ" : "Buddy"}</span>
+                <span className="menu-row-val">{buddy.hidden ? t.menu.off : t.menu.on}</span>
+              </button>
+              {buddyPos.pos && (
+                <button className="menu-row menu-sub" onClick={buddyPos.reset}>
+                  <span>📍 {ja ? "バディの位置をもどす" : "Reset buddy position"}</span>
+                  <span className="menu-row-val">›</span>
+                </button>
+              )}
+              </div>
+            )}
+            <button className={`menu-row menu-group${menuGroup === "watch" ? " open" : ""}`} onClick={() => setMenuGroup((g) => (g === "watch" ? null : "watch"))} aria-expanded={menuGroup === "watch"}>
+              <span>📺 {ja ? "見る" : "Watch"}</span>
+              <span className="menu-row-val"><i className="menu-chev">›</i></span>
             </button>
-            <button className="menu-row" onClick={langHook.toggle}>
-              <span>🌐 {t.menu.language}</span>
-              <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
+            {menuGroup === "watch" && (
+              <div className="menu-sub-list">
+              <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); goHome(); setTimeout(() => setTourOpen(true), 400); }}>
+                <span>🧭 {ja ? "使い方ツアー" : "How to use the app"}</span>
+                <span className="menu-row-val">{ja ? "もう一度" : "Replay"}</span>
+              </button>
+              <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); setStoryOpen(true); }}>
+                <span>📖 {lang === "ja" ? "ものがたりを見る" : "Watch the story"}</span>
+                <span className="menu-row-val">▶</span>
+              </button>
+              </div>
+            )}
+            <button className={`menu-row menu-group${menuGroup === "contact" ? " open" : ""}`} onClick={() => setMenuGroup((g) => (g === "contact" ? null : "contact"))} aria-expanded={menuGroup === "contact"}>
+              <span>💬 {ja ? "つながる" : "Contact"}</span>
+              <span className="menu-row-val">{pendingDuels > 0 ? "⚔️ " : ""}<i className="menu-chev">›</i></span>
             </button>
-            {classesEnabled && lang === "ja" && <button className="menu-row" onClick={() => { setMenuOpen(false); setClassesFrom("menu"); }}>
-              <span>🧮 Ray先生と学ぶ（授業）</span>
-              <span className="menu-row-val">›</span>
-            </button>}
+            {menuGroup === "contact" && (
+              <div className="menu-sub-list">
+              {classesEnabled && lang === "ja" && <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); setClassesFrom("menu"); }}>
+                <span>🧮 Ray先生と学ぶ（授業）</span>
+                <span className="menu-row-val">›</span>
+              </button>}
+              <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
+                <span>🏫 {ja ? "クラス" : "Class"}</span>
+                <span className="menu-row-val">
+                  {enrolled.length ? enrolled[0].name : ja ? "未参加" : "Not joined"}
+                </span>
+              </button>
+              <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); openFriends(); }}>
+                <span>👥 {lang === "ja" ? "フレンド" : "Friends"}</span>
+                <span className="menu-row-val">
+                  {friends.length}{pendingDuels > 0 ? ` · ⚔️ ${pendingDuels}` : ""}
+                </span>
+              </button>
+              </div>
+            )}
             <button className="menu-row" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent("vedank:collection")); }}>
               <span>🃏 {ja ? "偉人カード図鑑" : "Great Minds cards"}</span>
               <span className="menu-row-val mono">{Object.keys(ownedCards()).length}/{CARDS.length}</span>
@@ -3118,43 +3175,13 @@ export function GameApp({
               <span>🎁 {ja ? "友だちを招待" : "Invite friends"}</span>
               <span className="menu-row-val">{ja ? "シェア" : "Share"}</span>
             </button>
-            <button className="menu-row" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
-              <span>🏫 {ja ? "クラス" : "Class"}</span>
-              <span className="menu-row-val">
-                {enrolled.length ? enrolled[0].name : ja ? "未参加" : "Not joined"}
-              </span>
-            </button>
-            <button className="menu-row" onClick={() => { setMenuOpen(false); goHome(); setTimeout(() => setTourOpen(true), 400); }}>
-              <span>🧭 {ja ? "使い方ツアー" : "How to use the app"}</span>
-              <span className="menu-row-val">{ja ? "もう一度" : "Replay"}</span>
-            </button>
-            <button className="menu-row" onClick={() => { setMenuOpen(false); setStoryOpen(true); }}>
-              <span>📖 {lang === "ja" ? "ものがたりを見る" : "Watch the story"}</span>
-              <span className="menu-row-val">▶</span>
-            </button>
             <button className="menu-row" onClick={() => { setMenuOpen(false); setAchievementsOpen(true); }}>
               <span>🏅 {lang === "ja" ? "実績バッジ" : "Badges"}</span>
               <span className="menu-row-val">→</span>
             </button>
-            <button className="menu-row" onClick={() => { setMenuOpen(false); openFriends(); }}>
-              <span>👥 {lang === "ja" ? "フレンド" : "Friends"}</span>
-              <span className="menu-row-val">
-                {friends.length}{pendingDuels > 0 ? ` · ⚔️ ${pendingDuels}` : ""}
-              </span>
-            </button>
             <button className="menu-row" onClick={() => { setMenuOpen(false); setShopOpen(true); refreshShop(); }}>
               <span>🛍️ {lang === "ja" ? "ショップ" : "Shop"}</span>
               <span className="menu-row-val mono">💎 {gemBalance ?? "…"}</span>
-            </button>
-            {buddyPos.pos && (
-              <button className="menu-row" onClick={buddyPos.reset}>
-                <span>📍 {ja ? "バディの位置をもどす" : "Reset buddy position"}</span>
-                <span className="menu-row-val">›</span>
-              </button>
-            )}
-            <button className="menu-row" onClick={buddy.toggleHidden}>
-              <span>🧚 {ja ? "バディ" : "Buddy"}</span>
-              <span className="menu-row-val">{buddy.hidden ? t.menu.off : t.menu.on}</span>
             </button>
             <button className="menu-row" onClick={() => setSkinsOpen((o) => !o)}>
               <span>🎨 {ja ? "衣装とテーマ" : "Outfit & theme"}</span>
@@ -3435,7 +3462,7 @@ export function GameApp({
 
       {storyOpen && <StoryIntro lang={lang} onDone={closeStory} />}
       {invite && <InviteSheet lang={lang} extra={invite.extra} onClose={() => setInvite(null)} />}
-      <RewardsLayer lang={lang} onPlay={launchGame} giftReady={!storyOpen && chestReward === null && !tourOpen && !pushAsk} />
+      <RewardsLayer lang={lang} onPlay={launchGame} giftReady={!storyOpen && chestReward === null && !tourOpen && !pushAsk && !menuOpen} />
       {tourOpen && view === "home" && <Tour lang={lang} guest={guest} onDone={() => setTourOpen(false)} />}
       {gameDemo && (
         <GameDemo id={gameDemo.id} lang={lang} onClose={() => setGameDemo(null)}
