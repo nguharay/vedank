@@ -111,6 +111,7 @@ import { makeQuoteCycle, quoteText } from "@/lib/game/quotes";
 import { useBuddyPos } from "./useBuddyPos";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI } from "./i18n";
+import { LEAGUES } from "@/lib/game/daily";
 import { ri, shuffle, weightedPick, urlBase64ToUint8Array, RollUp, fmt, sameLoc, haptic, rankLabel, SPRINT_LEN, BLITZ_DEFAULT_LEVEL, BLITZ_BOOST_MS } from "./util";
 import type { View, Mode, Loc } from "./util";
 import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, TricksView, BlitzView } from "./views";
@@ -247,6 +248,17 @@ export function GameApp({
     dailyStatusAction().then(setDailyStatus).catch(() => {});
   }, []);
 
+  /* the League's "how it works" (the ⓘ button) */
+  const [leagueInfo, setLeagueInfo] = useState(false);
+  /* time until the league week ends (Monday 00:00 UTC, when the server starts a new week) */
+  function leagueTimeLeft(jaText: boolean): string {
+    const now = new Date();
+    const dow = (now.getUTCDay() + 6) % 7;            /* Monday = 0 */
+    const end = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + (7 - dow));
+    const h = Math.max(0, Math.floor((end - now.getTime()) / 3600_000));
+    const d = Math.floor(h / 24), hh = h % 24;
+    return jaText ? (d > 0 ? `${d}日${hh}時間` : `${hh}時間`) : (d > 0 ? `${d}d ${hh}h` : `${hh}h`);
+  }
   async function toggleLeague() {
     const next = !leagueOpen;
     setLeagueOpen(next);
@@ -3958,27 +3970,72 @@ export function GameApp({
                 {league?.league.icon} {lang === "ja" ? league?.league.nameJa : league?.league.name}{" "}
                 {lang === "ja" ? "リーグ" : "League"}
               </span>
-              {league && league.myRank > 0 && <span className="sheet-panel-count">#{league.myRank}</span>}
+              <span className="league-title-right">
+                {league && league.myRank > 0 && <span className="sheet-panel-count">#{league.myRank}</span>}
+                <button className={`league-info-btn${leagueInfo ? " on" : ""}`} onClick={() => setLeagueInfo((v) => !v)} aria-expanded={leagueInfo} aria-label={ja ? "しくみ" : "How it works"}>ⓘ</button>
+              </span>
             </div>
-            <div className="league-note">
-              {lang === "ja"
-                ? "デイリーチャレンジのポイントで毎週きそいます。上位は昇格、下位は降格。"
-                : "Weekly table, scored from Daily Challenge points. Top players promote, bottom relegate."}
+            {leagueInfo && (<div className="league-info">
+            {/* the ladder: which league you're in, and where it can take you */}
+            <div className="league-ladder" aria-label={ja ? "リーグの段階" : "League levels"}>
+              {LEAGUES.map((L) => (
+                <span key={L.tier} className={`league-step${league?.league.tier === L.tier ? " on" : ""}${league && L.tier < league.league.tier ? " past" : ""}`} style={{ ["--lc" as string]: L.color }}>
+                  <i>{L.icon}</i><small>{ja ? L.nameJa : L.name}</small>
+                </span>
+              ))}
             </div>
+
+            {/* how it works, in three steps */}
+            <ol className="league-how">
+              <li><b>📅</b><span>{ja ? <>毎日<strong>「今日のチャレンジ」</strong>（8問）を1回やる</> : <>Play the <strong>Daily Challenge</strong> (8 questions) once a day</>}</span></li>
+              <li><b>⚡</b><span>{ja ? <>正解1問 <strong>100pt</strong>＋はやさボーナス＋全問正解 <strong>150pt</strong>。1週間ぶん合計</> : <><strong>100 pts</strong> per right answer + speed bonus + <strong>150</strong> for all 8. Added up over the week</>}</span></li>
+              <li><b>🏁</b><span>{ja ? <>毎週月曜の朝9時にしめきり。<strong>上位20%は上のリーグへ⬆️</strong>、下位20%は下へ⬇️（5人以上のとき）</> : <>Ends every Monday 09:00 (Japan). <strong>Top 20% move up a league ⬆️</strong>, bottom 20% move down ⬇️ (with 5+ players)</>}</span></li>
+            </ol>
+            </div>)}
+            <div className="league-ends">⏳ {ja ? `今週のしめきりまで ${leagueTimeLeft(true)}` : `Week ends in ${leagueTimeLeft(false)}`}</div>
+
+            {/* you: on the table, or how to get on it */}
+            {league && (
+              <div className={`league-me${league.myRank > 0 ? "" : " off"}`}>
+                {league.myRank > 0 ? (
+                  <span>{ja ? <>あなたは <b>{league.myRank}位</b>・<b>⚡{league.myPoints}</b>
+                    {league.promote > 0 && league.myRank <= league.promote ? "　⬆️ 昇格ゾーン！" : league.relegate > 0 && league.myRank > league.size - league.relegate ? "　⬇️ 降格ゾーン…" : ""}</>
+                    : <>You are <b>#{league.myRank}</b> · <b>⚡{league.myPoints}</b>
+                    {league.promote > 0 && league.myRank <= league.promote ? " · ⬆️ promotion zone!" : league.relegate > 0 && league.myRank > league.size - league.relegate ? " · ⬇️ relegation zone" : ""}</>}</span>
+                ) : (
+                  <span>{ja ? "まだ今週の表にのっていません。今日のチャレンジを1回やると、のるよ！" : "You're not on this week's table yet — play today's Daily Challenge once to join!"}</span>
+                )}
+                {/* always a way to the Daily Challenge: play it, or see today's result */}
+                {!dailyStatus?.played ? (
+                  <button className="btn btn-primary league-go" onClick={() => { setLeagueOpen(false); startDaily(); }}>
+                    📅 {ja ? "今日のチャレンジをする ▶" : "Play today's challenge ▶"}
+                  </button>
+                ) : (
+                  <>
+                    <div className="league-done">✅ {ja ? "今日はプレイずみ。明日もやってポイントをふやそう！" : "Done for today — come back tomorrow for more points!"}</div>
+                    <button className="btn btn-ghost league-go" onClick={() => { setLeagueOpen(false); goHome(); setTimeout(() => window.dispatchEvent(new CustomEvent("vedank:hometab", { detail: "today" })), 150); }}>
+                      📅 {ja ? "今日のチャレンジを見る ▶" : "See today's challenge ▶"}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             <div className="leaderboard-panel">
               {leagueLoading && <div className="leaderboard-loading">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>}
               {!leagueLoading && league?.rows.length === 0 && (
                 <div className="leaderboard-loading">
-                  {lang === "ja" ? "今週はまだ誰もいません。最初の一人になろう！" : "Nobody here yet this week — be the first!"}
+                  {lang === "ja" ? "今週はまだ誰もいません。今日のチャレンジをやって、1位になろう！" : "Nobody here yet this week — play the Daily Challenge and take first place!"}
                 </div>
               )}
               {!leagueLoading &&
                 league?.rows.map((r) => (
-                  <div key={r.userId} className={`leaderboard-row${r.isMe ? " me" : ""}`}>
+                  <div key={r.userId} className={`leaderboard-row${r.isMe ? " me" : ""}${league.promote > 0 && r.rank <= league.promote ? " zone-up" : ""}${league.relegate > 0 && r.rank > league.size - league.relegate ? " zone-down" : ""}`}>
                     <span className={`leaderboard-rank${r.rank <= 3 ? ` top${r.rank}` : ""}`}>
                       {r.rank <= 3 ? ["🥇", "🥈", "🥉"][r.rank - 1] : r.rank}
                     </span>
                     <span className="leaderboard-name">{r.name}</span>
+                    {league.promote > 0 && r.rank <= league.promote && <span className="zone-tag up">⬆️</span>}
+                    {league.relegate > 0 && r.rank > league.size - league.relegate && <span className="zone-tag down">⬇️</span>}
                     <span className="leaderboard-gems">⚡ {r.points}</span>
                   </div>
                 ))}

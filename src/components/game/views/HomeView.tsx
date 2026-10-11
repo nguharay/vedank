@@ -115,6 +115,15 @@ export function HomeView({
   const pathWrapRef = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<"learn" | "today" | "play" | "world">("play");
   const tabsRef = useRef<HTMLDivElement | null>(null);
+  /* other screens can send Home to a tab (e.g. the League → today's challenge) */
+  useEffect(() => {
+    const on = (e: Event) => {
+      const t = (e as CustomEvent<string>).detail;
+      if (t === "learn" || t === "today" || t === "play" || t === "world") { setTab(t); onTabChange?.(t); }
+    };
+    window.addEventListener("vedank:hometab", on);
+    return () => window.removeEventListener("vedank:hometab", on);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   /* Home always opens on Play (games first) — say so, so the activity log doesn't keep a stale tab */
   useEffect(() => { onTabChange?.("play"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   function pickTab(id: "learn" | "today" | "play" | "world") {
