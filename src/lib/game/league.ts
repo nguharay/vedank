@@ -1,7 +1,7 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gt, lt, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { dailyChallenge, leaguePoints, users } from "@/db/schema";
-import { DAILY_QUESTIONS, scoreDaily, todayKey, weekStartKey, leagueOf, type League } from "./daily";
+import { DAILY_QUESTIONS, scoreDaily, todayKey, weekStartKey, leagueOf, nextTier, TOP_LEAGUE, type League } from "./daily";
 
 export type DailyStatus = {
   day: string;
@@ -25,7 +25,34 @@ export type LeagueStanding = {
   rows: LeagueRow[];
   myRank: number;
   myPoints: number;
+  /* how many players are in this league this week, and how many of them
+     move up / down when the week ends (0 when there are too few to move) */
+  size: number;
+  promote: number;
+  relegate: number;
 };
+
+/* The league a player is in this week. A player's first Daily Challenge of a
+   new week settles last week: top 20% of their old league move up a tier,
+   bottom 20% move down (only when the league had 5+ players). A player who
+   skipped weeks keeps their last league. */
+async function tierForWeek(userId: string, week: string): Promise<number> {
+  const db = getDb();
+  const cur = (await db.select().from(leaguePoints)
+    .where(and(eq(leaguePoints.userId, userId), eq(leaguePoints.weekStart, week))).limit(1))[0];
+  if (cur) return cur.tier;
+  const prev = (await db.select().from(leaguePoints)
+    .where(and(eq(leaguePoints.userId, userId), lt(leaguePoints.weekStart, week)))
+    .orderBy(desc(leaguePoints.weekStart)).limit(1))[0];
+  if (!prev) return 0;
+  const lastWeek = new Date(week + "T00:00:00");
+  lastWeek.setDate(lastWeek.getDate() - 7);
+  if (String(prev.weekStart) !== todayKey(lastWeek)) return prev.tier;
+  const same = and(eq(leaguePoints.weekStart, prev.weekStart), eq(leaguePoints.tier, prev.tier));
+  const [{ n: size }] = await db.select({ n: sql<number>`count(*)::int` }).from(leaguePoints).where(same);
+  const [{ n: ahead }] = await db.select({ n: sql<number>`count(*)::int` }).from(leaguePoints).where(and(same, gt(leaguePoints.points, prev.points)));
+  return nextTier(prev.tier, ahead + 1, size);
+}
 
 export async function getDailyStatus(userId: string): Promise<DailyStatus> {
   const db = getDb();
@@ -63,6 +90,7 @@ export async function submitDaily(userId: string, correct: number, elapsedMs: nu
     return { alreadyPlayed: true, points: existing.points, correct: existing.correct };
   }
 
+  const tier = await tierForWeek(userId, week);
   const safeCorrect = Math.max(0, Math.min(DAILY_QUESTIONS, Math.floor(correct)));
   const points = scoreDaily(safeCorrect, Math.max(0, elapsedMs));
 
@@ -77,7 +105,7 @@ export async function submitDaily(userId: string, correct: number, elapsedMs: nu
 
   await db
     .insert(leaguePoints)
-    .values({ userId, weekStart: week, points, tier: 0 })
+    .values({ userId, weekStart: week, points, tier })
     .onConflictDoUpdate({
       target: [leaguePoints.userId, leaguePoints.weekStart],
       set: { points: sql`${leaguePoints.points} + ${points}`, updatedAt: new Date() },
@@ -98,7 +126,11 @@ export async function getLeagueStanding(userId: string, limit = 25): Promise<Lea
       .where(and(eq(leaguePoints.userId, userId), eq(leaguePoints.weekStart, week)))
       .limit(1)
   )[0];
-  const tier = mine?.tier ?? 0;
+  /* not on this week's table yet: show the league they will join */
+  const tier = mine?.tier ?? (await tierForWeek(userId, week));
+  const [{ n: size }] = await db.select({ n: sql<number>`count(*)::int` }).from(leaguePoints)
+    .where(and(eq(leaguePoints.weekStart, week), eq(leaguePoints.tier, tier)));
+  const moving = size >= 5 ? Math.max(1, Math.floor(size * 0.2)) : 0;
 
   const rows = await db
     .select({
@@ -128,5 +160,8 @@ export async function getLeagueStanding(userId: string, limit = 25): Promise<Lea
     rows: table,
     myRank: me?.rank ?? 0,
     myPoints: mine?.points ?? 0,
+    size,
+    promote: tier < TOP_LEAGUE ? moving : 0,
+    relegate: tier > 0 ? moving : 0,
   };
 }

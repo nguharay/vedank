@@ -3985,3 +3985,30 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .menu-group.open{ background:var(--surface-2); }
 .menu-sub-list{ margin:0 0 4px 14px; padding-left:8px; border-left:3px solid var(--line-strong); animation:dm-fade .2s both; }
 .menu-sub{ font-size:.95em; }
+
+/* ======== League panel: ladder, how-it-works, your status, zones ======== */
+.league-ladder{ display:flex; gap:4px; overflow-x:auto; margin:4px 0 10px; padding-bottom:2px; }
+.league-step{ --lc:#999; flex:1 0 auto; min-width:44px; display:flex; flex-direction:column; align-items:center; gap:1px; padding:5px 4px; border-radius:12px;
+  border:2px solid var(--line); background:var(--surface-2); opacity:.55; font-size:10.5px; font-weight:800; color:var(--ink-dim); }
+.league-step i{ font-style:normal; font-size:18px; line-height:1; }
+.league-step.past{ opacity:.8; }
+.league-step.on{ opacity:1; border-color:var(--lc); background:color-mix(in srgb, var(--lc) 18%, var(--surface)); color:var(--ink); transform:scale(1.08); box-shadow:0 3px 0 var(--lc); }
+.league-how{ list-style:none; margin:0; padding:10px 12px; display:flex; flex-direction:column; gap:7px; border-radius:14px; background:var(--surface-2); border:2px solid var(--line); }
+.league-how li{ display:flex; gap:8px; align-items:flex-start; font-size:12.5px; font-weight:700; line-height:1.45; color:var(--ink-dim); }
+.league-how li b{ flex:0 0 22px; font-size:16px; line-height:1.2; }
+.league-how strong{ color:var(--ink); }
+.league-ends{ margin:8px 2px 0; font-size:12px; font-weight:800; color:var(--muted); text-align:right; }
+.league-me{ margin:8px 0 10px; padding:10px 12px; border-radius:14px; border:3px solid var(--gold-dk, #c99a00); background:color-mix(in srgb, var(--gold, #ffcf3a) 18%, var(--surface));
+  display:flex; flex-direction:column; gap:8px; font-size:13.5px; font-weight:700; color:var(--ink); }
+.league-me.off{ border-style:dashed; }
+.league-go{ width:100%; }
+.league-done{ font-size:12.5px; font-weight:800; color:var(--muted); }
+.leaderboard-row.zone-up{ box-shadow:inset 4px 0 0 #3fbf2a; }
+.leaderboard-row.zone-down{ box-shadow:inset 4px 0 0 #e5484d; }
+.zone-tag{ font-size:13px; margin-right:4px; }
+.league-ladder, .league-how, .league-ends, .league-me{ flex-shrink:0; }
+.league-title-right{ display:inline-flex; align-items:center; gap:8px; }
+.league-info-btn{ width:28px; height:28px; border-radius:50%; border:2px solid var(--line-strong); background:var(--surface-2); color:var(--ink);
+  font:900 15px/1 inherit; font-family:inherit; cursor:pointer; display:grid; place-items:center; padding:0; }
+.league-info-btn.on{ background:var(--ink); color:var(--surface, #fff); border-color:var(--ink); }
+.league-info{ flex-shrink:0; animation:dm-fade .2s both; }
