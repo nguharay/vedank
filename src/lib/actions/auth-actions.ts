@@ -35,10 +35,12 @@ export async function signupAction(
   const preferredLang = langRaw === "ja" ? "ja" : "en";
 
   if (!name) return { error: "Enter your name." };
-  if (!USERNAME_RE.test(username))
+  if (username && !USERNAME_RE.test(username))
     return { error: "Username must be 3–20 characters, using letters, numbers or underscore." };
   if (!EMAIL_RE.test(email)) return { error: "Enter a valid email address." };
-  if (!COUNTRY_CODES.has(country)) return { error: "Choose your country." };
+  /* the form preselects a country; if that failed, fall back by language
+     rather than send a child back to a dropdown */
+  const countryCode = COUNTRY_CODES.has(country) ? country : preferredLang === "ja" ? "JP" : "IN";
   if (phoneRaw && !PHONE_RE.test(phoneRaw))
     return { error: "Enter a valid phone number, digits only." };
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
@@ -46,17 +48,29 @@ export async function signupAction(
   const db = getDb();
   const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (existing[0]) return { error: "An account with that email already exists." };
-  const takenName = await db.select().from(users).where(eq(users.username, username)).limit(1);
-  if (takenName[0]) return { error: "That username is taken — try another." };
+  /* no username typed: make one from the name (or the email), unique */
+  let finalName = username;
+  if (!finalName) {
+    const base = (name.replace(/[^a-zA-Z0-9_]/g, "") || email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "") || "player").slice(0, 14) || "player";
+    for (let i = 0; i < 6; i++) {
+      const candidate = (i === 0 && base.length >= 3 ? base : `${base}${Math.floor(100 + Math.random() * 900)}`).slice(0, 20);
+      const clash = await db.select({ id: users.id }).from(users).where(eq(users.username, candidate)).limit(1);
+      if (!clash[0]) { finalName = candidate; break; }
+    }
+    if (!finalName) finalName = `player${Date.now().toString(36).slice(-6)}`;
+  } else {
+    const takenName = await db.select().from(users).where(eq(users.username, finalName)).limit(1);
+    if (takenName[0]) return { error: "That username is taken — try another." };
+  }
 
   const passwordHash = await bcrypt.hash(password, 12);
   await db.insert(users).values({
     name,
-    username,
+    username: finalName,
     email,
     passwordHash,
     preferredLang,
-    country,
+    country: countryCode,
     phoneCode: phoneRaw ? phoneCodeRaw : null,
     phone: phoneRaw || null,
   });
@@ -65,9 +79,9 @@ export async function signupAction(
      tab). Best effort and time-boxed (8s): a slow Google must never block a sign-up. */
   await addOwnerRow("Registrations", {
     Name: name,
-    Username: username,
+    Username: finalName,
     Email: email,
-    Country: country,
+    Country: countryCode,
     Phone: phoneRaw ? `${phoneCodeRaw} ${phoneRaw}` : "",
     Language: preferredLang === "ja" ? "日本語" : "English",
   }).catch(() => false);

@@ -12,12 +12,14 @@ import { SITE_URL } from "@/lib/site";
    tagged ?utm_source=invite&utm_medium=<channel>, so the activity sheet shows
    which channel brought each new player in ("came from: invite/line"). */
 
-type Channel = { id: string; label: string; icon: string; color: string; href: (text: string, url: string) => string };
+type Channel = { id: string; label: string; icon: string; color: string; href: (text: string, url: string) => string; copyFirst?: boolean };
 
 const CHANNELS: Channel[] = [
   { id: "line", label: "LINE", icon: "💬", color: "#06C755", href: (t, u) => `https://line.me/R/msg/text/?${encodeURIComponent(`${t}\n${u}`)}` },
   { id: "whatsapp", label: "WhatsApp", icon: "🟢", color: "#25D366", href: (t, u) => `https://wa.me/?text=${encodeURIComponent(`${t} ${u}`)}` },
-  { id: "x", label: "X", icon: "𝕏", color: "#111111", href: (t, u) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(t)}&url=${encodeURIComponent(u)}` },
+  /* Instagram has no "share this text" link: the message is copied first, then
+     Instagram opens (the app, on a phone) to paste it into a DM or story */
+  { id: "instagram", label: "Instagram", icon: "📸", color: "#E1306C", href: () => "https://www.instagram.com/", copyFirst: true },
   { id: "facebook", label: "Facebook", icon: "f", color: "#1877F2", href: (_t, u) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(u)}` },
   { id: "telegram", label: "Telegram", icon: "✈️", color: "#229ED9", href: (t, u) => `https://t.me/share/url?url=${encodeURIComponent(u)}&text=${encodeURIComponent(t)}` },
   { id: "sms", label: "SMS", icon: "✉️", color: "#34C759", href: (t, u) => `sms:?&body=${encodeURIComponent(`${t} ${u}`)}` },
@@ -29,6 +31,7 @@ export function InviteSheet({ lang, onClose, extra }: { lang: "en" | "ja"; onClo
   const [origin, setOrigin] = useState("");
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
+  const [pasted, setPasted] = useState<string | null>(null);
 
   const linkFor = (channel: string) => (origin ? `${origin}/?utm_source=invite&utm_medium=${channel}` : "");
   const text = (ja
@@ -88,7 +91,14 @@ export function InviteSheet({ lang, onClose, extra }: { lang: "en" | "ja"; onClo
               href={origin ? c.href(text, linkFor(c.id)) : "#"}
               target={c.id === "sms" || c.id === "email" ? undefined : "_blank"}
               rel="noopener noreferrer"
-              onClick={() => track("invite_share", { channel: c.id })}
+              onClick={() => {
+                track("invite_share", { channel: c.id });
+                if (c.copyFirst) {
+                  navigator.clipboard?.writeText(`${text} ${linkFor(c.id)}`).catch(() => {});
+                  setPasted(c.id);
+                  setTimeout(() => setPasted(null), 4000);
+                }
+              }}
             >
               <span className="invite-ch-ico" style={{ background: c.color }}>{c.icon}</span>
               <span className="invite-ch-lab">{c.label}</span>
@@ -100,6 +110,9 @@ export function InviteSheet({ lang, onClose, extra }: { lang: "en" | "ja"; onClo
           </button>
         </div>
 
+        {pasted && (
+          <div className="invite-pasted">📋 {ja ? "メッセージをコピーしたよ！Instagramで貼りつけて送ってね" : "Message copied! Paste it into an Instagram DM or story"}</div>
+        )}
         <div className="invite-qr-row">
           <div className="invite-qr" dangerouslySetInnerHTML={{ __html: qr }} aria-label="QR" />
           <div className="invite-qr-text">
