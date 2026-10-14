@@ -1999,7 +1999,7 @@ export function GameApp({
   /* invite friends: opened from the menu, Home, or a results screen (event) */
   const [invite, setInvite] = useState<{ extra?: string } | null>(null);
   /* which group of the account menu is open */
-  const [menuGroup, setMenuGroup] = useState<"settings" | "watch" | "contact" | null>(null);
+  const [menuGroup, setMenuGroup] = useState<"settings" | "watch" | "contact" | "rewards" | null>(null);
   useEffect(() => {
     const on = (e: Event) => { setInvite({ extra: (e as CustomEvent<{ extra?: string }>).detail?.extra }); track("invite_open"); };
     window.addEventListener("vedank:invite", on);
@@ -3219,14 +3219,22 @@ export function GameApp({
                 {friends.length}{pendingDuels > 0 ? ` · ⚔️ ${pendingDuels}` : ""}
               </span>
             </button>
-            <button className="menu-row" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent("vedank:collection")); }}>
-              <span>🃏 {ja ? "偉人カード図鑑" : "Great Minds cards"}</span>
-              <span className="menu-row-val mono">{Object.keys(ownedCards()).length}/{CARDS.length}</span>
+            <button className={`menu-row menu-group${menuGroup === "rewards" ? " open" : ""}`} onClick={() => setMenuGroup((g) => (g === "rewards" ? null : "rewards"))} aria-expanded={menuGroup === "rewards"}>
+              <span>🏆 {ja ? "ごほうび" : "Rewards"}</span>
+              <span className="menu-row-val">🃏 {Object.keys(ownedCards()).length}/{CARDS.length} <i className="menu-chev">›</i></span>
             </button>
-            <button className="menu-row" onClick={() => { setMenuOpen(false); setAchievementsOpen(true); }}>
-              <span>🏅 {lang === "ja" ? "実績バッジ" : "Badges"}</span>
-              <span className="menu-row-val">→</span>
-            </button>
+            {menuGroup === "rewards" && (
+              <div className="menu-sub-list">
+              <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent("vedank:collection")); }}>
+                <span>🃏 {ja ? "偉人カード図鑑" : "Great Minds cards"}</span>
+                <span className="menu-row-val mono">{Object.keys(ownedCards()).length}/{CARDS.length}</span>
+              </button>
+              <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); setAchievementsOpen(true); }}>
+                <span>🏅 {lang === "ja" ? "実績バッジ" : "Badges"}</span>
+                <span className="menu-row-val">→</span>
+              </button>
+              </div>
+            )}
             <button className="menu-row" onClick={() => { setMenuOpen(false); setShopOpen(true); refreshShop(); }}>
               <span>🛍️ {lang === "ja" ? "ショップ" : "Shop"}</span>
               <span className="menu-row-val mono">💎 {gemBalance ?? "…"}</span>
