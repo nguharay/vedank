@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { transition } from "./util";
+import { StreakIcon } from "./StreakIcon";
 import { signOut } from "next-auth/react";
 import {
   TOPICS,
@@ -3087,7 +3088,7 @@ export function GameApp({
         <div className="header-title"><h1>{headerTitle}</h1></div>
         <div className="stats-row">
           <button className={`stat stat-flame${dailyStreak > 0 ? " lit" : ""}`} onClick={() => openShare("streak")} aria-label={`${t.share.statStreak} ${dailyStreak} — ${t.share.shareBtn}`}>
-            <span aria-hidden="true">🪔</span> {dailyStreak}
+            <span aria-hidden="true"><StreakIcon lit={dailyStreak > 0} /></span> {dailyStreak}
           </button>
           <button className={`stat stat-gem${gemPop ? " pop" : ""}`} onClick={() => openShare("gems")} aria-label={`${t.share.statGems} ${gems} — ${t.share.shareBtn}`}>
             <span aria-hidden="true">💎</span> {gems}
@@ -3735,7 +3736,7 @@ export function GameApp({
                       <span className={`standings-rank rank-${i < 3 ? i + 1 : "n"}`}>{i + 1}</span>
                       <span className="standings-name">{r.name}</span>
                       <span className="standings-stat mono">
-                        {t.share.statLevel} {r.level} · 🪔 {r.dailyStreak}
+                        {t.share.statLevel} {r.level} · <StreakIcon size="1em" /> {r.dailyStreak}
                       </span>
                     </div>
                   ))}
@@ -3749,7 +3750,7 @@ export function GameApp({
                   <div className="friend-body">
                     <div className="friend-name">{f.name}</div>
                     <div className="friend-sub mono">
-                      {t.share.statLevel} {f.level} · 🪔 {f.dailyStreak} · ⚔️ {f.wins}–{f.losses}
+                      {t.share.statLevel} {f.level} · <StreakIcon size="1em" /> {f.dailyStreak} · ⚔️ {f.wins}–{f.losses}
                     </div>
                   </div>
                   <button
@@ -5326,7 +5327,7 @@ export function GameApp({
                 aria-label={lang === "ja" ? "デイリーチェストを開ける" : "Open the daily chest"}
               >
                 <span className="chest-box">🎁</span>
-                <h3>{lang === "ja" ? `🪔 ${dailyStreak}日連続のごほうび！` : `🪔 ${dailyStreak}-day streak reward!`}</h3>
+                <h3><StreakIcon lit /> {lang === "ja" ? `${dailyStreak}日連続のごほうび！` : `${dailyStreak}-day streak reward!`}</h3>
                 <p>{lang === "ja" ? "宝箱をタップして開けよう" : "Tap the chest to open it"}</p>
               </button>
             ) : (

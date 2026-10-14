@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { transition } from "../util";
 import { CollectionCard } from "../Rewards";
+import { StreakIcon } from "../StreakIcon";
 
 /* ================= sub-views ================= */
 
@@ -412,7 +413,7 @@ export function HomeView({
       <CollectionCard lang={lang} />
       {dailyStreak > 0 && (
         <div className="streak-calendar">
-          <span className="streak-calendar-label">🪔 {dailyStreak}{t.home.streakSuffix}</span>
+          <span className="streak-calendar-label"><StreakIcon lit={dailyStreak > 0} /> {dailyStreak}{t.home.streakSuffix}</span>
           <div className="streak-days">
             {Array.from({ length: 7 }, (_, i) => i).map((daysAgo) => (
               <span key={daysAgo} className={`streak-day${daysAgo < dailyStreak ? " lit" : ""}`}>
