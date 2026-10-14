@@ -113,3 +113,18 @@ export type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz
 export type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
 
 export type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
+
+/* ---------- screen transitions ----------
+   Screens slide like a native app: forward slides in from the right, back
+   slides in from the left, tabs slide sideways by position. Uses the View
+   Transitions API where the browser has it; elsewhere the change simply
+   happens. Respects "reduce motion". `update` must commit synchronously
+   (callers wrap React state changes in flushSync). */
+export type NavDir = "forward" | "back" | "left" | "right" | "none";
+export function transition(update: () => void, dir: NavDir = "forward") {
+  const d = typeof document !== "undefined" ? (document as Document & { startViewTransition?: (cb: () => void) => unknown }) : null;
+  const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!d?.startViewTransition || reduce || dir === "none") { update(); return; }
+  d.documentElement.dataset.nav = dir;
+  try { d.startViewTransition(update); } catch { update(); }
+}

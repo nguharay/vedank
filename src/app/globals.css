@@ -4094,3 +4094,29 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .ttt-board{ padding:12px; border-radius:22px; border:3px solid var(--ink-line); background:url(/games/ttt.svg) center / 100% 100% no-repeat, #b47a3f; box-shadow:0 5px 0 var(--ink-line); gap:10px; }
 .ttt-cell{ background:#fff8ea; border-color:#5e3a19; box-shadow:0 4px 0 #5e3a19; border-radius:14px; }
 .ttt-cell.sel{ border-color:var(--gold-dk); background:#fff1b8; }
+
+/* ======== screen transitions (View Transitions API) ======== */
+/* the header and footer hold still; only the page content slides */
+header{ view-transition-name:app-header; }
+.footerbar{ view-transition-name:app-footer; }
+main{ view-transition-name:app-main; }
+::view-transition-old(root), ::view-transition-new(root){ animation:none; }
+::view-transition-old(app-header), ::view-transition-new(app-header),
+::view-transition-old(app-footer), ::view-transition-new(app-footer){ animation:none; }
+::view-transition-group(app-main){ animation-duration:.32s; }
+::view-transition-old(app-main){ animation:.26s cubic-bezier(.4,0,.6,1) both vt-out-left; }
+::view-transition-new(app-main){ animation:.32s cubic-bezier(.2,.8,.2,1) both vt-in-right; }
+html[data-nav="back"]::view-transition-old(app-main){ animation-name:vt-out-right; }
+html[data-nav="back"]::view-transition-new(app-main){ animation-name:vt-in-left; }
+html[data-nav="left"]::view-transition-old(app-main){ animation:.22s ease-in both vt-tab-out-left; }
+html[data-nav="left"]::view-transition-new(app-main){ animation:.26s ease-out both vt-tab-in-right; }
+html[data-nav="right"]::view-transition-old(app-main){ animation:.22s ease-in both vt-tab-out-right; }
+html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out both vt-tab-in-left; }
+@keyframes vt-in-right{ from{ transform:translateX(100%); opacity:.6 } }
+@keyframes vt-out-left{ to{ transform:translateX(-28%); opacity:0 } }
+@keyframes vt-in-left{ from{ transform:translateX(-28%); opacity:0 } }
+@keyframes vt-out-right{ to{ transform:translateX(100%); opacity:.6 } }
+@keyframes vt-tab-in-right{ from{ transform:translateX(40px); opacity:0 } }
+@keyframes vt-tab-out-left{ to{ transform:translateX(-40px); opacity:0 } }
+@keyframes vt-tab-in-left{ from{ transform:translateX(-40px); opacity:0 } }
+@keyframes vt-tab-out-right{ to{ transform:translateX(40px); opacity:0 } }

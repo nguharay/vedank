@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { flushSync } from "react-dom";
+import { transition } from "./util";
 import { signOut } from "next-auth/react";
 import {
   TOPICS,
@@ -205,7 +207,18 @@ export function GameApp({
   overrides?: OverrideMap;
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
-  const [view, setView] = useState<View>("home");
+  const [view, setViewRaw] = useState<View>("home");
+  /* every screen change slides: deeper screens come in from the right,
+     going back slides from the left (see util.transition) */
+  const viewRef = useRef<View>("home");
+  const DEPTH: Partial<Record<View, number>> = { home: 0, games: 1, topic: 1, stagemap: 2, practice: 3 };
+  const setView = useCallback((next: View) => {
+    const from = viewRef.current;
+    if (from === next) return;
+    const back = (DEPTH[next] ?? 2) < (DEPTH[from] ?? 2) || next === "home";
+    viewRef.current = next;
+    transition(() => flushSync(() => setViewRaw(next)), back ? "back" : "forward");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "rhythm", "town", "ninja"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -3073,8 +3086,8 @@ export function GameApp({
         </button>
         <div className="header-title"><h1>{headerTitle}</h1></div>
         <div className="stats-row">
-          <button className={`stat stat-flame${dailyStreak > 0 ? " lit" : ""}`} onClick={() => openShare("streak")} aria-label={`${t.share.statBestStreak} ${bestStreakEver} — ${t.share.shareBtn}`}>
-            <span aria-hidden="true">🔥</span> {bestStreakEver}
+          <button className={`stat stat-flame${dailyStreak > 0 ? " lit" : ""}`} onClick={() => openShare("streak")} aria-label={`${t.share.statStreak} ${dailyStreak} — ${t.share.shareBtn}`}>
+            <span aria-hidden="true">🪔</span> {dailyStreak}
           </button>
           <button className={`stat stat-gem${gemPop ? " pop" : ""}`} onClick={() => openShare("gems")} aria-label={`${t.share.statGems} ${gems} — ${t.share.shareBtn}`}>
             <span aria-hidden="true">💎</span> {gems}
@@ -3722,7 +3735,7 @@ export function GameApp({
                       <span className={`standings-rank rank-${i < 3 ? i + 1 : "n"}`}>{i + 1}</span>
                       <span className="standings-name">{r.name}</span>
                       <span className="standings-stat mono">
-                        {t.share.statLevel} {r.level} · 🔥 {r.dailyStreak}
+                        {t.share.statLevel} {r.level} · 🪔 {r.dailyStreak}
                       </span>
                     </div>
                   ))}
@@ -3736,7 +3749,7 @@ export function GameApp({
                   <div className="friend-body">
                     <div className="friend-name">{f.name}</div>
                     <div className="friend-sub mono">
-                      {t.share.statLevel} {f.level} · 🔥 {f.dailyStreak} · ⚔️ {f.wins}–{f.losses}
+                      {t.share.statLevel} {f.level} · 🪔 {f.dailyStreak} · ⚔️ {f.wins}–{f.losses}
                     </div>
                   </div>
                   <button
@@ -5313,7 +5326,7 @@ export function GameApp({
                 aria-label={lang === "ja" ? "デイリーチェストを開ける" : "Open the daily chest"}
               >
                 <span className="chest-box">🎁</span>
-                <h3>{lang === "ja" ? `🔥 ${dailyStreak}日連続のごほうび！` : `🔥 ${dailyStreak}-day streak reward!`}</h3>
+                <h3>{lang === "ja" ? `🪔 ${dailyStreak}日連続のごほうび！` : `🪔 ${dailyStreak}-day streak reward!`}</h3>
                 <p>{lang === "ja" ? "宝箱をタップして開けよう" : "Tap the chest to open it"}</p>
               </button>
             ) : (

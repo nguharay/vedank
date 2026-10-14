@@ -25,7 +25,7 @@ function tilesFor(s: ShareStats, t: UIDict): Tile[] {
   return [
     { key: "level", icon: "🪔", label: t.share.statLevel, value: `${s.level}` },
     { key: "gems", icon: "💎", label: t.share.statGems, value: `${s.gems}` },
-    { key: "streak", icon: "🔥", label: t.share.statBestStreak, value: `${s.bestStreakEver}` },
+    { key: "streak", icon: "🪔", label: t.share.statStreak, value: `${s.dailyStreak}` },
     { key: "hearts", icon: "❤️", label: t.share.statHearts, value: `${s.hearts}` },
     { key: "blitz", icon: "⚡", label: t.share.statBlitz, value: `${s.blitzBest}` },
     { key: "bosses", icon: "👹", label: t.share.statBosses, value: `${s.bossClears}` },
@@ -42,8 +42,8 @@ function blurbFor(focus: ShareFocus, s: ShareStats, t: UIDict, lang: LangCode): 
       return t.share.blitzBlurb(s.blitzBest);
     case "streak":
       return ja
-        ? `インド式数学ゲームを${s.bestStreakEver}日連続で学習中です！🔥`
-        : `I'm on a ${s.bestStreakEver}-day streak on Sutra Sprint! 🔥`;
+        ? `インド式数学ゲームを${s.dailyStreak}日連続で学習中です！🪔`
+        : `I'm on a ${s.dailyStreak}-day streak on Sutra Sprint! 🪔`;
     case "gems":
       return ja
         ? `インド式数学で${s.gems}ジェムを集めました！💎`
