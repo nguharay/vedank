@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LangCode, UIDict } from "./i18n";
+import { StreakIcon } from "./StreakIcon";
 import { SITE_URL } from "@/lib/site";
 
 export type ShareStats = {
@@ -19,13 +20,13 @@ export type ShareStats = {
 /* Which stat the sheet opens on — drives the big headline number. */
 export type ShareFocus = "level" | "gems" | "streak" | "hearts" | "blitz" | "bosses" | "puzzles";
 
-type Tile = { key: ShareFocus; icon: string; label: string; value: string };
+type Tile = { key: ShareFocus; icon: React.ReactNode; label: string; value: string };
 
 function tilesFor(s: ShareStats, t: UIDict): Tile[] {
   return [
-    { key: "level", icon: "🪔", label: t.share.statLevel, value: `${s.level}` },
+    { key: "level", icon: "⭐", label: t.share.statLevel, value: `${s.level}` },
     { key: "gems", icon: "💎", label: t.share.statGems, value: `${s.gems}` },
-    { key: "streak", icon: "🪔", label: t.share.statStreak, value: `${s.dailyStreak}` },
+    { key: "streak", icon: <StreakIcon lit size="1em" />, label: t.share.statStreak, value: `${s.dailyStreak}` },
     { key: "hearts", icon: "❤️", label: t.share.statHearts, value: `${s.hearts}` },
     { key: "blitz", icon: "⚡", label: t.share.statBlitz, value: `${s.blitzBest}` },
     { key: "bosses", icon: "👹", label: t.share.statBosses, value: `${s.bossClears}` },

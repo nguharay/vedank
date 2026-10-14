@@ -4120,3 +4120,14 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 @keyframes vt-tab-out-left{ to{ transform:translateX(-40px); opacity:0 } }
 @keyframes vt-tab-in-left{ from{ transform:translateX(-40px); opacity:0 } }
 @keyframes vt-tab-out-right{ to{ transform:translateX(40px); opacity:0 } }
+
+/* the drawn streak lamp */
+.streak-ico{ vertical-align:-.22em; overflow:visible; }
+.streak-ico .streak-glow{ opacity:0; }
+.streak-ico.lit .streak-glow{ opacity:1; animation:streak-glow 1.6s ease-in-out infinite alternate; }
+.streak-ico.lit .streak-flame{ transform-origin:16px 18px; animation:streak-flame 1.1s ease-in-out infinite alternate; }
+.streak-ico.lit .streak-core{ transform-origin:16px 15px; animation:streak-flame .8s ease-in-out infinite alternate-reverse; }
+@keyframes streak-flame{ from{ transform:scale(1) rotate(-4deg) } to{ transform:scale(1.12, 1.18) rotate(4deg) } }
+@keyframes streak-glow{ from{ transform:scale(.9); opacity:.6 } to{ transform:scale(1.15); opacity:1 } }
+.stat-flame.lit span{ animation:none; }
+@media (prefers-reduced-motion: reduce){ .streak-ico .streak-flame, .streak-ico .streak-core, .streak-ico .streak-glow{ animation:none; } }
