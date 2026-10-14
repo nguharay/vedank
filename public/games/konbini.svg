@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 330" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbfcff"/><stop offset="1" stop-color="#e3e9ee"/></linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8ece9"/><stop offset="1" stop-color="#cfd6d1"/></linearGradient>
+    <pattern id="tiles" width="40" height="24" patternUnits="userSpaceOnUse"><rect width="40" height="24" fill="none"/><path d="M0 0 H40 M0 0 V24" stroke="#b9c2bc" stroke-width="1" opacity=".7"/></pattern>
+    <linearGradient id="shelf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfd8d3"/></linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="480" height="330" fill="url(#wall)"/>
+  <!-- ceiling lights -->
+  <g><rect x="60" y="40" width="110" height="8" rx="4" fill="#f6fbff" stroke="#c9d6e0"/><rect x="310" y="40" width="110" height="8" rx="4" fill="#f6fbff" stroke="#c9d6e0"/>
+     <path d="M60 48 L30 120 L200 120 L170 48Z" fill="url(#glow)" opacity=".5"/><path d="M310 48 L280 120 L450 120 L420 48Z" fill="url(#glow)" opacity=".5"/></g>
+  <!-- back shelves -->
+  <rect x="22" y="58" width="436" height="130" rx="8" fill="url(#shelf)" stroke="#b8c3bd" stroke-width="3"/>
+  <g stroke="#b8c3bd" stroke-width="3"><line x1="22" y1="100" x2="458" y2="100"/><line x1="22" y1="142" x2="458" y2="142"/></g>
+  <g>
+    <rect x="34" y="72" width="22" height="26" rx="3" fill="#e63946"/><rect x="60" y="76" width="22" height="22" rx="3" fill="#ffb703"/><rect x="86" y="70" width="22" height="28" rx="3" fill="#2a9d8f"/><rect x="112" y="78" width="24" height="20" rx="3" fill="#8ecae6"/>
+    <rect x="160" y="72" width="22" height="26" rx="3" fill="#06d6a0"/><rect x="186" y="74" width="22" height="24" rx="3" fill="#ef476f"/><rect x="212" y="70" width="22" height="28" rx="3" fill="#ffd166"/><rect x="238" y="76" width="22" height="22" rx="3" fill="#118ab2"/>
+    <rect x="290" y="72" width="22" height="26" rx="3" fill="#f4a261"/><rect x="316" y="74" width="22" height="24" rx="3" fill="#e76f51"/><rect x="342" y="70" width="22" height="28" rx="3" fill="#2b9348"/><rect x="368" y="78" width="24" height="20" rx="3" fill="#9b5de5"/><rect x="396" y="72" width="22" height="26" rx="3" fill="#00bbf9"/>
+    <rect x="34" y="114" width="26" height="26" rx="13" fill="#ffe8a3"/><rect x="66" y="112" width="20" height="28" rx="3" fill="#90e0ef"/><rect x="92" y="116" width="26" height="24" rx="4" fill="#ffafcc"/><rect x="124" y="112" width="20" height="28" rx="3" fill="#caffbf"/>
+    <rect x="170" y="112" width="24" height="28" rx="3" fill="#fdffb6"/><rect x="200" y="118" width="26" height="22" rx="4" fill="#a0c4ff"/><rect x="232" y="112" width="20" height="28" rx="3" fill="#ffd6a5"/>
+    <rect x="290" y="116" width="26" height="24" rx="4" fill="#bdb2ff"/><rect x="322" y="112" width="20" height="28" rx="3" fill="#9bf6ff"/><rect x="348" y="114" width="24" height="26" rx="13" fill="#ffc6ff"/><rect x="378" y="112" width="20" height="28" rx="3" fill="#f94144"/><rect x="404" y="118" width="26" height="22" rx="4" fill="#f9c74f"/>
+    <rect x="34" y="156" width="24" height="26" rx="3" fill="#43aa8b"/><rect x="64" y="154" width="22" height="28" rx="3" fill="#f3722c"/><rect x="92" y="158" width="26" height="24" rx="4" fill="#577590"/><rect x="124" y="154" width="22" height="28" rx="3" fill="#f9844a"/>
+    <rect x="172" y="156" width="24" height="26" rx="3" fill="#90be6d"/><rect x="202" y="154" width="22" height="28" rx="3" fill="#277da1"/><rect x="230" y="158" width="26" height="24" rx="4" fill="#f8961e"/>
+    <rect x="292" y="156" width="24" height="26" rx="3" fill="#4d908e"/><rect x="322" y="154" width="22" height="28" rx="3" fill="#f94144"/><rect x="350" y="158" width="26" height="24" rx="4" fill="#f9c74f"/><rect x="382" y="154" width="22" height="28" rx="3" fill="#43aa8b"/><rect x="410" y="156" width="24" height="26" rx="3" fill="#90be6d"/>
+  </g>
+  <!-- floor -->
+  <rect y="192" width="480" height="138" fill="url(#floor)"/><rect y="192" width="480" height="138" fill="url(#tiles)"/>
+  <rect y="190" width="480" height="4" fill="#aeb8b2"/>
+</svg>
