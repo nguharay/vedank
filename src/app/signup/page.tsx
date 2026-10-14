@@ -9,7 +9,7 @@ import { COUNTRIES } from "@/lib/countries";
 
 const COPY = {
   en: {
-    kicker: "Free · takes a minute",
+    kicker: "Free · 30 seconds",
     title: "Begin Your Indian Style Mathematics Journey",
     sub: "Ancient shortcuts, modern speed. Make an account so your stars, streaks and stages are always waiting for you.",
     lang: "Pick your language",
@@ -28,7 +28,7 @@ const COPY = {
     phonePh: "90000 00000",
     phoneHint: "Only if you'd like updates. We'll never share it.",
     password: "Password",
-    passwordHint: "At least 8 characters. Make it tricky — you're a mental-maths pro now.",
+    passwordHint: "At least 8 characters.",
     strength: ["Too short", "Getting there", "Good", "Strong", "Unbreakable"],
     submit: "Create my account",
     pending: "Setting up your dojo…",
@@ -37,7 +37,7 @@ const COPY = {
     perks: ["Your stars and stages saved forever", "Daily streaks and mystery chests", "Climb the global leaderboard"],
   },
   ja: {
-    kicker: "無料・1分でできます",
+    kicker: "無料・30秒でできます",
     title: "インド式数学の冒険をはじめよう",
     sub: "古代の裏ワザで、計算はもっと速く。アカウントを作れば、星もステージも連続記録もぜんぶ保存されます。",
     lang: "言語をえらぶ",
@@ -56,7 +56,7 @@ const COPY = {
     phonePh: "90 0000 0000",
     phoneHint: "お知らせがほしい方のみ。共有はしません。",
     password: "パスワード",
-    passwordHint: "8文字以上。あなたはもう暗算の達人――むずかしくしよう。",
+    passwordHint: "8文字以上。",
     strength: ["みじかすぎ", "もう少し", "いいね", "つよい", "かんぺき"],
     submit: "アカウントを作る",
     pending: "道場を準備中…",
@@ -100,6 +100,18 @@ export default function SignupPage() {
   const fromRef = useFromField();
   const [country, setCountry] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [morePhone, setMorePhone] = useState(false);
+  /* preselect the country from the phone's own region (ja-JP → Japan), so
+     most players never touch the dropdown */
+  useEffect(() => {
+    const t = setTimeout(() => {
+      let region = "";
+      try { region = (navigator.language.split("-")[1] || "").toUpperCase(); } catch {}
+      setCountry((cur) => cur || (COUNTRIES.some((x) => x.code === region) ? region : lang === "ja" ? "JP" : "IN"));
+    }, 0);
+    return () => clearTimeout(t);
+  }, [lang]);
   const c = COPY[lang];
 
   const dial = useMemo(() => COUNTRIES.find((x) => x.code === country)?.dial ?? "", [country]);
@@ -154,25 +166,10 @@ export default function SignupPage() {
             <input type="hidden" name="lang" value={lang} />
           </div>
 
-          <div className="field-row">
-            <div className="field">
-              <label htmlFor="name">{c.name}</label>
-              <input id="name" name="name" type="text" required autoComplete="name" placeholder={c.namePh} />
-            </div>
-            <div className="field">
-              <label htmlFor="username">{c.username}</label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                pattern="[a-zA-Z0-9_]{3,20}"
-                autoComplete="username"
-                placeholder={c.usernamePh}
-              />
-            </div>
+          <div className="field">
+            <label htmlFor="name">{c.name}</label>
+            <input id="name" name="name" type="text" required autoComplete="name" placeholder={c.namePh} autoFocus />
           </div>
-          <p className="field-hint">{c.usernameHint}</p>
 
           <div className="field">
             <label htmlFor="email">{c.email}</label>
@@ -200,6 +197,11 @@ export default function SignupPage() {
             </select>
           </div>
 
+          {!morePhone ? (
+            <button type="button" className="field-more" onClick={() => setMorePhone(true)}>
+              ＋ {lang === "ja" ? "電話番号を追加（任意）" : "Add a phone number (optional)"}
+            </button>
+          ) : (
           <div className="field">
             <label htmlFor="phone">
               {c.phone} <span className="field-optional">{c.optional}</span>
@@ -230,19 +232,23 @@ export default function SignupPage() {
             </div>
             <p className="field-hint">{c.phoneHint}</p>
           </div>
+          )}
 
           <div className="field">
             <label htmlFor="password">{c.password}</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="pw-wrap">
+              <input
+                id="password"
+                name="password"
+                type={showPw ? "text" : "password"}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button type="button" className="pw-eye" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? "Hide password" : "Show password"}>{showPw ? "🙈" : "👁️"}</button>
+            </div>
             <div className="pw-meter" aria-hidden="true">
               {[0, 1, 2, 3].map((i) => (
                 <span key={i} className={i < strength ? `on s${strength}` : ""} />

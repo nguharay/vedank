@@ -19,11 +19,16 @@ function ri(a: number, b: number) {
   return Math.floor(Math.random() * (b - a + 1)) + a;
 }
 // 60% small, 30% medium, 10% jackpot — variable reward on first play of the day.
-function rollChestReward(): number {
+/* The gem chest is a streak reward, not a daily one: it opens on day 5, day 7
+   and every 7th day after that, and grows with the streak. Opening the app
+   every day is rewarded with the card gift instead (client side). */
+export function chestDay(streak: number): boolean {
+  return streak === 5 || (streak >= 7 && streak % 7 === 0);
+}
+function rollChestReward(streak: number): number {
   const r = Math.random();
-  if (r < 0.1) return ri(120, 200);
-  if (r < 0.4) return ri(50, 80);
-  return ri(20, 40);
+  const base = r < 0.1 ? ri(120, 200) : r < 0.4 ? ri(50, 80) : ri(20, 40);
+  return base + Math.min(streak, 60) * 5;
 }
 
 export type DailyStreakInfo = {
@@ -79,8 +84,8 @@ export async function touchDailyStreak(userId: string): Promise<DailyStreakInfo>
 
   const nextStreak = gap === 1 || frozeOver ? user.dailyStreak + 1 : 1;
   const nextBest = Math.max(user.bestDailyStreak, nextStreak);
-  const chestReward = rollChestReward();
-  const nextBonusGems = user.bonusGems + chestReward;
+  const chestReward = chestDay(nextStreak) ? rollChestReward(nextStreak) : null;
+  const nextBonusGems = user.bonusGems + (chestReward ?? 0);
 
   await db
     .update(users)

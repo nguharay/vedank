@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { loginAction } from "@/lib/actions/auth-actions";
 import { Mascot } from "@/components/game/Mascot";
 import { useLang } from "@/components/game/i18n";
@@ -66,6 +66,7 @@ export default function LoginPage() {
      sign-in — and a Japanese browser lands on Japanese by default. */
   const { lang, setLang } = useLang("ja");
   const fromRef = useFromField();
+  const [showPw, setShowPw] = useState(false);
   const c = COPY[lang];
 
   return (
@@ -98,11 +99,14 @@ export default function LoginPage() {
           <input type="hidden" name="from" defaultValue="/" ref={fromRef} />
           <div className="field">
             <label htmlFor="email">{c.email}</label>
-            <input id="email" name="email" type="email" required autoComplete="email" />
+            <input id="email" name="email" type="email" required autoComplete="email" autoFocus inputMode="email" />
           </div>
           <div className="field">
             <label htmlFor="password">{c.password}</label>
-            <input id="password" name="password" type="password" required autoComplete="current-password" />
+            <div className="pw-wrap">
+              <input id="password" name="password" type={showPw ? "text" : "password"} required autoComplete="current-password" />
+              <button type="button" className="pw-eye" onClick={() => setShowPw((v) => !v)} aria-label={showPw ? "Hide password" : "Show password"}>{showPw ? "🙈" : "👁️"}</button>
+            </div>
           </div>
           {state?.error && <div className="auth-error">{state.error}</div>}
           <button className="btn btn-primary auth-submit" type="submit" disabled={pending}>

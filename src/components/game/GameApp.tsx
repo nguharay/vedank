@@ -248,6 +248,8 @@ export function GameApp({
     dailyStatusAction().then(setDailyStatus).catch(() => {});
   }, []);
 
+  /* the streak the next gem chest opens at: day 5, day 7, then every 7th day */
+  const nextChestDay = (n: number) => (n < 5 ? 5 : n < 7 ? 7 : (Math.floor(n / 7) + 1) * 7);
   /* the League's "how it works" (the ⓘ button) */
   const [leagueInfo, setLeagueInfo] = useState(false);
   /* time until the league week ends (Monday 00:00 UTC, when the server starts a new week) */
@@ -3071,7 +3073,7 @@ export function GameApp({
         </button>
         <div className="header-title"><h1>{headerTitle}</h1></div>
         <div className="stats-row">
-          <button className="stat stat-flame" onClick={() => openShare("streak")} aria-label={`${t.share.statBestStreak} ${bestStreakEver} — ${t.share.shareBtn}`}>
+          <button className={`stat stat-flame${dailyStreak > 0 ? " lit" : ""}`} onClick={() => openShare("streak")} aria-label={`${t.share.statBestStreak} ${bestStreakEver} — ${t.share.shareBtn}`}>
             <span aria-hidden="true">🔥</span> {bestStreakEver}
           </button>
           <button className={`stat stat-gem${gemPop ? " pop" : ""}`} onClick={() => openShare("gems")} aria-label={`${t.share.statGems} ${gems} — ${t.share.shareBtn}`}>
@@ -3137,6 +3139,40 @@ export function GameApp({
                   <span className="menu-row-val">›</span>
                 </button>
               )}
+              <button className="menu-row menu-sub" onClick={() => setSkinsOpen((o) => !o)}>
+                <span>🎨 {ja ? "衣装とテーマ" : "Outfit & theme"}</span>
+                <span className="menu-row-val">{skinName(activeSkin, ja)}</span>
+              </button>
+              {skinsOpen && (
+                <div className="skins-panel">
+                  {SKINS.map((s) => {
+                    const ja = lang === "ja";
+                    const unlocked = s.unlocked({ level: li.level, bossClears, solvedCount });
+                    return (
+                      <button
+                        key={s.id}
+                        className={`skin-row${skin.skinId === s.id ? " active" : ""}${unlocked ? "" : " locked"}`}
+                        disabled={!unlocked}
+                        onClick={() => unlocked && skin.selectSkin(s.id)}
+                      >
+                        <span className="skin-row-preview" style={{ background: s.swatch }}>
+                          <Buddy skinId={s.id} mood="happy" animated={false} />
+                        </span>
+                        <span className="skin-row-body">
+                          <span className="skin-row-name">
+                            {skinName(s, ja)}
+                            {!unlocked && <span className="skin-row-lock" aria-hidden="true"> 🔒</span>}
+                          </span>
+                          <span className="skin-row-note">
+                            {unlocked ? skinBlurb(s, ja) : skinUnlockLabel(s, ja)}
+                          </span>
+                        </span>
+                        {skin.skinId === s.id && <span className="skin-row-check" aria-hidden="true">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               </div>
             )}
             <button className={`menu-row menu-group${menuGroup === "watch" ? " open" : ""}`} onClick={() => setMenuGroup((g) => (g === "watch" ? null : "watch"))} aria-expanded={menuGroup === "watch"}>
@@ -3157,7 +3193,7 @@ export function GameApp({
             )}
             <button className={`menu-row menu-group${menuGroup === "contact" ? " open" : ""}`} onClick={() => setMenuGroup((g) => (g === "contact" ? null : "contact"))} aria-expanded={menuGroup === "contact"}>
               <span>💬 {ja ? "つながる" : "Contact"}</span>
-              <span className="menu-row-val">{pendingDuels > 0 ? "⚔️ " : ""}<i className="menu-chev">›</i></span>
+              <span className="menu-row-val"><i className="menu-chev">›</i></span>
             </button>
             {menuGroup === "contact" && (
               <div className="menu-sub-list">
@@ -3171,21 +3207,21 @@ export function GameApp({
                   {enrolled.length ? enrolled[0].name : ja ? "未参加" : "Not joined"}
                 </span>
               </button>
-              <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); openFriends(); }}>
-                <span>👥 {lang === "ja" ? "フレンド" : "Friends"}</span>
-                <span className="menu-row-val">
-                  {friends.length}{pendingDuels > 0 ? ` · ⚔️ ${pendingDuels}` : ""}
-                </span>
-              </button>
               </div>
             )}
-            <button className="menu-row" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent("vedank:collection")); }}>
-              <span>🃏 {ja ? "偉人カード図鑑" : "Great Minds cards"}</span>
-              <span className="menu-row-val mono">{Object.keys(ownedCards()).length}/{CARDS.length}</span>
-            </button>
             <button className="menu-row menu-row-invite" onClick={() => { setMenuOpen(false); setInvite({}); track("invite_open"); }}>
               <span>🎁 {ja ? "友だちを招待" : "Invite friends"}</span>
               <span className="menu-row-val">{ja ? "シェア" : "Share"}</span>
+            </button>
+            <button className="menu-row" onClick={() => { setMenuOpen(false); openFriends(); }}>
+              <span>👥 {lang === "ja" ? "友だちとあそぶ" : "Play with friends"}</span>
+              <span className="menu-row-val">
+                {friends.length}{pendingDuels > 0 ? ` · ⚔️ ${pendingDuels}` : ""}
+              </span>
+            </button>
+            <button className="menu-row" onClick={() => { setMenuOpen(false); window.dispatchEvent(new CustomEvent("vedank:collection")); }}>
+              <span>🃏 {ja ? "偉人カード図鑑" : "Great Minds cards"}</span>
+              <span className="menu-row-val mono">{Object.keys(ownedCards()).length}/{CARDS.length}</span>
             </button>
             <button className="menu-row" onClick={() => { setMenuOpen(false); setAchievementsOpen(true); }}>
               <span>🏅 {lang === "ja" ? "実績バッジ" : "Badges"}</span>
@@ -3195,40 +3231,6 @@ export function GameApp({
               <span>🛍️ {lang === "ja" ? "ショップ" : "Shop"}</span>
               <span className="menu-row-val mono">💎 {gemBalance ?? "…"}</span>
             </button>
-            <button className="menu-row" onClick={() => setSkinsOpen((o) => !o)}>
-              <span>🎨 {ja ? "衣装とテーマ" : "Outfit & theme"}</span>
-              <span className="menu-row-val">{skinName(activeSkin, ja)}</span>
-            </button>
-            {skinsOpen && (
-              <div className="skins-panel">
-                {SKINS.map((s) => {
-                  const ja = lang === "ja";
-                  const unlocked = s.unlocked({ level: li.level, bossClears, solvedCount });
-                  return (
-                    <button
-                      key={s.id}
-                      className={`skin-row${skin.skinId === s.id ? " active" : ""}${unlocked ? "" : " locked"}`}
-                      disabled={!unlocked}
-                      onClick={() => unlocked && skin.selectSkin(s.id)}
-                    >
-                      <span className="skin-row-preview" style={{ background: s.swatch }}>
-                        <Buddy skinId={s.id} mood="happy" animated={false} />
-                      </span>
-                      <span className="skin-row-body">
-                        <span className="skin-row-name">
-                          {skinName(s, ja)}
-                          {!unlocked && <span className="skin-row-lock" aria-hidden="true"> 🔒</span>}
-                        </span>
-                        <span className="skin-row-note">
-                          {unlocked ? skinBlurb(s, ja) : skinUnlockLabel(s, ja)}
-                        </span>
-                      </span>
-                      {skin.skinId === s.id && <span className="skin-row-check" aria-hidden="true">✓</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
             {isAdmin && (
               <>
                 <div className="menu-divider" />
@@ -3474,7 +3476,7 @@ export function GameApp({
 
       {storyOpen && <StoryIntro lang={lang} onDone={closeStory} />}
       {invite && <InviteSheet lang={lang} extra={invite.extra} onClose={() => setInvite(null)} />}
-      <RewardsLayer lang={lang} onPlay={launchGame} giftReady={!storyOpen && chestReward === null && !tourOpen && !pushAsk && !menuOpen} />
+      <RewardsLayer lang={lang} onPlay={launchGame} giftReady={view === "home" && !storyOpen && chestReward === null && !tourOpen && !pushAsk && !menuOpen && !invite && !gameDemo} />
       {tourOpen && view === "home" && <Tour lang={lang} guest={guest} onDone={() => setTourOpen(false)} />}
       {gameDemo && (
         <GameDemo id={gameDemo.id} lang={lang} onClose={() => setGameDemo(null)}
@@ -5303,14 +5305,14 @@ export function GameApp({
                 aria-label={lang === "ja" ? "デイリーチェストを開ける" : "Open the daily chest"}
               >
                 <span className="chest-box">🎁</span>
-                <h3>{lang === "ja" ? "デイリーチェスト！" : "Daily Chest!"}</h3>
-                <p>{lang === "ja" ? "タップして開けよう" : "Tap to open"}</p>
+                <h3>{lang === "ja" ? `🔥 ${dailyStreak}日連続のごほうび！` : `🔥 ${dailyStreak}-day streak reward!`}</h3>
+                <p>{lang === "ja" ? "宝箱をタップして開けよう" : "Tap the chest to open it"}</p>
               </button>
             ) : (
               <>
                 <div className="chest-box opened">🎉</div>
                 <h3>+{chestReward} 💎</h3>
-                <p>{lang === "ja" ? "毎日プレイしてもっと獲得しよう！" : "Come back tomorrow for another chest!"}</p>
+                <p>{lang === "ja" ? `次の宝箱は ${nextChestDay(dailyStreak)}日連続で！` : `Next chest at a ${nextChestDay(dailyStreak)}-day streak!`}</p>
                 <button className="btn btn-primary" style={{ flex: "none", padding: "14px 28px" }} onClick={() => setChestReward(null)}>
                   {lang === "ja" ? "やった！" : "Nice!"}
                 </button>
