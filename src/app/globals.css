@@ -4061,3 +4061,36 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .pw-wrap input{ padding-right:48px; }
 .pw-eye{ position:absolute; right:8px; top:50%; transform:translateY(-50%); margin-top:3px; width:36px; height:36px; border:none; background:none; font-size:18px; cursor:pointer; border-radius:10px; }
 .field-more{ display:block; margin-top:14px; background:none; border:none; padding:0; font-family:inherit; font-size:13px; font-weight:800; color:var(--blue-dk); cursor:pointer; text-decoration:underline; }
+
+/* ======== drawn scenes (public/games/*.svg): Runner, Castle, Konbini ======== */
+/* Math Runner: painted sky + sun, far mountains, rolling hills, treeline, dirt path */
+.run-scene{ background:url(/games/run-sky.svg) center / cover no-repeat; }
+.run-sun{ display:none; }
+.run-scene::before{ content:""; position:absolute; left:0; right:0; bottom:118px; height:110px; background:url(/games/run-mountains.svg) left bottom / 400px 110px repeat-x; opacity:.95; pointer-events:none; }
+.run-hills{ background-image:url(/games/run-hills.svg); background-size:400px 90px; }
+.run-trees{ bottom:48px; height:60px; background:url(/games/run-trees.svg) left bottom / 400px 60px repeat-x; font-size:0; color:transparent; }
+.run-ground{ background-color:transparent; background-image:url(/games/run-ground.svg); background-size:176px 52px; }
+/* Castle Defense: a stone castle on its mound, road, meadow and mountains */
+.castle-scene{ background:url(/games/castle.svg) center bottom / cover no-repeat, #bfe6ff; }
+.castle-cloud, .castle-hills, .castle-trees, .castle-emoji{ display:none; }
+.castle-keep{ height:70px; width:90px; left:0; bottom:28px; }
+.castle-archer{ left:24px; top:-18px; width:40px; height:40px; }
+/* Konbini: shop interior with lit shelves and a tiled floor */
+.konbini-scene{ background:url(/games/konbini.svg) center / 100% 100% no-repeat, #eef2ef; }
+.konbini-shelves{ height:110px; margin:0; padding:0; background:none; border:none; font-size:0; }
+.konbini-counter{ background:linear-gradient(#c89a63, #a2744a 30%, #8a5f3a); border-top:6px solid #6b4a2a; box-shadow:0 -6px 12px rgba(0,0,0,.18); }
+.konbini-counter::before{ content:""; position:absolute; left:0; right:0; top:0; height:10px; background:linear-gradient(rgba(255,255,255,.35), transparent); }
+.konbini-queue{ top:62px; }
+.konbini-customer{ top:36px; }
+.castle-archer{ left:12px; top:-46px; }
+
+/* Number Pop: balloons float up in a painted sky over hills */
+.pop-grid{ padding:12px; border-radius:22px; border:3px solid var(--ink-line); background:url(/games/pop.svg) center / cover no-repeat, #b8e4ff; box-shadow:0 4px 0 var(--ink-line); }
+.pop-hole{ background:rgba(255,255,255,.22); border-color:rgba(255,255,255,.75); backdrop-filter:blur(1px); box-shadow:none; }
+/* Rhythm Tap: a concert stage with spotlights and a crowd */
+.rhythm-track{ background:url(/games/rhythm.svg) center bottom / cover no-repeat, #2a1550; }
+.rhythm-lanes i{ border-right-color:rgba(255,255,255,.18); }
+/* Tic-Tac-Toe: a carved wooden board; the cells sit on it like tiles */
+.ttt-board{ padding:12px; border-radius:22px; border:3px solid var(--ink-line); background:url(/games/ttt.svg) center / 100% 100% no-repeat, #b47a3f; box-shadow:0 5px 0 var(--ink-line); gap:10px; }
+.ttt-cell{ background:#fff8ea; border-color:#5e3a19; box-shadow:0 4px 0 #5e3a19; border-radius:14px; }
+.ttt-cell.sel{ border-color:var(--gold-dk); background:#fff1b8; }

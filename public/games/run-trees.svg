@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 60">
+  <defs><linearGradient id="t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5bbf47"/><stop offset="1" stop-color="#2e7d2a"/></linearGradient></defs>
+  <g fill="url(#t)">
+    <path d="M30 58 L30 44 L22 44 L40 10 L58 44 L50 44 L50 58Z"/>
+    <path d="M108 58 L108 46 L100 46 L116 20 L132 46 L124 46 L124 58Z"/>
+    <path d="M196 58 L196 42 L186 42 L208 6 L230 42 L220 42 L220 58Z"/>
+    <path d="M296 58 L296 46 L288 46 L304 22 L320 46 L312 46 L312 58Z"/>
+    <path d="M356 58 L356 44 L348 44 L364 14 L380 44 L372 44 L372 58Z"/>
+  </g>
+  <g fill="#6b4423"><rect x="36" y="48" width="8" height="12" rx="2"/><rect x="112" y="48" width="8" height="12" rx="2"/><rect x="204" y="46" width="8" height="14" rx="2"/><rect x="300" y="48" width="8" height="12" rx="2"/><rect x="360" y="48" width="8" height="12" rx="2"/></g>
+  <g fill="#5cc650"><ellipse cx="70" cy="56" rx="16" ry="7"/><ellipse cx="160" cy="57" rx="20" ry="7"/><ellipse cx="258" cy="56" rx="18" ry="7"/><ellipse cx="340" cy="57" rx="14" ry="6"/></g>
+  <g><circle cx="72" cy="52" r="3" fill="#ff6b8b"/><circle cx="162" cy="53" r="3" fill="#ffd54a"/><circle cx="256" cy="52" r="3" fill="#fff"/><circle cx="342" cy="53" r="3" fill="#ff8c42"/></g>
+</svg>
