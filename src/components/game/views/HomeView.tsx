@@ -17,6 +17,8 @@ import type { ProgressState } from "@/lib/game/state";
 import { RANKS_JA, STAGE_COUNT, TOPICS, gradCss } from "@/lib/game/topics";
 import type { Lang, Topic } from "@/lib/game/topics";
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { transition } from "../util";
 import { CollectionCard } from "../Rewards";
 
 /* ================= sub-views ================= */
@@ -126,8 +128,10 @@ export function HomeView({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   /* Home always opens on Play (games first) — say so, so the activity log doesn't keep a stale tab */
   useEffect(() => { onTabChange?.("play"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const TAB_ORDER = ["learn", "today", "play", "world"] as const;
   function pickTab(id: "learn" | "today" | "play" | "world") {
-    setTab(id);
+    /* slide sideways in the direction of the tab */
+    transition(() => flushSync(() => setTab(id)), TAB_ORDER.indexOf(id) > TAB_ORDER.indexOf(tab) ? "left" : "right");
     onTabChange?.(id);
     /* bring the tab bar to the top so the new page starts at its beginning */
     requestAnimationFrame(() => tabsRef.current?.scrollIntoView({ block: "start" }));
@@ -408,7 +412,7 @@ export function HomeView({
       <CollectionCard lang={lang} />
       {dailyStreak > 0 && (
         <div className="streak-calendar">
-          <span className="streak-calendar-label">🔥 {dailyStreak}{t.home.streakSuffix}</span>
+          <span className="streak-calendar-label">🪔 {dailyStreak}{t.home.streakSuffix}</span>
           <div className="streak-days">
             {Array.from({ length: 7 }, (_, i) => i).map((daysAgo) => (
               <span key={daysAgo} className={`streak-day${daysAgo < dailyStreak ? " lit" : ""}`}>
