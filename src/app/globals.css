@@ -4153,3 +4153,20 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
    so a long table is never cut to a few rows under the status box */
 .sheet-panel{ max-height:min(84vh, calc(100dvh - 120px)); overflow-y:auto; overscroll-behavior:contain; }
 .leaderboard-panel{ max-height:none; overflow:visible; flex:none; }
+
+/* ---------- ➕✖️ Cross Math ---------- */
+.cm-grid{ display:grid; grid-template-columns:repeat(7, 1fr); gap:5px; max-width:380px; margin:10px auto 0; align-items:center; justify-items:center; }
+.cm-cell{ width:100%; aspect-ratio:1; border-radius:12px; border:3px solid var(--ink-line); background:var(--surface-2, #f3f1fb); font-size:22px; font-weight:800;
+  color:var(--ink); display:grid; place-items:center; font-family:inherit; padding:0; }
+.cm-cell:disabled{ cursor:default; opacity:1; }
+.cm-cell.blank{ background:#fff; border-style:dashed; border-color:#8a86a8; cursor:pointer; color:#2f6fd0; }
+.cm-cell.sel{ border-style:solid; border-color:#2B6FEA; box-shadow:0 0 0 3px rgba(43,111,234,.3); }
+.cm-cell.wrong{ border-color:#d9534f; background:#ffe3e3; animation:rg-shake .35s; }
+.cm-cell.ok{ border-style:solid; border-color:#2E8B57; background:#e3f8e9; color:#2E8B57; }
+.cm-op{ font-size:20px; font-weight:900; color:#c2410c; }
+.cm-eq{ font-size:20px; font-weight:900; color:var(--muted); }
+.cm-res{ width:100%; aspect-ratio:1; display:grid; place-items:center; border-radius:12px; background:#fff1c2; border:3px solid #c99a00; font-size:19px; font-weight:900; color:#7a4f00; }
+.cm-gap{ width:100%; }
+.cm-tray{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; max-width:380px; margin:14px auto 0; }
+.cm-tray .cross-key{ width:48px; height:48px; }
+.cm-wrong{ width:100%; text-align:center; font-size:12.5px; font-weight:800; color:#c0392b; margin-top:4px; }

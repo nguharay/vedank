@@ -861,3 +861,76 @@ export function buildNinjaWave(wave: number): NinjaWave {
   ];
   return { prompt: q.prompt, answer: q.answer, items: shuffle(items) };
 }
+
+/* ---------- ➕✖️ Cross Math ----------
+   A 3×3 grid of the digits 1–9 (each once) with an operator between every
+   pair of neighbours. Each row reads left to right, each column top to
+   bottom, and the result is shown after "=". Some digits are missing: put
+   the leftover digits back so all six equations hold. Early levels use + and
+   − with few blanks; later ones add × and ÷ and more blanks. */
+export type CrossMathOp = "+" | "−" | "×" | "÷";
+export type CrossMath = {
+  cells: number[];            /* 9 digits, row-major */
+  rowOps: CrossMathOp[][];    /* [row][0|1] */
+  colOps: CrossMathOp[][];    /* [col][0|1] */
+  rowRes: number[];
+  colRes: number[];
+  blanks: number[];           /* indexes of the hidden cells */
+};
+const CM_LEVELS: { ops: CrossMathOp[]; blanks: number }[] = [
+  { ops: ["+", "−"], blanks: 2 },
+  { ops: ["+", "−"], blanks: 3 },
+  { ops: ["+", "−", "×"], blanks: 3 },
+  { ops: ["+", "−", "×"], blanks: 4 },
+  { ops: ["+", "−", "×", "÷"], blanks: 4 },
+  { ops: ["+", "−", "×", "÷"], blanks: 5 },
+  { ops: ["+", "−", "×", "÷"], blanks: 6 },
+  { ops: ["+", "−", "×", "÷"], blanks: 7 },
+];
+/* left to right, no precedence — as the grid reads; null if not a positive whole number */
+export function cmEval(a: number, op1: CrossMathOp, b: number, op2: CrossMathOp, c: number): number | null {
+  const step = (x: number, op: CrossMathOp, y: number): number | null => {
+    if (op === "+") return x + y;
+    if (op === "−") return x - y > 0 ? x - y : null;
+    if (op === "×") return x * y;
+    return y !== 0 && x % y === 0 ? x / y : null;
+  };
+  const m = step(a, op1, b);
+  return m === null ? null : step(m, op2, c);
+}
+export function buildCrossMath(level: number): CrossMath {
+  const cfg = CM_LEVELS[Math.min(CM_LEVELS.length, Math.max(1, level)) - 1];
+  const pickOp = () => cfg.ops[Math.floor(Math.random() * cfg.ops.length)];
+  for (let attempt = 0; attempt < 4000; attempt++) {
+    const cells = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
+    const rowOps = [0, 1, 2].map(() => [pickOp(), pickOp()]);
+    const colOps = [0, 1, 2].map(() => [pickOp(), pickOp()]);
+    const rowRes: number[] = [], colRes: number[] = [];
+    let ok = true;
+    for (let r = 0; r < 3 && ok; r++) {
+      const v = cmEval(cells[r * 3], rowOps[r][0], cells[r * 3 + 1], rowOps[r][1], cells[r * 3 + 2]);
+      if (v === null || v > 99) ok = false; else rowRes.push(v);
+    }
+    for (let c = 0; c < 3 && ok; c++) {
+      const v = cmEval(cells[c], colOps[c][0], cells[3 + c], colOps[c][1], cells[6 + c]);
+      if (v === null || v > 99) ok = false; else colRes.push(v);
+    }
+    if (!ok) continue;
+    /* at least one × or ÷ on levels that allow them, so they are not all + − */
+    if (cfg.ops.length > 2 && ![...rowOps, ...colOps].flat().some((o) => o === "×" || o === "÷")) continue;
+    const idx = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    return { cells, rowOps, colOps, rowRes, colRes, blanks: idx.slice(0, cfg.blanks).sort((a, b) => a - b) };
+  }
+  /* practically unreachable; a tiny fixed puzzle keeps the game alive */
+  return { cells: [1, 2, 3, 4, 5, 6, 7, 8, 9], rowOps: [["+", "+"], ["+", "+"], ["+", "+"]], colOps: [["+", "+"], ["+", "+"], ["+", "+"]], rowRes: [6, 15, 24], colRes: [12, 15, 18], blanks: [0, 4] };
+}
+/* every row and column holds with these cells */
+export function cmSolved(p: CrossMath, cells: (number | null)[]): boolean {
+  if (cells.some((v) => v === null)) return false;
+  const g = cells as number[];
+  for (let r = 0; r < 3; r++) if (cmEval(g[r * 3], p.rowOps[r][0], g[r * 3 + 1], p.rowOps[r][1], g[r * 3 + 2]) !== p.rowRes[r]) return false;
+  for (let c = 0; c < 3; c++) if (cmEval(g[c], p.colOps[c][0], g[3 + c], p.colOps[c][1], g[6 + c]) !== p.colRes[c]) return false;
+  return true;
+}

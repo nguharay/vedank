@@ -92,6 +92,7 @@ const SushiShop = dynamic(() => import("./views/ShopGames").then((m) => m.SushiS
 const CastleDefense = dynamic(() => import("./views/ShopGames").then((m) => m.CastleDefense), { ssr: false });
 const KonbiniCashier = dynamic(() => import("./views/TownGames").then((m) => m.KonbiniCashier), { ssr: false });
 const NumberCrossword = dynamic(() => import("./views/TownGames").then((m) => m.NumberCrossword), { ssr: false });
+const CrossMath = dynamic(() => import("./views/TownGames").then((m) => m.CrossMath), { ssr: false });
 const RhythmTap = dynamic(() => import("./views/RhythmTap").then((m) => m.RhythmTap), { ssr: false });
 const TownView = dynamic(() => import("./views/TownView").then((m) => m.TownView), { ssr: false });
 const NinjaSlice = dynamic(() => import("./views/NinjaSlice").then((m) => m.NinjaSlice), { ssr: false });
@@ -220,7 +221,7 @@ export function GameApp({
     viewRef.current = next;
     transition(() => flushSync(() => setViewRaw(next)), back ? "back" : "forward");
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "rhythm", "town", "ninja"];
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
@@ -938,7 +939,7 @@ export function GameApp({
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
   const GUEST_TOPICS = 2;
-  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "rhythm", "town", "ninja"]);
+  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   /* a room code from a shared ?rr= link, handed to the race view once */
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
@@ -1971,6 +1972,7 @@ export function GameApp({
         castle: Number(localStorage.getItem("sutraSprint.castleBest") || 0),
         konbini: Number(localStorage.getItem("sutraSprint.konbiniBest") || 0),
         crossword: Number(localStorage.getItem("sutraSprint.crossBest") || 0),
+        crossmath: Number(localStorage.getItem("sutraSprint.crossMathBest") || 0),
         rhythm: Number(localStorage.getItem("sutraSprint.rhythmBest") || 0),
         ninja: Number(localStorage.getItem("sutraSprint.ninjaBest") || 0),
         ...Object.fromEntries(QUICK_GAMES.map((g) => [g.id, Number(localStorage.getItem(`sutraSprint.quick.${g.id}`) || 0)])),
@@ -2055,6 +2057,13 @@ export function GameApp({
       blurb: "Fill the blanks so every row and column adds up.",
       blurbJa: "たて・よこの合計があうようにマスをうめよう。",
       best: gameBests.crossword ?? 0, start: shelf(() => setView("crossword"), "crossword"),
+    },
+    {
+      id: "crossmath", icon: "➕", tint: "var(--teal, #0A7E92)",
+      name: "Cross Math", nameJa: "クロス計算",
+      blurb: "Digits 1–9, once each. Make every row and column equation true.",
+      blurbJa: "1〜9を1回ずつ。たて・よこの式がぜんぶ合うように。",
+      best: gameBests.crossmath ?? 0, start: shelf(() => setView("crossmath"), "crossmath"),
     },
     {
       id: "match", icon: "🃏", tint: "var(--sky2)",
@@ -4686,6 +4695,12 @@ export function GameApp({
         {view === "crossword" && (
           <section className="view active">
             <NumberCrossword lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
+              onCorrect={(n) => fireQuest("correct_answer", n)} />
+          </section>
+        )}
+        {view === "crossmath" && (
+          <section className="view active">
+            <CrossMath lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
               onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}
