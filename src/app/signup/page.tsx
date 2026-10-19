@@ -10,7 +10,7 @@ import { COUNTRIES } from "@/lib/countries";
 const COPY = {
   en: {
     kicker: "Free · 30 seconds",
-    title: "Begin Your Indian Style Mathematics Journey",
+    title: "LET THE NUMBER GAMES BEGIN!",
     sub: "Ancient shortcuts, modern speed. Make an account so your stars, streaks and stages are always waiting for you.",
     lang: "Pick your language",
     name: "Your name",
