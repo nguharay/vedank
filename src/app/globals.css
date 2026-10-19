@@ -4154,19 +4154,25 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .sheet-panel{ max-height:min(84vh, calc(100dvh - 120px)); overflow-y:auto; overscroll-behavior:contain; }
 .leaderboard-panel{ max-height:none; overflow:visible; flex:none; }
 
-/* ---------- ➕✖️ Cross Math ---------- */
-.cm-grid{ display:grid; grid-template-columns:repeat(7, 1fr); gap:5px; max-width:380px; margin:10px auto 0; align-items:center; justify-items:center; }
-.cm-cell{ width:100%; aspect-ratio:1; border-radius:12px; border:3px solid var(--ink-line); background:var(--surface-2, #f3f1fb); font-size:22px; font-weight:800;
-  color:var(--ink); display:grid; place-items:center; font-family:inherit; padding:0; }
-.cm-cell:disabled{ cursor:default; opacity:1; }
-.cm-cell.blank{ background:#fff; border-style:dashed; border-color:#8a86a8; cursor:pointer; color:#2f6fd0; }
-.cm-cell.sel{ border-style:solid; border-color:#2B6FEA; box-shadow:0 0 0 3px rgba(43,111,234,.3); }
-.cm-cell.wrong{ border-color:#d9534f; background:#ffe3e3; animation:rg-shake .35s; }
-.cm-cell.ok{ border-style:solid; border-color:#2E8B57; background:#e3f8e9; color:#2E8B57; }
-.cm-op{ font-size:20px; font-weight:900; color:#c2410c; }
-.cm-eq{ font-size:20px; font-weight:900; color:var(--muted); }
-.cm-res{ width:100%; aspect-ratio:1; display:grid; place-items:center; border-radius:12px; background:#fff1c2; border:3px solid #c99a00; font-size:19px; font-weight:900; color:#7a4f00; }
-.cm-gap{ width:100%; }
-.cm-tray{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; max-width:380px; margin:14px auto 0; }
-.cm-tray .cross-key{ width:48px; height:48px; }
-.cm-wrong{ width:100%; text-align:center; font-size:12.5px; font-weight:800; color:#c0392b; margin-top:4px; }
+/* ---------- ➕✖️ Cross Math (crossword style) ---------- */
+.cm-intro{ text-align:center; font-size:13px; font-weight:900; color:#7a4f00; background:#fff1c2; border:2px solid #c99a00; border-radius:12px; padding:6px 10px; margin:0 auto 10px; max-width:400px; animation:dm-fade .3s both; }
+.cm-board{ max-width:400px; margin:0 auto; padding:12px; border-radius:20px; border:3px solid #1d1b33; background:#fbf7ec; box-shadow:0 5px 0 #1d1b33; }
+.cm-grid{ display:grid; gap:3px; }
+.cm-grid > *{ aspect-ratio:1; min-width:0; display:grid; place-items:center; border-radius:6px; font-family:inherit; }
+.cm-empty{ background:transparent; }
+.cm-num{ background:#fdf6df; border:2px solid #8f7f58; color:#1d1b33; font-size:clamp(14px, 4.6vw, 20px); font-weight:800; }
+.cm-op{ background:#f3e2a0; border:2px solid #8f7f58; color:#4a3a10; font:900 clamp(14px, 4.4vw, 19px)/1 "Baloo 2",system-ui,sans-serif; }
+.cm-eq{ background:#f3e2a0; border:2px solid #8f7f58; color:#4a3a10; font:900 clamp(14px, 4.4vw, 19px)/1 "Baloo 2",system-ui,sans-serif; }
+.cm-cell{ background:#fff; border:2px solid #8f7f58; color:#1f8a3f; font-size:clamp(14px, 4.6vw, 20px); font-weight:800; padding:0; cursor:pointer;
+  box-shadow:inset 0 0 0 2px #fff, inset 0 2px 6px rgba(0,0,0,.12); transition:transform .12s, background .2s, border-color .2s; }
+.cm-cell.sel{ border-color:#ff8a3d; box-shadow:inset 0 0 0 2px #ffe3cf, 0 0 0 3px rgba(255,138,61,.35); background:#fff7f0; }
+.cm-cell.good{ background:#e6f7ea; border-color:#2E8B57; }
+.cm-cell.bad{ background:#ffe3e3; border-color:#d9534f; color:#b3261e; animation:rg-shake .35s; }
+.cm-cell.ok{ background:#d7f5df; border-color:#2E8B57; color:#1d6b10; }
+.cm-cell.pop{ animation:ans-pop .35s cubic-bezier(.2,1.6,.4,1); }
+.cm-tray{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; max-width:400px; margin:14px auto 0; min-height:48px; }
+.cm-tile{ min-width:46px; height:46px; padding:0 10px; border-radius:8px; border:2px solid #2E8B57; background:#eef9f0; color:#1f8a3f; font-size:20px; font-weight:800; font-family:inherit; cursor:grab; box-shadow:0 3px 0 #2E8B57; transition:transform .1s; }
+.cm-tile:active{ transform:translateY(3px); box-shadow:none; }
+.cm-tile:disabled{ opacity:.45; cursor:default; }
+.cm-tray-empty{ font-size:12.5px; font-weight:800; color:#c0392b; align-self:center; }
+.cm-reset{ display:block; margin:6px auto 0; background:none; border:none; font-family:inherit; font-size:12.5px; font-weight:800; color:var(--muted); cursor:pointer; text-decoration:underline; }
