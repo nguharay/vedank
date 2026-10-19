@@ -9,7 +9,7 @@
    there merges into their account the next time they sign in.
 
    Bump VERSION to retire every old cache on the next activate. */
-const VERSION = "v4";
+const VERSION = "v5";
 const CACHE = `sutra-${VERSION}`;
 
 /* /offline.html is a plain file with inline styles and no script: a fallback
