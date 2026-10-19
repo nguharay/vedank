@@ -2059,19 +2059,6 @@ export function GameApp({
       best: gameBests.crossword ?? 0, start: shelf(() => setView("crossword"), "crossword"),
     },
     {
-      id: "match", icon: "🃏", tint: "var(--sky2)",
-      name: "Number Match", nameJa: "ナンバーマッチ",
-      blurb: "Pair each sum with its answer.", blurbJa: "式と答えをペアにしよう。",
-      best: gameBests.match ?? 0, start: shelf(() => startMatch(), "match"),
-    },
-    {
-      id: "pop", icon: "🎈", tint: "var(--sky2)",
-      name: "Number Pop", nameJa: "かずの風船ポップ",
-      blurb: "Balloons float up with numbers. Pop the one that equals the sum!",
-      blurbJa: "数をつけた風船がうかんでくる。答えの風船をポップ！",
-      best: gameBests.pop ?? 0, start: shelf(startPop, "pop"),
-    },
-    {
       id: "bigger", icon: "⚖️", tint: "var(--violet)",
       name: "Which is Bigger?", nameJa: "どっちが大きい？",
       blurb: "Tap the larger of two sums. One slip ends the run.",
@@ -2111,6 +2098,19 @@ export function GameApp({
       name: g.name, nameJa: g.nameJa, blurb: g.blurb, blurbJa: g.blurbJa,
       best: gameBests[g.id] ?? 0, start: shelf(() => startQuick(g.id), g.id),
     })),
+    {
+      id: "match", icon: "🃏", tint: "var(--sky2)",
+      name: "Number Match", nameJa: "ナンバーマッチ",
+      blurb: "Pair each sum with its answer.", blurbJa: "式と答えをペアにしよう。",
+      best: gameBests.match ?? 0, start: shelf(() => startMatch(), "match"),
+    },
+    {
+      id: "pop", icon: "🎈", tint: "var(--sky2)",
+      name: "Number Pop", nameJa: "かずの風船ポップ",
+      blurb: "Balloons float up with numbers. Pop the one that equals the sum!",
+      blurbJa: "数をつけた風船がうかんでくる。答えの風船をポップ！",
+      best: gameBests.pop ?? 0, start: shelf(startPop, "pop"),
+    },
   ];
 
   /* ---------- Number Pop ----------
@@ -4536,24 +4536,44 @@ export function GameApp({
               </span>
               <span className="game-card-go">›</span>
             </button>
-            <button className={`ttt-card ninja-feature${isUnlocked("ninja") ? "" : " prog-locked"}`} onClick={shelf(() => setView("ninja"), "ninja")}>
-              <span className="feature-art ninja" aria-hidden="true"><b className="fa-fruit">🍉</b><b className="fa-slash">／</b></span>
+            <button className={`ttt-card race-feature${isUnlocked("race") ? "" : " prog-locked"}`} onClick={shelf(() => setView("race"), "race")}>
+              <span className="feature-art race" aria-hidden="true"><b className="fa-flag">🏁</b><b className="fa-r1">🐰</b><b className="fa-r2">🐢</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🥷 忍者スライス" : "🥷 Ninja Slice"}<ArcadeMarks id="ninja" lang={lang} /></span>
-                <span className="ttt-card-sub">{lang === "ja" ? "答えのフルーツをスワイプで切れ！ばくだん注意。" : "Swipe to slice the fruit with the answer. Mind the bombs!"}</span>
-                {(gameBests.ninja ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.ninja}</span>}
+                <span className="ttt-card-name">{lang === "ja" ? "🏁 計算レース" : "🏁 Math Race"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "正解でダッシュ！4つのレベル、ライバルはどんどん速くなる。" : "Every right answer is a dash. 4 levels of faster rivals!"}</span>
+                {(gameBests.race ?? 0) > 0 && <span className="feature-best mono">🏆 Lv.{gameBests.race} {lang === "ja" ? "クリア" : "cleared"}</span>}
               </span>
-              {!isUnlocked("ninja") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("ninja")}回クリアで解放` : `Finish ${gamesToUnlock("ninja")} more to unlock`}</span>}
+              {!isUnlocked("race") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("race")}回クリアで解放` : `Finish ${gamesToUnlock("race")} more to unlock`}</span>}
               <span className="game-card-go">›</span>
             </button>
-            <button className={`ttt-card run-feature${isUnlocked("runner") ? "" : " prog-locked"}`} onClick={shelf(() => setView("runner"), "runner")}>
-              <span className="feature-art runner" aria-hidden="true"><b className="fa-boy"><Mascot animated={false} /></b><b className="fa-rock">🪨</b></span>
+            <button className={`ttt-card sushi-feature${isUnlocked("sushi") ? "" : " prog-locked"}`} onClick={shelf(() => setView("sushi"), "sushi")}>
+              <span className="feature-art sushi" aria-hidden="true"><b className="fa-sushi">🍣</b><b className="fa-guest">🙋</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🏃 計算ランナー" : "🏃 Math Runner"}<ArcadeMarks id="runner" lang={lang} /></span>
-                <span className="ttt-card-sub">{lang === "ja" ? "答えをタップしてジャンプ！どこまで走れるかな？" : "Answer to jump the rocks and logs. How far can you run?"}</span>
-                {(gameBests.runner ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.runner}</span>}
+                <span className="ttt-card-name">{lang === "ja" ? "🍣 おすし屋さん" : "🍣 Sushi Shop"}<ArcadeMarks id="sushi" lang={lang} /></span>
+                <span className="ttt-card-sub">{lang === "ja" ? "回転寿司のお会計！お皿の合計を計算しよう。" : "Run a conveyor-belt sushi bar. Total the plates fast!"}</span>
+                {(gameBests.sushi ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "売上ベスト" : "Best day"} ¥{gameBests.sushi.toLocaleString("en-US")}</span>}
               </span>
-              {!isUnlocked("runner") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("runner")}回クリアで解放` : `Finish ${gamesToUnlock("runner")} more to unlock`}</span>}
+              {!isUnlocked("sushi") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("sushi")}回クリアで解放` : `Finish ${gamesToUnlock("sushi")} more to unlock`}</span>}
+              <span className="game-card-go">›</span>
+            </button>
+            <button className={`ttt-card castle-feature${isUnlocked("castle") ? "" : " prog-locked"}`} onClick={shelf(() => setView("castle"), "castle")}>
+              <span className="feature-art castle" aria-hidden="true"><b className="fa-castle">🏯</b><b className="fa-foe">👾</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🏯 お城をまもれ！" : "🏯 Castle Defense"}<ArcadeMarks id="castle" lang={lang} /></span>
+                <span className="ttt-card-sub">{lang === "ja" ? "答えて矢をうて！モンスターからお城をまもろう。" : "Answer to fire arrows. Hold off the monster waves!"}</span>
+                {(gameBests.castle ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.castle}</span>}
+              </span>
+              {!isUnlocked("castle") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("castle")}回クリアで解放` : `Finish ${gamesToUnlock("castle")} more to unlock`}</span>}
+              <span className="game-card-go">›</span>
+            </button>
+            <button className={`ttt-card rhythm-feature${isUnlocked("rhythm") ? "" : " prog-locked"}`} onClick={shelf(() => setView("rhythm"), "rhythm")}>
+              <span className="feature-art rhythm" aria-hidden="true"><b className="fa-note1">🎵</b><b className="fa-note2">🎶</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🎵 リズムタップ" : "🎵 Rhythm Tap"}<ArcadeMarks id="rhythm" lang={lang} /></span>
+                <span className="ttt-card-sub">{lang === "ja" ? "音楽にあわせて答えをタップ！" : "Tap the answers to the beat of the music!"}</span>
+                {(gameBests.rhythm ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.rhythm}</span>}
+              </span>
+              {!isUnlocked("rhythm") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("rhythm")}回クリアで解放` : `Finish ${gamesToUnlock("rhythm")} more to unlock`}</span>}
               <span className="game-card-go">›</span>
             </button>
             {/* One board a day, the same for everyone — the bit worth telling
@@ -4579,46 +4599,6 @@ export function GameApp({
                 <span className="town-card-sub">{lang === "ja" ? "ゲームのコインで自分のまちをつくろう" : "Build your own town with coins from every game"}</span>
               </span>
               <span className="town-card-coins mono">🪙 {townState.coins}</span>
-            </button>
-            <button className={`ttt-card rhythm-feature${isUnlocked("rhythm") ? "" : " prog-locked"}`} onClick={shelf(() => setView("rhythm"), "rhythm")}>
-              <span className="feature-art rhythm" aria-hidden="true"><b className="fa-note1">🎵</b><b className="fa-note2">🎶</b></span>
-              <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🎵 リズムタップ" : "🎵 Rhythm Tap"}<ArcadeMarks id="rhythm" lang={lang} /></span>
-                <span className="ttt-card-sub">{lang === "ja" ? "音楽にあわせて答えをタップ！" : "Tap the answers to the beat of the music!"}</span>
-                {(gameBests.rhythm ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.rhythm}</span>}
-              </span>
-              {!isUnlocked("rhythm") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("rhythm")}回クリアで解放` : `Finish ${gamesToUnlock("rhythm")} more to unlock`}</span>}
-              <span className="game-card-go">›</span>
-            </button>
-            <button className={`ttt-card castle-feature${isUnlocked("castle") ? "" : " prog-locked"}`} onClick={shelf(() => setView("castle"), "castle")}>
-              <span className="feature-art castle" aria-hidden="true"><b className="fa-castle">🏯</b><b className="fa-foe">👾</b></span>
-              <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🏯 お城をまもれ！" : "🏯 Castle Defense"}<ArcadeMarks id="castle" lang={lang} /></span>
-                <span className="ttt-card-sub">{lang === "ja" ? "答えて矢をうて！モンスターからお城をまもろう。" : "Answer to fire arrows. Hold off the monster waves!"}</span>
-                {(gameBests.castle ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.castle}</span>}
-              </span>
-              {!isUnlocked("castle") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("castle")}回クリアで解放` : `Finish ${gamesToUnlock("castle")} more to unlock`}</span>}
-              <span className="game-card-go">›</span>
-            </button>
-            <button className={`ttt-card sushi-feature${isUnlocked("sushi") ? "" : " prog-locked"}`} onClick={shelf(() => setView("sushi"), "sushi")}>
-              <span className="feature-art sushi" aria-hidden="true"><b className="fa-sushi">🍣</b><b className="fa-guest">🙋</b></span>
-              <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🍣 おすし屋さん" : "🍣 Sushi Shop"}<ArcadeMarks id="sushi" lang={lang} /></span>
-                <span className="ttt-card-sub">{lang === "ja" ? "回転寿司のお会計！お皿の合計を計算しよう。" : "Run a conveyor-belt sushi bar. Total the plates fast!"}</span>
-                {(gameBests.sushi ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "売上ベスト" : "Best day"} ¥{gameBests.sushi.toLocaleString("en-US")}</span>}
-              </span>
-              {!isUnlocked("sushi") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("sushi")}回クリアで解放` : `Finish ${gamesToUnlock("sushi")} more to unlock`}</span>}
-              <span className="game-card-go">›</span>
-            </button>
-            <button className={`ttt-card race-feature${isUnlocked("race") ? "" : " prog-locked"}`} onClick={shelf(() => setView("race"), "race")}>
-              <span className="feature-art race" aria-hidden="true"><b className="fa-flag">🏁</b><b className="fa-r1">🐰</b><b className="fa-r2">🐢</b></span>
-              <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🏁 計算レース" : "🏁 Math Race"}</span>
-                <span className="ttt-card-sub">{lang === "ja" ? "正解でダッシュ！4つのレベル、ライバルはどんどん速くなる。" : "Every right answer is a dash. 4 levels of faster rivals!"}</span>
-                {(gameBests.race ?? 0) > 0 && <span className="feature-best mono">🏆 Lv.{gameBests.race} {lang === "ja" ? "クリア" : "cleared"}</span>}
-              </span>
-              {!isUnlocked("race") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("race")}回クリアで解放` : `Finish ${gamesToUnlock("race")} more to unlock`}</span>}
-              <span className="game-card-go">›</span>
             </button>
 
             <button className="daily-game" onClick={startDailyGame}>
@@ -4658,6 +4638,26 @@ export function GameApp({
                 </button>
               ))}
             </div>
+            <button className={`ttt-card ninja-feature${isUnlocked("ninja") ? "" : " prog-locked"}`} onClick={shelf(() => setView("ninja"), "ninja")}>
+              <span className="feature-art ninja" aria-hidden="true"><b className="fa-fruit">🍉</b><b className="fa-slash">／</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🥷 忍者スライス" : "🥷 Ninja Slice"}<ArcadeMarks id="ninja" lang={lang} /></span>
+                <span className="ttt-card-sub">{lang === "ja" ? "答えのフルーツをスワイプで切れ！ばくだん注意。" : "Swipe to slice the fruit with the answer. Mind the bombs!"}</span>
+                {(gameBests.ninja ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.ninja}</span>}
+              </span>
+              {!isUnlocked("ninja") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("ninja")}回クリアで解放` : `Finish ${gamesToUnlock("ninja")} more to unlock`}</span>}
+              <span className="game-card-go">›</span>
+            </button>
+            <button className={`ttt-card run-feature${isUnlocked("runner") ? "" : " prog-locked"}`} onClick={shelf(() => setView("runner"), "runner")}>
+              <span className="feature-art runner" aria-hidden="true"><b className="fa-boy"><Mascot animated={false} /></b><b className="fa-rock">🪨</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🏃 計算ランナー" : "🏃 Math Runner"}<ArcadeMarks id="runner" lang={lang} /></span>
+                <span className="ttt-card-sub">{lang === "ja" ? "答えをタップしてジャンプ！どこまで走れるかな？" : "Answer to jump the rocks and logs. How far can you run?"}</span>
+                {(gameBests.runner ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.runner}</span>}
+              </span>
+              {!isUnlocked("runner") && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock("runner")}回クリアで解放` : `Finish ${gamesToUnlock("runner")} more to unlock`}</span>}
+              <span className="game-card-go">›</span>
+            </button>
             <div className="games-more">
               {lang === "ja" ? "新しいゲームを準備中！" : "More games on the way."}
             </div>
