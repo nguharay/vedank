@@ -112,7 +112,7 @@ export const UNLOCK_AT: Record<string, number> = {
   castle: 4, memory: 4, lastdigit: 4,
   konbini: 6, odd: 6, digitsum: 6,
   rhythm: 9, sortg: 9, div9: 9,
-  crossword: 12, sq5: 12, x11: 12,
+  crossword: 12, sq5: 12, x11: 12, crossmath: 12,
   race: 15, sprint: 15, estimate: 15,
 };
 export const GAME_NAMES: Record<string, [string, string]> = {
@@ -121,7 +121,7 @@ export const GAME_NAMES: Record<string, [string, string]> = {
   bigger: ["Which is Bigger?", "どっちが大きい？"], missing: ["Missing Number", "穴うめ"], castle: ["Castle Defense", "お城をまもれ"],
   memory: ["Memory Pairs", "神経衰弱"], lastdigit: ["Last Digit", "一の位あて"], konbini: ["Konbini Cashier", "コンビニのレジ"],
   odd: ["Odd One Out", "仲間はずれ"], digitsum: ["Digit Sum", "数字の和"], rhythm: ["Rhythm Tap", "リズムタップ"],
-  sortg: ["Smallest First", "小さい順"], div9: ["Divisible by 9?", "9でわれる？"], crossword: ["Number Crossword", "数字クロスワード"],
+  sortg: ["Smallest First", "小さい順"], div9: ["Divisible by 9?", "9でわれる？"], crossword: ["Number Crossword", "数字クロスワード"], crossmath: ["Cross Math", "クロス計算"],
   sq5: ["Squares ending in 5", "5で終わる数の2乗"], x11: ["× 11", "×11"], race: ["Math Race", "計算レース"],
   sprint: ["Matchstick Sprint", "マッチ棒スプリント"], estimate: ["Estimate", "見積もり"], ttt: ["Tic-Tac-Toe", "三目ならべ"], town: ["Math Town", "マスタウン"],
 };

@@ -9,6 +9,7 @@ import type { useSound } from "../useSound";
 import {
   buildKonbiniQ, konbiniLevel, konbiniPatience, type KonbiniQ,
   buildCrossword, type Crossword,
+  buildCrossMath, cmSolved, type CrossMath,
 } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
@@ -344,4 +345,107 @@ export function NumberCrossword({ lang, sound, celebrate, onCorrect }: Props) {
 /* grid rows are laid out by the parent's CSS grid; this just groups children */
 function FragmentRow({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
+}
+
+/* ---------- ➕✖️ Cross Math ----------
+   Tap an empty square, then a digit from the tray; tapping a filled square
+   returns its digit. When every square is filled the grid checks itself;
+   wrong squares are marked so they can be swapped. Each solved grid is the
+   next level. */
+const CROSSMATH_KEY = "sutraSprint.crossMathBest";
+
+export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
+  const ja = lang === "ja";
+  const [level, setLevel] = useState(1);
+  const [p, setP] = useState<CrossMath | null>(null);
+  const [cells, setCells] = useState<(number | null)[]>([]);
+  const [sel, setSel] = useState<number | null>(null);
+  const [wrong, setWrong] = useState(false);
+  const [solved, setSolved] = useState(false);
+  const [tries, setTries] = useState(0);
+  const [best, setBest] = useState(() => readBest(CROSSMATH_KEY));
+
+  function load(lv: number) {
+    const g = buildCrossMath(lv);
+    setLevel(lv); setP(g); setCells(g.cells.map((v, i) => (g.blanks.includes(i) ? null : v)));
+    setSel(g.blanks[0] ?? null); setWrong(false); setSolved(false); setTries(0);
+  }
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    const g = buildCrossMath(1);
+    /* random, so built after mount rather than during render */
+    setP(g); setCells(g.cells.map((v, i) => (g.blanks.includes(i) ? null : v))); setSel(g.blanks[0] ?? null);
+  }, []);
+
+  if (!p) return <div className="rg" />;
+  const tray = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => !cells.includes(d));
+
+  function place(d: number) {
+    if (sel === null || solved || !p) return;
+    const next = [...cells]; next[sel] = d;
+    setCells(next); setWrong(false); sound.click();
+    const empty = p.blanks.find((i) => next[i] === null);
+    if (empty !== undefined) { setSel(empty); return; }
+    if (cmSolved(p, next)) {
+      setSolved(true); setSel(null); sound.stageClear(); haptic([15, 30, 15]); onCorrect?.(p.blanks.length);
+      if (level > best) { writeBest(CROSSMATH_KEY, level); setBest(level); }
+      if (level % 3 === 0) celebrate();
+    } else { setWrong(true); setTries((t) => t + 1); sound.wrong(); haptic(30); }
+  }
+  function tapCell(i: number) {
+    if (solved || !p || !p.blanks.includes(i)) return;
+    if (cells[i] !== null) { const next = [...cells]; next[i] = null; setCells(next); setWrong(false); }
+    setSel(i); sound.click();
+  }
+
+  const g = cells;
+  /* the 7×7 board: numbers, operators, "=", results */
+  const board: React.ReactNode[] = [];
+  const num = (i: number) => {
+    const blank = p.blanks.includes(i);
+    return (
+      <button key={`n${i}`} className={`cm-cell${blank ? " blank" : ""}${sel === i ? " sel" : ""}${wrong && blank ? " wrong" : ""}${solved && blank ? " ok" : ""}`}
+        onClick={() => tapCell(i)} disabled={!blank} aria-label={blank ? (ja ? "空きマス" : "blank") : String(g[i])}>
+        <span className="mono">{g[i] ?? ""}</span>
+      </button>
+    );
+  };
+  const op = (k: string, o: string) => <span key={k} className="cm-op mono">{o}</span>;
+  const eq = (k: string) => <span key={k} className="cm-eq mono">=</span>;
+  const res = (k: string, v: number) => <span key={k} className="cm-res mono">{v}</span>;
+  const gap = (k: string) => <span key={k} className="cm-gap" />;
+  for (let r = 0; r < 3; r++) {
+    board.push(num(r * 3), op(`ro${r}0`, p.rowOps[r][0]), num(r * 3 + 1), op(`ro${r}1`, p.rowOps[r][1]), num(r * 3 + 2), eq(`re${r}`), res(`rr${r}`, p.rowRes[r]));
+    if (r < 2) {
+      board.push(op(`co0${r}`, p.colOps[0][r]), gap(`g${r}a`), op(`co1${r}`, p.colOps[1][r]), gap(`g${r}b`), op(`co2${r}`, p.colOps[2][r]), gap(`g${r}c`), gap(`g${r}d`));
+    }
+  }
+  board.push(eq("ce0"), gap("gea"), eq("ce1"), gap("geb"), eq("ce2"), gap("gec"), gap("ged"));
+  board.push(res("cr0", p.colRes[0]), gap("gra"), res("cr1", p.colRes[1]), gap("grb"), res("cr2", p.colRes[2]), gap("grc"), gap("grd"));
+
+  return (
+    <div className="rg">
+      <div className="match-head">
+        <div className="match-stat"><span className="match-stat-k">{ja ? "レベル" : "Level"}</span><span className="match-stat-v mono">{level}</span></div>
+        <div className="match-stat"><span className="match-stat-k">{ja ? "まちがい" : "Retries"}</span><span className="match-stat-v mono">{tries}</span></div>
+        <div className="match-stat"><span className="match-stat-k">{ja ? "ベスト" : "Best"}</span><span className="match-stat-v mono">{best ? `Lv.${best}` : "–"}</span></div>
+      </div>
+      <p className="match-hint">{ja ? "たて・よこの式が合うように、のこりの数字をマスに入れよう。左から右、上から下の順に計算するよ。" : "Put the leftover digits in so every row and column equation works. Read left to right, top to bottom."}</p>
+      <div className="cm-grid">{board}</div>
+      {solved ? (
+        <div className="match-done">
+          <div className="match-done-title">{tries === 0 ? (ja ? "パーフェクト！" : "Perfect!") : (ja ? "とけた！" : "Solved!")}</div>
+          <div className="match-done-line">{ja ? `次はレベル ${level + 1}` : `Next: level ${level + 1}`}</div>
+          <button className="btn btn-primary match-again" onClick={() => load(level + 1)}>{ja ? "次のパズル ▶" : "Next puzzle ▶"}</button>
+        </div>
+      ) : (
+        <div className="cm-tray">
+          {tray.map((d) => <button key={d} className="cross-key mono" onClick={() => place(d)} disabled={sel === null}>{d}</button>)}
+          {wrong && <div className="cm-wrong">{ja ? "どこかがちがうよ。赤いマスをタップして数字をもどそう。" : "Something's off — tap a red square to take its digit back."}</div>}
+        </div>
+      )}
+    </div>
+  );
 }
