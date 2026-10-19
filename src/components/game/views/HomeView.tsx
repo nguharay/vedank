@@ -4,7 +4,7 @@ import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
 import { todaysGame, bonusStopGame, type HomeGameId } from "../homeGames";
 import { useTown, townRank, RANKS } from "../town";
 import { useDragon, stageOf, nextStage, moodOf, nameDragon, DAILY_GOAL } from "../dragon";
-import { Mandala, Mascot } from "../Mascot";
+import { Mascot } from "../Mascot";
 import { monsterFor } from "../monsters";
 import type { ShareFocus } from "../ShareCard";
 import type { UIDict } from "../i18n";
@@ -179,26 +179,6 @@ export function HomeView({
 
   return (
     <section className="view active home-view">
-      <div className="unit-banner">
-        <svg className="mandala" viewBox="0 0 100 100"><Mandala stroke="#fff" /></svg>
-        <div className="mascot"><Mascot mood="happy" /></div>
-        <div className="eyebrow">{t.home.eyebrow}</div>
-        <h1>{t.home.title}</h1>
-        <div className="home-byline">
-          <img src="/brand/vedank-mark.png" alt="" />
-          <span>{t.home.brand}</span>
-        </div>
-        <button className="levelrow levelrow-share" onClick={() => onShare("level")} aria-label={`${t.share.statLevel} ${li.level} — ${t.share.shareBtn}`}>
-          <span>{t.home.level} {li.level} · {rank}</span>
-          <span className="levelrow-right">{li.into} / 150 <span className="levelrow-share-ico" aria-hidden="true">📤</span></span>
-        </button>
-        <div className="bar-track"><div className="bar-fill" style={{ width: `${li.pct}%` }} /></div>
-        <div className="hero-stats">
-          <span>👾 {lang === "ja" ? "たおしたモンスター" : "Monsters beaten"} <b className="mono">{TOPICS.reduce((a, tp) => a + topicProgressOf(progress, tp.id).cleared, 0)}</b>/{TOPICS.length * STAGE_COUNT}</span>
-          <span>👑 {lang === "ja" ? "制覇したボス" : "Bosses conquered"} <b className="mono">{TOPICS.filter((tp) => topicProgressOf(progress, tp.id).cleared >= STAGE_COUNT).length}</b></span>
-        </div>
-      </div>
-
       {/* Four short pages instead of one long scroll: the lessons come first. */}
       <div className="home-tabs" ref={tabsRef} role="tablist">
         {([
@@ -214,6 +194,19 @@ export function HomeView({
           </button>
         ))}
       </div>
+
+      {/* a slim level strip in place of the old banner: tap it to share */}
+      <button className="level-strip" onClick={() => onShare("level")} aria-label={`${t.share.statLevel} ${li.level} — ${t.share.shareBtn}`}>
+        <span className="level-strip-lv"><small>{t.home.level}</small><b className="mono">{li.level}</b></span>
+        <span className="level-strip-main">
+          <span className="level-strip-top"><span className="level-strip-rank">{rank}</span><span className="mono">{li.into} / 150</span></span>
+          <span className="bar-track"><span className="bar-fill" style={{ width: `${li.pct}%` }} /></span>
+        </span>
+        <span className="level-strip-stats">
+          <span>👾 <b className="mono">{TOPICS.reduce((a, tp) => a + topicProgressOf(progress, tp.id).cleared, 0)}</b></span>
+          <span>👑 <b className="mono">{TOPICS.filter((tp) => topicProgressOf(progress, tp.id).cleared >= STAGE_COUNT).length}</b></span>
+        </span>
+      </button>
 
       {tab === "learn" && (
         <>
