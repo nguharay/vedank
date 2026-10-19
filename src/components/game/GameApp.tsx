@@ -2059,13 +2059,6 @@ export function GameApp({
       best: gameBests.crossword ?? 0, start: shelf(() => setView("crossword"), "crossword"),
     },
     {
-      id: "crossmath", icon: "➕", tint: "var(--teal, #0A7E92)",
-      name: "Cross Math", nameJa: "クロス計算",
-      blurb: "Digits 1–9, once each. Make every row and column equation true.",
-      blurbJa: "1〜9を1回ずつ。たて・よこの式がぜんぶ合うように。",
-      best: gameBests.crossmath ?? 0, start: shelf(() => setView("crossmath"), "crossmath"),
-    },
-    {
       id: "match", icon: "🃏", tint: "var(--sky2)",
       name: "Number Match", nameJa: "ナンバーマッチ",
       blurb: "Pair each sum with its answer.", blurbJa: "式と答えをペアにしよう。",
@@ -4534,6 +4527,15 @@ export function GameApp({
                 ? "計算を使ったミニゲーム。アカウントがなくても、オフラインでも遊べます。"
                 : "Quick games built on the same maths. No account needed, and they work offline."}
             </p>
+            <button className="ttt-card crossmath-feature" onClick={shelf(() => setView("crossmath"), "crossmath")}>
+              <span className="feature-art crossmath" aria-hidden="true"><i>7</i><i>+</i><i>5</i><i>×</i><i></i><i>=</i><i>=</i><i></i><i>12</i></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "➕ クロス計算" : "➕ Cross Math"}<span className="feature-new">NEW</span></span>
+                <span className="ttt-card-sub">{lang === "ja" ? "たて・よこの式がぜんぶ合うように、数字をマスに入れよう。22種類の形！" : "Fill the squares so every row and column equation works. 22 puzzle shapes!"}</span>
+                {(gameBests.crossmath ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} Lv.{gameBests.crossmath}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
             <button className={`ttt-card ninja-feature${isUnlocked("ninja") ? "" : " prog-locked"}`} onClick={shelf(() => setView("ninja"), "ninja")}>
               <span className="feature-art ninja" aria-hidden="true"><b className="fa-fruit">🍉</b><b className="fa-slash">／</b></span>
               <span className="ttt-card-body">
