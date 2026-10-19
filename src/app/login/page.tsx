@@ -12,7 +12,7 @@ import { useLang } from "@/components/game/i18n";
 const COPY = {
   en: {
     kicker: "SUTRA SPRINT",
-    hero: "Indian-style mental maths, as a game",
+    hero: "A Mental Math Game - Think Fast. Play Smart. Have Fun!",
     pitch:
       "A game that doesn't just teach Indian calculation methods — it teaches you to see mathematics differently.",
     title: "Welcome back",
