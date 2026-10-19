@@ -23,7 +23,7 @@ function steps(guest: boolean): Step[] {
     { sel: ".continue-card", icon: "▶️", title: ["Start here", "まずはここから"],
       text: ["Tap this to start your next lesson battle.", "ここをタップすると、つぎのレッスンバトルがはじまるよ。"] },
     { sel: ".dock-play", icon: "🎮", title: ["Games", "ゲーム"],
-      text: ["All the maths games are here. A few are open at first — finish games to unlock more 🔓", "ゲームはここ！さいしょは少しだけ。クリアすると新しいゲームがアンロックされるよ🔓"] },
+      text: ["All the maths games are here — 20+ of them. Finish a game for the first time to win a Great Minds card 🃏", "ゲームはここ！20こ以上あるよ。はじめてクリアすると偉人カードがもらえる🃏"] },
     { sel: ".home-tabs .home-tab:nth-child(2)", icon: "🎁", title: ["Come back every day", "毎日ひらこう"],
       text: ["Open the app each day for a gift and a new Great Minds card 🃏 — plus a daily challenge.", "毎日アプリを開くとプレゼント🎁と偉人カード🃏がもらえる。デイリーチャレンジもあるよ。"] },
   ];
