@@ -863,74 +863,162 @@ export function buildNinjaWave(wave: number): NinjaWave {
 }
 
 /* ---------- ➕✖️ Cross Math ----------
-   A 3×3 grid of the digits 1–9 (each once) with an operator between every
-   pair of neighbours. Each row reads left to right, each column top to
-   bottom, and the result is shown after "=". Some digits are missing: put
-   the leftover digits back so all six equations hold. Early levels use + and
-   − with few blanks; later ones add × and ÷ and more blanks. */
+   Crossword-style equations. A puzzle is a SHAPE: a set of 5-tile strips
+   (number · op · number · = · number) laid across or down a grid, sharing
+   number tiles where they cross — letters like L, T, H, A, E, the square
+   frame, a two-frame staircase, 日 and 田. Numbers are found by walking the
+   strips in order and solving each against what is already fixed; a shape
+   whose cycle doesn't close is simply redrawn. The blanks' numbers go to a
+   shuffled tray. Levels add × and ÷, bigger numbers, bigger shapes and more
+   blanks. */
 export type CrossMathOp = "+" | "−" | "×" | "÷";
+export type CmCell = { t: "num"; v: number; blank: boolean } | { t: "op"; o: CrossMathOp } | { t: "eq" } | null;
 export type CrossMath = {
-  cells: number[];            /* 9 digits, row-major */
-  rowOps: CrossMathOp[][];    /* [row][0|1] */
-  colOps: CrossMathOp[][];    /* [col][0|1] */
-  rowRes: number[];
-  colRes: number[];
-  blanks: number[];           /* indexes of the hidden cells */
+  w: number; h: number;
+  cells: CmCell[];            /* row-major, w*h */
+  blanks: number[];           /* indexes of hidden number cells */
+  eqs: number[][];            /* [a, op, b, eq, c] cell indexes, one per strip */
+  shape: string;
 };
-const CM_LEVELS: { ops: CrossMathOp[]; blanks: number }[] = [
-  { ops: ["+", "−"], blanks: 2 },
-  { ops: ["+", "−"], blanks: 3 },
-  { ops: ["+", "−", "×"], blanks: 3 },
-  { ops: ["+", "−", "×"], blanks: 4 },
-  { ops: ["+", "−", "×", "÷"], blanks: 4 },
-  { ops: ["+", "−", "×", "÷"], blanks: 5 },
-  { ops: ["+", "−", "×", "÷"], blanks: 6 },
-  { ops: ["+", "−", "×", "÷"], blanks: 7 },
+/* a strip: direction, top-left row/col (in tiles) */
+type Strip = ["H" | "V", number, number];
+export const CM_SHAPES: Record<string, Strip[]> = {
+  /* small: 2–3 strips */
+  L: [["V", 0, 0], ["H", 4, 0]],
+  T: [["H", 0, 0], ["V", 0, 2]],
+  plus: [["H", 2, 0], ["V", 0, 2]],
+  C: [["V", 0, 0], ["H", 0, 0], ["H", 4, 0]],
+  U: [["V", 0, 0], ["V", 0, 4], ["H", 4, 0]],
+  S: [["H", 0, 0], ["V", 0, 4], ["H", 4, 4]],
+  F: [["V", 0, 0], ["H", 0, 0], ["H", 2, 0]],
+  H: [["V", 0, 0], ["V", 0, 4], ["H", 2, 0]],
+  /* medium: 4–5 strips */
+  square: [["H", 0, 0], ["V", 0, 0], ["V", 0, 4], ["H", 4, 0]],
+  A: [["H", 0, 0], ["V", 0, 0], ["V", 0, 4], ["H", 2, 0]],
+  E: [["V", 0, 0], ["H", 0, 0], ["H", 2, 0], ["H", 4, 0]],
+  P: [["H", 0, 0], ["V", 0, 0], ["V", 0, 4], ["H", 4, 0], ["V", 4, 0]],
+  h: [["V", 0, 0], ["V", 4, 0], ["H", 4, 0], ["V", 4, 4]],
+  comb: [["H", 0, 0], ["V", 0, 0], ["V", 0, 2], ["V", 0, 4]],
+  ladder: [["V", 0, 0], ["V", 0, 4], ["H", 0, 0], ["H", 2, 0], ["H", 4, 0]],
+  bigT: [["H", 0, 0], ["H", 0, 4], ["V", 0, 4], ["V", 4, 4]],
+  bigPlus: [["H", 4, 0], ["H", 4, 4], ["V", 0, 4], ["V", 4, 4]],
+  /* large: 6+ strips, interlocking */
+  pinwheel: [["H", 0, 2], ["V", 0, 6], ["H", 4, 2], ["V", 4, 2], ["H", 8, 2], ["V", 2, 4]],
+  "日": [["H", 0, 0], ["V", 0, 0], ["V", 0, 4], ["H", 4, 0], ["V", 4, 0], ["V", 4, 4], ["H", 8, 0]],
+  stairs: [["H", 0, 0], ["V", 0, 0], ["V", 0, 4], ["H", 4, 0], ["H", 4, 4], ["V", 4, 4], ["V", 4, 8], ["H", 8, 4]],
+  "目": [["V", 0, 0], ["V", 0, 4], ["V", 4, 0], ["V", 4, 4], ["H", 0, 0], ["H", 2, 0], ["H", 4, 0], ["H", 6, 0], ["H", 8, 0]],
+  "田": [["H", 0, 0], ["H", 0, 4], ["H", 4, 0], ["H", 4, 4], ["H", 8, 0], ["H", 8, 4], ["V", 0, 0], ["V", 0, 4], ["V", 0, 8], ["V", 4, 0], ["V", 4, 4], ["V", 4, 8]],
+};
+const CM_LEVELS: { shapes: string[]; ops: CrossMathOp[]; max: number; blanks: number }[] = [
+  { shapes: ["L", "T", "plus", "C", "S"], ops: ["+", "−"], max: 20, blanks: 2 },
+  { shapes: ["L", "T", "plus", "C", "U", "S", "F", "H"], ops: ["+", "−"], max: 30, blanks: 3 },
+  { shapes: ["U", "S", "F", "H", "square", "comb"], ops: ["+", "−", "×"], max: 40, blanks: 3 },
+  { shapes: ["square", "A", "E", "P", "h", "comb", "ladder", "bigT"], ops: ["+", "−", "×"], max: 40, blanks: 4 },
+  { shapes: ["A", "E", "P", "h", "ladder", "bigT", "bigPlus", "日"], ops: ["+", "−", "×", "÷"], max: 60, blanks: 5 },
+  { shapes: ["E", "ladder", "bigPlus", "pinwheel", "日", "stairs"], ops: ["+", "−", "×", "÷"], max: 80, blanks: 6 },
+  { shapes: ["pinwheel", "日", "stairs", "目", "田"], ops: ["+", "−", "×", "÷"], max: 99, blanks: 8 },
+  { shapes: ["pinwheel", "stairs", "目", "田"], ops: ["+", "−", "×", "÷"], max: 99, blanks: 10 },
 ];
-/* left to right, no precedence — as the grid reads; null if not a positive whole number */
-export function cmEval(a: number, op1: CrossMathOp, b: number, op2: CrossMathOp, c: number): number | null {
-  const step = (x: number, op: CrossMathOp, y: number): number | null => {
-    if (op === "+") return x + y;
-    if (op === "−") return x - y > 0 ? x - y : null;
-    if (op === "×") return x * y;
-    return y !== 0 && x % y === 0 ? x / y : null;
-  };
-  const m = step(a, op1, b);
-  return m === null ? null : step(m, op2, c);
+function cmApply(a: number, o: CrossMathOp, b: number): number | null {
+  if (o === "+") return a + b;
+  if (o === "−") return a - b > 0 ? a - b : null;
+  if (o === "×") return a * b;
+  return b !== 0 && a % b === 0 ? a / b : null;
 }
-export function buildCrossMath(level: number): CrossMath {
-  const cfg = CM_LEVELS[Math.min(CM_LEVELS.length, Math.max(1, level)) - 1];
-  const pickOp = () => cfg.ops[Math.floor(Math.random() * cfg.ops.length)];
-  for (let attempt = 0; attempt < 4000; attempt++) {
-    const cells = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
-    const rowOps = [0, 1, 2].map(() => [pickOp(), pickOp()]);
-    const colOps = [0, 1, 2].map(() => [pickOp(), pickOp()]);
-    const rowRes: number[] = [], colRes: number[] = [];
-    let ok = true;
-    for (let r = 0; r < 3 && ok; r++) {
-      const v = cmEval(cells[r * 3], rowOps[r][0], cells[r * 3 + 1], rowOps[r][1], cells[r * 3 + 2]);
-      if (v === null || v > 99) ok = false; else rowRes.push(v);
+const cmOk = (v: number | null, max: number): v is number => v !== null && Number.isInteger(v) && v >= 1 && v <= max;
+/* solve one strip against what is fixed; returns [a, op, b, c] or null */
+function cmSolveStrip(a: number | null, b: number | null, c: number | null, ops: CrossMathOp[], max: number): [number, CrossMathOp, number, number] | null {
+  const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const shuffled = [...ops].sort(() => Math.random() - 0.5);
+  const divisors = (x: number) => { const d = []; for (let i = 2; i <= Math.min(x, 12); i++) if (x % i === 0) d.push(i); return d; };
+  for (const o of shuffled) {
+    const mul = o === "×" || o === "÷";
+    if (a !== null && b !== null && c !== null) { if (cmApply(a, o, b) === c) return [a, o, b, c]; continue; }
+    if (a !== null && b !== null) { const v = cmApply(a, o, b); if (cmOk(v, max) && !(mul && (a === 1 || b === 1))) return [a, o, b, v]; continue; }
+    if (a !== null && c !== null) {
+      const v = o === "+" ? c - a : o === "−" ? a - c : o === "×" ? (a !== 0 && c % a === 0 ? c / a : null) : c !== 0 && a % c === 0 ? a / c : null;
+      if (cmOk(v, max) && !(mul && v === 1)) return [a, o, v, c]; continue;
     }
-    for (let c = 0; c < 3 && ok; c++) {
-      const v = cmEval(cells[c], colOps[c][0], cells[3 + c], colOps[c][1], cells[6 + c]);
-      if (v === null || v > 99) ok = false; else colRes.push(v);
+    if (b !== null && c !== null) {
+      const v = o === "+" ? c - b : o === "−" ? c + b : o === "×" ? (b !== 0 && c % b === 0 ? c / b : null) : c * b;
+      if (cmOk(v, max) && !(mul && (b === 1 || v === 1))) return [v, o, b, c]; continue;
+    }
+    if (a !== null) {
+      let y: number | null = null;
+      if (o === "+" && a < max) y = ri(1, Math.min(20, max - a));
+      if (o === "−" && a > 1) y = ri(1, Math.min(20, a - 1));
+      if (o === "×" && a >= 2 && a * 2 <= max) y = ri(2, Math.min(12, Math.floor(max / a)));
+      if (o === "÷") { const d = divisors(a); if (d.length) y = d[ri(0, d.length - 1)]; }
+      if (y !== null) { const v = cmApply(a, o, y); if (cmOk(v, max)) return [a, o, y, v]; }
+      continue;
+    }
+    if (c !== null) {
+      if (o === "+" && c >= 2) { const x = ri(1, c - 1); return [x, o, c - x, c]; }
+      if (o === "−" && c < max) { const y = ri(1, Math.min(20, max - c)); return [c + y, o, y, c]; }
+      if (o === "×") { const d = divisors(c); if (d.length) { const y = d[ri(0, d.length - 1)]; if (c / y >= 2) return [c / y, o, y, c]; } }
+      if (o === "÷" && c * 2 <= max) { const y = ri(2, Math.min(12, Math.floor(max / c))); return [c * y, o, y, c]; }
+      continue;
+    }
+    if (b !== null) {
+      if (o === "+" && b < max) { const x = ri(1, Math.min(20, max - b)); return [x, o, b, x + b]; }
+      if (o === "−" && b < max) { const x = ri(b + 1, Math.min(max, b + 20)); return [x, o, b, x - b]; }
+      if (o === "×" && b >= 2 && b * 2 <= max) { const x = ri(2, Math.min(12, Math.floor(max / b))); return [x, o, b, x * b]; }
+      if (o === "÷" && b >= 2 && b * 2 <= max) { const q = ri(2, Math.min(12, Math.floor(max / b))); return [b * q, o, b, q]; }
+      continue;
+    }
+    /* nothing fixed yet */
+    const x = ri(2, Math.min(mul ? 12 : 20, max));
+    const r = cmSolveStrip(x, null, null, [o], max);
+    if (r) return r;
+  }
+  return null;
+}
+export function buildCrossMath(level: number, shapeName?: string, avoid?: string): CrossMath {
+  const cfg = CM_LEVELS[Math.min(CM_LEVELS.length, Math.max(1, level)) - 1];
+  const pool = cfg.shapes.filter((n) => n !== avoid);
+  const name = shapeName && CM_SHAPES[shapeName] ? shapeName : (pool.length ? pool : cfg.shapes)[Math.floor(Math.random() * (pool.length ? pool : cfg.shapes).length)];
+  const strips = CM_SHAPES[name];
+  const h = Math.max(...strips.map(([d, r]) => r + (d === "V" ? 5 : 1)));
+  const w = Math.max(...strips.map(([d, , c]) => c + (d === "H" ? 5 : 1)));
+  const at = (r: number, c: number) => r * w + c;
+  const stripIdx = strips.map(([d, r, c]) => [0, 1, 2, 3, 4].map((k) => (d === "H" ? at(r, c + k) : at(r + k, c))));
+  for (let attempt = 0; attempt < 6000; attempt++) {
+    const val = new Map<number, number>();
+    const opAt = new Map<number, CrossMathOp>();
+    let ok = true;
+    /* random strip order each try, so cycles close from different sides */
+    const order = [...stripIdx].sort(() => Math.random() - 0.5);
+    for (const [ia, io, ib, , ic] of order) {
+      const r = cmSolveStrip(val.get(ia) ?? null, val.get(ib) ?? null, val.get(ic) ?? null, cfg.ops, cfg.max);
+      if (!r) { ok = false; break; }
+      val.set(ia, r[0]); opAt.set(io, r[1]); val.set(ib, r[2]); val.set(ic, r[3]);
     }
     if (!ok) continue;
-    /* at least one × or ÷ on levels that allow them, so they are not all + − */
-    if (cfg.ops.length > 2 && ![...rowOps, ...colOps].flat().some((o) => o === "×" || o === "÷")) continue;
-    const idx = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
-    return { cells, rowOps, colOps, rowRes, colRes, blanks: idx.slice(0, cfg.blanks).sort((a, b) => a - b) };
+    const usedOps = new Set(opAt.values());
+    if (cfg.ops.length > 2 && !usedOps.has("×") && !usedOps.has("÷")) continue;
+    const cells: CmCell[] = Array(w * h).fill(null);
+    for (const [ia, io, ib, ie, ic] of stripIdx) {
+      cells[ia] = { t: "num", v: val.get(ia)!, blank: false }; cells[ib] = { t: "num", v: val.get(ib)!, blank: false }; cells[ic] = { t: "num", v: val.get(ic)!, blank: false };
+      cells[io] = { t: "op", o: opAt.get(io)! }; cells[ie] = { t: "eq" };
+    }
+    const numIdx = [...val.keys()];
+    for (let i = numIdx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [numIdx[i], numIdx[j]] = [numIdx[j], numIdx[i]]; }
+    const blanks = numIdx.slice(0, Math.min(cfg.blanks, Math.max(1, numIdx.length - 2))).sort((x, y) => x - y);
+    blanks.forEach((i) => { (cells[i] as { blank: boolean }).blank = true; });
+    return { w, h, cells, blanks, eqs: stripIdx, shape: name };
   }
-  /* practically unreachable; a tiny fixed puzzle keeps the game alive */
-  return { cells: [1, 2, 3, 4, 5, 6, 7, 8, 9], rowOps: [["+", "+"], ["+", "+"], ["+", "+"]], colOps: [["+", "+"], ["+", "+"], ["+", "+"]], rowRes: [6, 15, 24], colRes: [12, 15, 18], blanks: [0, 4] };
+  /* practically unreachable: the smallest shape with plus only */
+  return buildCrossMath(1, "L");
 }
-/* every row and column holds with these cells */
-export function cmSolved(p: CrossMath, cells: (number | null)[]): boolean {
-  if (cells.some((v) => v === null)) return false;
-  const g = cells as number[];
-  for (let r = 0; r < 3; r++) if (cmEval(g[r * 3], p.rowOps[r][0], g[r * 3 + 1], p.rowOps[r][1], g[r * 3 + 2]) !== p.rowRes[r]) return false;
-  for (let c = 0; c < 3; c++) if (cmEval(g[c], p.colOps[c][0], g[3 + c], p.colOps[c][1], g[6 + c]) !== p.colRes[c]) return false;
-  return true;
+/* does one equation hold with these numbers? null while it has a blank */
+export function cmLineOk(p: CrossMath, filled: (number | null)[], eq: number[]): boolean | null {
+  const [ia, io, ib, , ic] = eq;
+  const a = filled[ia], b = filled[ib], c = filled[ic];
+  if (a === null || b === null || c === null) return null;
+  const op = p.cells[io];
+  if (!op || op.t !== "op") return false;
+  return cmApply(a, op.o, b) === c;
+}
+export function cmSolved(p: CrossMath, filled: (number | null)[]): boolean {
+  return p.eqs.every((eq) => cmLineOk(p, filled, eq) === true);
 }

@@ -9,7 +9,7 @@ import type { useSound } from "../useSound";
 import {
   buildKonbiniQ, konbiniLevel, konbiniPatience, type KonbiniQ,
   buildCrossword, type Crossword,
-  buildCrossMath, cmSolved, type CrossMath,
+  buildCrossMath, cmSolved, cmLineOk, type CrossMath,
 } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
@@ -348,83 +348,81 @@ function FragmentRow({ children }: { children: React.ReactNode }) {
 }
 
 /* ---------- ➕✖️ Cross Math ----------
-   Tap an empty square, then a digit from the tray; tapping a filled square
-   returns its digit. When every square is filled the grid checks itself;
-   wrong squares are marked so they can be swapped. Each solved grid is the
-   next level. */
+   Crossword-style: tap an empty square, then a number from the tray (or
+   drag one in). Every equation shows green the moment it holds and red when
+   it doesn't, so a wrong line can be fixed at once. Solve all for the next
+   level. */
 const CROSSMATH_KEY = "sutraSprint.crossMathBest";
+const CM_INTRO: Record<number, [string, string]> = {
+  3: ["Level 3: × joins in!", "レベル3：✖ が登場！"],
+  4: ["Level 4: two frames, linked at the corner", "レベル4：2つのわくが角でつながる"],
+  5: ["Level 5: ÷ joins in!", "レベル5：➗ が登場！"],
+};
 
 export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
   const ja = lang === "ja";
   const [level, setLevel] = useState(1);
   const [p, setP] = useState<CrossMath | null>(null);
-  const [cells, setCells] = useState<(number | null)[]>([]);
+  const [filled, setFilled] = useState<(number | null)[]>([]);
+  const [tray, setTray] = useState<number[]>([]);          /* numbers still to place */
   const [sel, setSel] = useState<number | null>(null);
-  const [wrong, setWrong] = useState(false);
   const [solved, setSolved] = useState(false);
   const [tries, setTries] = useState(0);
   const [best, setBest] = useState(() => readBest(CROSSMATH_KEY));
+  const [popped, setPopped] = useState<number | null>(null);
 
-  function load(lv: number) {
-    const g = buildCrossMath(lv);
-    setLevel(lv); setP(g); setCells(g.cells.map((v, i) => (g.blanks.includes(i) ? null : v)));
-    setSel(g.blanks[0] ?? null); setWrong(false); setSolved(false); setTries(0);
+  function setup(g: CrossMath, lv: number) {
+    setLevel(lv); setP(g);
+    setFilled(g.cells.map((c) => (c && c.t === "num" && !c.blank ? c.v : null)));
+    const t = g.blanks.map((i) => (g.cells[i] as { v: number }).v);
+    for (let i = t.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [t[i], t[j]] = [t[j], t[i]]; }
+    setTray(t); setSel(g.blanks[0] ?? null); setSolved(false); setTries(0);
   }
   const started = useRef(false);
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    const g = buildCrossMath(1);
-    /* random, so built after mount rather than during render */
-    setP(g); setCells(g.cells.map((v, i) => (g.blanks.includes(i) ? null : v))); setSel(g.blanks[0] ?? null);
-  }, []);
+    /* random, so built after mount rather than during render (?cmshape=田 forces a shape for review) */
+    let force: string | undefined;
+    try { force = new URLSearchParams(window.location.search).get("cmshape") || undefined; } catch {}
+    setup(buildCrossMath(force ? 7 : 1, force), force ? 7 : 1);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!p) return <div className="rg" />;
-  const tray = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => !cells.includes(d));
+  const lineOk = p.eqs.map((eq) => cmLineOk(p, filled, eq));
+  /* each blank's state from the lines it sits on */
+  const stateOf = (i: number): "" | "good" | "bad" => {
+    if (filled[i] === null) return "";
+    const lines = p.eqs.filter((eq) => eq[0] === i || eq[2] === i || eq[4] === i).map((eq) => lineOk[p.eqs.indexOf(eq)]);
+    if (lines.some((l) => l === false)) return "bad";
+    if (lines.some((l) => l === true)) return "good";
+    return "";
+  };
 
-  function place(d: number) {
-    if (sel === null || solved || !p) return;
-    const next = [...cells]; next[sel] = d;
-    setCells(next); setWrong(false); sound.click();
+  function place(v: number, at = sel) {
+    if (at === null || solved || !p || !p.blanks.includes(at)) return;
+    const next = [...filled];
+    const prev = next[at];
+    next[at] = v;
+    const t = [...tray]; t.splice(t.indexOf(v), 1); if (prev !== null) t.push(prev);
+    setFilled(next); setTray(t); setPopped(at); setTimeout(() => setPopped((x) => (x === at ? null : x)), 350); sound.click();
     const empty = p.blanks.find((i) => next[i] === null);
     if (empty !== undefined) { setSel(empty); return; }
     if (cmSolved(p, next)) {
       setSolved(true); setSel(null); sound.stageClear(); haptic([15, 30, 15]); onCorrect?.(p.blanks.length);
       if (level > best) { writeBest(CROSSMATH_KEY, level); setBest(level); }
       if (level % 3 === 0) celebrate();
-    } else { setWrong(true); setTries((t) => t + 1); sound.wrong(); haptic(30); }
+    } else { setTries((n) => n + 1); sound.wrong(); haptic(30); setSel(null); }
   }
   function tapCell(i: number) {
     if (solved || !p || !p.blanks.includes(i)) return;
-    if (cells[i] !== null) { const next = [...cells]; next[i] = null; setCells(next); setWrong(false); }
+    if (filled[i] !== null) { const next = [...filled]; setTray([...tray, filled[i]!]); next[i] = null; setFilled(next); }
     setSel(i); sound.click();
   }
+  function resetAll() { if (p) setup(p, level); }
+  /* the shape's name, for the small label on the board */
 
-  const g = cells;
-  /* the 7×7 board: numbers, operators, "=", results */
-  const board: React.ReactNode[] = [];
-  const num = (i: number) => {
-    const blank = p.blanks.includes(i);
-    return (
-      <button key={`n${i}`} className={`cm-cell${blank ? " blank" : ""}${sel === i ? " sel" : ""}${wrong && blank ? " wrong" : ""}${solved && blank ? " ok" : ""}`}
-        onClick={() => tapCell(i)} disabled={!blank} aria-label={blank ? (ja ? "空きマス" : "blank") : String(g[i])}>
-        <span className="mono">{g[i] ?? ""}</span>
-      </button>
-    );
-  };
-  const op = (k: string, o: string) => <span key={k} className="cm-op mono">{o}</span>;
-  const eq = (k: string) => <span key={k} className="cm-eq mono">=</span>;
-  const res = (k: string, v: number) => <span key={k} className="cm-res mono">{v}</span>;
-  const gap = (k: string) => <span key={k} className="cm-gap" />;
-  for (let r = 0; r < 3; r++) {
-    board.push(num(r * 3), op(`ro${r}0`, p.rowOps[r][0]), num(r * 3 + 1), op(`ro${r}1`, p.rowOps[r][1]), num(r * 3 + 2), eq(`re${r}`), res(`rr${r}`, p.rowRes[r]));
-    if (r < 2) {
-      board.push(op(`co0${r}`, p.colOps[0][r]), gap(`g${r}a`), op(`co1${r}`, p.colOps[1][r]), gap(`g${r}b`), op(`co2${r}`, p.colOps[2][r]), gap(`g${r}c`), gap(`g${r}d`));
-    }
-  }
-  board.push(eq("ce0"), gap("gea"), eq("ce1"), gap("geb"), eq("ce2"), gap("gec"), gap("ged"));
-  board.push(res("cr0", p.colRes[0]), gap("gra"), res("cr1", p.colRes[1]), gap("grb"), res("cr2", p.colRes[2]), gap("grc"), gap("grd"));
-
+  const intro = CM_INTRO[level];
   return (
     <div className="rg">
       <div className="match-head">
@@ -432,19 +430,46 @@ export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
         <div className="match-stat"><span className="match-stat-k">{ja ? "まちがい" : "Retries"}</span><span className="match-stat-v mono">{tries}</span></div>
         <div className="match-stat"><span className="match-stat-k">{ja ? "ベスト" : "Best"}</span><span className="match-stat-v mono">{best ? `Lv.${best}` : "–"}</span></div>
       </div>
-      <p className="match-hint">{ja ? "たて・よこの式が合うように、のこりの数字をマスに入れよう。左から右、上から下の順に計算するよ。" : "Put the leftover digits in so every row and column equation works. Read left to right, top to bottom."}</p>
-      <div className="cm-grid">{board}</div>
+      {intro && !solved && <div className="cm-intro">✨ {ja ? intro[1] : intro[0]}</div>}
+
+      <div className="cm-board">
+        <div className="cm-grid" style={{ gridTemplateColumns: `repeat(${p.w}, 1fr)` }}>
+          {p.cells.map((c, i) => {
+            if (!c) return <span key={i} className="cm-empty" />;
+            if (c.t === "op") return <span key={i} className="cm-op" data-op={c.o}>{c.o}</span>;
+            if (c.t === "eq") return <span key={i} className="cm-eq">=</span>;
+            if (!c.blank) return <span key={i} className="cm-num mono">{c.v}</span>;
+            const st = stateOf(i);
+            return (
+              <button key={i} className={`cm-cell${sel === i ? " sel" : ""}${st ? ` ${st}` : ""}${solved ? " ok" : ""}${popped === i ? " pop" : ""}`}
+                onClick={() => tapCell(i)}
+                onDragOver={(e) => { if (!solved) e.preventDefault(); }}
+                onDrop={(e) => { e.preventDefault(); const v = Number(e.dataTransfer.getData("text/plain")); if (v) place(v, i); }}
+                aria-label={filled[i] === null ? (ja ? "空きマス" : "blank") : String(filled[i])}>
+                <span className="mono">{filled[i] ?? ""}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {solved ? (
         <div className="match-done">
           <div className="match-done-title">{tries === 0 ? (ja ? "パーフェクト！" : "Perfect!") : (ja ? "とけた！" : "Solved!")}</div>
           <div className="match-done-line">{ja ? `次はレベル ${level + 1}` : `Next: level ${level + 1}`}</div>
-          <button className="btn btn-primary match-again" onClick={() => load(level + 1)}>{ja ? "次のパズル ▶" : "Next puzzle ▶"}</button>
+          <button className="btn btn-primary match-again" onClick={() => setup(buildCrossMath(level + 1, undefined, p.shape), level + 1)}>{ja ? "次のパズル ▶" : "Next puzzle ▶"}</button>
         </div>
       ) : (
-        <div className="cm-tray">
-          {tray.map((d) => <button key={d} className="cross-key mono" onClick={() => place(d)} disabled={sel === null}>{d}</button>)}
-          {wrong && <div className="cm-wrong">{ja ? "どこかがちがうよ。赤いマスをタップして数字をもどそう。" : "Something's off — tap a red square to take its digit back."}</div>}
-        </div>
+        <>
+          <div className="cm-tray" aria-label={ja ? "のこりの数字" : "Numbers left"}>
+            {tray.map((v, k) => (
+              <button key={`${v}-${k}`} className="cm-tile mono" draggable onDragStart={(e) => e.dataTransfer.setData("text/plain", String(v))} onClick={() => place(v)} disabled={sel === null}>{v}</button>
+            ))}
+            {tray.length === 0 && <span className="cm-tray-empty">{ja ? "赤いマスをタップして数字をもどそう" : "Tap a red square to take its number back"}</span>}
+          </div>
+          <p className="match-hint">{sel === null && tray.length > 0 ? (ja ? "空きマスをタップしてから数字をえらぼう" : "Tap an empty square, then a number") : (ja ? "数字をタップ（またはドラッグ）してマスに入れよう" : "Tap (or drag) a number into the square")}</p>
+          <button className="cm-reset" onClick={resetAll}>↺ {ja ? "はじめから" : "Reset"}</button>
+        </>
       )}
     </div>
   );
