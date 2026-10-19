@@ -112,7 +112,7 @@ export const UNLOCK_AT: Record<string, number> = {
   castle: 4, memory: 4, lastdigit: 4,
   konbini: 6, odd: 6, digitsum: 6,
   rhythm: 9, sortg: 9, div9: 9,
-  crossword: 12, sq5: 12, x11: 12, crossmath: 12,
+  crossword: 12, sq5: 12, x11: 12, crossmath: 0,
   race: 15, sprint: 15, estimate: 15,
 };
 export const GAME_NAMES: Record<string, [string, string]> = {

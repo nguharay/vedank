@@ -4176,3 +4176,11 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .cm-tile:disabled{ opacity:.45; cursor:default; }
 .cm-tray-empty{ font-size:12.5px; font-weight:800; color:#c0392b; align-self:center; }
 .cm-reset{ display:block; margin:6px auto 0; background:none; border:none; font-family:inherit; font-size:12.5px; font-weight:800; color:var(--muted); cursor:pointer; text-decoration:underline; }
+
+/* Cross Math featured card: a tiny cream puzzle as its art */
+.ttt-card.crossmath-feature{ background:linear-gradient(130deg,#0a6f7e,#13a0a8 55%,#5cc6b0); }
+.feature-art.crossmath{ display:grid; grid-template-columns:repeat(3,1fr); gap:2px; padding:4px; background:#fbf7ec; }
+.feature-art.crossmath i{ display:grid; place-items:center; border-radius:3px; background:#fdf6df; border:1px solid #8f7f58; font:900 11px/1 "Baloo 2",system-ui,sans-serif; font-style:normal; color:#1d1b33; }
+.feature-art.crossmath i:nth-child(2), .feature-art.crossmath i:nth-child(4), .feature-art.crossmath i:nth-child(6), .feature-art.crossmath i:nth-child(7){ background:#f3e2a0; color:#4a3a10; }
+.feature-art.crossmath i:empty{ background:#fff; }
+.feature-new{ display:inline-block; margin-left:6px; vertical-align:middle; font-size:10px; font-weight:900; letter-spacing:.06em; padding:2px 7px; border-radius:999px; background:#ffcf3a; color:#1d1b33; }
