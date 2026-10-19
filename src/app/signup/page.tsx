@@ -101,7 +101,6 @@ export default function SignupPage() {
   const [country, setCountry] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
-  const [morePhone, setMorePhone] = useState(false);
   /* preselect the country from the phone's own region (ja-JP → Japan), so
      most players never touch the dropdown */
   useEffect(() => {
@@ -197,11 +196,6 @@ export default function SignupPage() {
             </select>
           </div>
 
-          {!morePhone ? (
-            <button type="button" className="field-more" onClick={() => setMorePhone(true)}>
-              ＋ {lang === "ja" ? "電話番号を追加（任意）" : "Add a phone number (optional)"}
-            </button>
-          ) : (
           <div className="field">
             <label htmlFor="phone">
               {c.phone} <span className="field-optional">{c.optional}</span>
@@ -232,7 +226,6 @@ export default function SignupPage() {
             </div>
             <p className="field-hint">{c.phoneHint}</p>
           </div>
-          )}
 
           <div className="field">
             <label htmlFor="password">{c.password}</label>

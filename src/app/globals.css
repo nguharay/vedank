@@ -4131,3 +4131,25 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 @keyframes streak-glow{ from{ transform:scale(.9); opacity:.6 } to{ transform:scale(1.15); opacity:1 } }
 .stat-flame.lit span{ animation:none; }
 @media (prefers-reduced-motion: reduce){ .streak-ico .streak-flame, .streak-ico .streak-core, .streak-ico .streak-glow{ animation:none; } }
+
+/* ======== Home: tabs on top, slim level strip ======== */
+.home-view .home-tabs{ margin-top:2px; }
+.level-strip{ width:100%; display:flex; align-items:center; gap:10px; margin:0 0 12px; padding:8px 12px; cursor:pointer; text-align:left; font-family:inherit; color:#fff;
+  border-radius:16px; border:3px solid var(--ink-line); box-shadow:0 3px 0 var(--ink-line);
+  background:linear-gradient(110deg, #7a2ad8, #ff2d7b 60%, #ff7a1a); }
+.level-strip:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--ink-line); }
+.level-strip-lv{ flex:0 0 auto; display:flex; flex-direction:column; align-items:center; line-height:1; padding:4px 10px; border-radius:12px; background:rgba(0,0,0,.22); }
+.level-strip-lv small{ font-size:9px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; opacity:.85; }
+.level-strip-lv b{ font-size:20px; font-weight:800; }
+.level-strip-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.level-strip-top{ display:flex; justify-content:space-between; font-size:12px; font-weight:800; }
+.level-strip-rank{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.level-strip .bar-track{ height:7px; display:block; }
+.level-strip .bar-fill{ display:block; }
+.level-strip-stats{ flex:0 0 auto; display:flex; flex-direction:column; gap:2px; font-size:11.5px; font-weight:800; text-align:right; }
+.level-strip-stats b{ font-size:12.5px; }
+
+/* sheets (League, Rank, Friends, Class): taller, and the whole sheet scrolls,
+   so a long table is never cut to a few rows under the status box */
+.sheet-panel{ max-height:min(84vh, calc(100dvh - 120px)); overflow-y:auto; overscroll-behavior:contain; }
+.leaderboard-panel{ max-height:none; overflow:visible; flex:none; }
