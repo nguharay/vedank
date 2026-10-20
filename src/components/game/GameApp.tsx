@@ -4020,32 +4020,6 @@ export function GameApp({
             </div>)}
             <div className="league-ends">⏳ {ja ? `今週のしめきりまで ${leagueTimeLeft(true)}` : `Week ends in ${leagueTimeLeft(false)}`}</div>
 
-            {/* you: on the table, or how to get on it */}
-            {league && (
-              <div className={`league-me${league.myRank > 0 ? "" : " off"}`}>
-                {league.myRank > 0 ? (
-                  <span>{ja ? <>あなたは <b>{league.myRank}位</b>・<b>⚡{league.myPoints}</b>
-                    {league.promote > 0 && league.myRank <= league.promote ? "　⬆️ 昇格ゾーン！" : league.relegate > 0 && league.myRank > league.size - league.relegate ? "　⬇️ 降格ゾーン…" : ""}</>
-                    : <>You are <b>#{league.myRank}</b> · <b>⚡{league.myPoints}</b>
-                    {league.promote > 0 && league.myRank <= league.promote ? " · ⬆️ promotion zone!" : league.relegate > 0 && league.myRank > league.size - league.relegate ? " · ⬇️ relegation zone" : ""}</>}</span>
-                ) : (
-                  <span>{ja ? "まだ今週の表にのっていません。今日のチャレンジを1回やると、のるよ！" : "You're not on this week's table yet — play today's Daily Challenge once to join!"}</span>
-                )}
-                {/* always a way to the Daily Challenge: play it, or see today's result */}
-                {!dailyStatus?.played ? (
-                  <button className="btn btn-primary league-go" onClick={() => { setLeagueOpen(false); startDaily(); }}>
-                    📅 {ja ? "今日のチャレンジをする ▶" : "Play today's challenge ▶"}
-                  </button>
-                ) : (
-                  <>
-                    <div className="league-done">✅ {ja ? "今日はプレイずみ。明日もやってポイントをふやそう！" : "Done for today — come back tomorrow for more points!"}</div>
-                    <button className="btn btn-ghost league-go" onClick={() => { setLeagueOpen(false); goHome(); setTimeout(() => window.dispatchEvent(new CustomEvent("vedank:hometab", { detail: "today" })), 150); }}>
-                      📅 {ja ? "今日のチャレンジを見る ▶" : "See today's challenge ▶"}
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
             <div className="leaderboard-panel">
               {leagueLoading && <div className="leaderboard-loading">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>}
               {!leagueLoading && league?.rows.length === 0 && (
