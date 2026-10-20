@@ -2,7 +2,6 @@
 
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
 import { todaysGame, bonusStopGame, type HomeGameId } from "../homeGames";
-import { useTown, townRank, RANKS } from "../town";
 import { useDragon, stageOf, nextStage, moodOf, nameDragon, DAILY_GOAL } from "../dragon";
 import { Mascot } from "../Mascot";
 import { monsterFor } from "../monsters";
@@ -540,11 +539,10 @@ export function HomeView({
       )}
       {tab === "world" && (
         <>
-      <p className="home-tabdesc">{lang === "ja" ? "正解でドラゴンが育ち、まちが発展する" : "Right answers grow your dragon and build your town"}</p>
+      <p className="home-tabdesc">{lang === "ja" ? "正解でドラゴンが育つよ" : "Right answers grow your dragon"}</p>
       <CollectionCard lang={lang} />
       <DragonCard lang={lang} />
 
-      <HomeTownCard lang={lang} onOpen={onOpenTown} guest={guest} />
       <InviteCard lang={lang} />
 
       {/* Quests used to have a full card here, but they already have their own
@@ -569,27 +567,6 @@ export function HomeView({
   );
 }
 
-/* Math Town on Home: coins in the bank and the town's rank, one tap away. */
-function HomeTownCard({ lang, onOpen, guest }: { lang: "en" | "ja"; onOpen: () => void; guest: boolean }) {
-  const town = useTown();
-  const r = RANKS[townRank(town) - 1];
-  const built = town.plots.filter(Boolean).length;
-  return (
-    <button className="town-card" onClick={onOpen}>
-      <span className="town-card-art" aria-hidden="true">🏠🏪🏯</span>
-      <span className="town-card-body">
-        <span className="town-card-name">{lang === "ja" ? `🏙️ 計算タウン · ${r.nameJa}` : `🏙️ Math Town · ${r.name}`}</span>
-        <span className="town-card-sub">
-          {built === 0
-            ? (lang === "ja" ? "正解1問 = 1🪙。まちをつくろう！" : "1 right answer = 1🪙. Start building!")
-            : (lang === "ja" ? `${built}つの建物 · タップして建てる` : `${built} buildings · tap to build more`)}
-        </span>
-        {!guest && <span className="town-card-friends">{lang === "ja" ? "👫 友だちのまちにも遊びに行けるよ" : "👫 Visit your friends' towns too"}</span>}
-      </span>
-      <span className="town-card-coins mono">🪙 {town.coins}</span>
-    </button>
-  );
-}
 
 /* The dragon pet: how fed it is today, its streak, and what it will grow
    into. Tap the name to rename it. */

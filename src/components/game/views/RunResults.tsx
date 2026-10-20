@@ -165,7 +165,7 @@ export function RunResults({
           <div className={`rr-loot${chest.jackpot ? " jackpot" : ""}`}>
             {chest.jackpot && <b>{ja ? "💥 大当たり ×3！" : "💥 JACKPOT ×3!"}</b>}
             <span className="mono">+{chest.coins} 🪙</span>
-            <small>{ja ? "町のコインに入ったよ" : "added to your Math Town"}</small>
+            <small>{ja ? "コインゲット！" : "coins collected!"}</small>
           </div>
         )}
 
