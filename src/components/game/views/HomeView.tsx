@@ -221,6 +221,27 @@ export function HomeView({
         <span className="continue-card-arrow">▶</span>
       </div>
 
+      {/* practice the tricks: timed drill and party tricks */}
+      <div className="blitz-cta" onClick={onOpenBlitz}>
+        <div className="blitz-cta-icon">⚡</div>
+        <div className="blitz-cta-info">
+          <div className="blitz-cta-title">{t.home.blitzTitle}</div>
+          <div className="blitz-cta-sub">{t.home.blitzSub}</div>
+        </div>
+        <span className="blitz-cta-arrow">›</span>
+      </div>
+
+      <div className="blitz-cta trick-cta" onClick={onOpenTricks}>
+        <div className="blitz-cta-icon">🔮</div>
+        <div className="blitz-cta-info">
+          <div className="blitz-cta-title">{lang === "ja" ? "マジックモード" : "Magic Tricks"}</div>
+          <div className="blitz-cta-sub">
+            {lang === "ja" ? "友だちをおどろかせる4つのネタ" : "Four tricks to amaze your friends"}
+          </div>
+        </div>
+        <span className="blitz-cta-arrow">›</span>
+      </div>
+
       {/* A brand-new player gets a plain-words intro: what this is, in three steps. */}
         {totalCleared === 0 && (
           <div className="howto">
@@ -500,25 +521,6 @@ export function HomeView({
         );
       })()}
 
-      <div className="blitz-cta" onClick={onOpenBlitz}>
-        <div className="blitz-cta-icon">⚡</div>
-        <div className="blitz-cta-info">
-          <div className="blitz-cta-title">{t.home.blitzTitle}</div>
-          <div className="blitz-cta-sub">{t.home.blitzSub}</div>
-        </div>
-        <span className="blitz-cta-arrow">›</span>
-      </div>
-
-      <div className="blitz-cta trick-cta" onClick={onOpenTricks}>
-        <div className="blitz-cta-icon">🔮</div>
-        <div className="blitz-cta-info">
-          <div className="blitz-cta-title">{lang === "ja" ? "マジックモード" : "Magic Tricks"}</div>
-          <div className="blitz-cta-sub">
-            {lang === "ja" ? "友だちをおどろかせる4つのネタ" : "Four tricks to amaze your friends"}
-          </div>
-        </div>
-        <span className="blitz-cta-arrow">›</span>
-      </div>
       {/* The Play tab shows three games; this says there are many more. */}
       <button className="arcade-card" onClick={onOpenGames}>
         <span className="arcade-card-art" aria-hidden="true">🥷🏃🍣🏯🎵🏪</span>
