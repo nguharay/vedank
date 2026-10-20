@@ -4566,14 +4566,6 @@ export function GameApp({
 
             {/* The two action games sit up top with the tic-tac-toe card —
                 they are the ones that feel most like a real game. */}
-            <button className="town-card" onClick={() => openTown(false)}>
-              <span className="town-card-art" aria-hidden="true">🏠🏪🏯</span>
-              <span className="town-card-body">
-                <span className="town-card-name">{lang === "ja" ? "🏙️ 計算タウン" : "🏙️ Math Town"}</span>
-                <span className="town-card-sub">{lang === "ja" ? "ゲームのコインで自分のまちをつくろう" : "Build your own town with coins from every game"}</span>
-              </span>
-              <span className="town-card-coins mono">🪙 {townState.coins}</span>
-            </button>
 
             <button className="daily-game" onClick={startDailyGame}>
               <span className="daily-game-tag">{lang === "ja" ? "今日のゲーム" : "GAME OF THE DAY"}</span>
