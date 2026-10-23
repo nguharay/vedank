@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { transition } from "./util";
+import { UiIcon, GameArt } from "./Art";
 import { StreakIcon } from "./StreakIcon";
 import { signOut } from "next-auth/react";
 import {
@@ -2080,7 +2081,7 @@ export function GameApp({
       best: gameBests.odd ?? 0, start: shelf(startOdd, "odd"),
     },
     {
-      id: "sortg", icon: "📊", tint: "var(--pink)",
+      id: "sortg", icon: "📊", tint: "var(--pink, #FF5A8A)",
       name: "Smallest First", nameJa: "小さい順",
       blurb: "Put four answers in order without working them all out.",
       blurbJa: "4つの答えを小さい順に並べよう。",
@@ -3093,10 +3094,10 @@ export function GameApp({
             <span aria-hidden="true"><StreakIcon lit={dailyStreak > 0} /></span> {dailyStreak}
           </button>
           <button className={`stat stat-gem${gemPop ? " pop" : ""}`} onClick={() => openShare("gems")} aria-label={`${t.share.statGems} ${gems} — ${t.share.shareBtn}`}>
-            <span aria-hidden="true">💎</span> {gems}
+            <span aria-hidden="true"><UiIcon name="gem" size="1.15em" /></span> {gems}
           </button>
           <button className="stat stat-heart" onClick={() => openShare("hearts")} aria-label={`${t.share.statHearts} ${hearts} — ${t.share.shareBtn}`}>
-            <span aria-hidden="true">❤️</span> {hearts}
+            <span aria-hidden="true"><UiIcon name="heart" size="1.15em" /></span> {hearts}
           </button>
         </div>
       </header>
@@ -4588,12 +4589,12 @@ export function GameApp({
             <div className="games-grid">
               {GAMES.map((g) => (
                 <button key={g.id} className={`game-card${gameLocked(g.id) ? " locked" : ""}${!gameLocked(g.id) && !isUnlocked(g.id) ? " prog-locked" : ""}`} onClick={g.start} style={{ ["--g" as string]: g.tint }}>
-                  <span className="game-card-icon">{g.icon}</span>
+                  <span className="game-card-icon"><GameArt id={g.id} fallback={g.icon} /></span>
                   <span className="game-card-body">
                     <span className="game-card-name">{lang === "ja" ? g.nameJa : g.name}{g.id === "konbini" && <ArcadeMarks id="konbini" lang={lang} />}</span>
                     <span className="game-card-blurb">{lang === "ja" ? g.blurbJa : g.blurb}</span>
                   </span>
-                  {gameLocked(g.id) && <span className="game-card-lock" aria-label="locked">🔒</span>}
+                  {gameLocked(g.id) && <span className="game-card-lock" aria-label="locked"><UiIcon name="lock" size="20px" /></span>}
                   {!gameLocked(g.id) && !isUnlocked(g.id) && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock(g.id)}回` : `${gamesToUnlock(g.id)} to go`}</span>}
                   {g.best > 0 && !gameLocked(g.id) && (
                     <span className="game-card-best mono">
@@ -5045,41 +5046,41 @@ export function GameApp({
              sits around it. For a guest, Save is a small chip, not a rival. */
           <div className="dock-bar">
             <button className="bottomnav-item active" onClick={goHome}>
-              <span className="bottomnav-icon">🏠</span>
+              <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
             <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
-              <span className="dock-play-ico" aria-hidden="true">🎮</span>
+              <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
               <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
             </button>
             <a className="dock-save" href="/signup?from=%2F">
-              <span className="bottomnav-icon" aria-hidden="true">💾</span>
+              <span className="bottomnav-icon" aria-hidden="true"><UiIcon name="save" /></span>
               <span>{lang === "ja" ? "保存" : "Save"}</span>
             </a>
           </div>
         ) : view === "home" ? (
           <div className="dock-bar">
             <button className="bottomnav-item active" onClick={goHome}>
-              <span className="bottomnav-icon">🏠</span>
+              <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
             <button className="bottomnav-item" onClick={() => { setQuestsOpen((o) => !o); refreshQuests(); refreshReview(); }}>
               <span className="bottomnav-icon">
-                📜
+                <UiIcon name="quests" />
                 {(claimableQuests > 0 || reviewCount > 0) && <span className="nav-dot" aria-hidden="true" />}
               </span>
               <span>{lang === "ja" ? "クエスト" : "Quests"}</span>
             </button>
             <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
-              <span className="dock-play-ico" aria-hidden="true">🎮</span>
+              <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
               <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
             </button>
             <button className="bottomnav-item" onClick={toggleLeague}>
-              <span className="bottomnav-icon">🏆</span>
+              <span className="bottomnav-icon"><UiIcon name="league" /></span>
               <span>{lang === "ja" ? "リーグ" : "League"}</span>
             </button>
             <button className="bottomnav-item" onClick={toggleLeaderboard}>
-              <span className="bottomnav-icon">🌍</span>
+              <span className="bottomnav-icon"><UiIcon name="rank" /></span>
               <span>{lang === "ja" ? "ランク" : "Rank"}</span>
             </button>
           </div>

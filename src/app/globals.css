@@ -4184,3 +4184,64 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .feature-art.crossmath i:nth-child(2), .feature-art.crossmath i:nth-child(4), .feature-art.crossmath i:nth-child(6), .feature-art.crossmath i:nth-child(7){ background:#f3e2a0; color:#4a3a10; }
 .feature-art.crossmath i:empty{ background:#fff; }
 .feature-new{ display:inline-block; margin-left:6px; vertical-align:middle; font-size:10px; font-weight:900; letter-spacing:.06em; padding:2px 7px; border-radius:999px; background:#ffcf3a; color:#1d1b33; }
+
+/* ---------- drawn icons (Art.tsx) in place of system emoji ---------- */
+.ui-ico, .game-art{ display:block; overflow:visible; }
+.home-tab-ico{ font-size:27px; height:27px; display:grid; place-items:center; margin-bottom:1px; }
+.home-tab-ico .ui-ico{ transition:transform .2s cubic-bezier(.3,1.6,.5,1); filter:drop-shadow(0 1.5px 0 rgba(29,27,51,.18)); }
+.home-tab.on .home-tab-ico .ui-ico{ transform:scale(1.12) rotate(-6deg); filter:drop-shadow(0 2px 0 rgba(29,27,51,.35)); }
+.home-tab:not(.on) .home-tab-ico .ui-ico{ opacity:.85; }
+.bottomnav-icon{ display:grid; place-items:center; }
+.bottomnav-icon .ui-ico{ width:26px; height:26px; }
+.dock-save .bottomnav-icon .ui-ico{ width:28px; height:28px; }
+.dock-play-ico .ui-ico{ width:44px; height:44px; filter:drop-shadow(0 2px 0 rgba(29,27,51,.3)); }
+.stat .ui-ico{ display:inline-block; vertical-align:-0.2em; }
+.game-card-lock{ display:grid; place-items:center; }
+
+/* the quick-game list: each row wears its game's colour */
+.game-card{ background:linear-gradient(100deg, color-mix(in srgb, var(--g) 16%, var(--surface)) 0%, var(--surface) 46%); }
+.game-card::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--g); opacity:.85; }
+.game-card-icon{ width:56px; height:56px; padding:5px; border-radius:16px; border:2.5px solid var(--ink-line);
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255,255,255,.75), transparent 48%),
+    linear-gradient(160deg, color-mix(in srgb, var(--g) 30%, #fff), color-mix(in srgb, var(--g) 62%, #fff));
+  box-shadow:0 3px 0 var(--ink-line), inset 0 -4px 0 color-mix(in srgb, var(--g) 30%, transparent);
+  transition:transform .25s cubic-bezier(.3,1.6,.5,1); }
+.game-card:hover .game-card-icon{ transform:rotate(-5deg) scale(1.05); }
+.game-card:active .game-card-icon{ transform:scale(.94); }
+.game-card .game-art-emoji{ font-size:27px; line-height:1; }
+.game-card-go{ display:grid; place-items:center; width:28px; height:28px; border-radius:50%; font-size:18px; font-weight:900;
+  background:color-mix(in srgb, var(--g) 14%, transparent); color:color-mix(in srgb, var(--g) 80%, var(--ink)); font:900 22px/1 system-ui,sans-serif; padding-bottom:2px; }
+
+/* ---------- Great Minds cards: a minted medallion, not a flat circle ---------- */
+.mcard{ isolation:isolate;
+  background-image:radial-gradient(color-mix(in srgb, var(--cc) 14%, transparent) 1.2px, transparent 1.4px); background-size:12px 12px; }
+.mcard.rare{ background-image:radial-gradient(rgba(62,124,201,.13) 1.2px, transparent 1.4px), linear-gradient(160deg,#f2f7ff,#fffdf6 60%); background-size:12px 12px, auto; }
+.mcard.legendary{ background-image:radial-gradient(rgba(214,160,20,.18) 1.2px, transparent 1.4px), linear-gradient(160deg,#fff6d5,#fffdf6 55%,#fff1c2); background-size:12px 12px, auto; }
+.mcard.big{ box-shadow:inset 0 0 0 3px #fff, inset 0 0 0 5px color-mix(in srgb, var(--cc) 35%, transparent), 0 10px 28px rgba(0,0,0,.38); }
+.mcard-art{ position:relative;
+  background:
+    radial-gradient(circle at 34% 26%, rgba(255,255,255,.7), rgba(255,255,255,0) 38%),
+    radial-gradient(circle, transparent 55%, rgba(0,0,0,.18) 56%, transparent 60%),
+    repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--cc) 78%, #fff) 0 9deg, var(--cc) 9deg 18deg);
+  box-shadow:inset 0 0 0 4px rgba(255,255,255,.45), inset 0 -7px 0 rgba(0,0,0,.14), 0 4px 0 #1d1b33;
+  text-shadow:0 2px 0 #1d1b33, 0 0 12px rgba(0,0,0,.25); -webkit-text-stroke:1px #1d1b33; }
+/* sun rays behind the medallion */
+.mcard-art::before{ content:""; position:absolute; inset:-22%; z-index:-1; border-radius:50%;
+  background:repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--cc) 30%, transparent) 0 6deg, transparent 6deg 18deg);
+  -webkit-mask:radial-gradient(circle, #000 40%, transparent 70%); mask:radial-gradient(circle, #000 40%, transparent 70%); }
+.mcard.big .mcard-art::before{ animation:mcard-rays 24s linear infinite; }
+.mcard.legendary .mcard-art::before{ background:repeating-conic-gradient(from 0deg, rgba(240,180,20,.55) 0 6deg, transparent 6deg 15deg); }
+.mcard.legendary .mcard-art{ box-shadow:inset 0 0 0 4px rgba(255,236,160,.8), inset 0 -7px 0 rgba(0,0,0,.14), 0 4px 0 #1d1b33, 0 0 0 6px #f3c53d, 0 4px 0 8px #1d1b33; }
+.mcard.rare .mcard-art{ box-shadow:inset 0 0 0 4px rgba(255,255,255,.55), inset 0 -7px 0 rgba(0,0,0,.14), 0 4px 0 #1d1b33, 0 0 0 5px #a9c6ee; }
+.mcard.mini .mcard-art{ -webkit-text-stroke:.6px #1d1b33; box-shadow:inset 0 0 0 3px rgba(255,255,255,.45), 0 2px 0 #1d1b33; }
+.mcard.mini.legendary .mcard-art{ box-shadow:inset 0 0 0 3px rgba(255,236,160,.8), 0 0 0 3px #f3c53d, 0 2px 0 4px #1d1b33; }
+.mcard-name{ position:relative; }
+.mcard.big .mcard-name{ margin-top:6px; padding:4px 14px; border-radius:999px; background:#fff; border:2px solid #1d1b33; box-shadow:0 3px 0 color-mix(in srgb, var(--cc) 70%, #1d1b33); }
+.mcard.locked .mcard-art{ background:repeating-conic-gradient(#d8d1c2 0 9deg, #cfc7b6 9deg 18deg); -webkit-text-stroke:0; text-shadow:none; }
+.mcard.locked .mcard-art::before{ display:none; }
+@keyframes mcard-rays{ to{ transform:rotate(360deg); } }
+@media (prefers-reduced-motion: reduce){ .mcard.big .mcard-art::before, .home-tab-ico .ui-ico{ animation:none; transition:none; } }
+.mcard.big .mcard-art{ font-size:68px; }
+.mcard-art span{ position:relative; line-height:1; }
+.mcard-art span.long{ font-size:.48em; }
