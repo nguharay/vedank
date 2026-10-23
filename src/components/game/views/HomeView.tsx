@@ -1,5 +1,6 @@
 "use client";
 
+import { UiIcon } from "../Art";
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
 import { todaysGame, bonusStopGame, type HomeGameId } from "../homeGames";
 import { useDragon, stageOf, nextStage, moodOf, nameDragon, DAILY_GOAL } from "../dragon";
@@ -181,13 +182,13 @@ export function HomeView({
       {/* Four short pages instead of one long scroll: the lessons come first. */}
       <div className="home-tabs" ref={tabsRef} role="tablist">
         {([
-          ["learn", "⚔️", lang === "ja" ? "まなぶ" : "Learn"],
-          ["today", "📅", lang === "ja" ? "きょう" : "Today"],
-          ["play", "🎮", lang === "ja" ? "あそぶ" : "Play"],
-          ["world", "🏙️", lang === "ja" ? "マイワールド" : "My world"],
+          ["learn", "learn", lang === "ja" ? "まなぶ" : "Learn"],
+          ["today", "today", lang === "ja" ? "きょう" : "Today"],
+          ["play", "play", lang === "ja" ? "あそぶ" : "Play"],
+          ["world", "world", lang === "ja" ? "マイワールド" : "My world"],
         ] as const).map(([id, ico, label]) => (
           <button key={id} role="tab" aria-selected={tab === id} className={`home-tab${tab === id ? " on" : ""}`} onClick={() => pickTab(id)}>
-            <span className="home-tab-ico" aria-hidden="true">{ico}</span>
+            <span className="home-tab-ico" aria-hidden="true"><UiIcon name={ico} /></span>
             <span>{label}</span>
             {id === "today" && !dailyPlayed && <i className="home-tab-dot" aria-hidden="true" />}
           </button>

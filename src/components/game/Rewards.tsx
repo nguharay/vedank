@@ -31,7 +31,7 @@ export function CardFace({ card, lang, size = "big" }: { card: Card; lang: L; si
         <span>{RARITY[card.rarity][ja ? 1 : 0]}</span>
         <span className="mono">No.{String(no).padStart(2, "0")}</span>
       </div>
-      <div className="mcard-art"><span>{card.glyph}</span></div>
+      <div className="mcard-art"><span className={[...card.glyph].length > 2 ? "long" : undefined}>{card.glyph}</span></div>
       <div className="mcard-name">{ja ? card.nameJa : card.name}</div>
       {size === "big" && (
         <>

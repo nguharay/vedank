@@ -326,7 +326,7 @@ export const QUICK_GAMES: QuickGame[] = [
     },
   },
   {
-    id: "div9", icon: "➗", tint: "var(--pink)",
+    id: "div9", icon: "➗", tint: "var(--pink, #FF5A8A)",
     name: "Divisible by 9?", nameJa: "9で割れる？",
     blurb: "Yes or no — without dividing.", blurbJa: "割らずに判定できるかな？",
     hintJa: "数字の合計が9なら、9で割れる", hintEn: "Digit sum 9 means divisible by 9",
