@@ -18,8 +18,8 @@ function steps(guest: boolean): Step[] {
   const s: Step[] = [
     { sel: null, icon: "👋", title: ["Welcome!", "ようこそ！"],
       text: ["Let me show you around — it takes 30 seconds.", "かんたんな使い方を案内するね。30秒でおわるよ。"] },
-    { sel: ".home-tabs .home-tab:nth-child(1)", icon: "⚔️", title: ["Learn", "まなぶ"],
-      text: ["Lessons teach one Vedic maths trick at a time. You practise by battling monsters!", "インド式計算をひとつずつレッスンで覚えるよ。モンスターとのバトルで練習！"] },
+    { sel: ".home-tabs .home-tab:nth-child(1)", icon: "📖", title: ["Learn", "まなぶ"],
+      text: ["Lessons teach one Vedic maths trick at a time. You practise by battling monsters!", "インド式数学をひとつずつレッスンで覚えるよ。モンスターとのバトルで練習！"] },
     { sel: ".continue-card", icon: "▶️", title: ["Start here", "まずはここから"],
       text: ["Tap this to start your next lesson battle.", "ここをタップすると、つぎのレッスンバトルがはじまるよ。"] },
     { sel: ".dock-play", icon: "🎮", title: ["Games", "ゲーム"],
