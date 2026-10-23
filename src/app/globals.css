@@ -3578,7 +3578,7 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .dm-ground{ position:absolute; left:0; right:0; top:150px; height:8px; background:#6aa84f; }
 .dm-hero{ position:absolute; left:26px; top:92px; width:58px; height:58px; z-index:2; }
 .dm-hero svg{ width:100%; height:100%; }
-.dm-rock{ position:absolute; top:118px; left:300px; font-size:30px; animation:dm-rock 2.6s linear both; }
+.dm-rock{ position:absolute; top:118px; left:300px; font-size:30px; animation:dm-rock 2.1s linear both; }
 @keyframes dm-rock{ to{ left:-40px } }
 .dm-run.win .dm-hero{ animation:dm-jump .7s ease-out both; }
 @keyframes dm-jump{ 50%{ transform:translateY(-58px) rotate(-8deg) } }
@@ -3641,10 +3641,10 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 /* rhythm */
 .dm-rhythm{ background:linear-gradient(#2a1f5c, #4b2f8f); }
 .dm-line{ position:absolute; left:0; right:0; top:168px; height:4px; background:#ffcf3a; box-shadow:0 0 10px #ffcf3a; }
-.dm-note{ position:absolute; top:-40px; width:56px; height:34px; border-radius:12px; display:grid; place-items:center; background:#fff; border:3px solid #1d1b33; font:900 18px/1 "Baloo 2",system-ui,sans-serif; animation:dm-fall 1.3s linear forwards; }
+.dm-note{ position:absolute; top:-40px; width:56px; height:34px; border-radius:12px; display:grid; place-items:center; background:#fff; border:3px solid #1d1b33; font:900 18px/1 "Baloo 2",system-ui,sans-serif; animation:dm-fall 1.25s linear forwards; }
 .dm-note.n0{ left:28px } .dm-note.n1{ left:122px; animation-duration:1.7s } .dm-note.n2{ left:216px; animation-duration:2.1s }
 @keyframes dm-fall{ to{ top:153px } }
-.dm-rhythm.win .dm-note.n0{ animation:dm-fall 1.3s linear forwards, dm-gone .2s both; }
+.dm-rhythm.win .dm-note.n0{ animation:dm-fall 1.25s linear forwards, dm-gone .2s both; }
 .dm-perfect{ position:absolute; left:14px; top:120px; font:900 18px/1 "Baloo 2",system-ui,sans-serif; color:#ffcf3a; opacity:0; }
 .dm-rhythm.win .dm-perfect{ animation:dm-plus 1s both; }
 .dm-rhythm .dm-prompt{ top:60px; }

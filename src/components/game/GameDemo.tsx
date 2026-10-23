@@ -221,7 +221,8 @@ const DEMOS: Record<string, Demo> = {
   })),
 };
 
-const START = { x: 262, y: 300 };   /* just below the stage, so it slides in */
+const START = { x: 262, y: 300 };
+const MOVE_MS = 650;                /* the finger glides in .55s, then presses */   /* just below the stage, so it slides in */
 const centre = (t: Tile) => ({ x: t.x + t.w / 2, y: t.y + t.h / 2 });
 
 export function GameDemo({ id, lang, onStart, onClose }: { id: string; lang: "en" | "ja"; onStart: () => void; onClose: () => void }) {
@@ -241,25 +242,35 @@ export function GameDemo({ id, lang, onStart, onClose }: { id: string; lang: "en
   useEffect(() => {
     if (!d) return;
     const at = (ms: number, f: () => void) => timers.current.push(setTimeout(f, ms));
+    /* The finger lands at FIRST_PRESS (the scene CSS — rock, notes, monster —
+       is timed to that), and the game reacts on the last tap itself, not
+       after a pause, so tap and result read as one moment. */
     let t = 600;
+    let react = 0;
     at(t, () => setCap(1));
     d.taps.forEach((tap, k) => {
       const i = typeof tap === "number" ? tap : tap.i;
       const c = centre(d.tiles[i]);
       at(t, () => setFinger({ ...c, press: false }));
-      t += 650;
+      t += MOVE_MS;
       at(t, () => { setFinger({ ...c, press: true }); setHits(k + 1); });
-      at(t + 180, () => setFinger({ ...c, press: false }));
+      react = t + 60;
       if (typeof tap !== "number") {
+        /* a drag: hold, carry the tile across, let go once it has landed */
         const to = tap.to;
         const tile = d.tiles[i];
-        at(t + 260, () => { setFinger({ x: to.x + tile.w / 2, y: to.y + tile.h / 2, press: true }); setMoved((m) => ({ ...m, [i]: to })); });
-        t += 900;
+        const drop = { x: to.x + tile.w / 2, y: to.y + tile.h / 2 };
+        at(t + 220, () => { setFinger({ ...drop, press: true }); setMoved((m) => ({ ...m, [i]: to })); });
+        at(t + 780, () => setFinger({ ...drop, press: false }));
+        react = t + 780;
+        t += 780;
+      } else {
+        at(t + 180, () => setFinger({ ...c, press: false }));
       }
-      t += 400;
+      t += 420;
     });
-    at(t, () => { setWin(true); setCap(2); });
-    at(t + 2000, () => setDone(true));
+    at(react, () => { setWin(true); setCap(2); });
+    at(react + 2200, () => setDone(true));
     const list = timers.current;
     return () => { list.forEach(clearTimeout); timers.current = []; };
   }, [run, d]);

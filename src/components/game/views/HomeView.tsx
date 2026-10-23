@@ -248,7 +248,7 @@ export function HomeView({
             <div className="howto-title">{lang === "ja" ? "このゲームって？" : "What is this game?"}</div>
             <p className="howto-text">
               {lang === "ja"
-                ? "インド式計算の「ひらめき」を、モンスターとのバトルで楽しく身につけよう。"
+                ? "インド式数学の「ひらめき」を、モンスターとのバトルで楽しく身につけよう。"
                 : "Learn the clever shortcuts of Indian maths by battling monsters, playing games and raising your own dragon."}
             </p>
             <div className="howto-steps">
