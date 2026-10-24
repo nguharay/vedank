@@ -276,6 +276,9 @@ const raceBestKey = (lv: number) => `sutraSprint.raceBest.L${lv}`;
 function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOnline: () => void }) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "count" | "race" | "over">("ready");
+  const [sceneIdx, setSceneIdx] = useState(0);
+  const startedOnce = useRef(false);
+  const scene = RACE_SCENES[sceneIdx];
   const [unlocked, setUnlocked] = useState(() => Math.max(1, readBest(RACE_UNLOCK_KEY)));
   const [lvId, setLvId] = useState(() => Math.max(1, readBest(RACE_UNLOCK_KEY)));
   const [count, setCount] = useState(3);
@@ -329,6 +332,8 @@ function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOn
 
   function start(lv = lvId) {
     stopAll();
+    if (startedOnce.current) setSceneIdx(nextScene);   /* the first race keeps the stadium */
+    startedOnce.current = true;
     const st = s.current;
     st.done = 0; st.streak = 0; st.over = false; st.place = 1; st.lv = lv;
     setLvId(lv);
@@ -404,14 +409,14 @@ function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOn
         <div className="match-stat"><span className="match-stat-k">{ja ? "タイム" : "Time"}</span><span className="match-stat-v mono"><span ref={timeRef}>0.0</span>s</span></div>
       </div>
 
-      <div className={`race-track r3d${phase === "race" ? " moving" : ""}`}>
+      <div className={`race-track r3d scene-${scene.id}${phase === "race" ? " moving" : ""}`} style={sceneVars(scene)}>
         {/* the stadium: sky, mountains, a stand full of fans, and a road that
             runs away from you in perspective */}
         <div className="r3d-sky" aria-hidden="true">
-          <span className="r3d-cloud c1">☁️</span><span className="r3d-cloud c2">☁️</span>
+          <span className="r3d-cloud c1">{scene.cloud}</span><span className="r3d-cloud c2">{scene.cloud}</span>
           <span className="r3d-mtn m1" /><span className="r3d-mtn m2" /><span className="r3d-mtn m3" />
           <span className="r3d-stand"><i>🧒👧👦🧑👩👨👧🧒</i><i>👦🧑👧👨🧒👩👦👧</i></span>
-          <span className="r3d-trees">🌳🌲🌳</span>
+          <span className="r3d-trees">{scene.side}</span>
           <span className="r3d-arch"><b>GOAL</b></span>
         </div>
         <div className="race-progress" aria-hidden="true">
@@ -527,7 +532,29 @@ export function RaceGame(props: Props & { guest: boolean; onNeedAccount: () => v
    2–4 friends, one room code, the same sums for everyone. The room is polled
    once a second — like online tic-tac-toe, no socket needed; your own runner
    moves the instant you answer and the server confirms it. */
-const FRIEND_AVATARS = ["🐶", "🐱", "🐼", "🦁"];
+/* ---------- race scenery ----------
+   Every new race is run somewhere new: the sky, the ground, the hills, the
+   road and its kerbs, and what lines the track all change together. */
+type RaceScene = { id: string; sky: [string, string]; ground: [string, string]; hills: [string, string, string]; road: string; kerb: string; cloud: string; side: string; sideL: string; sideR: string };
+const RACE_SCENES: RaceScene[] = [
+  { id: "stadium", sky: ["#5fb4ff", "#c8ecff"], ground: ["#7cc85e", "#69b84c"], hills: ["#6f8fb8", "#5d7ca6", "#7c9cc4"], road: "#5d6068", kerb: "#e8443a", cloud: "☁️", side: "🌳🌲🌳", sideL: "🌳🌷🌲🌼🌳", sideR: "🌲🌻🌳🌷🌲" },
+  { id: "beach", sky: ["#3fb6f2", "#bfeeff"], ground: ["#f3d58a", "#e6be62"], hills: ["#2bb3c9", "#1e9db5", "#4fc9d9"], road: "#6a6d74", kerb: "#ff9f1c", cloud: "☁️", side: "🌴⛱️🌴", sideL: "🌴🐚⛱️🦀🌴", sideR: "🌴🏄🌴🐚⛱️" },
+  { id: "snow", sky: ["#8eaad3", "#e8f1fb"], ground: ["#f6f9fd", "#d9e5f2"], hills: ["#c3d2e6", "#aebfd8", "#d4e0ef"], road: "#4b515c", kerb: "#3e7cc9", cloud: "❄️", side: "🌲⛄🌲", sideL: "🌲⛄🌲❄️🌲", sideR: "☃️🌲❄️🌲⛄" },
+  { id: "desert", sky: ["#ffa65c", "#ffe2a8"], ground: ["#e9b96e", "#d39a4b"], hills: ["#c97b4a", "#b5683a", "#d98e5b"], road: "#7b6a58", kerb: "#c0392b", cloud: "☀️", side: "🌵🐪🌵", sideL: "🌵🦂🌵🐪🌵", sideR: "🐪🌵🏜️🌵🦎" },
+  { id: "night", sky: ["#121838", "#3b2f72"], ground: ["#2c5a3c", "#1d412b"], hills: ["#262a55", "#1f2249", "#30356a"], road: "#34373f", kerb: "#ff4fd8", cloud: "🌙", side: "🏙️🎡🏙️", sideL: "🏮🌃🏮✨🏮", sideR: "✨🏮🌃🏮✨" },
+  { id: "sakura", sky: ["#ffb3d1", "#ffe6f0"], ground: ["#a3d47c", "#87bf62"], hills: ["#b48fd0", "#9d78bd", "#c7a6df"], road: "#5d6068", kerb: "#ff6fa3", cloud: "🌸", side: "🌸⛩️🌸", sideL: "🌸🗻🌸⛩️🌸", sideR: "⛩️🌸🎎🌸🌸" },
+];
+const sceneVars = (sc: RaceScene) => ({
+  "--sky1": sc.sky[0], "--sky2": sc.sky[1], "--gr1": sc.ground[0], "--gr2": sc.ground[1],
+  "--h1": sc.hills[0], "--h2": sc.hills[1], "--h3": sc.hills[2], "--road": sc.road, "--kerb": sc.kerb,
+}) as React.CSSProperties;
+/* split into whole emoji (⛱️ is two code points) */
+const glyphs = (s: string) => Array.from(new Intl.Segmenter().segment(s), (g) => g.segment);
+/* a different scene from the last one */
+const nextScene = (cur: number) => (cur + 1 + Math.floor(Math.random() * (RACE_SCENES.length - 1))) % RACE_SCENES.length;
+
+const TRACK_LANES = 6;   /* runners drawn on the online road before it shows only the leaders + you */
+const FRIEND_AVATARS = ["🐶", "🐱", "🐼", "🦁", "🐰", "🦊", "🐸", "🐨", "🐯", "🐵", "🐧", "🐹"];
 
 function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onBack }: Props & {
   joinCode: string | null; onJoined: () => void; onBack: () => void;
@@ -677,40 +704,52 @@ function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onB
     );
   }
 
+  /* Up to 6 racers each get a lane. Past that the road would be too narrow,
+     so it shows the top 5 and you; the standings list has everyone. Lanes
+     follow join order among those shown, sliding over when the set changes. */
+  /* every player sees the same place, and each rematch (new seed) moves it */
+  const oScene = RACE_SCENES[room.seed % RACE_SCENES.length];
   const n = room.players.length;
-  const laneLeft = (i: number) => `${((i + 0.5) / n) * 100}%`;
+  const crowd = n > TRACK_LANES;
+  const shownKeys = new Set(crowd ? ranked.slice(0, TRACK_LANES - 1).map((p) => p.key).concat(me ? [me.key] : []) : room.players.map((p) => p.key));
+  const shown = room.players.filter((p) => shownKeys.has(p.key));
+  const lanes = shown.length;
+  const laneLeft = (i: number) => `${((i + 0.5) / lanes) * 100}%`;
+  const placeLabel = (pl: number) => medal[pl - 1] ?? (ja ? `${pl}位` : `#${pl}`);
 
   return (
     <div className="rg">
       <div className="match-head">
         <div className="match-stat"><span className="match-stat-k">{ja ? "順位" : "Place"}</span>
-          <span className="match-stat-v rg-nowrap">{me && status !== "lobby" && status !== "countdown" ? `${medal[placeOf(me.key) - 1]}` : "–"}</span></div>
+          <span className="match-stat-v rg-nowrap">{me && status !== "lobby" && status !== "countdown" ? placeLabel(placeOf(me.key)) : "–"}</span></div>
         <div className="match-stat"><span className="match-stat-k">{ja ? "のこり" : "To go"}</span><span className="match-stat-v mono">{goal - myDone}</span></div>
         <div className="match-stat"><span className="match-stat-k">{ja ? "タイム" : "Time"}</span><span className="match-stat-v mono">{elapsed.toFixed(1)}s</span></div>
       </div>
 
-      <div className={`race-track${status === "racing" ? " moving" : ""}`}>
-        <div className="race-side left" aria-hidden="true">🌳<br />🌷<br />🌲<br />🌼<br />🌳</div>
+      <div className={`race-track scene-${oScene.id}${status === "racing" ? " moving" : ""}`} style={sceneVars(oScene)}>
+        <div className="race-side left" aria-hidden="true">{glyphs(oScene.sideL).map((c, i) => <span key={i}>{c}<br /></span>)}</div>
         <div className="race-road lanes-custom">
           <div className="race-finish" aria-hidden="true"><span>GOAL</span></div>
-          {Array.from({ length: n - 1 }, (_, i) => (
-            <div key={i} className="race-divider" style={{ left: `${((i + 1) / n) * 100}%` }} aria-hidden="true" />
+          {Array.from({ length: lanes - 1 }, (_, i) => (
+            <div key={i} className="race-divider" style={{ left: `${((i + 1) / lanes) * 100}%` }} aria-hidden="true" />
           ))}
-          {room.players.map((p, i) => {
+          {shown.map((p, i) => {
             const done = p.me ? myDone : p.done;
+            const idx = room.players.indexOf(p);
             return (
               <div key={p.key} className="race-lane" style={{ left: laneLeft(i) }}>
                 <div className={`race-runner online${p.me ? " me" : ""}${p.me && stumble ? " stumble" : ""}`} style={{ bottom: at(done / goal) }}>
                   {p.me
                     ? <span className="race-boy"><Mascot mood={stumble ? "sad" : "excited"} animated={false} /></span>
-                    : <span className="race-emoji">{FRIEND_AVATARS[i % FRIEND_AVATARS.length]}</span>}
-                  <span className={`race-name${p.me ? " you" : ""}`}>{p.me ? (ja ? "きみ" : "You") : p.name}</span>
+                    : <span className="race-emoji">{FRIEND_AVATARS[idx % FRIEND_AVATARS.length]}</span>}
+                  <span className={`race-name${p.me ? " you" : ""}`}>{crowd && status !== "lobby" ? `${placeLabel(placeOf(p.key))} ` : ""}{p.me ? (ja ? "きみ" : "You") : p.name}</span>
                 </div>
               </div>
             );
           })}
         </div>
-        <div className="race-side right" aria-hidden="true">🌲<br />🌻<br />🌳<br />🌷<br />🌲</div>
+        <div className="race-side right" aria-hidden="true">{glyphs(oScene.sideR).map((c, i) => <span key={i}>{c}<br /></span>)}</div>
+        {crowd && status !== "lobby" && <span className="race-crowd">👥 {n}{ja ? "人" : ""}</span>}
 
         {status === "countdown" && room.startAt !== null && (
           <div key={Math.ceil((room.startAt - now) / 1000)} className="race-count mono">{Math.max(1, Math.ceil((room.startAt - now) / 1000))}</div>
@@ -722,6 +761,7 @@ function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onB
             <div className="race-code mono">{room.code}</div>
             <button className="btn" onClick={share}>🔗 {ja ? "友だちに送る" : "Send to friends"}</button>
             <ul className="race-players">
+              <li className="race-count-row">{ja ? `参加 ${n}人` : `${n} in the room`}</li>
               {room.players.map((p, i) => (
                 <li key={p.key}>{p.me ? "🧒" : FRIEND_AVATARS[i % FRIEND_AVATARS.length]} {p.me ? (ja ? `${p.name}（きみ）` : `${p.name} (you)`) : p.name}{p.host ? " 👑" : ""}</li>
               ))}
@@ -736,7 +776,7 @@ function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onB
 
         {(status === "done" || (status === "racing" && iFinished)) && (
           <div className="rg-card">
-            {me && <div className="rg-card-medal">{medal[placeOf(me.key) - 1]}</div>}
+            {me && <div className="rg-card-medal">{placeLabel(placeOf(me.key))}</div>}
             <div className="rg-card-title">
               {status === "done"
                 ? (me && placeOf(me.key) === 1 ? (ja ? "1位！きみの勝ち！" : "You won!") : (ja ? "レース終了！" : "Race over!"))

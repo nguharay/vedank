@@ -2611,7 +2611,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .rg{ max-width:480px; margin:0 auto; }
 .rg-answers{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
 .rg-ans{ font-size:24px; font-weight:800; padding:14px 6px; border-radius:18px; border:3px solid var(--ink);
-  background:var(--card, #fff); color:var(--ink); box-shadow:0 5px 0 var(--ink); cursor:pointer;
+  background:var(--surface); color:var(--ink); box-shadow:0 5px 0 var(--ink); cursor:pointer;
   transition:transform .08s, box-shadow .08s; font-variant-numeric:tabular-nums; }
 .rg-ans:active{ transform:translateY(4px); box-shadow:0 1px 0 var(--ink); }
 .rg-ans.right{ background:#7ED957; color:#10300a; }
@@ -2722,7 +2722,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .race-over-btns{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
 /* online race */
 .race-online-btn{ margin-top:8px; width:100%; }
-.race-online-menu{ text-align:center; background:var(--card, #fff); border:3px solid var(--ink); border-radius:20px; padding:18px 16px;
+.race-online-menu{ text-align:center; background:#fff; color:#1d1b33; border:3px solid var(--ink); border-radius:20px; padding:18px 16px;
   box-shadow:4px 4px 0 var(--ink-line); display:flex; flex-direction:column; gap:10px; }
 .race-online-menu .rg-card-sub{ margin:0; }
 .race-join{ display:flex; gap:8px; justify-content:center; }
@@ -2800,7 +2800,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .sushi-menu{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 10px; margin:0 0 10px; font-size:12px; font-weight:800; }
 .sushi-menu span, .sushi-bill-lines span{ display:inline-flex; align-items:center; gap:4px; }
 .sushi-menu i, .sushi-bill-lines i{ width:14px; height:14px; border-radius:50%; background:var(--plate); border:1px solid rgba(0,0,0,.3); display:inline-block; }
-.sushi-bill{ margin-top:12px; background:var(--card, #fff); border:3px solid var(--ink); border-radius:18px; padding:12px; box-shadow:4px 4px 0 var(--ink-line); }
+.sushi-bill{ margin-top:12px; background:var(--surface); border:3px solid var(--ink); border-radius:18px; padding:12px; box-shadow:4px 4px 0 var(--ink-line); }
 .sushi-bill-head{ font-weight:800; font-size:14px; color:var(--ink); }
 .sushi-bill-lines{ display:flex; flex-wrap:wrap; gap:4px 12px; margin:6px 0 0; font-size:12.5px; font-weight:700; color:var(--muted); }
 .sushi-bill .race-q{ font-size:24px; }
@@ -2929,7 +2929,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .cross-sum{ font-size:17px; font-weight:900; color:#c2410c; padding-left:2px; white-space:nowrap; }
 .cross-sum.col{ text-align:center; padding:0; }
 .cross-pad{ display:grid; grid-template-columns:repeat(6,1fr); gap:6px; max-width:360px; margin:16px auto 0; }
-.cross-key{ padding:12px 0; border-radius:12px; border:3px solid var(--ink); background:var(--card, #fff); color:var(--ink); font-size:20px; font-weight:800;
+.cross-key{ padding:12px 0; border-radius:12px; border:3px solid var(--ink); background:var(--surface); color:var(--ink); font-size:20px; font-weight:800;
   box-shadow:0 4px 0 var(--ink); cursor:pointer; font-family:inherit; }
 .cross-key:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--ink); }
 .cross-key.back{ background:#f3f1fb; }
@@ -4245,3 +4245,42 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .mcard.big .mcard-art{ font-size:68px; }
 .mcard-art span{ position:relative; line-height:1; }
 .mcard-art span.long{ font-size:.48em; }
+
+/* ---------- Math Race fits one screen ----------
+   The question and the answer buttons keep their size; only the scenery
+   (the track) gives up height, so on a phone the track, the sum and the
+   three answers are all on screen together without scrolling.
+   ~375px = header + stats row + sum + answers + back bar. */
+.rg .race-track{ height:clamp(200px, calc(100dvh - 375px), 390px); }
+.rg .race-track.r3d{ --race-h:clamp(220px, calc(100dvh - 375px), 440px); height:var(--race-h);
+  /* the road's vanishing point sits a fixed distance up from the bottom, so the
+     finish line is always --race-fin above the bottom whatever the height, and
+     the painting / drawn horizon can be pinned to it */
+  perspective-origin:50% calc(100% - 175px); --race-fin:213px;
+  --race-bg-y:calc(var(--race-h) - var(--race-fin) - 98.5cqw); }
+.rg .race-q{ margin-top:8px; }
+.rg .race-q + .rg-answers{ margin-top:8px; position:relative; bottom:auto; }
+/* online race with a crowd: lanes slide when the leaders change; long lists scroll */
+.race-lane{ transition:left .4s ease; }
+.race-crowd{ position:absolute; right:16%; top:10%; z-index:3; background:rgba(29,27,51,.75); color:#fff; font:800 11px/1 "Baloo 2",system-ui,sans-serif; padding:4px 8px; border-radius:999px; }
+.race-players, .race-results{ max-height:150px; overflow-y:auto; }
+.race-players .race-count-row{ background:none; padding:0 2px; font-size:12px; color:#6a6688; }
+/* race scenery: the track reads its colours from the scene (RunGames RACE_SCENES) */
+/* the stadium keeps its painting; every other scene is drawn in its own colours */
+.race-track.r3d:not(.scene-stadium){ background:linear-gradient(var(--sky1) 0%, var(--sky2) 44%, var(--gr1) 44%, var(--gr2) 100%); }
+.race-track.r3d:not(.scene-stadium) .r3d-sky > span{ display:block; }
+.r3d-mtn.m1{ border-bottom-color:var(--h1, #6f8fb8); } .r3d-mtn.m2{ border-bottom-color:var(--h2, #5d7ca6); } .r3d-mtn.m3{ border-bottom-color:var(--h3, #7c9cc4); }
+.r3d .race-road{ background-color:var(--road, #5d6068); box-shadow:-10px 0 0 var(--kerb, #e8443a), 10px 0 0 var(--kerb, #e8443a), -18px 0 0 #fff, 18px 0 0 #fff; }
+.race-track:not(.r3d){ background:linear-gradient(var(--gr1, #7cc85e), var(--gr2, #69b84c)); }
+.race-track:not(.r3d) .race-road{ background-color:var(--road, #5d6068); }
+.race-track.scene-night .r3d-cloud{ animation:none; }
+.race-track.scene-night .r3d-cloud.c2{ display:none; }
+.race-track.scene-snow .race-side, .race-track.scene-desert .race-side{ filter:drop-shadow(0 1px 0 rgba(0,0,0,.15)); }
+/* drawn scenes are pinned to the finish line (--race-fin up from the bottom), not to the top */
+.rg .race-track.r3d:not(.scene-stadium){ background:linear-gradient(to top, var(--gr2) 0, var(--gr1) calc(var(--race-fin) + 4px), var(--sky2) calc(var(--race-fin) + 4px), var(--sky1) 100%); }
+.rg .r3d:not(.scene-stadium) .r3d-mtn{ bottom:calc(var(--race-fin) + 4px); }
+.rg .r3d:not(.scene-stadium) .r3d-stand{ top:auto; bottom:calc(var(--race-fin) - 78px); height:74px; }
+.rg .r3d:not(.scene-stadium) .r3d-trees{ top:auto; bottom:calc(var(--race-fin) - 14px); }
+.rg .r3d:not(.scene-stadium) .r3d-arch{ top:auto; bottom:calc(var(--race-fin) + 2px); width:46%; }
+.race-track.r3d:not(.scene-stadium) .r3d-sky > .r3d-arch{ display:grid; }
+.race-track.r3d:not(.scene-stadium) .r3d-sky > .r3d-stand{ display:flex; }

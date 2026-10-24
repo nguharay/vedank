@@ -525,7 +525,8 @@ export function racePlace(level: RaceLevel, secs: number): number {
    Everyone in a room gets the same sums in the same order: question i is
    drawn from the room's seed, so the server can re-derive it and check an
    answer without storing the sequence, and nobody gets an easier run. */
-export const RACE_ROOM_MAX = 4;
+/* big enough for a whole class; the track draws the leaders + you past 6 */
+export const RACE_ROOM_MAX = 50;
 export function raceQuestion(seed: number, i: number): ChoiceRound {
   const rand = seededRandom((seed ^ Math.imul(i + 1, 2654435761)) >>> 0);
   return withSeededRandom(rand, () => buildChoiceRound(i));

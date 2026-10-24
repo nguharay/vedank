@@ -28,6 +28,8 @@ export type RoomView = {
   hostName: string;
   guestName: string | null;
   round: number;
+  rev: number;                      /* updatedAt in ms: the client drops any reply older than what it shows */
+  now: number;                      /* server clock, so both phones count the turn down to the same moment */
 };
 
 async function nameOf(id: string | null) {
@@ -38,7 +40,7 @@ async function nameOf(id: string | null) {
 
 function view(row: typeof tttRooms.$inferSelect, userId: string, hostName: string, guestName: string | null): RoomView {
   const you: Mark | null = row.hostId === userId ? "X" : row.guestId === userId ? "O" : null;
-  return { code: row.code, state: row.state as TTTState, you, hostName, guestName, round: row.round };
+  return { code: row.code, state: row.state as TTTState, you, hostName, guestName, round: row.round, rev: row.updatedAt.getTime(), now: Date.now() };
 }
 
 export async function createRoom(userId: string, level: TTTLevel = 2): Promise<RoomView> {
@@ -65,8 +67,9 @@ export async function joinRoom(userId: string, raw: string): Promise<RoomView | 
   if (row.hostId !== userId && !row.guestId) {
     /* Clock starts now, not when the host made the room. */
     const state = { ...(row.state as TTTState), turnAt: Date.now() };
-    await db.update(tttRooms).set({ guestId: userId, state, updatedAt: new Date() }).where(eq(tttRooms.code, code));
-    row.guestId = userId; row.state = state;
+    const at = new Date();
+    await db.update(tttRooms).set({ guestId: userId, state, updatedAt: at }).where(eq(tttRooms.code, code));
+    row.guestId = userId; row.state = state; row.updatedAt = at;
   }
   return view(row, userId, (await nameOf(row.hostId)) ?? "", await nameOf(row.guestId));
 }
@@ -92,9 +95,15 @@ export async function moveRoom(userId: string, code: string, i: number, chosen: 
   if (state.turn !== you) return { error: row !== found ? "Time's up — the turn passed." : "Not your turn." };
   const next = play(state, Number(i), Number(chosen));
   if (next === state) return { error: "That square is taken." };
-  await db.update(tttRooms).set({ state: next, updatedAt: new Date() })
-    .where(and(eq(tttRooms.code, row.code), or(eq(tttRooms.hostId, userId), eq(tttRooms.guestId, userId))));
-  return view({ ...row, state: next }, userId, (await nameOf(row.hostId)) ?? "", await nameOf(row.guestId));
+  /* Only lands on the board this move was made against: if the turn timed
+     out (or anything else changed) in between, nothing is written and the
+     player gets the board as it really is. */
+  const at = new Date();
+  const ok = await db.update(tttRooms).set({ state: next, updatedAt: at })
+    .where(and(eq(tttRooms.code, row.code), eq(tttRooms.updatedAt, row.updatedAt), or(eq(tttRooms.hostId, userId), eq(tttRooms.guestId, userId))))
+    .returning({ code: tttRooms.code });
+  if (!ok.length) return { error: "Time's up — the turn passed." };
+  return view({ ...row, state: next, updatedAt: at }, userId, (await nameOf(row.hostId)) ?? "", await nameOf(row.guestId));
 }
 
 export async function rematchRoom(userId: string, code: string): Promise<RoomView | { error: string }> {
@@ -106,6 +115,14 @@ export async function rematchRoom(userId: string, code: string): Promise<RoomVie
   if (!state.winner) return { error: "The game is still on." };
   const round = row.round + 1;
   const fresh = newGame(round % 2 === 0 ? "X" : "O", state.level);
-  await db.update(tttRooms).set({ state: fresh, round, updatedAt: new Date() }).where(eq(tttRooms.code, row.code));
-  return view({ ...row, state: fresh, round }, userId, (await nameOf(row.hostId)) ?? "", await nameOf(row.guestId));
+  /* Both players can press rematch at once: only the first press makes the
+     new board; the second just gets that same board back. */
+  const at = new Date();
+  const ok = await db.update(tttRooms).set({ state: fresh, round, updatedAt: at })
+    .where(and(eq(tttRooms.code, row.code), eq(tttRooms.round, row.round))).returning({ code: tttRooms.code });
+  if (!ok.length) {
+    const [now] = await db.select().from(tttRooms).where(eq(tttRooms.code, row.code)).limit(1);
+    return now ? view(now, userId, (await nameOf(now.hostId)) ?? "", await nameOf(now.guestId)) : { error: "No such room." };
+  }
+  return view({ ...row, state: fresh, round, updatedAt: at }, userId, (await nameOf(row.hostId)) ?? "", await nameOf(row.guestId));
 }

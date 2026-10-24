@@ -5,7 +5,7 @@ import { raceRooms, users } from "@/db/schema";
 import { roomCode, normaliseRoomCode } from "./ttt";
 import { raceQuestion, RACE_GOAL, RACE_ROOM_MAX } from "./minigames";
 
-/* Online Math Race: 2–4 friends in one room, same sums, first to RACE_GOAL.
+/* Online Math Race: 2–50 friends in one room, same sums, first to RACE_GOAL.
 
    The host makes the room and shares the 4-letter code; friends join while it
    is in the lobby. The host presses start, which stamps a start time a few
