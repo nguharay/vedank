@@ -2325,6 +2325,20 @@ export function GameApp({
   const [tttSel, setTttSel] = useState<number | null>(null);
   const [tttScore, setTttScore] = useState({ X: 0, O: 0, draw: 0 });
   const [tttRoom, setTttRoom] = useState<RoomView | null>(null);
+  /* Online replies can arrive out of order (a poll sent before your move can
+     land after it), so the newest board wins: anything older than what is
+     on screen is dropped. The server's clock offset is kept so both phones
+     count the turn down to the same moment. */
+  const tttRevRef = useRef(0);
+  const [tttSkew, setTttSkew] = useState(0);
+  function applyRoom(r: RoomView, force = false) {
+    if (!force && r.code === tttRoom?.code && r.rev < tttRevRef.current) return false;
+    tttRevRef.current = r.rev;
+    const skew = r.now - Date.now();
+    setTttSkew((s) => (Math.abs(skew - s) > 400 ? skew : s));   /* ignore network jitter */
+    setTttRoom(r); setTtt(r.state);
+    return true;
+  }
   const [tttJoinCode, setTttJoinCode] = useState("");
   const [tttNote, setTttNote] = useState<string | null>(null);
   const [tttBusy, setTttBusy] = useState(false);
@@ -2341,7 +2355,7 @@ export function GameApp({
     setTttBusy(true);
     try {
       const room = await tttCreateAction(tttLevel);
-      setTttRoom(room); setTtt(room.state); setTttMode("online"); setTttNote(null);
+      applyRoom(room, true); setTttMode("online"); setTttNote(null);
     } catch { setTttNote(lang === "ja" ? "部屋を作れませんでした" : "Could not make a room"); }
     setTttBusy(false);
   }
@@ -2351,14 +2365,14 @@ export function GameApp({
     const res = await tttJoinAction(code);
     setTttBusy(false);
     if ("error" in res) { setTttNote(res.error); return; }
-    setTttRoom(res); setTtt(res.state); setTttMode("online"); setTttNote(null); setTttSel(null); setView("ttt");
+    applyRoom(res, true); setTttMode("online"); setTttNote(null); setTttSel(null); setView("ttt");
   }
   async function challengeFriendTtt(friendId: string) {
     setTttBusy(true);
     const res = await tttChallengeFriendAction(friendId, tttLevel);
     setTttBusy(false);
     if ("error" in res) { setFriendNote(res.error); return; }
-    setTttRoom(res); setTtt(res.state); setTttMode("online"); setTttNote(null); setTttSel(null);
+    applyRoom(res, true); setTttMode("online"); setTttNote(null); setTttSel(null);
     setFriendsOpen(false); setView("ttt");
     spawnToast(lang === "ja" ? "挑戦状を送りました！" : "Challenge sent!", null);
   }
@@ -2377,8 +2391,13 @@ export function GameApp({
       setTttBusy(true);
       const res = await tttMoveAction(tttRoom.code, i, chosen);
       setTttBusy(false);
-      if ("error" in res) { setTttNote(res.error); return; }
-      const was = ttt; setTttRoom(res); setTtt(res.state);
+      if ("error" in res) {
+        setTttNote(res.error);
+        /* refused (turn passed, square taken): show the real board now */
+        tttRoomAction(tttRoom.code).then((r) => { if (r) applyRoom(r); }).catch(() => {});
+        return;
+      }
+      const was = ttt; applyRoom(res);
       if (res.state.cells[i].owner) { sound.correct(); haptic(14); } else if (was.level > 1) sound.wrong();
       return;
     }
@@ -2401,7 +2420,7 @@ export function GameApp({
   }
   function tttRematch() {
     if (tttMode === "online" && tttRoom) {
-      tttRematchAction(tttRoom.code).then((res) => { if (!("error" in res)) { setTttRoom(res); setTtt(res.state); } });
+      tttRematchAction(tttRoom.code).then((res) => { if (!("error" in res)) applyRoom(res); });
       return;
     }
     tttStarterRef.current = tttStarterRef.current === "X" ? "O" : "X";
@@ -2428,9 +2447,9 @@ export function GameApp({
     const id = setInterval(async () => {
       try {
         const r = await tttRoomAction(code);
-        if (r) { setTttRoom(r); setTtt(r.state); }
+        if (r) applyRoom(r);
       } catch {}
-    }, 1500);
+    }, 1000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, tttMode, tttRoom?.code]);
@@ -4278,7 +4297,7 @@ export function GameApp({
                 <div className="ttt-top">
                   <div className={`ttt-player x${ttt.turn === "X" && !ttt.winner ? " turn" : ""}`}>
                     {ttt.turn === "X" && !ttt.winner && (tttMode !== "online" || !!tttRoom?.guestName) && (
-                      <TurnClock key={`x${ttt.turnAt}`} since={ttt.turnAt} seconds={tttTurnSeconds(ttt.level)} onExpire={tttTimeUp} />
+                      <TurnClock key={`x${ttt.turnAt}`} since={ttt.turnAt - (tttMode === "online" ? tttSkew : 0)} seconds={tttTurnSeconds(ttt.level)} onExpire={tttTimeUp} />
                     )}
                     <span className="ttt-glyph">✕</span>
                     <span>{tttMode === "online" ? tttRoom?.hostName : tttMode === "cpu" ? (lang === "ja" ? "あなた" : "You") : (lang === "ja" ? "プレイヤー X" : "Player X")}</span>
@@ -4287,7 +4306,7 @@ export function GameApp({
                   <div className="ttt-vs">Lv.{ttt.level}</div>
                   <div className={`ttt-player o${ttt.turn === "O" && !ttt.winner ? " turn" : ""}`}>
                     {ttt.turn === "O" && !ttt.winner && (tttMode !== "online" || !!tttRoom?.guestName) && (
-                      <TurnClock key={`o${ttt.turnAt}`} since={ttt.turnAt} seconds={tttTurnSeconds(ttt.level)} onExpire={tttTimeUp} />
+                      <TurnClock key={`o${ttt.turnAt}`} since={ttt.turnAt - (tttMode === "online" ? tttSkew : 0)} seconds={tttTurnSeconds(ttt.level)} onExpire={tttTimeUp} />
                     )}
                     <span className="ttt-glyph">○</span>
                     <span>{tttMode === "online" ? (tttRoom?.guestName ?? (lang === "ja" ? "待っています…" : "waiting…")) : tttMode === "cpu" ? "CPU" : (lang === "ja" ? "プレイヤー O" : "Player O")}</span>
