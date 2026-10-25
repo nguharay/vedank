@@ -1,6 +1,8 @@
 "use client";
 
 import { UiIcon } from "../Art";
+
+export type HomeTab = "learn" | "today" | "play" | "quests" | "world";
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
 import { todaysGame, bonusStopGame, type HomeGameId } from "../homeGames";
 import { useDragon, stageOf, nextStage, moodOf, nameDragon, DAILY_GOAL } from "../dragon";
@@ -58,6 +60,8 @@ export function HomeView({
   onOpenGames,
   onTabChange,
   focusTopic,
+  questsPanel,
+  questsDot,
   lang,
   t,
 }: {
@@ -96,9 +100,12 @@ export function HomeView({
   /* the full Games shelf (the arcade) */
   onOpenGames: () => void;
   /* which Home tab is showing — for the activity log */
-  onTabChange?: (tab: "learn" | "today" | "play" | "world") => void;
+  onTabChange?: (tab: HomeTab) => void;
   /* coming back from a lesson: open on the map, scrolled to that lesson */
   focusTopic?: string | null;
+  /* signed-in players: today's quests as a tab before My world */
+  questsPanel?: React.ReactNode;
+  questsDot?: boolean;
   lang: Lang;
   t: UIDict;
 }) {
@@ -119,7 +126,7 @@ export function HomeView({
   const resetMins = Math.floor((resetIn % 3600000) / 60000);
 
   const pathWrapRef = useRef<HTMLDivElement | null>(null);
-  const [tab, setTab] = useState<"learn" | "today" | "play" | "world">(focusTopic ? "learn" : "play");
+  const [tab, setTab] = useState<HomeTab>(focusTopic ? "learn" : "play");
   useEffect(() => {
     if (!focusTopic) return;
     onTabChange?.("learn");
@@ -132,18 +139,19 @@ export function HomeView({
   useEffect(() => {
     const on = (e: Event) => {
       const t = (e as CustomEvent<string>).detail;
-      if (t === "learn" || t === "today" || t === "play" || t === "world") { setTab(t); onTabChange?.(t); }
+      if (t === "learn" || t === "today" || t === "play" || t === "quests" || t === "world") { setTab(t); onTabChange?.(t); }
     };
     window.addEventListener("vedank:hometab", on);
     return () => window.removeEventListener("vedank:hometab", on);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   /* Home always opens on Play (games first) — say so, so the activity log doesn't keep a stale tab */
   useEffect(() => { onTabChange?.("play"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const TAB_ORDER = ["learn", "today", "play", "world"] as const;
-  function pickTab(id: "learn" | "today" | "play" | "world") {
+  const TAB_ORDER = ["learn", "today", "play", "quests", "world"] as const;
+  function pickTab(id: HomeTab) {
     /* slide sideways in the direction of the tab */
     transition(() => flushSync(() => setTab(id)), TAB_ORDER.indexOf(id) > TAB_ORDER.indexOf(tab) ? "left" : "right");
     onTabChange?.(id);
+    if (id === "quests") onOpenQuests();   /* fresh counts every time it opens */
     /* bring the tab bar to the top so the new page starts at its beginning */
     requestAnimationFrame(() => tabsRef.current?.scrollIntoView({ block: "start" }));
   }
@@ -195,12 +203,14 @@ export function HomeView({
           ["learn", "learn", lang === "ja" ? "まなぶ" : "Learn"],
           ["today", "today", lang === "ja" ? "きょう" : "Today"],
           ["play", "play", lang === "ja" ? "あそぶ" : "Play"],
+          ["quests", "quests", lang === "ja" ? "クエスト" : "Quests"],
           ["world", "world", lang === "ja" ? "マイワールド" : "My world"],
-        ] as const).map(([id, ico, label]) => (
+        ] as const).filter(([id]) => id !== "quests" || !!questsPanel).map(([id, ico, label]) => (
           <button key={id} role="tab" aria-selected={tab === id} className={`home-tab${tab === id ? " on" : ""}`} onClick={() => pickTab(id)}>
             <span className="home-tab-ico" aria-hidden="true"><UiIcon name={ico} /></span>
             <span>{label}</span>
             {id === "today" && !dailyPlayed && <i className="home-tab-dot" aria-hidden="true" />}
+            {id === "quests" && questsDot && <i className="home-tab-dot" aria-hidden="true" />}
           </button>
         ))}
       </div>
@@ -547,6 +557,9 @@ export function HomeView({
       </button>
       <InviteCard lang={lang} />
         </>
+      )}
+      {tab === "quests" && questsPanel && (
+        <div className="home-quests">{questsPanel}</div>
       )}
       {tab === "world" && (
         <>

@@ -122,6 +122,7 @@ import { LEAGUES } from "@/lib/game/daily";
 import { ri, shuffle, weightedPick, urlBase64ToUint8Array, RollUp, fmt, sameLoc, haptic, rankLabel, SPRINT_LEN, BLITZ_DEFAULT_LEVEL, BLITZ_BOOST_MS } from "./util";
 import type { View, Mode, Loc } from "./util";
 import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, TricksView, BlitzView } from "./views";
+import type { HomeTab } from "./views/HomeView";
 import { SITE_URL } from "@/lib/site";
 
 /* A reward that snaps into place reads as a label. One that climbs reads as
@@ -920,6 +921,48 @@ export function GameApp({
       dealReviewQuestion(reviewQueue, next);
     }, ok ? 700 : 1400);
   }
+
+  /* today's quests (and the "fix your misses" button): shown as a Home tab */
+  const questsList = (
+    <>
+      <div className="quest-list">
+        {quests.map((q) => (
+          <div key={q.id} className={`quest-row${q.claimed ? " claimed" : q.done ? " ready" : ""}`}>
+            <span className="quest-icon">{q.claimed ? "✅" : q.icon}</span>
+            <div className="quest-body">
+              <div className="quest-title">{lang === "ja" ? q.titleJa : q.title}</div>
+              <div className="quest-track">
+                <div
+                  className="quest-fill"
+                  style={{ width: `${Math.min(100, (q.count / q.target) * 100)}%` }}
+                />
+              </div>
+              <div className="quest-sub mono">
+                {Math.min(q.count, q.target)} / {q.target}
+              </div>
+            </div>
+            {q.claimed ? (
+              <span className="quest-done">{lang === "ja" ? "受取済" : "Claimed"}</span>
+            ) : q.done ? (
+              <button className="quest-claim" onClick={() => onClaimQuest(q.id)}>
+                +{q.reward} 💎
+              </button>
+            ) : (
+              <span className="quest-reward mono">+{q.reward} 💎</span>
+            )}
+          </div>
+        ))}
+        {quests.length === 0 && (
+          <div className="quest-empty">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>
+        )}
+      </div>
+      {reviewCount > 0 && (
+        <button className="quest-review-cta" onClick={startReview}>
+          🩹 {lang === "ja" ? `まちがい ${reviewCount} 問をなおす` : `Fix ${reviewCount} missed question${reviewCount === 1 ? "" : "s"}`}
+        </button>
+      )}
+    </>
+  );
 
   /* share sheet: every header stat and the blitz result open it focused on that number */
   const [shareOpen, setShareOpen] = useState(false);
@@ -2546,7 +2589,7 @@ export function GameApp({
 
   /* the section the player is in, by its real name — each visit's row in
      the sheet lists these in order with the time spent and the score on each */
-  const [homeTab, setHomeTab] = useState<"learn" | "today" | "play" | "world">("play");
+  const [homeTab, setHomeTab] = useState<HomeTab>("play");
   const sectionName = (() => {
     const EN = UI.en.headerTitles;
     const topic = currentTopic ? currentTopic.title : "";
@@ -3957,42 +4000,7 @@ export function GameApp({
                 {quests.filter((q) => q.claimed).length}/{quests.length}
               </span>
             </div>
-            <div className="quest-list">
-              {quests.map((q) => (
-                <div key={q.id} className={`quest-row${q.claimed ? " claimed" : q.done ? " ready" : ""}`}>
-                  <span className="quest-icon">{q.claimed ? "✅" : q.icon}</span>
-                  <div className="quest-body">
-                    <div className="quest-title">{lang === "ja" ? q.titleJa : q.title}</div>
-                    <div className="quest-track">
-                      <div
-                        className="quest-fill"
-                        style={{ width: `${Math.min(100, (q.count / q.target) * 100)}%` }}
-                      />
-                    </div>
-                    <div className="quest-sub mono">
-                      {Math.min(q.count, q.target)} / {q.target}
-                    </div>
-                  </div>
-                  {q.claimed ? (
-                    <span className="quest-done">{lang === "ja" ? "受取済" : "Claimed"}</span>
-                  ) : q.done ? (
-                    <button className="quest-claim" onClick={() => onClaimQuest(q.id)}>
-                      +{q.reward} 💎
-                    </button>
-                  ) : (
-                    <span className="quest-reward mono">+{q.reward} 💎</span>
-                  )}
-                </div>
-              ))}
-              {quests.length === 0 && (
-                <div className="quest-empty">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>
-              )}
-            </div>
-            {reviewCount > 0 && (
-              <button className="quest-review-cta" onClick={startReview}>
-                🩹 {lang === "ja" ? `まちがい ${reviewCount} 問をなおす` : `Fix ${reviewCount} missed question${reviewCount === 1 ? "" : "s"}`}
-              </button>
-            )}
+            {questsList}
           </div>
         </>
       )}
@@ -4281,7 +4289,17 @@ export function GameApp({
             onShare={openShare}
             reviewCount={reviewCount}
             reviewStats={reviewStats}
-            onOpenQuests={() => { setQuestsOpen(true); refreshQuests(); }}
+            onOpenQuests={() => { refreshQuests(); refreshReview(); }}
+            questsPanel={guest ? undefined : (
+              <div className="quests-tab">
+                <div className="sheet-panel-title">
+                  <span>📜 {lang === "ja" ? "今日のクエスト" : "Today's Quests"}</span>
+                  <span className="sheet-panel-count">{quests.filter((q) => q.claimed).length}/{quests.length}</span>
+                </div>
+                {questsList}
+              </div>
+            )}
+            questsDot={claimableQuests > 0 || reviewCount > 0}
             onOpenShop={() => { setShopOpen(true); refreshShop(); }}
             onStartReview={startReview}
             gemBalance={gemBalance}
@@ -5226,13 +5244,6 @@ export function GameApp({
             <button className="bottomnav-item active" onClick={goHome}>
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
-            </button>
-            <button className="bottomnav-item" onClick={() => { setQuestsOpen((o) => !o); refreshQuests(); refreshReview(); }}>
-              <span className="bottomnav-icon">
-                <UiIcon name="quests" />
-                {(claimableQuests > 0 || reviewCount > 0) && <span className="nav-dot" aria-hidden="true" />}
-              </span>
-              <span>{lang === "ja" ? "クエスト" : "Quests"}</span>
             </button>
             <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
