@@ -1,4 +1,4 @@
-/* ---------- progression: game unlocks, the card collection, the daily gift ----------
+/* ---------- progression: game unlocks and the card collection ----------
    Everything here lives in the browser (localStorage), like Math Town and the
    dragon — no server round trip, works for guests too.
 
@@ -6,8 +6,8 @@
      player finishes games (any games). A game already played before this
      existed stays open.
    - Cards: famous mathematicians, each with their quote or a fun fact. One
-     comes with the daily gift (open the app each day), and one the first
-     time each game is finished — so trying every game pays off.
+     comes with every new level the player reaches (each level a different
+     card), and one the first time each game is finished.
    - When something unlocks, or a card is won, a window event tells the UI
      (vedank:unlock, vedank:card), so any screen can trigger it. */
 
@@ -88,7 +88,6 @@ export const CARDS: Card[] = [
 /* ---------- storage ---------- */
 const PLAYS_KEY = "sutraSprint.plays";       /* { [game]: { o: opened, f: finished } } */
 const CARDS_KEY = "sutraSprint.cards";       /* { [cardId]: dayObtained } */
-const GIFT_KEY = "sutraSprint.dailyGift";    /* { day, streak } */
 
 type Plays = Record<string, { o: number; f: number }>;
 function load<T>(key: string, fallback: T): T {
@@ -198,7 +197,7 @@ export function ownedCards(): Record<string, string> {
   return load<Record<string, string>>(CARDS_KEY, {});
 }
 /* a random card the player doesn't have; legendaries are rare unless `boost` */
-export function awardCard(_reason: "game" | "daily", boost = 0): Card | null {
+export function awardCard(_reason: "game" | "level", boost = 0): Card | null {
   const owned = ownedCards();
   const left = CARDS.filter((c) => !owned[c.id]);
   if (!left.length) return null;
@@ -212,22 +211,23 @@ export function awardCard(_reason: "game" | "daily", boost = 0): Card | null {
   return pick;
 }
 
-/* ---------- daily gift: open the app each day ---------- */
-export function dailyGiftDue(): boolean {
-  return load<{ day: string }>(GIFT_KEY, { day: "" }).day !== jstDay();
-}
-/* claim today's gift: a card (better odds on a longer daily streak) and coins */
-export function claimDailyGift(): { card: Card | null; coins: number; streak: number } {
-  const g = load<{ day: string; streak: number }>(GIFT_KEY, { day: "", streak: 0 });
-  const today = jstDay();
-  if (g.day === today) return { card: null, coins: 0, streak: g.streak };
-  const yesterday = jstDay(new Date(Date.now() - 86400_000));
-  const streak = g.day === yesterday ? g.streak + 1 : 1;
-  save(GIFT_KEY, { day: today, streak });
-  const card = awardCard("daily", streak >= 7 ? 3 : streak >= 3 ? 1 : 0);
-  const coins = 10 + Math.min(streak, 7) * 5;
-  return { card, coins, streak };
-}
-export function giftStreak(): number {
-  return load<{ streak: number }>(GIFT_KEY, { streak: 0 }).streak;
+/* ---------- level cards: every new level brings a new card ----------
+   The highest level already paid out is kept, so each level's card pops up
+   once. A player who was already some levels in when this arrived gets one
+   card for where they are now, not a pile for every level behind them.
+   Higher levels tilt the odds toward Rare and Legendary. */
+const LEVEL_CARDS_KEY = "sutraSprint.levelCards";
+export function awardLevelCards(level: number): { level: number; card: Card }[] {
+  if (!Number.isFinite(level) || level < 2) return [];
+  const paid = load<{ level: number } | null>(LEVEL_CARDS_KEY, null);
+  /* at most three at once (e.g. signing in on a new phone that's levels ahead) */
+  const from = Math.max(paid ? paid.level + 1 : level, level - 2);
+  if (from > level) return [];
+  const won: { level: number; card: Card }[] = [];
+  for (let lv = from; lv <= level; lv++) {
+    const card = awardCard("level", Math.floor(lv / 5));
+    if (card) won.push({ level: lv, card });
+  }
+  save(LEVEL_CARDS_KEY, { level });
+  return won;
 }

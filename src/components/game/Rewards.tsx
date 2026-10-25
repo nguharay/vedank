@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import {
-  CARDS, ownedCards, claimDailyGift, dailyGiftDue, gamesToUnlock, untriedGames, GAME_NAMES, giftStreak,
+  CARDS, ownedCards, gamesToUnlock, untriedGames, GAME_NAMES,
   type Card,
 } from "@/lib/game/progression";
-import { addTownCoins } from "./town";
 import { track } from "@/lib/analytics";
 
 /* ---------- rewards layer ----------
@@ -43,36 +42,26 @@ export function CardFace({ card, lang, size = "big" }: { card: Card; lang: L; si
   );
 }
 
-function untilTomorrow(): string {
-  const now = Date.now();
-  const jst = now + 9 * 3600_000;
-  const next = Math.ceil(jst / 86400_000) * 86400_000 - 9 * 3600_000;
-  const m = Math.max(0, Math.round((next - now) / 60000));
-  return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
-}
-
 type Pop =
-  | { kind: "card"; card: Card; reason: string; game?: string }
+  | { kind: "card"; card: Card; reason: string; game?: string; level?: number }
   | { kind: "unlock"; games: string[] }
   | { kind: "nudge"; from: string; to: string }
   | { kind: "locked"; game: string }
-  | { kind: "gift" }
   | { kind: "collection" };
 
-export function RewardsLayer({ lang, onPlay, giftReady }: { lang: L; onPlay: (id: string) => void; giftReady: boolean }) {
+export function RewardsLayer({ lang, onPlay }: { lang: L; onPlay: (id: string) => void }) {
   const ja = lang === "ja";
   const [queue, setQueue] = useState<Pop[]>([]);
-  const [gift, setGift] = useState<null | ReturnType<typeof claimDailyGift>>(null);
   const [detail, setDetail] = useState<Card | null>(null);
   const [, bump] = useState(0);
   const pop = queue[0];
   const push = (p: Pop) => setQueue((q) => (q.some((x) => x.kind === p.kind && x.kind !== "card") ? q : [...q, p]));
-  const close = () => { setQueue((q) => q.slice(1)); setGift(null); setDetail(null); };
+  const close = () => { setQueue((q) => q.slice(1)); setDetail(null); };
 
   useEffect(() => {
     const on = (kind: Pop["kind"]) => (e: Event) => {
       const d = (e as CustomEvent).detail ?? {};
-      if (kind === "card") { push({ kind, card: d.card, reason: d.reason, game: d.game }); track("card_won", { card: d.card.id, reason: d.reason }); }
+      if (kind === "card") { push({ kind, card: d.card, reason: d.reason, game: d.game, level: d.level }); track("card_won", { card: d.card.id, reason: d.reason }); }
       else if (kind === "unlock") { push({ kind, games: d.games }); track("game_unlocked", { detail: d.games.join(",") }); }
       else if (kind === "nudge") { push({ kind, from: d.from, to: d.to }); track("nudge_shown", { game: d.to }); }
       else if (kind === "locked") push({ kind, game: d.game });
@@ -85,13 +74,6 @@ export function RewardsLayer({ lang, onPlay, giftReady }: { lang: L; onPlay: (id
     return () => fns.forEach(([n, f]) => window.removeEventListener(`vedank:${n}`, f));
   }, []);
 
-  /* the daily gift, once the app is settled (no intro, tour or chest showing) */
-  useEffect(() => {
-    if (!giftReady) return;
-    const t = setTimeout(() => { if (dailyGiftDue()) setQueue((q) => (q.some((x) => x.kind === "gift") ? q : [{ kind: "gift" }, ...q])); }, 1200);
-    return () => clearTimeout(t);
-  }, [giftReady]);
-
   if (!pop) return null;
   const owned = ownedCards();
 
@@ -103,7 +85,7 @@ export function RewardsLayer({ lang, onPlay, giftReady }: { lang: L; onPlay: (id
           <button className="rw-x" onClick={close} aria-label={ja ? "とじる" : "Close"}>×</button>
           <div className="rw-title">📚 {ja ? "偉人カード図鑑" : "Great Minds collection"}</div>
           <div className="rw-progress"><i style={{ width: `${(have / CARDS.length) * 100}%` }} /><b className="mono">{have} / {CARDS.length}</b></div>
-          <p className="rw-sub">{ja ? "🎁 毎日アプリを開くと1まい ・ 🎮 新しいゲームをはじめてクリアで1まい" : "🎁 One a day when you open the app · 🎮 one for every new game you finish"}</p>
+          <p className="rw-sub">{ja ? "⬆️ レベルが上がるたびに1まい ・ 🎮 新しいゲームをはじめてクリアで1まい" : "⬆️ One for every new level · 🎮 one for every new game you finish"}</p>
           <div className="rw-grid">
             {CARDS.map((c) =>
               owned[c.id] ? (
@@ -123,52 +105,21 @@ export function RewardsLayer({ lang, onPlay, giftReady }: { lang: L; onPlay: (id
     );
   }
 
-  if (pop.kind === "gift") {
-    return (
-      <div className="rw-wrap" role="dialog" aria-modal="true" aria-label={ja ? "今日のプレゼント" : "Today's gift"}>
-        <div className="rw-card">
-          {!gift ? (
-            <button className="rw-gift" onClick={() => {
-              const g = claimDailyGift();
-              if (g.coins) addTownCoins(g.coins);
-              setGift(g);
-              window.dispatchEvent(new CustomEvent("vedank:giftclaimed"));
-              track("daily_gift", { card: g.card?.id ?? "", coins: g.coins, streak: g.streak });
-            }}>
-              <span className="rw-gift-box">🎁</span>
-              <b>{ja ? "今日のプレゼント！" : "Today's gift!"}</b>
-              <span>{ja ? "タップしてあけよう" : "Tap to open"}</span>
-            </button>
-          ) : (
-            <>
-              <div className="rw-title">{ja ? `🔥 ${gift.streak}日連続ログイン！` : `🔥 Day ${gift.streak} in a row!`}</div>
-              {gift.card ? <div className="rw-flip"><CardFace card={gift.card} lang={lang} /></div> : <p className="rw-sub">{ja ? "カードはぜんぶ集まった！すごい！" : "You have every card — amazing!"}</p>}
-              {gift.card && <div className="rw-new">{ja ? "✨ 新しいカード！" : "✨ New card!"}</div>}
-              <div className="rw-coins mono">+{gift.coins} 🪙</div>
-              <p className="rw-sub">
-                {ja ? `明日もまた来てね！次のカードが待ってるよ（あと ${untilTomorrow()}）` : `Come back tomorrow for another card (in ${untilTomorrow()})`}
-                {gift.streak < 7 && <><br />{ja ? `7日連続でレジェンドカードが出やすくなる！` : `7 days in a row = better chance of a Legendary!`}</>}
-              </p>
-              <div className="rw-btns">
-                <button className="btn btn-primary" onClick={close}>{ja ? "やったー！" : "Awesome!"}</button>
-                <button className="btn btn-ghost" onClick={() => { setGift(null); setQueue((q) => [{ kind: "collection" }, ...q.slice(1)]); }}>📚 {ja ? "図鑑を見る" : "See collection"}</button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   if (pop.kind === "card") {
     return (
       <div className="rw-wrap" role="dialog" aria-modal="true">
         <div className="rw-card">
-          <div className="rw-title">{pop.reason === "game" && pop.game
+          <div className="rw-title">{pop.reason === "level" && pop.level
+            ? (ja ? `⬆️ レベル ${pop.level} になった！` : `⬆️ You reached Level ${pop.level}!`)
+            : pop.reason === "game" && pop.game
             ? (ja ? `🎉「${gname(pop.game, true)}」はじめてクリア！` : `🎉 First clear: ${gname(pop.game, false)}!`)
             : (ja ? "🎉 カードをゲット！" : "🎉 New card!")}</div>
           <div className="rw-flip"><CardFace card={pop.card} lang={lang} /></div>
-          <p className="rw-sub">{ja ? `図鑑 ${Object.keys(owned).length} / ${CARDS.length} まい` : `${Object.keys(owned).length} of ${CARDS.length} collected`}</p>
+          <div className="rw-new">{ja ? "✨ 新しい偉人カード！" : "✨ New Great Minds card!"}</div>
+          <p className="rw-sub">
+            {ja ? `図鑑 ${Object.keys(owned).length} / ${CARDS.length} まい` : `${Object.keys(owned).length} of ${CARDS.length} collected`}
+            {pop.reason === "level" && <><br />{ja ? "次のレベルで、また別のカードがもらえるよ！" : "Reach the next level for another card!"}</>}
+          </p>
           <div className="rw-btns">
             <button className="btn btn-primary" onClick={close}>{ja ? "やったー！" : "Awesome!"}</button>
             <button className="btn btn-ghost" onClick={() => setQueue((q) => [{ kind: "collection" }, ...q.slice(1)])}>📚 {ja ? "図鑑を見る" : "See collection"}</button>
@@ -244,8 +195,7 @@ export function CollectionChip({ lang }: { lang: L }) {
     const read = () => setN(Object.keys(ownedCards()).length);
     const t = setTimeout(read, 0);
     window.addEventListener("vedank:card", read);
-    window.addEventListener("vedank:giftclaimed", read);
-    return () => { clearTimeout(t); window.removeEventListener("vedank:card", read); window.removeEventListener("vedank:giftclaimed", read); };
+        return () => { clearTimeout(t); window.removeEventListener("vedank:card", read); };
   }, []);
   return (
     <button className="collection-chip" onClick={() => window.dispatchEvent(new CustomEvent("vedank:collection"))} aria-label={lang === "ja" ? "偉人カード図鑑" : "Card collection"}>
@@ -261,8 +211,8 @@ export function CollectionCard({ lang }: { lang: L }) {
   useEffect(() => {
     const read = () => setN(Object.keys(ownedCards()).length);
     const t = setTimeout(read, 0);
-    ["vedank:card", "vedank:giftclaimed"].forEach((e) => window.addEventListener(e, read));
-    return () => { clearTimeout(t); ["vedank:card", "vedank:giftclaimed"].forEach((e) => window.removeEventListener(e, read)); };
+    ["vedank:card"].forEach((e) => window.addEventListener(e, read));
+    return () => { clearTimeout(t); ["vedank:card"].forEach((e) => window.removeEventListener(e, read)); };
   }, []);
   return (
     <button className="collection-card" onClick={() => window.dispatchEvent(new CustomEvent("vedank:collection"))}>
@@ -277,4 +227,3 @@ export function CollectionCard({ lang }: { lang: L }) {
   );
 }
 
-export { giftStreak };

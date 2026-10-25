@@ -2,7 +2,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { stageOutcome } from "./state";
 import { topicProgress, arenaProgress, users, inventory } from "@/db/schema";
-import { TOPICS, QUESTIONS_PER_STAGE, STAGE_COUNT, rankFor } from "./topics";
+import { TOPICS, QUESTIONS_PER_STAGE, STAGE_COUNT } from "./topics";
 import { PUZZLES } from "./matchstick";
 import type { ProgressState, TopicProgressRow } from "./state";
 
@@ -243,50 +243,62 @@ export async function submitPuzzleSolved(userId: string, puzzleId: string, moves
   return { alreadySolved, bestMoves };
 }
 
+/* ---------- the Rank board ----------
+   One clear rule a child can follow: the more lessons you clear, the higher
+   you are. Ties go to more ⭐ stars, then to whoever got there first. Games,
+   gems and puzzles don't count — those have their own boards (league, race).
+   Players who haven't cleared a lesson yet aren't ranked. */
+export const LESSONS_TOTAL = TOPICS.length * STAGE_COUNT;
+
 export type LeaderboardEntry = {
   userId: string;
   name: string;
-  gems: number;
-  level: number;
-  rank: string;
+  lessons: number;       /* lesson stages cleared, out of LESSONS_TOTAL */
+  stars: number;         /* ⭐ earned across those stages (3 a stage at most) */
   dailyStreak: number;
+};
+
+export type LeaderboardData = {
+  top: LeaderboardEntry[];
+  me: (LeaderboardEntry & { position: number | null }) | null;   /* position null = not ranked yet */
+  above: LeaderboardEntry | null;                                /* the player one place above me: "N more to pass X" */
+  total: number;                                                 /* how many players are ranked */
+  lessonsTotal: number;
 };
 
 export async function getLeaderboard(
   currentUserId: string,
-  limit = 20
-): Promise<{ top: LeaderboardEntry[]; me: (LeaderboardEntry & { position: number }) | null }> {
+  limit = 30
+): Promise<LeaderboardData> {
   const db = getDb();
-  const [userRows, tRows, aRows] = await Promise.all([
-    db.select({ id: users.id, name: users.name, dailyStreak: users.dailyStreak, bonusGems: users.bonusGems }).from(users),
+  const [userRows, tRows] = await Promise.all([
+    db.select({ id: users.id, name: users.name, dailyStreak: users.dailyStreak }).from(users),
     db.select().from(topicProgress),
-    db.select().from(arenaProgress),
   ]);
 
-  const gemsByUser = new Map<string, number>();
-  for (const u of userRows) gemsByUser.set(u.id, u.bonusGems);
+  const agg = new Map<string, { lessons: number; stars: number; at: number }>();
   for (const row of tRows) {
-    const stars = (row.stageStars as Record<string, number>) || {};
-    let g = row.cleared * 50;
-    for (const v of Object.values(stars)) g += (v || 0) * 25;
-    gemsByUser.set(row.userId, (gemsByUser.get(row.userId) || 0) + g);
-  }
-  for (const row of aRows) {
-    if (row.solved) gemsByUser.set(row.userId, (gemsByUser.get(row.userId) || 0) + 40);
+    const a = agg.get(row.userId) ?? { lessons: 0, stars: 0, at: 0 };
+    a.lessons += Math.max(0, Math.min(STAGE_COUNT, row.cleared || 0));
+    for (const v of Object.values((row.stageStars as Record<string, number>) || {})) a.stars += Math.max(0, Math.min(3, v || 0));
+    a.at = Math.max(a.at, row.updatedAt.getTime());
+    agg.set(row.userId, a);
   }
 
-  const entries: LeaderboardEntry[] = userRows.map((u) => {
-    const gems = gemsByUser.get(u.id) || 0;
-    const level = Math.floor(gems / 150) + 1;
-    return { userId: u.id, name: u.name, gems, level, rank: rankFor(level), dailyStreak: u.dailyStreak };
+  const all = userRows.map((u) => {
+    const a = agg.get(u.id) ?? { lessons: 0, stars: 0, at: 0 };
+    return { userId: u.id, name: u.name, lessons: a.lessons, stars: a.stars, dailyStreak: u.dailyStreak, at: a.at };
   });
-  entries.sort((a, b) => b.gems - a.gems);
+  const ranked = all.filter((e) => e.lessons > 0)
+    .sort((x, y) => y.lessons - x.lessons || y.stars - x.stars || x.at - y.at);
+  const strip = (e: (typeof all)[number]): LeaderboardEntry => ({ userId: e.userId, name: e.name, lessons: e.lessons, stars: e.stars, dailyStreak: e.dailyStreak });
 
-  const top = entries.slice(0, limit);
-  const idx = entries.findIndex((e) => e.userId === currentUserId);
-  const me = idx >= 0 ? { ...entries[idx], position: idx + 1 } : null;
-
-  return { top, me };
+  const top = ranked.slice(0, limit).map(strip);
+  const idx = ranked.findIndex((e) => e.userId === currentUserId);
+  const mine = all.find((e) => e.userId === currentUserId);
+  const me = mine ? { ...strip(mine), position: idx >= 0 ? idx + 1 : null } : null;
+  const above = idx > 0 ? strip(ranked[idx - 1]) : idx < 0 && ranked.length ? strip(ranked[ranked.length - 1]) : null;
+  return { top, me, above, total: ranked.length, lessonsTotal: LESSONS_TOTAL };
 }
 
 export { QUESTIONS_PER_STAGE, PUZZLES };

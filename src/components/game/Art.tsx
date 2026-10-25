@@ -8,7 +8,7 @@ const O = "#1d1b33"; /* the outline, the same ink as the cards' borders */
 const s = { stroke: O, strokeWidth: 2, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
 
 export type UiIconName =
-  | "learn" | "today" | "play" | "world" | "home" | "quests" | "league" | "rank" | "save" | "gem" | "heart" | "lock";
+  | "learn" | "today" | "play" | "world" | "home" | "quests" | "league" | "rank" | "save" | "gem" | "heart" | "lock" | "card";
 
 export function UiIcon({ name, size = "1em" }: { name: UiIconName; size?: string }) {
   return (
@@ -107,6 +107,17 @@ const UI: Record<UiIconName, React.ReactNode> = {
     <>
       <path d="M16 27S3.5 19.5 3.5 11.5A6.5 6.5 0 0 1 16 8.6a6.5 6.5 0 0 1 12.5 2.9C28.5 19.5 16 27 16 27z" fill="#ff4d6d" {...s} />
       <path d="M8 10.5a3 3 0 0 1 3-2.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity=".8" />
+    </>
+  ),
+  /* a Great Minds card: a gold-trimmed card with its medallion */
+  card: (
+    <>
+      <rect x="9" y="3" width="17" height="23" rx="3" fill="#c8b6ff" {...s} transform="rotate(12 17.5 14.5)" />
+      <rect x="5" y="6" width="18" height="24" rx="3.5" fill="#fffdf6" {...s} />
+      <rect x="7.5" y="8.5" width="13" height="19" rx="2" fill="none" stroke="#e0a21b" strokeWidth="1.4" />
+      <circle cx="14" cy="16" r="4.6" fill="#ff7a59" {...s} strokeWidth="1.6" />
+      <path d="M12.6 14.6a2 2 0 0 1 1.6-.9" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" opacity=".8" />
+      <path d="M10 24h8" stroke="#b8b2c9" strokeWidth="1.6" strokeLinecap="round" />
     </>
   ),
   lock: (
