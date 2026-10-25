@@ -3196,6 +3196,11 @@ export function GameApp({
                 </span>
               </button>
             )}
+            {/* the buddy on screen: a plain switch at the top, not buried in Settings */}
+            <button className="menu-row" onClick={buddy.toggleHidden} role="switch" aria-checked={!buddy.hidden}>
+              <span>🧚 {ja ? "バディを画面に出す" : "Show buddy on screen"}</span>
+              <span className={`menu-switch${buddy.hidden ? "" : " on"}`} aria-hidden="true"><i /></span>
+            </button>
             {/* grouped rows: tap a heading to open it */}
             <button className={`menu-row menu-group${menuGroup === "settings" ? " open" : ""}`} onClick={() => setMenuGroup((g) => (g === "settings" ? null : "settings"))} aria-expanded={menuGroup === "settings"}>
               <span>⚙️ {ja ? "設定" : "Settings"}</span>
@@ -3215,10 +3220,6 @@ export function GameApp({
                 <span>🌐 {t.menu.language}</span>
                 <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
               </button>
-              <button className="menu-row menu-sub" onClick={buddy.toggleHidden}>
-                <span>🧚 {ja ? "バディ" : "Buddy"}</span>
-                <span className="menu-row-val">{buddy.hidden ? t.menu.off : t.menu.on}</span>
-              </button>
               {buddyPos.pos && (
                 <button className="menu-row menu-sub" onClick={buddyPos.reset}>
                   <span>📍 {ja ? "バディの位置をもどす" : "Reset buddy position"}</span>
@@ -3231,6 +3232,10 @@ export function GameApp({
               </button>
               {skinsOpen && (
                 <div className="skins-panel">
+                  <button className="menu-row skins-buddy-switch" onClick={buddy.toggleHidden} role="switch" aria-checked={!buddy.hidden}>
+                    <span>🧚 {ja ? "バディを画面に出す" : "Show buddy on screen"}</span>
+                    <span className={`menu-switch${buddy.hidden ? "" : " on"}`} aria-hidden="true"><i /></span>
+                  </button>
                   {SKINS.map((s) => {
                     const ja = lang === "ja";
                     const unlocked = s.unlocked({ level: li.level, bossClears, solvedCount });
