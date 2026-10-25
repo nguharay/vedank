@@ -4483,3 +4483,16 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .home-tabs .home-tab{ padding-inline:1px; }
 /* five tabs (signed in, with クエスト): a slightly smaller label so マイワールド fits */
 .home-tabs:has(> :nth-child(5)) .home-tab{ font-size:10px; letter-spacing:-.02em; }
+/* Rank / League rows: gold icons with a dark edge, numbers in high-contrast colours */
+.lb-ico{ font-style:normal; display:inline-block; margin-right:3px; filter:drop-shadow(0 0 .6px #3b2600) drop-shadow(0 0 .6px #3b2600) drop-shadow(0 1px 0 rgba(59,38,0,.6)); }
+.lb-stars{ color:#7a4300; font-weight:900; }
+.leaderboard-gems{ color:#1450c4; font-weight:900; }
+.leaderboard-row.me{ border-color:#d98a00; background:#fff3cf; }
+:root[data-theme="dark"] .lb-stars{ color:#ffc94d; }
+:root[data-theme="dark"] .leaderboard-gems{ color:#7fb0ff; }
+:root[data-theme="dark"] .leaderboard-row.me{ background:#3a2f12; border-color:#d98a00; }
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .lb-stars{ color:#ffc94d; }
+  :root:not([data-theme="light"]) .leaderboard-gems{ color:#7fb0ff; }
+  :root:not([data-theme="light"]) .leaderboard-row.me{ background:#3a2f12; border-color:#d98a00; }
+}

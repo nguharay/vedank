@@ -4110,7 +4110,7 @@ export function GameApp({
                       <div key={r.userId} className={`leaderboard-row${r.isMe ? " me" : ""}${tb.promote > 0 && r.rank <= tb.promote ? " zone-up" : ""}${tb.relegate > 0 && r.rank > tb.size - tb.relegate ? " zone-down" : ""}`}>
                         <span className="leaderboard-rank">{r.rank}</span>
                         <span className="leaderboard-name">{r.name}</span>
-                        <span className="leaderboard-gems">⚡ {r.points}</span>
+                        <span className="leaderboard-gems"><i className="lb-ico" aria-hidden="true">⚡</i>{r.points}</span>
                       </div>
                     ))}
                   </div>
@@ -4152,7 +4152,7 @@ export function GameApp({
                     <span className="leaderboard-name">{r.name}</span>
                     {league.promote > 0 && r.rank <= league.promote && <span className="zone-tag up">⬆️</span>}
                     {league.relegate > 0 && r.rank > league.size - league.relegate && <span className="zone-tag down">⬇️</span>}
-                    <span className="leaderboard-gems">⚡ {r.points}</span>
+                    <span className="leaderboard-gems"><i className="lb-ico" aria-hidden="true">⚡</i>{r.points}</span>
                   </div>
                 ))}
             </div>
@@ -4191,7 +4191,7 @@ export function GameApp({
                     <span className="lb-me-pos">{me.position ? (ja ? `${me.position}位` : `#${me.position}`) : "—"}</span>
                     <span className="lb-me-stats">
                       <span>📘 <b className="mono">{me.lessons}</b><small> / {lb.lessonsTotal}</small></span>
-                      <span>⭐ <b className="mono">{me.stars}</b></span>
+                      <span><i className="lb-ico" aria-hidden="true">⭐</i><b className="mono">{me.stars}</b></span>
                     </span>
                   </div>
                   <div className="lb-me-bar"><i style={{ width: `${(me.lessons / lb.lessonsTotal) * 100}%` }} /></div>
@@ -4214,7 +4214,7 @@ export function GameApp({
                     <span className={`leaderboard-rank${i < 3 ? ` top${i + 1}` : ""}`}>{i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
                     <span className="leaderboard-name">{e.name}</span>
                     <span className="lb-lessons mono">📘 {e.lessons}</span>
-                    <span className="lb-stars mono">⭐ {e.stars}</span>
+                    <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{e.stars}</span>
                   </div>
                 ))}
                 {!leaderboardLoading && me?.position && me.position > (lb?.top.length ?? 0) && (
@@ -4222,7 +4222,7 @@ export function GameApp({
                     <span className="leaderboard-rank">{me.position}</span>
                     <span className="leaderboard-name">{me.name}</span>
                     <span className="lb-lessons mono">📘 {me.lessons}</span>
-                    <span className="lb-stars mono">⭐ {me.stars}</span>
+                    <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{me.stars}</span>
                   </div>
                 )}
               </div>
