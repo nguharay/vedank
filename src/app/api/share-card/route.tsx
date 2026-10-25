@@ -33,10 +33,13 @@ async function logoDataUri(): Promise<string | null> {
   return logoCache;
 }
 
-type Focus = "level" | "gems" | "streak" | "hearts" | "blitz" | "bosses" | "puzzles";
+/* gems and hearts stay so links shared before they left the card still render */
+type Focus = "level" | "lessons" | "cards" | "gems" | "streak" | "hearts" | "blitz" | "bosses" | "puzzles";
 
 const FACE: Record<Focus, { icon: string; label: string; from: string; to: string }> = {
   level: { icon: "🪔", label: "LEVEL", from: "#9B30FF", to: "#FF4D1C" },
+  lessons: { icon: "📘", label: "LESSONS CLEARED", from: "#3E7CC9", to: "#7A58C0" },
+  cards: { icon: "🃏", label: "GREAT MINDS CARDS", from: "#E0A21B", to: "#FF4D7A" },
   gems: { icon: "💎", label: "GEMS EARNED", from: "#2979FF", to: "#00E0FF" },
   streak: { icon: "🔥", label: "DAY STREAK", from: "#FF7A3D", to: "#D81B5B" },
   hearts: { icon: "❤️", label: "HEARTS LEFT", from: "#FF1E3C", to: "#9B30FF" },

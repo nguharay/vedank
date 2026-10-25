@@ -9,6 +9,8 @@ type Q = { f?: string; v?: string; n?: string; s?: string; l?: string };
 
 const TITLES: Record<string, (v: string) => string> = {
   level: (v) => `Level ${v} in Sutra Sprint`,
+  lessons: (v) => `${v} Vedic maths lessons cleared`,
+  cards: (v) => `${v} Great Minds cards collected`,
   gems: (v) => `${v} gems earned doing Vedic maths`,
   streak: (v) => `${v}-day streak on Sutra Sprint`,
   hearts: (v) => `Still on ${v} hearts`,

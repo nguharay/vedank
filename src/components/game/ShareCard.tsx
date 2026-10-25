@@ -7,10 +7,12 @@ import { SITE_URL } from "@/lib/site";
 export type ShareStats = {
   level: number;
   rank: string;
-  gems: number;
+  lessons: number;          /* lesson stages cleared … */
+  lessonsTotal: number;     /* … out of this many */
+  cards: number;            /* Great Minds cards collected … */
+  cardsTotal: number;
   dailyStreak: number;
   bestStreakEver: number;
-  hearts: number;
   blitzBest: number;
   bossClears: number;
   solvedCount: number;
@@ -18,16 +20,16 @@ export type ShareStats = {
 };
 
 /* Which stat the sheet opens on — drives the big headline number. */
-export type ShareFocus = "level" | "gems" | "streak" | "hearts" | "blitz" | "bosses" | "puzzles";
+export type ShareFocus = "level" | "lessons" | "cards" | "streak" | "blitz" | "bosses" | "puzzles";
 
 type Tile = { key: ShareFocus; icon: React.ReactNode; label: string; value: string };
 
 function tilesFor(s: ShareStats, t: UIDict): Tile[] {
   return [
     { key: "level", icon: "⭐", label: t.share.statLevel, value: `${s.level}` },
-    { key: "gems", icon: "💎", label: t.share.statGems, value: `${s.gems}` },
+    { key: "lessons", icon: "📘", label: t.share.statLessons, value: `${s.lessons}/${s.lessonsTotal}` },
+    { key: "cards", icon: "🃏", label: t.share.statCards, value: `${s.cards}/${s.cardsTotal}` },
     { key: "streak", icon: <StreakIcon lit size="1em" />, label: t.share.statStreak, value: `${s.dailyStreak}` },
-    { key: "hearts", icon: "❤️", label: t.share.statHearts, value: `${s.hearts}` },
     { key: "blitz", icon: "⚡", label: t.share.statBlitz, value: `${s.blitzBest}` },
     { key: "bosses", icon: "👹", label: t.share.statBosses, value: `${s.bossClears}` },
     { key: "puzzles", icon: "🧩", label: t.share.statPuzzles, value: `${s.solvedCount}/${s.totalPuzzles}` },
@@ -45,10 +47,14 @@ function blurbFor(focus: ShareFocus, s: ShareStats, t: UIDict, lang: LangCode): 
       return ja
         ? `インド式数学ゲームを${s.dailyStreak}日連続で学習中です！🪔`
         : `I'm on a ${s.dailyStreak}-day streak on Sutra Sprint! 🪔`;
-    case "gems":
+    case "lessons":
       return ja
-        ? `インド式数学で${s.gems}ジェムを集めました！💎`
-        : `I've earned ${s.gems} gems doing Vedic math on Sutra Sprint! 💎`;
+        ? `インド式数学のレッスンを${s.lessons}こクリアしました！📘`
+        : `I've cleared ${s.lessons} Vedic maths lessons on Sutra Sprint! 📘`;
+    case "cards":
+      return ja
+        ? `偉人カードを${s.cards}まい集めました！🃏 ぜんぶで${s.cardsTotal}まい`
+        : `I've collected ${s.cards} of ${s.cardsTotal} Great Minds cards on Sutra Sprint! 🃏`;
     case "bosses":
       return ja
         ? `インド式数学ゲームでボスを${s.bossClears}体倒しました！👹`
@@ -57,10 +63,6 @@ function blurbFor(focus: ShareFocus, s: ShareStats, t: UIDict, lang: LangCode): 
       return ja
         ? `マッチ棒パズルを${s.solvedCount}/${s.totalPuzzles}問クリアしました！🧩`
         : `I've solved ${s.solvedCount} of ${s.totalPuzzles} matchstick puzzles on Sutra Sprint! 🧩`;
-    case "hearts":
-      return ja
-        ? `ハート${s.hearts}個でレベル${s.level}まで来ました！❤️`
-        : `Still on ${s.hearts} hearts at level ${s.level} of Sutra Sprint! ❤️`;
     default:
       return t.share.blurb(s.level, s.rank);
   }
@@ -182,8 +184,9 @@ export function ShareSheet({
 
   const enc = encodeURIComponent(`${shareText}`);
   const encUrl = encodeURIComponent(shareUrl);
+  /* Instagram has no share link: the text is copied first (see onClick below) */
   const networks: { id: string; label: string; icon: string; href: string }[] = [
-    { id: "x", label: "X", icon: "𝕏", href: `https://twitter.com/intent/tweet?text=${enc}&url=${encUrl}` },
+    { id: "instagram", label: "Instagram", icon: "📸", href: "https://www.instagram.com/" },
     { id: "line", label: "LINE", icon: "💬", href: `https://social-plugins.line.me/lineit/share?url=${encUrl}&text=${enc}` },
     { id: "whatsapp", label: "WhatsApp", icon: "🟢", href: `https://wa.me/?text=${enc}%20${encUrl}` },
     { id: "facebook", label: "Facebook", icon: "🔵", href: `https://www.facebook.com/sharer/sharer.php?u=${encUrl}&quote=${enc}` },
@@ -269,6 +272,7 @@ export function ShareSheet({
               rel="noopener noreferrer"
               aria-label={n.label}
               title={n.label}
+              onClick={n.id === "instagram" ? () => { void copy(); } : undefined}
             >
               <span aria-hidden="true">{n.icon}</span>
             </a>
