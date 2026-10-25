@@ -165,3 +165,30 @@ export async function getLeagueStanding(userId: string, limit = 25): Promise<Lea
     relegate: tier > 0 ? moving : 0,
   };
 }
+
+/* ---------- admin: every league at once ----------
+   The players' sheet shows only their own tier; the admin sees this week's
+   table for every tier, everyone in it, with the same up/down zones. */
+export type LeagueTable = { league: League; size: number; promote: number; relegate: number; rows: LeagueRow[] };
+
+export async function getAllLeagues(viewerId: string, week = weekStartKey()): Promise<{ weekStart: string; tables: LeagueTable[] }> {
+  const rows = await getDb()
+    .select({ userId: leaguePoints.userId, points: leaguePoints.points, tier: leaguePoints.tier, name: users.name, username: users.username })
+    .from(leaguePoints)
+    .innerJoin(users, eq(users.id, leaguePoints.userId))
+    .where(eq(leaguePoints.weekStart, week))
+    .orderBy(desc(leaguePoints.tier), desc(leaguePoints.points));
+  const byTier = new Map<number, typeof rows>();
+  for (const r of rows) byTier.set(r.tier, [...(byTier.get(r.tier) ?? []), r]);
+  const tables: LeagueTable[] = [...byTier.entries()].sort((a, b) => b[0] - a[0]).map(([tier, list]) => {
+    const size = list.length;
+    const moving = size >= 5 ? Math.max(1, Math.floor(size * 0.2)) : 0;
+    return {
+      league: leagueOf(tier), size,
+      promote: tier < TOP_LEAGUE ? moving : 0,
+      relegate: tier > 0 ? moving : 0,
+      rows: list.map((r, i) => ({ userId: r.userId, name: r.username || r.name, points: r.points, rank: i + 1, isMe: r.userId === viewerId })),
+    };
+  });
+  return { weekStart: week, tables };
+}

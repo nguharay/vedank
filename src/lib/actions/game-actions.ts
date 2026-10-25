@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { submitStageResult, importGuestProgress, submitPuzzleSolved, getLeaderboard } from "@/lib/game/progress";
-import { getDailyStatus, submitDaily, getLeagueStanding } from "@/lib/game/league";
+import { getDailyStatus, submitDaily, getLeagueStanding, getAllLeagues } from "@/lib/game/league";
 import {
   getQuests, reportQuestEvent, claimQuest, getInventory, getWallet,
   buyItem, consumeItem, recordMistake, getMistakes, countMistakes, fixMistake, reviewStats,
@@ -32,6 +32,8 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { saveTown, friendTowns, visitTown, buyFromTown, leaveSticker, collectGifts, type TownSnapshot } from "@/lib/game/townOnline";
 import { getAdminSession } from "@/lib/admin";
+import { createPartyRoom, joinPartyRoom, getPartyRoom, startPartyRoom, answerPartyRoom } from "@/lib/game/partyOnline";
+import type { PartyGame } from "@/lib/game/party";
 import { TOPIC_BY_ID } from "@/lib/game/topics";
 
 async function requireUserId(): Promise<string> {
@@ -69,6 +71,13 @@ export async function submitDailyAction(correct: number, elapsedMs: number) {
 export async function leagueAction() {
   const userId = await requireUserId();
   return getLeagueStanding(userId);
+}
+
+/* Admin only: every league's table this week (the sheet's "all leagues" tab). */
+export async function leagueAllAction() {
+  const userId = await requireUserId();
+  if (!(await getAdminSession())) return { error: "Not authorised." } as const;
+  return getAllLeagues(userId);
 }
 
 export async function leaderboardAction() {
@@ -313,6 +322,16 @@ export async function raceRoomAction(code: string) { return getRaceRoom(await re
 export async function raceStartAction(code: string) { return startRaceRoom(await requireUserId(), String(code ?? "")); }
 export async function raceAnswerAction(code: string, idx: number, answer: number) {
   return answerRaceRoom(await requireUserId(), String(code ?? ""), Number(idx), Number(answer));
+}
+
+/* ---------- party games (tug of war, buzzer quiz, boss battle) ---------- */
+
+export async function partyCreateAction(game: PartyGame) { return createPartyRoom(await requireUserId(), game); }
+export async function partyJoinAction(code: string) { return joinPartyRoom(await requireUserId(), String(code ?? "")); }
+export async function partyRoomAction(code: string) { return getPartyRoom(await requireUserId(), String(code ?? "")); }
+export async function partyStartAction(code: string) { return startPartyRoom(await requireUserId(), String(code ?? "")); }
+export async function partyAnswerAction(code: string, idx: number, answer: number) {
+  return answerPartyRoom(await requireUserId(), String(code ?? ""), Number(idx), Number(answer));
 }
 
 /* ---------- push notifications ---------- */

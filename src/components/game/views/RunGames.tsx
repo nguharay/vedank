@@ -27,7 +27,7 @@ function writeBest(key: string, v: number) {
 }
 
 /* The three answer buttons both games use. */
-function Answers({ round, onPick, picked, disabled }: {
+export function Answers({ round, onPick, picked, disabled }: {
   round: ChoiceRound; onPick: (v: number) => void; picked: number | null; disabled: boolean;
 }) {
   return (
@@ -528,10 +528,6 @@ export function RaceGame(props: Props & { guest: boolean; onNeedAccount: () => v
   );
 }
 
-/* ---------- Math Race: online ----------
-   2–4 friends, one room code, the same sums for everyone. The room is polled
-   once a second — like online tic-tac-toe, no socket needed; your own runner
-   moves the instant you answer and the server confirms it. */
 /* ---------- race scenery ----------
    Every new race is run somewhere new: the sky, the ground, the hills, the
    road and its kerbs, and what lines the track all change together. */
@@ -556,6 +552,10 @@ const nextScene = (cur: number) => (cur + 1 + Math.floor(Math.random() * (RACE_S
 const TRACK_LANES = 6;   /* runners drawn on the online road before it shows only the leaders + you */
 const FRIEND_AVATARS = ["🐶", "🐱", "🐼", "🦁", "🐰", "🦊", "🐸", "🐨", "🐯", "🐵", "🐧", "🐹"];
 
+/* ---------- Math Race: online ----------
+   2–50 friends, one room code, the same sums for everyone. The room is polled
+   once a second — like online tic-tac-toe, no socket needed; your own runner
+   moves the instant you answer and the server confirms it. */
 function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onBack }: Props & {
   joinCode: string | null; onJoined: () => void; onBack: () => void;
 }) {

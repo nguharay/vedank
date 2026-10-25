@@ -35,8 +35,8 @@ export type SignupRow = {
 
 const COUNTRY_BY_CODE = new Map(COUNTRIES.map((c) => [c.code, c]));
 
-/* Gem maths mirrors getLeaderboard so the admin view and the in-game leaderboard
-   can never disagree about someone's level. */
+/* Gem maths mirrors the in-game level (state.ts) so the admin view and the
+   player's own level can never disagree. */
 function gemsFrom(cleared: number, stars: number, solved: number, bonus: number) {
   return cleared * 50 + stars * 25 + solved * 40 + bonus;
 }

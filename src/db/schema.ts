@@ -366,6 +366,15 @@ export const raceRooms = pgTable("race_rooms", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+/* Party games (Tug of War, Buzzer Quiz, Boss Battle): see lib/game/party.ts */
+export const partyRooms = pgTable("party_rooms", {
+  code: text("code").primaryKey(),
+  hostId: uuid("host_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  state: jsonb("state").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const towns = pgTable("towns", {
   userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   state: jsonb("state").notNull(),
