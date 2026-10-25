@@ -43,7 +43,7 @@ const FACE: Record<Focus, { icon: string; label: string; from: string; to: strin
   gems: { icon: "💎", label: "GEMS EARNED", from: "#2979FF", to: "#00E0FF" },
   streak: { icon: "🔥", label: "DAY STREAK", from: "#FF7A3D", to: "#D81B5B" },
   hearts: { icon: "❤️", label: "HEARTS LEFT", from: "#FF1E3C", to: "#9B30FF" },
-  blitz: { icon: "⚡", label: "NUMBER BLITZ", from: "#00C2FF", to: "#4D6BFF" },
+  blitz: { icon: "⚡", label: "SPEED QUIZ", from: "#00C2FF", to: "#4D6BFF" },
   bosses: { icon: "👹", label: "BOSSES BEATEN", from: "#8B5CF6", to: "#FF3DA6" },
   puzzles: { icon: "🧩", label: "PUZZLES SOLVED", from: "#1FE07A", to: "#0FA857" },
 };

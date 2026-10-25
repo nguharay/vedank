@@ -14,7 +14,7 @@ const TITLES: Record<string, (v: string) => string> = {
   gems: (v) => `${v} gems earned doing Vedic maths`,
   streak: (v) => `${v}-day streak on Sutra Sprint`,
   hearts: (v) => `Still on ${v} hearts`,
-  blitz: (v) => `${v} in Number Blitz`,
+  blitz: (v) => `${v} in Speed Quiz`,
   bosses: (v) => `${v} boss stages beaten`,
   puzzles: (v) => `${v} matchstick puzzles solved`,
 };

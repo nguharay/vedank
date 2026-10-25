@@ -3436,7 +3436,7 @@ export function GameApp({
           <div className="menu-overlay" onClick={() => setBlitzPicker(false)} />
           <div className="sheet-panel">
             <div className="sheet-panel-title">
-              <span>⚡ {ja ? "ブリッツのレベル" : "Choose your Blitz"}</span>
+              <span>⚡ {ja ? "スピードクイズのレベル" : "Choose your Speed Quiz"}</span>
               <button className="share-close" onClick={() => setBlitzPicker(false)} aria-label={t.share.close}>✕</button>
             </div>
             <div className="lvl-list">
@@ -4289,17 +4289,8 @@ export function GameApp({
             onShare={openShare}
             reviewCount={reviewCount}
             reviewStats={reviewStats}
-            onOpenQuests={() => { refreshQuests(); refreshReview(); }}
-            questsPanel={guest ? undefined : (
-              <div className="quests-tab">
-                <div className="sheet-panel-title">
-                  <span>📜 {lang === "ja" ? "今日のクエスト" : "Today's Quests"}</span>
-                  <span className="sheet-panel-count">{quests.filter((q) => q.claimed).length}/{quests.length}</span>
-                </div>
-                {questsList}
-              </div>
-            )}
-            questsDot={claimableQuests > 0 || reviewCount > 0}
+            onOpenQuests={() => { setQuestsOpen(true); refreshQuests(); }}
+
             onOpenShop={() => { setShopOpen(true); refreshShop(); }}
             onStartReview={startReview}
             gemBalance={gemBalance}
@@ -5244,6 +5235,13 @@ export function GameApp({
             <button className="bottomnav-item active" onClick={goHome}>
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
+            </button>
+            <button className="bottomnav-item" onClick={() => { setQuestsOpen((o) => !o); refreshQuests(); refreshReview(); }}>
+              <span className="bottomnav-icon">
+                <UiIcon name="quests" />
+                {(claimableQuests > 0 || reviewCount > 0) && <span className="nav-dot" aria-hidden="true" />}
+              </span>
+              <span>{lang === "ja" ? "クエスト" : "Quests"}</span>
             </button>
             <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
