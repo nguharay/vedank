@@ -2,9 +2,9 @@
 
 import { UiIcon } from "../Art";
 
-export type HomeTab = "learn" | "today" | "play" | "quests" | "world";
+export type HomeTab = "learn" | "today" | "play" | "world";
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
-import { todaysGame, bonusStopGame, type HomeGameId } from "../homeGames";
+import { todaysGame, type HomeGameId } from "../homeGames";
 import { useDragon, stageOf, nextStage, moodOf, nameDragon, DAILY_GOAL } from "../dragon";
 import { Mascot } from "../Mascot";
 import { monsterFor } from "../monsters";
@@ -60,8 +60,6 @@ export function HomeView({
   onOpenGames,
   onTabChange,
   focusTopic,
-  questsPanel,
-  questsDot,
   lang,
   t,
 }: {
@@ -103,9 +101,7 @@ export function HomeView({
   onTabChange?: (tab: HomeTab) => void;
   /* coming back from a lesson: open on the map, scrolled to that lesson */
   focusTopic?: string | null;
-  /* signed-in players: today's quests as a tab before My world */
-  questsPanel?: React.ReactNode;
-  questsDot?: boolean;
+
   lang: Lang;
   t: UIDict;
 }) {
@@ -139,19 +135,18 @@ export function HomeView({
   useEffect(() => {
     const on = (e: Event) => {
       const t = (e as CustomEvent<string>).detail;
-      if (t === "learn" || t === "today" || t === "play" || t === "quests" || t === "world") { setTab(t); onTabChange?.(t); }
+      if (t === "learn" || t === "today" || t === "play" || t === "world") { setTab(t); onTabChange?.(t); }
     };
     window.addEventListener("vedank:hometab", on);
     return () => window.removeEventListener("vedank:hometab", on);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   /* Home always opens on Play (games first) — say so, so the activity log doesn't keep a stale tab */
   useEffect(() => { onTabChange?.("play"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const TAB_ORDER = ["learn", "today", "play", "quests", "world"] as const;
+  const TAB_ORDER = ["learn", "today", "play", "world"] as const;
   function pickTab(id: HomeTab) {
     /* slide sideways in the direction of the tab */
     transition(() => flushSync(() => setTab(id)), TAB_ORDER.indexOf(id) > TAB_ORDER.indexOf(tab) ? "left" : "right");
     onTabChange?.(id);
-    if (id === "quests") onOpenQuests();   /* fresh counts every time it opens */
     /* bring the tab bar to the top so the new page starts at its beginning */
     requestAnimationFrame(() => tabsRef.current?.scrollIntoView({ block: "start" }));
   }
@@ -203,14 +198,12 @@ export function HomeView({
           ["learn", "learn", lang === "ja" ? "まなぶ" : "Learn"],
           ["today", "today", lang === "ja" ? "きょう" : "Today"],
           ["play", "play", lang === "ja" ? "あそぶ" : "Play"],
-          ["quests", "quests", lang === "ja" ? "クエスト" : "Quests"],
           ["world", "world", lang === "ja" ? "マイワールド" : "My world"],
-        ] as const).filter(([id]) => id !== "quests" || !!questsPanel).map(([id, ico, label]) => (
+        ] as const).map(([id, ico, label]) => (
           <button key={id} role="tab" aria-selected={tab === id} className={`home-tab${tab === id ? " on" : ""}`} onClick={() => pickTab(id)}>
             <span className="home-tab-ico" aria-hidden="true"><UiIcon name={ico} /></span>
             <span>{label}</span>
             {id === "today" && !dailyPlayed && <i className="home-tab-dot" aria-hidden="true" />}
-            {id === "quests" && questsDot && <i className="home-tab-dot" aria-hidden="true" />}
           </button>
         ))}
       </div>
@@ -231,7 +224,7 @@ export function HomeView({
       {tab === "learn" && (
         <>
       <div className="continue-card" style={{ background: gradCss(continueTopic.grad) }} onClick={() => onContinue(continueTopic.id, continueStageN)}>
-        <div className="continue-card-label">{lang === "ja" ? "⚔️ つぎのバトル" : "⚔️ Next battle"}</div>
+        <div className="continue-card-label">{lang === "ja" ? "📘 つぎのレッスン" : "📘 Next lesson"}</div>
         <div className="continue-card-title">
           <span className="continue-monster">{monsterFor(continueTopic.id, continueStageN, lang).emoji}</span>
           {monsterFor(continueTopic.id, continueStageN, lang).name}
@@ -395,22 +388,6 @@ export function HomeView({
                   <div className="node-label">{lang === "ja" ? tp.titleJa : tp.title}</div>
                 </div>
               </div>
-              {/* A bonus game stop every third topic, off to the side of the
-                  path. Which game it is changes every day. */}
-              {i % 3 === 2 && i < visibleTopics - 1 && (() => {
-                const g = bonusStopGame(Math.floor(i / 3));
-                const side = PATH_POS[i % PATH_POS.length] === "r" ? "left" : "right";
-                return (
-                  <div className={`bonus-row ${side}`}>
-                    <button className="bonus-stop" style={{ background: g.tint }} onClick={() => onPlayGame(g.id)}
-                      aria-label={lang === "ja" ? `ボーナス：${g.nameJa}` : `Bonus: ${g.name}`}>
-                      <span className="bonus-stop-icon">{g.icon}</span>
-                      <span className="bonus-stop-tag">{lang === "ja" ? "ボーナス" : "BONUS"}</span>
-                    </button>
-                    <span className="bonus-stop-name">{lang === "ja" ? g.nameJa : g.name}</span>
-                  </div>
-                );
-              })()}
             </div>
           );
         })}
@@ -512,7 +489,7 @@ export function HomeView({
               <span className="duel-card-info">
                 <span className="duel-card-name">{d.opponentName}</span>
                 <span className="duel-card-sub">
-                  {lang === "ja" ? `ブリッツ ${d.fromScore}点に挑戦` : `Scored ${d.fromScore} in Blitz`}
+                  {lang === "ja" ? `スピードクイズ ${d.fromScore}点に挑戦` : `Scored ${d.fromScore} in Speed Quiz`}
                 </span>
               </span>
               <span className="duel-card-go">{lang === "ja" ? "挑む" : "Beat it"} ›</span>
@@ -544,7 +521,7 @@ export function HomeView({
       {/* The Play tab shows three games; this says there are many more. */}
       <button className="arcade-card" onClick={onOpenGames}>
         <span className="arcade-card-art" aria-hidden="true">🥷🏃🍣🏯🎵🏪</span>
-        <span className="arcade-card-title">{lang === "ja" ? "🕹️ ゲームセンターへ" : "🕹️ Enter the arcade"}</span>
+        <span className="arcade-card-title">{lang === "ja" ? "🕹️ ゲームをぜんぶ見る" : "🕹️ Explore all the games"}</span>
         <span className="arcade-card-sub">
           {lang === "ja" ? "忍者スライス、計算ランナー、おすし屋さん…20以上のアーケードゲーム！" : "Ninja Slice, Math Runner, Sushi Shop… 20+ arcade games!"}
         </span>
@@ -557,9 +534,6 @@ export function HomeView({
       </button>
       <InviteCard lang={lang} />
         </>
-      )}
-      {tab === "quests" && questsPanel && (
-        <div className="home-quests">{questsPanel}</div>
       )}
       {tab === "world" && (
         <>
