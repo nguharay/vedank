@@ -146,3 +146,16 @@ export function buildPartyView(st: PartyState, o: { code: string; hostId: string
     buzz: st.game === "buzz" ? { q: st.q, qAt: st.qAt, wins: st.wins.map((w) => (w ? keyOf.get(w) ?? null : null)) } : null,
   };
 }
+
+/* ---------- joining by code: messages a child can read, and where a code really goes ---------- */
+const JOIN_ERR_JA: Record<string, string> = {
+  "That code doesn't look right.": "コードは4文字だよ。もう一度たしかめてね。",
+  "No room with that code.": "そのコードの部屋が見つからないよ。コードをたしかめるか、友だちにもう一度送ってもらおう。",
+  "That room is full.": "その部屋はもういっぱいだよ。",
+  "That game has already started.": "その部屋はもうゲームが始まっているよ。終わるまで待ってね。",
+  "That race has already started.": "そのレースはもう始まっているよ。終わるまで待ってね。",
+  "Could not join — the race may have started.": "参加できなかったよ。レースが始まったのかも。",
+};
+export const joinErrorText = (err: string, ja: boolean) => (ja ? JOIN_ERR_JA[err] ?? "参加できませんでした。もう一度ためしてね。" : err);
+/* a code for another game: open the app on that game's join link */
+export const roomLink = (kind: "party" | "race" | "ttt", code: string) => `/?${kind === "party" ? "pr" : kind === "race" ? "rr" : "ttt"}=${encodeURIComponent(code)}`;

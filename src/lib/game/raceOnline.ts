@@ -84,11 +84,16 @@ export async function createRaceRoom(userId: string): Promise<RaceRoomView> {
   throw new Error("Could not make a room.");
 }
 
-export async function joinRaceRoom(userId: string, rawCode: string): Promise<RaceRoomView | { error: string }> {
+export async function joinRaceRoom(userId: string, rawCode: string): Promise<RaceRoomView | { error: string; redirect?: "party" | "race" | "ttt" }> {
   const code = normaliseRoomCode(rawCode);
   if (code.length !== 4) return { error: "That code doesn't look right." };
   const row = await load(code);
-  if (!row) return { error: "No room with that code." };
+  if (!row) {
+    /* a party or tic-tac-toe code typed into the race's box: say where it goes */
+    const { roomKindOf } = await import("./partyOnline");
+    const kind = await roomKindOf(code);
+    return kind ? { error: "another-game", redirect: kind } : { error: "No room with that code." };
+  }
   const st = row.state as State;
   if (userId in st.players) return view(row, userId);
   if (st.startAt !== null) return { error: "That race has already started." };

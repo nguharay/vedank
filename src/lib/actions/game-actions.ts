@@ -32,7 +32,7 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { saveTown, friendTowns, visitTown, buyFromTown, leaveSticker, collectGifts, type TownSnapshot } from "@/lib/game/townOnline";
 import { getAdminSession } from "@/lib/admin";
-import { createPartyRoom, joinPartyRoom, getPartyRoom, startPartyRoom, answerPartyRoom } from "@/lib/game/partyOnline";
+import { createPartyRoom, joinPartyRoom, getPartyRoom, startPartyRoom, answerPartyRoom, switchPartyGame } from "@/lib/game/partyOnline";
 import type { PartyGame } from "@/lib/game/party";
 import { TOPIC_BY_ID } from "@/lib/game/topics";
 
@@ -330,6 +330,7 @@ export async function partyCreateAction(game: PartyGame) { return createPartyRoo
 export async function partyJoinAction(code: string) { return joinPartyRoom(await requireUserId(), String(code ?? "")); }
 export async function partyRoomAction(code: string) { return getPartyRoom(await requireUserId(), String(code ?? "")); }
 export async function partyStartAction(code: string) { return startPartyRoom(await requireUserId(), String(code ?? "")); }
+export async function partySwitchAction(code: string, game: PartyGame) { return switchPartyGame(await requireUserId(), String(code ?? ""), game); }
 export async function partyAnswerAction(code: string, idx: number, answer: number) {
   return answerPartyRoom(await requireUserId(), String(code ?? ""), Number(idx), Number(answer));
 }

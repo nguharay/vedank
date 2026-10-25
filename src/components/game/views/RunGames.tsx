@@ -11,6 +11,7 @@ import {
   raceCreateAction, raceJoinAction, raceRoomAction, raceStartAction, raceAnswerAction,
 } from "@/lib/actions/game-actions";
 import type { RaceRoomView } from "@/lib/game/raceOnline";
+import { joinErrorText, roomLink } from "@/lib/game/party";
 import {
   raceQuestion, RACE_ROOM_MAX,
   buildChoiceRound, runnerWindowMs, runnerPoints, racePlace, raceLevel, rivalProgress, RACE_GOAL, RACE_LEVELS, type ChoiceRound,
@@ -596,7 +597,8 @@ function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onB
     setBusy(true); setNote(null);
     try {
       const res = await raceJoinAction(c);
-      if ("error" in res) setNote(res.error); else take(res);
+      if ("error" in res && res.redirect && res.redirect !== "race") { window.location.assign(roomLink(res.redirect, c)); return; }
+      if ("error" in res) setNote(joinErrorText(res.error, ja)); else take(res);
     } catch { setNote(ja ? "参加できませんでした" : "Could not join"); }
     setBusy(false);
   }
