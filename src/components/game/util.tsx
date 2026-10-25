@@ -126,5 +126,19 @@ export function transition(update: () => void, dir: NavDir = "forward") {
   const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!d?.startViewTransition || reduce || dir === "none") { update(); return; }
   d.documentElement.dataset.nav = dir;
-  try { d.startViewTransition(update); } catch { update(); }
+  /* The screen change must happen even if the animation doesn't: a transition
+     can be skipped or aborted (another one starts, the app is switched away
+     from, an "invalid state"), and some browsers then never run the update —
+     which left the app thinking it was on a screen it never showed, so taps
+     to go there did nothing. Run it ourselves if it hasn't run in 800 ms, and
+     swallow the animation's own rejections (they are not errors for us). */
+  let ran = false;
+  const once = () => { if (ran) return; ran = true; update(); };
+  try {
+    const vt = d.startViewTransition(once) as { ready?: Promise<unknown>; finished?: Promise<unknown>; updateCallbackDone?: Promise<unknown> } | undefined;
+    vt?.ready?.catch(() => {});
+    vt?.finished?.catch(() => {});
+    vt?.updateCallbackDone?.catch(() => { once(); });
+    setTimeout(once, 800);
+  } catch { once(); }
 }
