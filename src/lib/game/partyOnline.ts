@@ -1,7 +1,7 @@
 import "server-only";
 import { eq, lt, and, sql as raw } from "drizzle-orm";
 import { getDb } from "@/db";
-import { partyRooms, users } from "@/db/schema";
+import { partyRooms, raceRooms, tttRooms, users } from "@/db/schema";
 import { roomCode, normaliseRoomCode } from "./ttt";
 import {
   PARTY_GAMES, PARTY_ROOM_MAX, PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS, BOSS_WAVE_MS,
@@ -66,11 +66,30 @@ export async function createPartyRoom(userId: string, game: PartyGame): Promise<
   throw new Error("Could not make a room.");
 }
 
-export async function joinPartyRoom(userId: string, rawCode: string): Promise<PartyRoomView | { error: string }> {
+/* Which kind of room a code belongs to. Party, race and tic-tac-toe rooms each
+   have their own 4-letter codes, and a friend may type one into the wrong
+   "join" box — so every join box can say where the code really goes. */
+export type RoomKind = "party" | "race" | "ttt";
+export async function roomKindOf(rawCode: string): Promise<RoomKind | null> {
+  const code = normaliseRoomCode(rawCode);
+  if (code.length !== 4) return null;
+  const db = getDb();
+  const [p] = await db.select({ c: partyRooms.code }).from(partyRooms).where(eq(partyRooms.code, code)).limit(1);
+  if (p) return "party";
+  const [r] = await db.select({ c: raceRooms.code }).from(raceRooms).where(eq(raceRooms.code, code)).limit(1);
+  if (r) return "race";
+  const [t] = await db.select({ c: tttRooms.code }).from(tttRooms).where(eq(tttRooms.code, code)).limit(1);
+  return t ? "ttt" : null;
+}
+
+export async function joinPartyRoom(userId: string, rawCode: string): Promise<PartyRoomView | { error: string; redirect?: RoomKind }> {
   const code = normaliseRoomCode(rawCode);
   if (code.length !== 4) return { error: "That code doesn't look right." };
   const row = await load(code);
-  if (!row) return { error: "No room with that code." };
+  if (!row) {
+    const kind = await roomKindOf(code);
+    return kind ? { error: "another-game", redirect: kind } : { error: "No room with that code." };
+  }
   const st = row.state as PartyState;
   if (userId in st.players) return view(row, userId);
   if (st.startAt !== null && partyStatus(st, Date.now()) !== "done") return { error: "That game has already started." };
@@ -112,6 +131,24 @@ export async function startPartyRoom(userId: string, code: string): Promise<Part
     .forEach(([id, p], i) => { players[id] = { ...p, done: 0, team: (i % 2) as 0 | 1 }; });
   const startAt = Date.now() + PARTY_COUNTDOWN_MS;
   const next: PartyState = { ...st, seed: newSeed(), startAt, round: st.round + 1, players, q: 0, qAt: startAt, wins: [], waves: {} };
+  const [saved] = await getDb().update(partyRooms).set({ state: next, updatedAt: new Date() })
+    .where(and(eq(partyRooms.code, row.code), eq(partyRooms.hostId, userId))).returning();
+  return view(saved, userId);
+}
+
+/* Host only: switch the room to another game (lobby or after a game). Same
+   room, same code, same players — the next game just waits for Start. */
+export async function switchPartyGame(userId: string, code: string, game: PartyGame): Promise<PartyRoomView | { error: string }> {
+  if (!PARTY_GAMES.includes(game)) return { error: "No such game." };
+  const row = await load(code);
+  if (!row) return { error: "No such room." };
+  if (row.hostId !== userId) return { error: "Only the host can change the game." };
+  const st = row.state as PartyState;
+  const status = partyStatus(st, Date.now());
+  if (status === "countdown" || status === "playing") return { error: "The game is on." };
+  const players: Record<string, PartyPlayer> = {};
+  for (const [id, p] of Object.entries(st.players)) players[id] = { ...p, done: 0 };
+  const next: PartyState = { ...st, game, startAt: null, players, q: 0, qAt: 0, wins: [], waves: {} };
   const [saved] = await getDb().update(partyRooms).set({ state: next, updatedAt: new Date() })
     .where(and(eq(partyRooms.code, row.code), eq(partyRooms.hostId, userId))).returning();
   return view(saved, userId);

@@ -4449,3 +4449,16 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .race-join-input:focus{ outline:none; border-style:solid !important; border-color:#7a58c0 !important; }
 .btn.btn-join{ flex:0 0 auto; margin:0; padding:10px 18px; background:#2E8B57; color:#fff; border:3px solid #1d1b33; box-shadow:0 4px 0 #1d1b33; }
 .btn.btn-join:disabled{ background:#d9d6e6; color:#8a86a8; box-shadow:0 2px 0 #b5b0c9; border-color:#b5b0c9; }
+/* one room, any game: the host's game picker */
+.party-picker{ width:100%; display:flex; flex-direction:column; align-items:center; gap:5px; margin:2px 0; }
+.party-picker-lab{ font-size:11.5px; font-weight:800; color:#6a6688; }
+.party-picker-row{ display:flex; gap:6px; width:100%; }
+.party-chip{ flex:1; display:flex; flex-direction:column; align-items:center; gap:1px; padding:7px 3px; border-radius:12px; border:2.5px solid #1d1b33; background:#fff; color:#1d1b33; font:900 11.5px/1.15 "Baloo 2",system-ui,sans-serif; cursor:pointer; box-shadow:0 3px 0 #1d1b33; }
+.party-chip span{ font-size:20px; line-height:1; }
+.party-chip.on{ background:#ffcf3a; }
+.party-chip:disabled{ cursor:default; opacity:1; }
+.party-chip:disabled:not(.on){ opacity:.55; box-shadow:none; }
+.party-chip:not(:disabled):active{ transform:translateY(2px); box-shadow:0 1px 0 #1d1b33; }
+/* tug: the one middle line, bold, with a little flag on top */
+.tug-line.c{ top:24%; width:6px; margin-left:-3px; background:#fff; box-shadow:0 0 0 2px rgba(29,27,51,.35); }
+.tug-line.c::before{ content:"🚩"; position:absolute; top:-22px; left:50%; transform:translateX(-30%); font-size:18px; }

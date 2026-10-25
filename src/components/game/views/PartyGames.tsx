@@ -9,11 +9,11 @@ import type { useSound } from "../useSound";
 import { Answers } from "./RunGames";
 import { track } from "@/lib/analytics";
 import {
-  partyCreateAction, partyJoinAction, partyRoomAction, partyStartAction, partyAnswerAction,
+  partyCreateAction, partyJoinAction, partyRoomAction, partyStartAction, partyAnswerAction, partySwitchAction,
 } from "@/lib/actions/game-actions";
 import {
   PARTY_NAMES, PARTY_ROOM_MAX, TUG_WIN, BUZZ_QS, BUZZ_Q_MS, BOSS_HEARTS, BOSS_WAVE_MS,
-  partyQuestion, buzzQuestion, buildPartyView, type PartyGame, type PartyState, type PartyView as PartyRoomView,
+  partyQuestion, buzzQuestion, buildPartyView, joinErrorText, roomLink, type PartyGame, type PartyState, type PartyView as PartyRoomView,
 } from "@/lib/game/party";
 import { soloStart, soloAnswer, soloTick, SOLO_LEVELS, SOLO_ME, type SoloLevel } from "@/lib/game/partySolo";
 
@@ -70,6 +70,12 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   const [lock, setLock] = useState(false);
   const [now, setNow] = useState(0);
   const [fx, setFx] = useState<{ k: number; kind: "hit" | "fire" | "pull" } | null>(null);
+  /* the finish stays on the field for a moment (the pull over the line, the
+     dragon falling) before the results panel takes over */
+  const [resultsFor, setResultsFor] = useState(-1);
+  /* buzzer: who answered first when I was a moment too late */
+  const [taken, setTaken] = useState<string | null>(null);
+  const lastQ = useRef(-1);
   const offset = useRef(0);
   const round = useRef(-1);
   const roomRef = useRef("");
@@ -101,6 +107,11 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     }
     const mine = v.players.find((p) => p.me);
     if (mine && v.game !== "buzz") setMyDone((d) => Math.max(d, mine.done));
+    /* buzzer: a new question unlocks everyone */
+    if (v.buzz && v.buzz.q !== lastQ.current) {
+      lastQ.current = v.buzz.q;
+      setLock(false); setTaken(null); setPicked(null);
+    }
     /* the dragon's fire got through: shake the screen */
     if (v.boss && v.boss.heartsLost > lastHearts.current) {
       lastHearts.current = v.boss.heartsLost;
@@ -132,8 +143,17 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     setBusy(true); setNote(null);
     try {
       const res = await partyJoinAction(c);
-      if ("error" in res) setNote(res.error); else { setSolo(false); soloRef.current = null; take(res); track("party_join", { game: res.game }); }
-    } catch { setNote(ja ? "参加できませんでした" : "Could not join"); }
+      if ("error" in res && res.redirect && res.redirect !== "party") { window.location.assign(roomLink(res.redirect, c)); return; }
+      if ("error" in res) { setNote(joinErrorText(res.error, ja)); track("party_join_fail", { detail: res.error }); } else { setSolo(false); soloRef.current = null; take(res); track("party_join", { game: res.game }); }
+    } catch (e) { setNote(ja ? "参加できませんでした。通信をたしかめて、もう一度ためしてね。" : "Could not join. Check your connection and try again."); track("party_join_fail", { detail: String(e).slice(0, 80) }); }
+    setBusy(false);
+  }
+  /* host: same room, same code, another game */
+  async function switchGame(g: PartyGame) {
+    if (!room || g === room.game && room.status === "lobby") return;
+    if (solo) { playSolo(g); return; }
+    setBusy(true);
+    try { const res = await partySwitchAction(room.code, g); if ("error" in res) setNote(res.error); else { setNote(null); take(res); track("party_switch", { game: g }); } } catch {}
     setBusy(false);
   }
   async function start() {
@@ -155,6 +175,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   }, [joinCode]);
 
   const roomCode = solo ? null : room?.code;
+  const roomGame = room?.game;
   /* solo: the computer players move a few times a second */
   useEffect(() => {
     if (!solo) return;
@@ -173,11 +194,11 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     if (!roomCode) return;
     const poll = setInterval(async () => {
       try { const r = await partyRoomAction(roomCode); if (r) take(r); } catch {}
-    }, 1000);
+    }, roomGame === "buzz" ? 500 : 1000);   /* the buzzer needs "answered!" to arrive fast */
     const tick = setInterval(() => setNow(clock() + offset.current), 100);
     return () => { clearInterval(poll); clearInterval(tick); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomCode]);
+  }, [roomCode, roomGame]);
   useEffect(() => () => { if (lockTimer.current) clearTimeout(lockTimer.current); }, []);
   /* the app's Back button / gesture: out of a game or room → the party menu */
   const inRoom = !!room;
@@ -206,6 +227,8 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   useEffect(() => {
     if (status !== "done" || !room || celebrated.current === room.round) return;
     celebrated.current = room.round;
+    const r = room.round;
+    setTimeout(() => setResultsFor(r), room.startAt === null ? 0 : 1400);
     const won = room.game === "tug" ? room.tug?.winner === me?.team
       : room.game === "boss" ? room.boss?.result === "win"
       : !!me && Math.max(...room.players.map((p) => p.score)) === me.score && me.score > 0;
@@ -228,9 +251,33 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       lockTimer.current = setTimeout(() => { setLock(false); setPicked(null); }, room.game === "buzz" ? 1800 : 800);
       return;
     }
+    const idx = room.game === "buzz" ? room.buzz!.q : myDone;
+    /* online buzzer: someone may have beaten me to it a split second ago, so
+       wait for the server's verdict before celebrating */
+    if (room.game === "buzz" && !solo) {
+      setLock(true);
+      try {
+        const res = await partyAnswerAction(room.code, idx, v);
+        if ("error" in res) { setLock(false); setPicked(null); return; }
+        const mine = res.players.find((p) => p.me);
+        const winner = res.buzz?.wins[idx];
+        if (winner && winner === mine?.key) {
+          sound.correct(); haptic(12); onCorrect?.(1);
+          setFx({ k: clock(), kind: "pull" });
+        } else if (winner) {
+          const who = res.players.find((p) => p.key === winner);
+          setTaken(who?.name ?? (ja ? "だれか" : "Someone"));
+          sound.wrong(); haptic(20);
+        } else {
+          setLock(false);   /* nothing decided yet (e.g. the question wasn't open): try again */
+        }
+        setPicked(null);
+        take(res);
+      } catch { setLock(false); setPicked(null); }
+      return;
+    }
     sound.correct(); haptic(12); onCorrect?.(1);
     setFx({ k: clock(), kind: room.game === "boss" ? "hit" : "pull" });
-    const idx = room.game === "buzz" ? room.buzz!.q : myDone;
     if (room.game !== "buzz") setMyDone(idx + 1);
     setTimeout(() => setPicked(null), 160);
     if (solo) {
@@ -316,7 +363,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       {/* the game area only while a game is on; before and after it the room
           card takes its place at full height, so Start / Play again are never
           pushed out of sight by a long player list */}
-      {(status === "countdown" || status === "playing") && (
+      {(status === "countdown" || status === "playing" || (status === "done" && resultsFor !== room.round && room.startAt !== null)) && (
       <div className="party-stage">
         {game === "tug" && <TugStage room={room} ja={ja} myTeam={me?.team ?? 0} pulse={fx?.kind === "pull" ? fx.k : 0} />}
         {game === "buzz" && <BuzzStage room={room} ja={ja} now={now} q={q?.prompt ?? null} ranked={ranked} />}
@@ -332,6 +379,8 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
           <div className="rg-card party-panel party-lobby">
             <div className="rg-card-title">{ja ? "部屋のコード" : "Room code"}</div>
             <div className="race-code mono">{room.code}</div>
+            <GamePicker current={game} ja={ja} canPick={room.isHost} busy={busy} onPick={switchGame}
+              label={room.isHost ? (ja ? "あそぶゲーム（同じコードのまま変えられるよ）" : "Game (change it any time, same code)") : (ja ? "あそぶゲーム" : "Game")} />
             <div className="party-lobby-btns">
               <button className="btn" onClick={share}>🔗 {ja ? "友だちに送る" : "Send to friends"}</button>
               {room.isHost
@@ -349,7 +398,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
           </div>
         )}
 
-        {status === "done" && (
+        {status === "done" && (resultsFor === room.round || room.startAt === null) && (
           <div className="rg-card party-panel party-done">
             <div className="rg-card-medal">{resultIcon(room, me?.team ?? 0, me?.key)}</div>
             <div className="rg-card-title">{resultTitle(room, ja, me?.team ?? 0, me?.key)}</div>
@@ -366,6 +415,10 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
             {room.isHost
               ? <button className="btn btn-primary" onClick={start} disabled={busy}>{ja ? "もう一回" : "Play again"}</button>
               : <p className="race-note">{ja ? "ホストが次のゲームを始めるのを待っています" : "Waiting for the host to start the next game"}</p>}
+            {room.isHost && (
+              <GamePicker current={null} ja={ja} canPick busy={busy} onPick={switchGame}
+                label={solo ? (ja ? "ほかのゲーム" : "Another game") : (ja ? "次のゲーム（みんなそのまま・同じコード）" : "Next game (everyone stays, same code)")} />
+            )}
             {solo && <button className="btn" onClick={() => create(room.game)} disabled={busy}>🌐 {ja ? "友だちとやる" : "Play with friends"}</button>}
           </div>
         )}
@@ -374,7 +427,9 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
         <>
           <div className="race-q mono">{q.prompt} = ?</div>
           <Answers round={q} onPick={pick} picked={picked} disabled={lock} />
-          {lock && game === "buzz" && <p className="party-lock">{ja ? "おてつき！ちょっと待ってね" : "Oops, wait a moment"}</p>}
+          {lock && game === "buzz" && <p className="party-lock">{taken
+            ? (ja ? `🔔 ${taken} が先に答えた！次の問題を待ってね` : `🔔 ${taken} answered first! Wait for the next one`)
+            : (ja ? "おてつき！ちょっと待ってね" : "Oops, wait a moment")}</p>}
         </>
       )}
       {game === "tug" && status === "playing" && me && (
@@ -384,6 +439,24 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
         <span className="mono">{solo ? `🤖 ${SOLO_LEVELS[level][ja ? "ja" : "en"]}` : `${ja ? "部屋" : "Room"} ${room.code}`}</span>
         <button className="btn btn-ghost" onClick={() => { setRoom(null); setSolo(false); soloRef.current = null; if (!solo) onBack(); }}>{solo ? (ja ? "← ゲームをえらぶ" : "← Games") : (ja ? "退出" : "Leave")}</button>
       </div>
+    </div>
+  );
+}
+
+/* the three games as chips: the host taps one to switch the room's game */
+function GamePicker({ current, ja, canPick, busy, onPick, label }: {
+  current: PartyGame | null; ja: boolean; canPick: boolean; busy: boolean; onPick: (g: PartyGame) => void; label: string;
+}) {
+  return (
+    <div className="party-picker">
+      <span className="party-picker-lab">{label}</span>
+      <span className="party-picker-row">
+        {(["tug", "buzz", "boss"] as PartyGame[]).map((g) => (
+          <button key={g} className={`party-chip${g === current ? " on" : ""}`} disabled={!canPick || busy} onClick={() => onPick(g)} aria-pressed={g === current}>
+            <span>{PARTY_NAMES[g][0]}</span>{ja ? PARTY_NAMES[g][2] : PARTY_NAMES[g][1]}
+          </button>
+        ))}
+      </span>
     </div>
   );
 }
@@ -414,21 +487,26 @@ function resultTitle(room: PartyRoomView, ja: boolean, myTeam: 0 | 1, myKey?: st
   return ja ? `${winners.map((w) => w.name).join("・")} が1位！` : `${winners.map((w) => w.name).join(" & ")} wins!`;
 }
 
-/* ---- 🪢 Tug of War: the rope's knot slides toward the winning side ---- */
+/* ---- 🪢 Tug of War: one line in the middle ----
+   The rope slides toward the side that's ahead. It is drawn so that at a
+   lead of TUG_WIN the losing team's front player is pulled over the middle
+   line — the moment the game is won. */
 function TugStage({ room, ja, myTeam, pulse }: { room: PartyRoomView; ja: boolean; myTeam: 0 | 1; pulse: number }) {
   const t = room.tug;
   const pos = t?.pos ?? 0;
-  /* +pos = red ahead = rope moves left; TUG_WIN is the line */
-  const shift = Math.max(-1, Math.min(1, pos / TUG_WIN)) * 38;
+  /* +pos = red ahead = rope moves left. The front players stand 18px from
+     the knot and are ~46px wide, so a 50px slide at ±TUG_WIN puts the
+     losing front player just over the middle line */
+  const shift = Math.max(-1, Math.min(1, pos / TUG_WIN)) * 50;
   const reds = room.players.filter((p) => p.team === 0), whites = room.players.filter((p) => p.team === 1);
   return (
     <div className="tug-field">
       <div className="tug-score">
-        <span className="t0">🔴 {TEAM[0][ja ? 1 : 0]} <b className="mono">{t?.red ?? 0}</b></span>
-        <span className="t1"><b className="mono">{t?.white ?? 0}</b> {TEAM[1][ja ? 1 : 0]} ⚪</span>
+        <span className="t0">🔴 {TEAM[0][ja ? 1 : 0]}</span>
+        <span className="t1">{TEAM[1][ja ? 1 : 0]} ⚪</span>
       </div>
-      <span className="tug-line l" /><span className="tug-line c" /><span className="tug-line r" />
-      <div className="tug-rope" style={{ transform: `translateX(${-shift}%)` }}>
+      <span className="tug-line c" />
+      <div className="tug-rope" style={{ transform: `translateX(${-shift}px)` }}>
         <div className="tug-team t0">{reds.slice(0, 3).map((p, i) => <span key={p.key} className={`tug-kid${p.me ? " me" : ""}`}>{p.me ? <Mascot animated={false} mood="excited" /> : <Person seed={i * 7 + 3} mood="happy" size={40} />}</span>)}</div>
         <span key={pulse} className={`tug-knot${pulse ? " pulse" : ""}`}>🎀</span>
         <div className="tug-team t1">{whites.slice(0, 3).map((p, i) => <span key={p.key} className={`tug-kid${p.me ? " me" : ""}`}>{p.me ? <Mascot animated={false} mood="excited" /> : <Person seed={i * 5 + 11} mood="happy" size={40} />}</span>)}</div>

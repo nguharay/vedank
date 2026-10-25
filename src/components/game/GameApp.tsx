@@ -3551,10 +3551,16 @@ export function GameApp({
         <>
           <div className="menu-overlay" onClick={() => setLockOpen(null)} />
           <div className="hint-sheet lock-sheet" role="dialog" aria-modal="true">
-            <div className="lock-sheet-icon">🔒</div>
-            <h3>{lang === "ja" ? "ここから先はアカウントが必要です" : "Sign up to unlock this"}</h3>
+            <div className="lock-sheet-icon">{lockOpen === "race-online" ? "🌐" : "🔒"}</div>
+            <h3>{lockOpen === "race-online"
+              ? (lang === "ja" ? "友だちとあそぶには無料アカウントが必要です" : "Playing with friends needs a free account")
+              : (lang === "ja" ? "ここから先はアカウントが必要です" : "Sign up to unlock this")}</h3>
             <p>
-              {lang === "ja"
+              {lockOpen === "race-online"
+                ? (lang === "ja"
+                  ? "オンラインの部屋では、みんなの名前と答えをサーバーで合わせます。メールだけで無料登録できるよ。🤖 ひとりで（コンピューターと）なら、このまま遊べます。"
+                  : "Online rooms match everyone's names and answers on our server. Sign up free with just your email. 🤖 Solo (against the computer) works right now without one.")
+                : lang === "ja"
                 ? "おためしでは最初の2トピックと一部のゲームが遊べます。無料のアカウントを作ると、すべてのトピック・ゲーム・デイリーチャレンジ・マッチ棒道場が開き、今までの記録もそのまま引き継がれます。"
                 : "Guests can play the first two topics and a few games. A free account opens every topic, every game, the Daily Challenge and the Matchstick Dojo, and keeps the progress you've made so far."}
             </p>
