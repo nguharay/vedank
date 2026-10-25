@@ -937,7 +937,10 @@ export function GameApp({
     [achievementCtx]
   );
 
+  /* set by Back out of a lesson; any other way home starts on the usual tab */
+  const [homeFocus, setHomeFocus] = useState<string | null>(null);
   function goHome() {
+    setHomeFocus(null);
     setView("home");
   }
   function openTopic(id: string) {
@@ -999,6 +1002,11 @@ export function GameApp({
     }
     else if (GAME_VIEWS.includes(view) || (view === "arena" && (sprintRef.current || sprintOver))) {
       sprintRef.current = null; setSprintOver(null); openGames();
+    }
+    else if (view === "topic" && currentTopicId) {
+      /* out of a lesson: back to the learning map, at that lesson's stop */
+      setHomeFocus(currentTopicId);
+      setView("home");
     }
     else { goHome(); }
   }
@@ -3150,7 +3158,7 @@ export function GameApp({
           <button className={`stat stat-cards${cardPop ? " pop" : ""}`} onClick={() => window.dispatchEvent(new CustomEvent("vedank:collection"))} aria-label={ja ? `偉人カード ${cardCount}まい — 図鑑を見る` : `${cardCount} Great Minds cards — open the collection`}>
             <span aria-hidden="true"><UiIcon name="card" size="1.15em" /></span> {cardCount}
           </button>
-          <button className="stat stat-heart" onClick={() => openShare("hearts")} aria-label={`${t.share.statHearts} ${hearts} — ${t.share.shareBtn}`}>
+          <button className="stat stat-heart" onClick={() => openShare("level")} aria-label={`${t.share.statHearts} ${hearts} — ${t.share.shareBtn}`}>
             <span aria-hidden="true"><UiIcon name="heart" size="1.15em" /></span> {hearts}
           </button>
         </div>
@@ -4238,6 +4246,7 @@ export function GameApp({
         {view === "home" && (
           <HomeView
             onTabChange={setHomeTab}
+            focusTopic={homeFocus}
             guest={guest}
             guestTopicLimit={guest ? GUEST_TOPICS : Infinity}
             progress={progress}
@@ -5543,10 +5552,12 @@ export function GameApp({
         stats={{
           level: li.level,
           rank,
-          gems,
+          lessons: TOPICS.reduce((n, tp) => n + Math.min(STAGE_COUNT, progress.topics[tp.id]?.cleared ?? 0), 0),
+          lessonsTotal: TOPICS.length * STAGE_COUNT,
+          cards: cardCount,
+          cardsTotal: CARDS.length,
           dailyStreak,
           bestStreakEver,
-          hearts,
           blitzBest: Math.max(0, ...Object.values(blitzBests)),
           bossClears,
           solvedCount,

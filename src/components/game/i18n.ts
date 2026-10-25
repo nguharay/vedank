@@ -69,7 +69,7 @@ export type UIDict = {
     title: string; subtitle: string; tapHint: string; close: string;
     shareBtn: string; copy: string; copied: string;
     statLevel: string; statGems: string; statStreak: string; statBestStreak: string;
-    statHearts: string; statBlitz: string; statBosses: string; statPuzzles: string;
+    statHearts: string; statBlitz: string; statBosses: string; statPuzzles: string; statLessons: string; statCards: string;
     blurb: (level: number, rank: string) => string;
     blitzBlurb: (score: number) => string;
   };
@@ -202,6 +202,8 @@ export const UI: Record<LangCode, UIDict> = {
       statBlitz: "Blitz best",
       statBosses: "Bosses conquered",
       statPuzzles: "Puzzles solved",
+      statLessons: "Lessons cleared",
+      statCards: "Great Minds cards",
       blurb: (level, rank) => `I'm level ${level} — ${rank} — in Sutra Sprint! 🪔`,
       blitzBlurb: (score) => `I scored ${score} in Number Blitz on Sutra Sprint! ⚡ Can you beat it?`,
     },
@@ -332,6 +334,8 @@ export const UI: Record<LangCode, UIDict> = {
       statBlitz: "ブリッツ最高",
       statBosses: "制覇したボス",
       statPuzzles: "パズル達成",
+      statLessons: "クリアしたレッスン",
+      statCards: "偉人カード",
       blurb: (level, rank) => `ヴェダンク・アカデミーのインド式数学ゲームでレベル${level}「${rank}」になりました！🪔`,
       blitzBlurb: (score) => `ナンバーブリッツで${score}点を取りました！⚡ 挑戦してみませんか？`,
     },

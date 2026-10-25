@@ -57,6 +57,7 @@ export function HomeView({
   onOpenTown,
   onOpenGames,
   onTabChange,
+  focusTopic,
   lang,
   t,
 }: {
@@ -96,6 +97,8 @@ export function HomeView({
   onOpenGames: () => void;
   /* which Home tab is showing — for the activity log */
   onTabChange?: (tab: "learn" | "today" | "play" | "world") => void;
+  /* coming back from a lesson: open on the map, scrolled to that lesson */
+  focusTopic?: string | null;
   lang: Lang;
   t: UIDict;
 }) {
@@ -116,7 +119,14 @@ export function HomeView({
   const resetMins = Math.floor((resetIn % 3600000) / 60000);
 
   const pathWrapRef = useRef<HTMLDivElement | null>(null);
-  const [tab, setTab] = useState<"learn" | "today" | "play" | "world">("play");
+  const [tab, setTab] = useState<"learn" | "today" | "play" | "world">(focusTopic ? "learn" : "play");
+  useEffect(() => {
+    if (!focusTopic) return;
+    onTabChange?.("learn");
+    const t = setTimeout(() => document.querySelector(`[data-topic="${focusTopic}"]`)?.scrollIntoView({ block: "center" }), 120);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusTopic]);
   const tabsRef = useRef<HTMLDivElement | null>(null);
   /* other screens can send Home to a tab (e.g. the League → today's challenge) */
   useEffect(() => {
@@ -350,7 +360,7 @@ export function HomeView({
           return (
             <div key={tp.id}>
               {boss}
-              <div className={`path-row pos-${PATH_POS[i % PATH_POS.length]}`}>
+              <div className={`path-row pos-${PATH_POS[i % PATH_POS.length]}`} data-topic={tp.id}>
                 <div className="node-wrap">
                   {isCurrent && <div className="node-bubble">{t.home.play}</div>}
                   <span className="node-level">{i + 1}</span>
@@ -362,7 +372,7 @@ export function HomeView({
                     {locked ? "🔒" : tp.icon}
                     <span className="stage-pips">
                       {Array.from({ length: STAGE_COUNT }, (_, k) => (
-                        <i key={k} className={k < p.cleared ? "on" : ""} />
+                        <i key={k} className={k < p.cleared ? "on" : ""}>★</i>
                       ))}
                     </span>
                   </div>

@@ -34,6 +34,28 @@ const clock = () => Date.now();
 
 const TEAM: [[string, string], [string, string]] = [["Red", "あかぐみ"], ["White", "しろぐみ"]];
 
+/* ---- personal records, kept on the phone (solo and online alike) ----
+   tug: wins · buzz: best score out of BUZZ_QS · boss: fastest win in seconds */
+type Record_ = { plays: number; wins: number; best: number };
+const recKey = (g: PartyGame) => `sutraSprint.party.${g}`;
+function readRec(g: PartyGame): Record_ {
+  try { return { plays: 0, wins: 0, best: 0, ...JSON.parse(localStorage.getItem(recKey(g)) || "{}") }; } catch { return { plays: 0, wins: 0, best: 0 }; }
+}
+/* returns true when this game set a new best */
+function saveRec(g: PartyGame, won: boolean, value: number): boolean {
+  const r = readRec(g);
+  const better = g === "boss" ? won && (r.best === 0 || value < r.best) : g === "buzz" ? value > r.best : false;
+  const next: Record_ = { plays: r.plays + 1, wins: r.wins + (won ? 1 : 0), best: better ? value : r.best };
+  try { localStorage.setItem(recKey(g), JSON.stringify(next)); } catch {}
+  return better;
+}
+function recChip(g: PartyGame, r: Record_, ja: boolean): string | null {
+  if (!r.plays) return null;
+  if (g === "tug") return ja ? `🏆 ${r.wins}勝 / ${r.plays}回` : `🏆 ${r.wins} won of ${r.plays}`;
+  if (g === "buzz") return ja ? `⭐ ベスト ${r.best}/${BUZZ_QS}` : `⭐ Best ${r.best}/${BUZZ_QS}`;
+  return r.best ? (ja ? `⏱ ベスト ${r.best}秒` : `⏱ Best ${r.best}s`) : (ja ? `🐉 ${r.plays}回挑戦` : `🐉 ${r.plays} tries`);
+}
+
 export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, onCorrect, guest, onNeedAccount }: {
   lang: L; sound: Sound; celebrate: () => void; game: PartyGame; joinCode: string | null; onJoined: () => void; onBack: () => void;
   onCorrect?: (n: number) => void; guest: boolean; onNeedAccount: () => void;
@@ -58,6 +80,12 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   const [solo, setSolo] = useState(false);
   const [level, setLevel] = useState<SoloLevel>(1);
   const soloRef = useRef<PartyState | null>(null);
+  const [recs, setRecs] = useState<Record<PartyGame, Record_> | null>(null);
+  const [newBest, setNewBest] = useState(false);
+  useEffect(() => {
+    const t0 = setTimeout(() => setRecs({ tug: readRec("tug"), buzz: readRec("buzz"), boss: readRec("boss") }), 0);
+    return () => clearTimeout(t0);
+  }, [room?.round, solo]);
   const soloView = (st: PartyState) => buildPartyView(st, { code: "SOLO", hostId: SOLO_ME, viewerId: SOLO_ME, now: clock() });
   const game: PartyGame = room?.game ?? initialGame;
   const [icon, nameEn, nameJa] = PARTY_NAMES[game];
@@ -171,7 +199,12 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       : room.game === "boss" ? room.boss?.result === "win"
       : !!me && Math.max(...room.players.map((p) => p.score)) === me.score && me.score > 0;
     if (won) { celebrate(); sound.levelUp(); }
-    track("party_end", { game: room.game, won, players: room.players.length });
+    const value = room.game === "buzz" ? me?.score ?? 0
+      : room.game === "boss" ? Math.round((clock() + offset.current - (room.startAt ?? 0)) / 1000)
+      : me?.score ?? 0;
+    setNewBest(saveRec(room.game, !!won, value));
+    setRecs({ tug: readRec("tug"), buzz: readRec("buzz"), boss: readRec("boss") });
+    track("party_end", { game: room.game, won, players: room.players.length, solo, score: value });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, room?.round]);
 
@@ -227,8 +260,11 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
             {(["tug", "buzz", "boss"] as PartyGame[]).map((g) => (
               <div key={g} className={`party-pick ${g}`}>
                 <span className="party-pick-ico">{PARTY_NAMES[g][0]}</span>
-                <b>{ja ? PARTY_NAMES[g][2] : PARTY_NAMES[g][1]}</b>
-                <small>{blurb(g, ja)}</small>
+                <span className="party-pick-txt">
+                  <b>{ja ? PARTY_NAMES[g][2] : PARTY_NAMES[g][1]}</b>
+                  <small>{blurb(g, ja)}</small>
+                  {recs && recChip(g, recs[g], ja) && <em className="party-rec">{recChip(g, recs[g], ja)}</em>}
+                </span>
                 <span className="party-pick-btns">
                   <button className="btn btn-primary" onClick={() => playSolo(g)} disabled={busy}>🤖 {ja ? "ひとりで" : "Solo"}</button>
                   <button className="btn" onClick={() => create(g)} disabled={busy}>🌐 {ja ? "みんなで" : "Friends"}</button>
@@ -297,6 +333,8 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
           <div className="rg-card party-done">
             <div className="rg-card-medal">{resultIcon(room, me?.team ?? 0, me?.key)}</div>
             <div className="rg-card-title">{resultTitle(room, ja, me?.team ?? 0, me?.key)}</div>
+            {newBest && <div className="party-best">{ja ? "🎉 自己ベスト！" : "🎉 New personal best!"}</div>}
+            {recs && recChip(game, recs[game], ja) && <div className="party-rec">{recChip(game, recs[game], ja)}</div>}
             <ol className="race-results">
               {(game === "tug" ? [...room.players].sort((a, b) => a.team - b.team || b.score - a.score) : ranked).map((p) => (
                 <li key={p.key} className={p.me ? "me" : ""}>
