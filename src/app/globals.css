@@ -4477,3 +4477,9 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .party-dots i{ font-style:normal; animation:party-dot 1.2s infinite; opacity:.2; }
 .party-dots i:nth-child(2){ animation-delay:.2s; } .party-dots i:nth-child(3){ animation-delay:.4s; }
 @keyframes party-dot{ 30%{ opacity:1; } }
+/* Home → クエスト tab: the quest list as a page card */
+.quests-tab{ background:var(--surface); border:3px solid var(--ink-line); border-radius:20px; padding:10px 6px 12px; box-shadow:0 4px 0 color-mix(in srgb, var(--ink-line) 22%, transparent); }
+.quests-tab .sheet-panel-title{ padding:2px 10px 8px; }
+.home-tabs .home-tab{ padding-inline:1px; }
+/* five tabs (signed in, with クエスト): a slightly smaller label so マイワールド fits */
+.home-tabs:has(> :nth-child(5)) .home-tab{ font-size:10px; letter-spacing:-.02em; }
