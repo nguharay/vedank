@@ -76,6 +76,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   /* buzzer: who answered first when I was a moment too late */
   const [taken, setTaken] = useState<string | null>(null);
   const lastQ = useRef(-1);
+  const lastCount = useRef(0);
   const offset = useRef(0);
   const round = useRef(-1);
   const roomRef = useRef("");
@@ -100,6 +101,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     offset.current = v.now - clock();
     /* a new round — or a different room — starts my count from zero */
     if (v.round !== round.current || v.code !== roomRef.current) {
+      if (v.code !== roomRef.current) lastCount.current = 0;
       round.current = v.round;
       roomRef.current = v.code;
       lastHearts.current = 0;
@@ -107,6 +109,13 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     }
     const mine = v.players.find((p) => p.me);
     if (mine && v.game !== "buzz") setMyDone((d) => Math.max(d, mine.done));
+    /* host: a friend just joined — say so, so the host knows to press Start */
+    if (v.isHost && v.status === "lobby" && roomRef.current === v.code && v.players.length > lastCount.current && lastCount.current > 0) {
+      const newest = v.players[v.players.length - 1];
+      sound.correct(); haptic(15);
+      setNote(ja ? `🎉 ${newest.name} が参加したよ！スタートできるよ` : `🎉 ${newest.name} joined! You can start`);
+    }
+    lastCount.current = v.players.length;
     /* buzzer: a new question unlocks everyone */
     if (v.buzz && v.buzz.q !== lastQ.current) {
       lastQ.current = v.buzz.q;
@@ -144,7 +153,12 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     try {
       const res = await partyJoinAction(c);
       if ("error" in res && res.redirect && res.redirect !== "party") { window.location.assign(roomLink(res.redirect, c)); return; }
-      if ("error" in res) { setNote(joinErrorText(res.error, ja)); track("party_join_fail", { detail: res.error }); } else { setSolo(false); soloRef.current = null; take(res); track("party_join", { game: res.game }); }
+      if ("error" in res) { setNote(joinErrorText(res.error, ja)); track("party_join_fail", { detail: res.error }); }
+      else {
+        setSolo(false); soloRef.current = null; take(res); track("party_join", { game: res.game, detail: res.isHost ? "own-room" : "" });
+        /* the same account on a second phone just lands back in its own room */
+        if (res.isHost) setNote(ja ? "これはきみが作った部屋だよ。友だちは自分のアカウントでこのコードを入力してね。" : "This is your own room. Friends join with their own account and this code.");
+      }
     } catch (e) { setNote(ja ? "参加できませんでした。通信をたしかめて、もう一度ためしてね。" : "Could not join. Check your connection and try again."); track("party_join_fail", { detail: String(e).slice(0, 80) }); }
     setBusy(false);
   }
@@ -334,7 +348,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
             <span className="party-or">{ja ? "友だちのコードで参加" : "Join a friend's room"}</span>
             <span className="race-join">
               <input className="race-join-input mono" value={code} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
-                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} aria-label={ja ? "部屋のコード" : "Room code"} />
+                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} onKeyDown={(e) => { if (e.key === "Enter" && code.length === 4) join(code); }} enterKeyHint="go" aria-label={ja ? "部屋のコード" : "Room code"} />
               <button className="btn btn-join" onClick={() => join(code)} disabled={busy || code.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
             </span>
           </div>
@@ -385,7 +399,12 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
               <button className="btn" onClick={share}>🔗 {ja ? "友だちに送る" : "Send to friends"}</button>
               {room.isHost
                 ? <button className="btn btn-primary" onClick={start} disabled={busy || n < 2}>{n < 2 ? (ja ? "2人以上でスタート" : "Needs 2 players") : (ja ? `${n}人でスタート！` : `Start with ${n}!`)}</button>
-                : <p className="race-note">{ja ? "ホストがスタートするのを待っています" : "Waiting for the host to start"}</p>}
+                : (
+                  <div className="party-waiting">
+                    <b>✅ {ja ? "参加しました！" : "You're in!"}</b>
+                    <span>{(() => { const h = room.players.find((p) => p.host)?.name ?? (ja ? "ホスト" : "the host"); return ja ? `${h} さんがスタートするのを待っています` : `Waiting for ${h} to start`; })()}<i className="party-dots"><i>.</i><i>.</i><i>.</i></i></span>
+                  </div>
+                )}
             </div>
             {note && <p className="race-note">{note}</p>}
             <ul className="race-players">
@@ -393,7 +412,9 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
               {room.players.map((p) => (
                 <li key={p.key}>{p.me ? (ja ? `${p.name}（きみ）` : `${p.name} (you)`) : p.name}{p.host ? " 👑" : ""}</li>
               ))}
-              <li className="race-wait">{ja ? "友だちを待っています…" : "Waiting for friends…"}</li>
+              <li className="race-wait">{room.isHost && n < 2
+                ? (ja ? "友だちがこのコードを入力するのを待っています（友だちは自分のアカウントでログインしてね）" : "Waiting for a friend to enter this code (signed in with their own account)")
+                : (ja ? "友だちを待っています…" : "Waiting for friends…")}</li>
             </ul>
           </div>
         )}
@@ -447,6 +468,14 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
 function GamePicker({ current, ja, canPick, busy, onPick, label }: {
   current: PartyGame | null; ja: boolean; canPick: boolean; busy: boolean; onPick: (g: PartyGame) => void; label: string;
 }) {
+  if (!canPick && current) {
+    return (
+      <div className="party-picker">
+        <span className="party-picker-lab">{label}</span>
+        <span className="party-game-now"><span>{PARTY_NAMES[current][0]}</span>{ja ? PARTY_NAMES[current][2] : PARTY_NAMES[current][1]}</span>
+      </div>
+    );
+  }
   return (
     <div className="party-picker">
       <span className="party-picker-lab">{label}</span>

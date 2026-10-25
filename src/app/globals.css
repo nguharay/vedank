@@ -4462,3 +4462,18 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 /* tug: the one middle line, bold, with a little flag on top */
 .tug-line.c{ top:24%; width:6px; margin-left:-3px; background:#fff; box-shadow:0 0 0 2px rgba(29,27,51,.35); }
 .tug-line.c::before{ content:"🚩"; position:absolute; top:-22px; left:50%; transform:translateX(-30%); font-size:18px; }
+/* an on/off switch for menu rows */
+.menu-switch{ flex:none; position:relative; width:44px; height:26px; border-radius:999px; background:#cfcbe0; border:2px solid #1d1b33; transition:background .2s; }
+.menu-switch i{ position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; border:2px solid #1d1b33; transition:left .2s cubic-bezier(.3,1.4,.5,1); }
+.menu-switch.on{ background:#3cbf74; }
+.menu-switch.on i{ left:20px; }
+.skins-buddy-switch{ width:100%; margin-bottom:6px; }
+/* lobby, for a friend who joined: clearly "you're in, waiting for the host" */
+.party-game-now{ display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:14px; border:3px solid #1d1b33; background:#ffcf3a; font:900 16px/1 "Baloo 2",system-ui,sans-serif; box-shadow:0 3px 0 #1d1b33; }
+.party-game-now span{ font-size:24px; }
+.party-waiting{ display:flex; flex-direction:column; gap:3px; padding:10px 12px; border-radius:14px; background:#e7f8ee; border:2px solid #3cbf74; }
+.party-waiting b{ font-size:16px; color:#1f7a45; }
+.party-waiting span{ font-size:13px; font-weight:800; color:#1d1b33; }
+.party-dots i{ font-style:normal; animation:party-dot 1.2s infinite; opacity:.2; }
+.party-dots i:nth-child(2){ animation-delay:.2s; } .party-dots i:nth-child(3){ animation-delay:.4s; }
+@keyframes party-dot{ 30%{ opacity:1; } }

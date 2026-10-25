@@ -402,27 +402,59 @@ export function popUpMs(streak: number): number {
 export function popSum(streak: number): { prompt: string; answer: number } {
   const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
   const tier = streak < 6 ? 0 : streak < 14 ? 1 : 2;
-  const k = ri(0, 3);
+  /* six kinds per tier, two of them multiplication — so roughly a third of
+     the sums are ×, and the × ones start very easy (×2, ×3, ×10, doubles) */
+  const k = ri(0, 5);
   if (tier === 0) {
     if (k === 0) { const a = ri(2, 9), b = ri(2, 9); return { prompt: `${a} + ${b}`, answer: a + b }; }
     if (k === 1) { const a = ri(6, 15), b = ri(1, a - 1); return { prompt: `${a} − ${b}`, answer: a - b }; }
-    if (k === 2) { const a = ri(2, 5), b = ri(2, 6); return { prompt: `${a} × ${b}`, answer: a * b }; }
-    const a = ri(1, 9); return { prompt: `${a} + 10`, answer: a + 10 };
+    if (k === 2) { const a = ri(1, 9); return Math.random() < 0.5 ? { prompt: `${a} + 10`, answer: a + 10 } : { prompt: `${a + 10} − 10`, answer: a }; }
+    if (k === 3) { const a = ri(2, 9); return { prompt: `${a} + ${a}`, answer: a + a }; }                 /* doubles */
+    if (k === 4) { const a = ri(1, 9), m = Math.random() < 0.6 ? 2 : 3; return Math.random() < 0.5 ? { prompt: `${a} × ${m}`, answer: a * m } : { prompt: `${m} × ${a}`, answer: a * m }; }
+    const a = ri(1, 9); return Math.random() < 0.5 ? { prompt: `${a} × 10`, answer: a * 10 } : { prompt: `${a} × 1`, answer: a };
   }
   if (tier === 1) {
     if (k === 0) { const a = ri(11, 29), b = ri(2, 9); return { prompt: `${a} + ${b}`, answer: a + b }; }
     if (k === 1) { const a = ri(11, 30), b = ri(2, 9); return { prompt: `${a} − ${b}`, answer: a - b }; }
-    if (k === 2) { const a = ri(2, 9), b = ri(2, 9); return { prompt: `${a} × ${b}`, answer: a * b }; }
-    const a = ri(1, 9) * 10, b = ri(1, 9) * 10; return { prompt: `${a} + ${b}`, answer: a + b };
+    if (k === 2) { const a = ri(1, 9) * 10, b = ri(1, 9) * 10; return Math.random() < 0.5 ? { prompt: `${a} + ${b}`, answer: a + b } : { prompt: `${Math.max(a, b)} − ${Math.min(a, b)}`, answer: Math.abs(a - b) }; }
+    if (k === 3) { const a = ri(2, 9), m = [4, 5][ri(0, 1)]; return { prompt: `${a} × ${m}`, answer: a * m }; }   /* ×4, ×5 */
+    if (k === 4) { const a = ri(2, 9), b = ri(2, 9); return { prompt: `${a} × ${b}`, answer: a * b }; }          /* the tables */
+    const a = ri(11, 49); return { prompt: `${a} + 9`, answer: a + 9 };                                       /* +9: add 10, take 1 */
   }
   if (k === 0) { const a = ri(12, 25); return { prompt: `${a} × 11`, answer: a * 11 }; }
   if (k === 1) { const a = ri(11, 89); return { prompt: `100 − ${a}`, answer: 100 - a }; }
   if (k === 2) { const a = ri(1, 2) * 10 + 5; return { prompt: `${a}²`, answer: a * a }; }
+  if (k === 3) { const a = ri(12, 49) * 2; return { prompt: `${a} × 5`, answer: a * 5 }; }                    /* ×5 = half of ×10 */
+  if (k === 4) { const a = ri(11, 19), b = ri(2, 5); return { prompt: `${a} × ${b}`, answer: a * b }; }
   const a = ri(12, 40), b = ri(1, 2) * 10 + 9; return { prompt: `${a} + ${b}`, answer: a + b };
 }
 
+/* Variety rules for a run of sums: never the same sum within the last few,
+   never three of one kind (+, −, ×) in a row, and a × at least every fourth.
+   A sum that breaks a rule is drawn again (a few tries, then let through). */
+const opOf = (p: string) => (p.includes("×") || p.includes("²") ? "×" : p.includes("−") ? "−" : "+");
+function fitsRun(prompt: string, recent: string[]): boolean {
+  if (recent.slice(-8).includes(prompt)) return false;
+  const op = opOf(prompt), last = recent.slice(-3).map(opOf);
+  if (last.length >= 2 && last[last.length - 1] === op && last[last.length - 2] === op) return false;
+  if (last.length >= 3 && !last.includes("×") && op !== "×") return false;
+  return true;
+}
+function pickFor(streak: number, recent: string[]): { prompt: string; answer: number } {
+  let s = popSum(streak);
+  for (let i = 0; i < 12 && !fitsRun(s.prompt, recent); i++) s = popSum(streak);
+  return s;
+}
+const recentPrompts: string[] = [];
+function freshSum(streak: number): { prompt: string; answer: number } {
+  const s = pickFor(streak, recentPrompts);
+  recentPrompts.push(s.prompt);
+  if (recentPrompts.length > 10) recentPrompts.shift();
+  return s;
+}
+
 export function buildPopRound(streak: number): PopRound {
-  const p = popSum(streak);
+  const p = freshSum(streak);
   const decoys = new Set<number>();
   const swapped = Number(String(Math.abs(p.answer)).split("").reverse().join(""));
   const cands = [p.answer + 1, p.answer - 1, p.answer + 10, p.answer - 10, swapped, p.answer + 2, p.answer - 2, p.answer + 100];
@@ -448,7 +480,7 @@ export function popPoints(combo: number): number {
 export type ChoiceRound = { prompt: string; answer: number; options: number[] };
 
 export function buildChoiceRound(streak: number): ChoiceRound {
-  return choiceFor(popSum(streak));
+  return choiceFor(freshSum(streak));
 }
 /* Three answers for a sum: the right one and two near misses a hurried
    player might pick (off by one, off by ten, digits swapped). */
@@ -527,9 +559,23 @@ export function racePlace(level: RaceLevel, secs: number): number {
    answer without storing the sequence, and nobody gets an easier run. */
 /* big enough for a whole class; the track draws the leaders + you past 6 */
 export const RACE_ROOM_MAX = 50;
+/* Question i of a room. It must be the same on every phone and on the server,
+   so it comes from the seed alone — and it is re-drawn (from the same seeded
+   stream) if it repeats one of the previous few, so a room never gets the
+   same sum twice in a row, and follows the variety rules above. The sequence
+   is cached per seed. */
+const roomSeqs = new Map<number, ChoiceRound[]>();
 export function raceQuestion(seed: number, i: number): ChoiceRound {
-  const rand = seededRandom((seed ^ Math.imul(i + 1, 2654435761)) >>> 0);
-  return withSeededRandom(rand, () => buildChoiceRound(i));
+  let seq = roomSeqs.get(seed);
+  if (!seq) { seq = []; roomSeqs.set(seed, seq); if (roomSeqs.size > 200) roomSeqs.delete(roomSeqs.keys().next().value!); }
+  while (seq.length <= i) {
+    const n = seq.length;
+    const rand = seededRandom((seed ^ Math.imul(n + 1, 2654435761)) >>> 0);
+    const recent = seq.slice(Math.max(0, n - 8)).map((q) => q.prompt);
+    const q = withSeededRandom(rand, () => choiceFor(pickFor(n, recent)));
+    seq.push(q);
+  }
+  return seq[i];
 }
 
 /* ---------- Sushi Shop ----------
