@@ -693,9 +693,9 @@ function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onB
           </p>
           <button className="btn btn-primary" onClick={create} disabled={busy}>{ja ? "部屋を作る" : "Make a room"}</button>
           <div className="race-join">
-            <input className="race-join-input mono" value={code} maxLength={4} placeholder="ABCD"
+            <input className="race-join-input mono" value={code} maxLength={4} placeholder={ja ? "コード" : "CODE"}
               onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} aria-label={ja ? "部屋のコード" : "Room code"} />
-            <button className="btn" onClick={() => join(code)} disabled={busy || code.length !== 4}>{ja ? "参加" : "Join"}</button>
+            <button className="btn btn-join" onClick={() => join(code)} disabled={busy || code.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
           </div>
           {note && <p className="race-note">{note}</p>}
           <button className="btn btn-ghost" onClick={onBack}>← {ja ? "CPUとレース" : "Race the CPU"}</button>

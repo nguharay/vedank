@@ -68,7 +68,7 @@ export const TRICKS: Trick[] = [
           const rev = Number(String(n).split("").reverse().join(""));
           const d = String(Math.abs(n - rev)).padStart(3, "0");
           const dr = d.split("").reverse().join("");
-          return `${d} + ${dr} = 1089 — always`;
+          return `${d} + ${dr} = 1089, always`;
         },
         secretJa: (n) => {
           const rev = Number(String(n).split("").reverse().join(""));
@@ -91,7 +91,7 @@ export const TRICKS: Trick[] = [
     grad: ["#EA580C", "#F59E0B"],
     title: "I Know Your Number",
     titleJa: "きみの数、当てます",
-    hook: "They do four steps in secret. You never see a single digit — and you still name their number.",
+    hook: "They do four steps in secret. You never see a single digit, and you still name their number.",
     hookJa: "相手はこっそり4つの計算をするだけ。数字は一度も見ていないのに、ぴたりと当てられます。",
     why: "Every step is undone by the last one. (n × 2 + 10) ÷ 2 − 5 is just n again, no matter what they started with.",
     whyJa: "すべての手順が最後に打ち消し合います。(n × 2 + 10) ÷ 2 − 5 は、どんな数でも元のnに戻ります。",
@@ -104,7 +104,7 @@ export const TRICKS: Trick[] = [
       {
         say: "Now take away the number you started with. Tell me what's left.",
         sayJa: "最初の数を引いて。残った数を教えて。",
-        secret: () => "they will say 5 — every single time",
+        secret: () => "they will say 5, every single time",
         secretJa: () => "相手は必ず5と言います",
       },
       {
@@ -123,7 +123,7 @@ export const TRICKS: Trick[] = [
     titleJa: "いなずま2乗",
     hook: "Ask for any number ending in 5. Say the square before they've finished writing it down.",
     hookJa: "5で終わる数を言ってもらおう。相手が書き終わる前に2乗を言えます。",
-    why: "This is the book's own rule: n5² = n × (n+1), then 25 on the end. You already know it — now perform it.",
+    why: "This is the book's own rule: n5² = n × (n+1), then 25 on the end. You already know it, now perform it.",
     whyJa: "これは本のルールそのもの。n5² = n×(n+1) のあとに25。もう知っているはず――披露しよう。",
     sample: () => ri(1, 9) * 10 + 5,
     steps: [

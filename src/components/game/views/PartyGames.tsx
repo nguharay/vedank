@@ -179,6 +179,17 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomCode]);
   useEffect(() => () => { if (lockTimer.current) clearTimeout(lockTimer.current); }, []);
+  /* the app's Back button / gesture: out of a game or room → the party menu */
+  const inRoom = !!room;
+  useEffect(() => {
+    const on = (e: Event) => {
+      if (!inRoom) return;
+      e.preventDefault();
+      setRoom(null); setSolo(false); soloRef.current = null;
+    };
+    window.addEventListener("vedank:partyback", on);
+    return () => window.removeEventListener("vedank:partyback", on);
+  }, [inRoom]);
 
   /* status from the local clock, so the countdown flips on time everywhere */
   const status = !room ? null
@@ -272,14 +283,15 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
               </div>
             ))}
           </div>
-          <div className="party-or">{ja ? "コードをもらったら" : "Got a code?"}</div>
-          <div className="race-join">
-            <input className="race-join-input mono" value={code} maxLength={4} placeholder="ABCD"
-              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} aria-label={ja ? "部屋のコード" : "Room code"} />
-            <button className="btn" onClick={() => join(code)} disabled={busy || code.length !== 4}>{ja ? "参加" : "Join"}</button>
+          <div className="party-join">
+            <span className="party-or">{ja ? "友だちのコードで参加" : "Join a friend's room"}</span>
+            <span className="race-join">
+              <input className="race-join-input mono" value={code} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
+                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} aria-label={ja ? "部屋のコード" : "Room code"} />
+              <button className="btn btn-join" onClick={() => join(code)} disabled={busy || code.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
+            </span>
           </div>
           {note && <p className="race-note">{note}</p>}
-          <button className="btn btn-ghost" onClick={onBack}>← {ja ? "もどる" : "Back"}</button>
         </div>
       </div>
     );
@@ -301,6 +313,10 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
         </span>
       </div>
 
+      {/* the game area only while a game is on; before and after it the room
+          card takes its place at full height, so Start / Play again are never
+          pushed out of sight by a long player list */}
+      {(status === "countdown" || status === "playing") && (
       <div className="party-stage">
         {game === "tug" && <TugStage room={room} ja={ja} myTeam={me?.team ?? 0} pulse={fx?.kind === "pull" ? fx.k : 0} />}
         {game === "buzz" && <BuzzStage room={room} ja={ja} now={now} q={q?.prompt ?? null} ranked={ranked} />}
@@ -309,12 +325,20 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
         {status === "countdown" && room.startAt !== null && (
           <div key={secsLeft(room.startAt)} className="race-count mono">{Math.max(1, secsLeft(room.startAt))}</div>
         )}
+      </div>
+      )}
 
         {status === "lobby" && (
-          <div className="rg-card party-lobby">
+          <div className="rg-card party-panel party-lobby">
             <div className="rg-card-title">{ja ? "部屋のコード" : "Room code"}</div>
             <div className="race-code mono">{room.code}</div>
-            <button className="btn" onClick={share}>🔗 {ja ? "友だちに送る" : "Send to friends"}</button>
+            <div className="party-lobby-btns">
+              <button className="btn" onClick={share}>🔗 {ja ? "友だちに送る" : "Send to friends"}</button>
+              {room.isHost
+                ? <button className="btn btn-primary" onClick={start} disabled={busy || n < 2}>{n < 2 ? (ja ? "2人以上でスタート" : "Needs 2 players") : (ja ? `${n}人でスタート！` : `Start with ${n}!`)}</button>
+                : <p className="race-note">{ja ? "ホストがスタートするのを待っています" : "Waiting for the host to start"}</p>}
+            </div>
+            {note && <p className="race-note">{note}</p>}
             <ul className="race-players">
               <li className="race-count-row">{ja ? `参加 ${n}人` : `${n} in the room`}{game === "tug" ? (ja ? "（スタートでチームを半分にわけるよ）" : " (teams are split evenly at the start)") : ""}</li>
               {room.players.map((p) => (
@@ -322,15 +346,11 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
               ))}
               <li className="race-wait">{ja ? "友だちを待っています…" : "Waiting for friends…"}</li>
             </ul>
-            {room.isHost
-              ? <button className="btn btn-primary" onClick={start} disabled={busy || n < 2}>{n < 2 ? (ja ? "2人以上でスタート" : "Needs 2 players") : (ja ? "スタート！" : "Start!")}</button>
-              : <p className="race-note">{ja ? "ホストがスタートするのを待っています" : "Waiting for the host to start"}</p>}
-            {note && <p className="race-note">{note}</p>}
           </div>
         )}
 
         {status === "done" && (
-          <div className="rg-card party-done">
+          <div className="rg-card party-panel party-done">
             <div className="rg-card-medal">{resultIcon(room, me?.team ?? 0, me?.key)}</div>
             <div className="rg-card-title">{resultTitle(room, ja, me?.team ?? 0, me?.key)}</div>
             {newBest && <div className="party-best">{ja ? "🎉 自己ベスト！" : "🎉 New personal best!"}</div>}
@@ -349,13 +369,12 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
             {solo && <button className="btn" onClick={() => create(room.game)} disabled={busy}>🌐 {ja ? "友だちとやる" : "Play with friends"}</button>}
           </div>
         )}
-      </div>
 
       {q && (
         <>
           <div className="race-q mono">{q.prompt} = ?</div>
           <Answers round={q} onPick={pick} picked={picked} disabled={lock} />
-          {lock && game === "buzz" && <p className="party-lock">{ja ? "おてつき！ちょっと待ってね" : "Oops — wait a moment"}</p>}
+          {lock && game === "buzz" && <p className="party-lock">{ja ? "おてつき！ちょっと待ってね" : "Oops, wait a moment"}</p>}
         </>
       )}
       {game === "tug" && status === "playing" && me && (
@@ -371,7 +390,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
 
 function blurb(g: PartyGame, ja: boolean) {
   if (g === "tug") return ja ? "2チームで対決。正解でつなを引こう！" : "Two teams. Every right answer pulls the rope!";
-  if (g === "buzz") return ja ? "同じ問題を早いもの勝ち！" : "Same sum for all — fastest wins the point!";
+  if (g === "buzz") return ja ? "同じ問題を早いもの勝ち！" : "Same sum for all, fastest wins the point!";
   return ja ? "みんなで力をあわせてドラゴンをたおせ！" : "Team up and beat the dragon together!";
 }
 
@@ -386,7 +405,7 @@ function resultTitle(room: PartyRoomView, ja: boolean, myTeam: 0 | 1, myKey?: st
     const w = room.tug?.winner;
     if (w === "draw") return ja ? "ひきわけ！" : "It's a draw!";
     const name = w === 0 ? TEAM[0] : TEAM[1];
-    return w === myTeam ? (ja ? `${name[1]}の勝ち！きみのチームだ！` : `${name[0]} wins — that's your team!`) : (ja ? `${name[1]}の勝ち！` : `${name[0]} wins!`);
+    return w === myTeam ? (ja ? `${name[1]}の勝ち！きみのチームだ！` : `${name[0]} wins, that's your team!`) : (ja ? `${name[1]}の勝ち！` : `${name[0]} wins!`);
   }
   if (room.game === "boss") return room.boss?.result === "win" ? (ja ? "ドラゴンをたおした！" : "Dragon defeated!") : (ja ? "ドラゴンの勝ち…もう一回！" : "The dragon won… try again!");
   const top = Math.max(...room.players.map((p) => p.score));

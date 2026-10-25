@@ -46,7 +46,7 @@ export async function generateMetadata({
 
   return {
     title: `${headline} · Sutra Sprint`,
-    description: "Vedic maths as a game — 25 sutras, a matchstick dojo and a daily challenge.",
+    description: "Vedic maths as a game, 25 sutras, a matchstick dojo and a daily challenge.",
     openGraph: {
       title: headline,
       description: "Vedic maths as a game. Can you beat it?",
@@ -93,7 +93,7 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
 
         <h1 className="share-landing-title">{headline}</h1>
         <p className="sub">
-          Sutra Sprint turns Vedic maths into a game — 25 sutras as stages, a matchstick dojo,
+          Sutra Sprint turns Vedic maths into a game, 25 sutras as stages, a matchstick dojo,
           a daily challenge and timed Blitz runs.
         </p>
         <Link className="btn btn-primary share-landing-cta" href="/signup">

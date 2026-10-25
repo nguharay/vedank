@@ -988,6 +988,13 @@ export function GameApp({
   useEffect(() => { setAudience({ signed_in: !guest, lang }); }, [guest, lang]);
 
   function handleBack() {
+    /* party games: inside a game/room, Back goes to the party menu first */
+    if (view === "party") {
+      const ev = new CustomEvent("vedank:partyback", { cancelable: true });
+      window.dispatchEvent(ev);
+      if (!ev.defaultPrevented) { gameFromHomeRef.current = false; openGames(); }
+      return;
+    }
     if (view === "practice") { openStageMap(currentTopicId!); }
     else if (view === "stagemap") { openTopic(currentTopicId!); }
     /* Out of a game goes back to the shelf, not all the way home — finishing
@@ -1703,7 +1710,7 @@ export function GameApp({
           const bought = await buyItemAction("hint");
           if (!bought.ok) {
             setPuzzleStatus({
-              text: ja ? "💎 ジェムが足りません。バトルに勝ってジェムを集めよう！" : "💎 Not enough gems — win battles to earn more!",
+              text: ja ? "💎 ジェムが足りません。バトルに勝ってジェムを集めよう！" : "💎 Not enough gems, win battles to earn more!",
               color: "var(--red, #d9534f)",
             });
             return;
@@ -3152,13 +3159,13 @@ export function GameApp({
         </button>
         <div className="header-title"><h1>{headerTitle}</h1></div>
         <div className="stats-row">
-          <button className={`stat stat-flame${dailyStreak > 0 ? " lit" : ""}`} onClick={() => openShare("streak")} aria-label={`${t.share.statStreak} ${dailyStreak} — ${t.share.shareBtn}`}>
+          <button className={`stat stat-flame${dailyStreak > 0 ? " lit" : ""}`} onClick={() => openShare("streak")} aria-label={`${t.share.statStreak} ${dailyStreak}, ${t.share.shareBtn}`}>
             <span aria-hidden="true"><StreakIcon lit={dailyStreak > 0} /></span> {dailyStreak}
           </button>
-          <button className={`stat stat-cards${cardPop ? " pop" : ""}`} onClick={() => window.dispatchEvent(new CustomEvent("vedank:collection"))} aria-label={ja ? `偉人カード ${cardCount}まい — 図鑑を見る` : `${cardCount} Great Minds cards — open the collection`}>
+          <button className={`stat stat-cards${cardPop ? " pop" : ""}`} onClick={() => window.dispatchEvent(new CustomEvent("vedank:collection"))} aria-label={ja ? `偉人カード ${cardCount}まい・図鑑を見る` : `${cardCount} Great Minds cards, open the collection`}>
             <span aria-hidden="true"><UiIcon name="card" size="1.15em" /></span> {cardCount}
           </button>
-          <button className="stat stat-heart" onClick={() => openShare("level")} aria-label={`${t.share.statHearts} ${hearts} — ${t.share.shareBtn}`}>
+          <button className="stat stat-heart" onClick={() => openShare("level")} aria-label={`${t.share.statHearts} ${hearts}, ${t.share.shareBtn}`}>
             <span aria-hidden="true"><UiIcon name="heart" size="1.15em" /></span> {hearts}
           </button>
         </div>
@@ -3497,7 +3504,7 @@ export function GameApp({
                         <div className="my-team-tip">{ja ? "がんばると先生がチームに⭐をくれるよ！" : "Your teacher gives your team ⭐ for great work!"}</div>
                       </div>
                     ) : (
-                      e.groups.length > 0 && <div className="friend-note">{ja ? "まだチームに入っていません。先生が決めてくれるよ。" : "You're not in a team yet — your teacher will put you in one."}</div>
+                      e.groups.length > 0 && <div className="friend-note">{ja ? "まだチームに入っていません。先生が決めてくれるよ。" : "You're not in a team yet, your teacher will put you in one."}</div>
                     )}
                   </div>
                 );
@@ -3534,7 +3541,7 @@ export function GameApp({
             )}
 
             <a className="quest-review-cta cls-teach-link" href="/classroom">
-              🧑‍🏫 {ja ? "先生用：クラスを作る" : teachingCount > 0 ? `Teaching ${teachingCount} class${teachingCount === 1 ? "" : "es"}` : "I'm a teacher — make a class"}
+              🧑‍🏫 {ja ? "先生用：クラスを作る" : teachingCount > 0 ? `Teaching ${teachingCount} class${teachingCount === 1 ? "" : "es"}` : "I'm a teacher, make a class"}
             </a>
           </div>
         </>
@@ -3549,7 +3556,7 @@ export function GameApp({
             <p>
               {lang === "ja"
                 ? "おためしでは最初の2トピックと一部のゲームが遊べます。無料のアカウントを作ると、すべてのトピック・ゲーム・デイリーチャレンジ・マッチ棒道場が開き、今までの記録もそのまま引き継がれます。"
-                : "Guests can play the first two topics and a few games. A free account opens every topic, every game, the Daily Challenge and the Matchstick Dojo — and keeps the progress you've made so far."}
+                : "Guests can play the first two topics and a few games. A free account opens every topic, every game, the Daily Challenge and the Matchstick Dojo, and keeps the progress you've made so far."}
             </p>
             <a className="btn btn-primary auth-submit" href="/signup?from=%2F">
               {lang === "ja" ? "無料アカウントにログイン" : "Sign in to your free account"}
@@ -3736,7 +3743,7 @@ export function GameApp({
                       : "Add a friend and you can host a race."
                     : lang === "ja"
                       ? "まだレースがありません。開催してみよう！"
-                      : "No races yet — host one."}
+                      : "No races yet, host one."}
                 </div>
               )}
 
@@ -3840,7 +3847,7 @@ export function GameApp({
               ))}
               {friends.length === 0 && (
                 <div className="friend-empty">
-                  {lang === "ja" ? "まだフレンドがいません。" : "No friends yet — swap codes!"}
+                  {lang === "ja" ? "まだフレンドがいません。" : "No friends yet, swap codes!"}
                 </div>
               )}
             </div>
@@ -4114,7 +4121,7 @@ export function GameApp({
               {leagueLoading && <div className="leaderboard-loading">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>}
               {!leagueLoading && league?.rows.length === 0 && (
                 <div className="leaderboard-loading">
-                  {lang === "ja" ? "今週はまだ誰もいません。今日のチャレンジをやって、1位になろう！" : "Nobody here yet this week — play the Daily Challenge and take first place!"}
+                  {lang === "ja" ? "今週はまだ誰もいません。今日のチャレンジをやって、1位になろう！" : "Nobody here yet this week, play the Daily Challenge and take first place!"}
                 </div>
               )}
               {!leagueLoading &&
@@ -4145,7 +4152,7 @@ export function GameApp({
           const a = lb.above;
           const gapL = a.lessons - me.lessons;
           if (gapL > 0) next = ja ? `あと ${gapL + 1} レッスンで ${a.name} さんをぬかせるよ！` : `${gapL + 1} more lesson${gapL + 1 > 1 ? "s" : ""} to pass ${a.name}!`;
-          else next = ja ? `${a.name} さんとレッスン数は同じ。⭐をあと ${a.stars - me.stars + 1} こで上に行けるよ！` : `Same lessons as ${a.name} — ${a.stars - me.stars + 1} more ⭐ to pass them!`;
+          else next = ja ? `${a.name} さんとレッスン数は同じ。⭐をあと ${a.stars - me.stars + 1} こで上に行けるよ！` : `Same lessons as ${a.name}, ${a.stars - me.stars + 1} more ⭐ to pass them!`;
         }
         return (
           <>
@@ -4172,7 +4179,7 @@ export function GameApp({
                   <div className="lb-me-next">
                     {!me.position
                       ? (ja ? "レッスンを1つクリアすると、ランキングにのるよ！" : "Clear your first lesson to get on the board!")
-                      : me.position === 1 ? (ja ? "👑 いま1位！このままレッスンをすすめよう" : "👑 You're #1 — keep clearing lessons!")
+                      : me.position === 1 ? (ja ? "👑 いま1位！このままレッスンをすすめよう" : "👑 You're #1, keep clearing lessons!")
                       : next}
                   </div>
                   <button className="btn btn-primary lb-go" onClick={() => { setLeaderboardOpen(false); goHome(); setTimeout(() => window.dispatchEvent(new CustomEvent("vedank:hometab", { detail: "learn" })), 60); }}>
@@ -4182,7 +4189,7 @@ export function GameApp({
               )}
               <div className="leaderboard-panel">
                 {leaderboardLoading && <div className="leaderboard-loading">{ja ? "読み込み中…" : "Loading…"}</div>}
-                {!leaderboardLoading && lb && !lb.top.length && <div className="leaderboard-loading">{ja ? "まだだれもいないよ。1番のりになろう！" : "Nobody yet — be the first!"}</div>}
+                {!leaderboardLoading && lb && !lb.top.length && <div className="leaderboard-loading">{ja ? "まだだれもいないよ。1番のりになろう！" : "Nobody yet, be the first!"}</div>}
                 {!leaderboardLoading && lb?.top.map((e, i) => (
                   <div key={e.userId} className={`leaderboard-row${e.userId === me?.userId ? " me" : ""}`}>
                     <span className={`leaderboard-rank${i < 3 ? ` top${i + 1}` : ""}`}>{i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
@@ -4640,11 +4647,11 @@ export function GameApp({
               </span>
               <span className="game-card-go">›</span>
             </button>
-            <button className="ttt-card party-feature" onClick={() => setView("party")}>
+            <button className="ttt-card party-feature" onClick={() => { gameFromHomeRef.current = false; setView("party"); }}>
               <span className="feature-art party" aria-hidden="true"><b>🪢</b><b>🔔</b><b>🐉</b></span>
               <span className="ttt-card-body">
                 <span className="ttt-card-name">{lang === "ja" ? "🎉 みんなであそぶ" : "🎉 Party games"}<span className="feature-new">NEW</span></span>
-                <span className="ttt-card-sub">{lang === "ja" ? "つなひき・早押しクイズ・ボス戦。ひとりでも、友だちやクラス（最大50人）でも！" : "Tug of War, Buzzer Quiz, Boss Battle — solo, or with friends and classes (up to 50)!"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "つなひき・早押しクイズ・ボス戦。ひとりでも、友だちやクラス（最大50人）でも！" : "Tug of War, Buzzer Quiz and Boss Battle. Play solo, or with friends and classes (up to 50)!"}</span>
               </span>
               <span className="game-card-go">›</span>
             </button>
@@ -4716,7 +4723,7 @@ export function GameApp({
                 {dailyGameDone !== null
                   ? lang === "ja"
                     ? `今日の記録 ${dailyGameDone}・もう一度あそぶ`
-                    : `Today: ${dailyGameDone} — play it again`
+                    : `Today: ${dailyGameDone}, play it again`
                   : lang === "ja"
                     ? "みんな同じ問題。毎日0時に変わります。"
                     : "Everyone gets this same board today."}
@@ -5242,7 +5249,7 @@ export function GameApp({
             {view === "practice" && (
               <>
                 {/* Mid-question, the lesson is an overlay you can close and
-                    carry on from — not a navigation that throws the question
+                    carry on from, not a navigation that throws the question
                     away. The steps sheet pauses the clock while it is up. */}
                 <button className="btn btn-ghost" onClick={() => setHintOpen(true)}>
                   {t.practice.lesson}
@@ -5498,7 +5505,7 @@ export function GameApp({
       )}
 
       {/* The companion. Fixed above the nav so it never covers an answer tile,
-          and tappable to hush it — a helper you can't silence is a nuisance. */}
+          and tappable to hush it, a helper you can't silence is a nuisance. */}
       {!buddy.hidden && (() => {
         /* A moved buddy on the right half of the screen opens its bubble to the
            LEFT (anchored by `right`), so a quote never runs off the edge. The
@@ -5521,7 +5528,7 @@ export function GameApp({
               </button>
               <button className="buddy-hide" onClick={() => {
                 buddy.quiet(); setQuoteBy(null); buddy.toggleHidden();
-                spawnToast(ja ? "バディをかくしました（メニューでもどせます）" : "Buddy hidden — turn it back on in the menu", null);
+                spawnToast(ja ? "バディをかくしました（メニューでもどせます）" : "Buddy hidden, turn it back on in the menu", null);
               }}>
                 🙈 {ja ? "バディをかくす" : "Hide buddy"}
               </button>
@@ -5530,7 +5537,7 @@ export function GameApp({
           <button
             className="buddy-tap"
             {...buddyPos.handlers}
-            aria-label={ja ? "バディ（タップで名言、ドラッグで移動）" : "Buddy — tap for a quote, drag to move"}
+            aria-label={ja ? "バディ（タップで名言、ドラッグで移動）" : "Buddy, tap for a quote, drag to move"}
             title={ja ? "タップ：名言 / ドラッグ：移動" : "Tap for a quote · drag to move"}
           >
             <Buddy skinId={skin.skinId} mood={buddy.mood} />

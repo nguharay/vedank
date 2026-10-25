@@ -1631,7 +1631,7 @@ const PARTS_SPECS: Record<string, PartsSpec> = {
     join: "83 − 2", answer: "81",
   },
   mult9: {
-    caption: "answer in two parts — no multiplication!",
+    caption: "answer in two parts, no multiplication!",
     leftLabel: "left part", leftWork: ["(32 − 1) − 3", "= 28"],
     rightLabel: "right part", rightWork: ["10 − 2", "= 8"],
     join: "28 | 8", answer: "288",

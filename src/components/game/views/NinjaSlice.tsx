@@ -359,7 +359,7 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
             <div className="rg-card-title">{ja ? "🥷 忍者スライス" : "🥷 Ninja Slice"}</div>
             <p className="rg-card-sub">
               {ja ? "数字のついたフルーツが飛んでくる！答えのフルーツを指でスパッと切ろう。ばくだんはさわらないで！"
-                  : "Fruit flies up with numbers on it. Swipe through the fruit that equals the sum — and don't touch the bombs!"}
+                  : "Fruit flies up with numbers on it. Swipe through the fruit that equals the sum, and don't touch the bombs!"}
             </p>
             <button className="btn btn-primary" onClick={begin}>{ja ? "いざ、参る！" : "Begin!"}</button>
           </div>

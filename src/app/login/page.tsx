@@ -14,7 +14,7 @@ const COPY = {
     kicker: "SUTRA SPRINT",
     hero: "A Mental Math Game - Think Fast. Play Smart. Have Fun!",
     pitch:
-      "A game that doesn't just teach Indian calculation methods — it teaches you to see mathematics differently.",
+      "A game that doesn't just teach Indian calculation methods, it teaches you to see mathematics differently.",
     title: "Welcome back",
     sub: "Sign in to keep your streak alive.",
     email: "Email",
@@ -120,7 +120,7 @@ export default function LoginPage() {
           {c.newHere} <Link href="/signup">{c.create}</Link>
         </div>
         <Link className="auth-try" href="/try">
-          {lang === "ja" ? "▶ アカウントなしで遊んでみる" : "▶ Just play — no account needed"}
+          {lang === "ja" ? "▶ アカウントなしで遊んでみる" : "▶ Just play, no account needed"}
         </Link>
       </div>
     </div>

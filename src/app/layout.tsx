@@ -7,11 +7,11 @@ import { SITE_URL } from "@/lib/site";
 /* The link preview is the first thing a Japanese player sees — it has to sell
    the idea before they ever reach the login screen, so the copy here is
    Japanese-first with the English line kept underneath. */
-const TITLE = "インド式数学ゲーム — 考えて、ひらめいて、挑戦しよう！";
+const TITLE = "インド式数学ゲーム｜考えて、ひらめいて、挑戦しよう！";
 const DESCRIPTION =
   "インド式数学を覚えるアプリではなく、数学の「見方」を発見するゲーム。" +
   "古代の計算法を、14のスートラとマッチ棒パズルで。" +
-  "A game that doesn't just teach Indian calculation methods — it teaches you to see mathematics differently.";
+  "A game that doesn't just teach Indian calculation methods, it teaches you to see mathematics differently.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

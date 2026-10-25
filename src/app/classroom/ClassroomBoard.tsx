@@ -152,7 +152,7 @@ export function ClassroomBoard({
       setClasses((cs) =>
         cs.map((c) => (c.id === open.id ? { ...c, assignedTopicId: topicId, assignedNote: assignNote || null } : c))
       );
-      setNote(topicId ? "Assignment saved — students see it on their home screen." : "Assignment cleared.");
+      setNote(topicId ? "Assignment saved, students see it on their home screen." : "Assignment cleared.");
     } else setNote(res.error ?? null);
   }
 
@@ -384,7 +384,7 @@ export function ClassroomBoard({
               ))}
               {classes.length === 0 && (
                 <div className="admin-empty">
-                  No classes yet. Create one — you&apos;ll get a code and a QR code for your students to join.
+                  No classes yet. Create one, you&apos;ll get a code and a QR code for your students to join.
                 </div>
               )}
             </div>
@@ -436,7 +436,7 @@ export function ClassroomBoard({
               <section className="cls-groups">
                 {roster.length === 0 && students !== null ? (
                   <div className="admin-empty">
-                    Nobody has joined yet. Show the QR code or read out <b className="mono">{open.joinCode}</b> — groups can be made once students are in.
+                    Nobody has joined yet. Show the QR code or read out <b className="mono">{open.joinCode}</b>, groups can be made once students are in.
                   </div>
                 ) : (
                   <>
@@ -496,7 +496,7 @@ export function ClassroomBoard({
 
                         <div className={`cls-move-hint${selected ? " on" : ""}`}>
                           {selected
-                            ? <>Moving <b>{selectedName}</b> — tap a group to put them there. <button onClick={() => setSelected(null)}>Cancel</button></>
+                            ? <>Moving <b>{selectedName}</b>, tap a group to put them there. <button onClick={() => setSelected(null)}>Cancel</button></>
                             : "Tip: tap a student, then tap a group to move them. Tap ⭐ to reward a group."}
                         </div>
 
@@ -550,7 +550,7 @@ export function ClassroomBoard({
                                       {s.name}<small>Lv{s.level}</small>
                                     </button>
                                   ))}
-                                  {members.length === 0 && <span className="cls-group-empty">Empty — tap a student, then here</span>}
+                                  {members.length === 0 && <span className="cls-group-empty">Empty, tap a student, then here</span>}
                                 </div>
                                 <button className="cls-group-pick" onClick={(e) => { e.stopPropagation(); pickStudent(g); }} disabled={!members.length}>
                                   🎲 Pick from this group

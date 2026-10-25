@@ -9,10 +9,10 @@ type Run = { slot: string; day: string; reminderId: number | null; sent: number;
 
 /* For now only the evening slot is scheduled (vercel.json): one notification
    a day. Morning messages are kept but not sent until it is switched back on. */
-const SLOT_LABEL: Record<string, string> = { morning: "🌅 Morning · ⏸ paused (not sent)", evening: "🌙 Evening · 19:00 JST — the daily notification" };
+const SLOT_LABEL: Record<string, string> = { morning: "🌅 Morning · ⏸ paused (not sent)", evening: "🌙 Evening · 19:00 JST, the daily notification" };
 const AUD_LABEL: Record<string, string> = {
   all: "Everyone with notifications on (signed in + guests)",
-  guests: "Guests only (not signed in) — good for 'save your progress' nudges",
+  guests: "Guests only (not signed in), good for 'save your progress' nudges",
   not_played_today: "Hasn't played today",
   streak_risk: "Has a streak and hasn't played today",
 };
@@ -51,7 +51,7 @@ export function RemindersAdmin({ rows: initial, runs, reach, adminEmail, pushOn 
     setBusy(true); setNote(null);
     const res = await sendTestReminderAction(id);
     setBusy(false);
-    setNote(res.ok ? "Test sent to your phone — if nothing arrived, turn on 🔔 Notifications in the game menu first." : res.error);
+    setNote(res.ok ? "Test sent to your phone, if nothing arrived, turn on 🔔 Notifications in the game menu first." : res.error);
   }
   async function sendNow(r: Reminder) {
     if (!confirm(`Send "${r.titleJa}" to its audience right now?`)) return;
@@ -81,7 +81,7 @@ export function RemindersAdmin({ rows: initial, runs, reach, adminEmail, pushOn 
         </div>
         <p className="rem-help">
           <b>One notification goes out a day, at 19:00 JST</b>, from the <b>evening</b> list. Each day the next message in that list is sent,
-          cycling through it in order, so write several and they rotate. The morning list is paused — its messages are kept but not sent. Players receive the version in their language.
+          cycling through it in order, so write several and they rotate. The morning list is paused, its messages are kept but not sent. Players receive the version in their language.
           Keep titles under ~30 characters and bodies under ~80 so they fit on a lock screen.
         </p>
         {note && <div className="rem-note">{note}</div>}
@@ -89,7 +89,7 @@ export function RemindersAdmin({ rows: initial, runs, reach, adminEmail, pushOn 
         {["morning", "evening"].map((slot) => (
           <section key={slot} className="rem-slot">
             <h2>{SLOT_LABEL[slot]}</h2>
-            {bySlot(slot).length === 0 && <p className="rem-empty">No messages yet — nothing will be sent in this slot.</p>}
+            {bySlot(slot).length === 0 && <p className="rem-empty">No messages yet, nothing will be sent in this slot.</p>}
             <ol className="rem-list">
               {bySlot(slot).map((r) => (
                 <li key={r.id} className={`rem-item${r.enabled ? "" : " off"}`}>

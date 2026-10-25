@@ -154,7 +154,7 @@ export function RewardsLayer({ lang, onPlay }: { lang: L; onPlay: (id: string) =
       <div className="rw-wrap rw-soft" role="dialog" aria-modal="true">
         <div className="rw-card">
           <div className="rw-title">{ja ? `🎮「${gname(pop.from, true)}」がとくいだね！` : `🎮 You're great at ${gname(pop.from, false)}!`}</div>
-          <p className="rw-sub big">{ja ? <>まだ遊んでいない<b>「{gname(pop.to, true)}」</b>もやってみよう。<br />はじめてクリアで<b>偉人カード</b>がもらえるよ 🃏</> : <>Try <b>{gname(pop.to, false)}</b> next — you haven&apos;t played it yet.<br />Finish it once to win a <b>Great Minds card</b> 🃏</>}</p>
+          <p className="rw-sub big">{ja ? <>まだ遊んでいない<b>「{gname(pop.to, true)}」</b>もやってみよう。<br />はじめてクリアで<b>偉人カード</b>がもらえるよ 🃏</> : <>Try <b>{gname(pop.to, false)}</b> next, you haven&apos;t played it yet.<br />Finish it once to win a <b>Great Minds card</b> 🃏</>}</p>
           <div className="rw-btns">
             <button className="btn btn-primary" onClick={() => { track("nudge_accept", { game: pop.to }); close(); onPlay(pop.to); }}>{ja ? "やってみる ▶" : "Try it ▶"}</button>
             <button className="btn btn-ghost" onClick={close}>{ja ? "あとで" : "Later"}</button>

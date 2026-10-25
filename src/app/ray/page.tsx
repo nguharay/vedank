@@ -3,7 +3,7 @@ import { RayLanding } from "./RayLanding";
 import { ownerSheetEnabled } from "@/lib/owner-notify";
 
 export const metadata: Metadata = {
-  title: "Ray先生と学ぶインド式数学 — 授業のお問い合わせ",
+  title: "Ray先生と学ぶインド式数学｜授業のお問い合わせ",
   description: "インド式数学をRay先生と。日本国内の対面授業とオンライン授業。まずは無料のゲームアプリで遊んでみよう。",
   openGraph: {
     title: "Ray先生と学ぶインド式数学",

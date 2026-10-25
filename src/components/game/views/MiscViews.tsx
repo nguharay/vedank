@@ -122,7 +122,7 @@ export function TricksView({
           <p className="trick-intro">
             {lang === "ja"
               ? "どれも本物の数学。タネも仕掛けもありません――だから絶対に失敗しません。"
-              : "Every one of these is real maths, not sleight of hand — which is why they never fail."}
+              : "Every one of these is real maths, not sleight of hand, which is why they never fail."}
           </p>
         </div>
         <div className="trick-list">
