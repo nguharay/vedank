@@ -5,8 +5,8 @@ import { partyRooms, users } from "@/db/schema";
 import { roomCode, normaliseRoomCode } from "./ttt";
 import {
   PARTY_GAMES, PARTY_ROOM_MAX, PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS, BOSS_WAVE_MS,
-  partyQuestion, buzzQuestion, partyStatus, tugInfo, bossInfo,
-  type PartyGame, type PartyPlayer, type PartyState, type PartyStatus, type TugInfo, type BossInfo,
+  partyQuestion, buzzQuestion, partyStatus, buildPartyView,
+  type PartyGame, type PartyPlayer, type PartyState, type PartyView,
 } from "./party";
 
 /* Party rooms (Tug of War, Buzzer Quiz, Boss Battle) — the rules are in
@@ -17,40 +17,10 @@ import {
 
 type Row = typeof partyRooms.$inferSelect;
 
-export type PartyRoomView = {
-  code: string;
-  game: PartyGame;
-  status: PartyStatus;
-  isHost: boolean;
-  inRoom: boolean;
-  now: number;
-  startAt: number | null;
-  seed: number;
-  round: number;
-  mySlot: number;
-  players: { key: string; name: string; team: 0 | 1; done: number; me: boolean; host: boolean; score: number }[];
-  tug: TugInfo | null;
-  boss: BossInfo | null;
-  buzz: { q: number; qAt: number; wins: (string | null)[] } | null;   /* wins hold player keys */
-};
+export type PartyRoomView = PartyView;
 
 function view(row: Row, userId: string): PartyRoomView {
-  const st = row.state as PartyState;
-  const now = Date.now();
-  const entries = Object.entries(st.players).sort((a, b) => a[1].joinedAt - b[1].joinedAt);
-  const keyOf = new Map(entries.map(([id], i) => [id, `p${i}`]));
-  const buzzScore = (id: string) => st.wins.filter((w) => w === id).length;
-  return {
-    code: row.code, game: st.game, status: partyStatus(st, now), isHost: row.hostId === userId, inRoom: userId in st.players,
-    now, startAt: st.startAt, seed: st.seed, round: st.round, mySlot: st.players[userId]?.slot ?? 0,
-    players: entries.map(([id, p]) => ({
-      key: keyOf.get(id)!, name: p.name, team: p.team, done: p.done, me: id === userId, host: id === row.hostId,
-      score: st.game === "buzz" ? buzzScore(id) : p.done,
-    })),
-    tug: st.game === "tug" && st.startAt !== null ? tugInfo(st, now) : null,
-    boss: st.game === "boss" && st.startAt !== null ? bossInfo(st, now) : null,
-    buzz: st.game === "buzz" ? { q: st.q, qAt: st.qAt, wins: st.wins.map((w) => (w ? keyOf.get(w) ?? null : null)) } : null,
-  };
+  return buildPartyView(row.state as PartyState, { code: row.code, hostId: row.hostId, viewerId: userId, now: Date.now() });
 }
 
 async function nameOf(id: string) {

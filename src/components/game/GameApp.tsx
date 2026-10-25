@@ -4631,11 +4631,11 @@ export function GameApp({
               </span>
               <span className="game-card-go">›</span>
             </button>
-            <button className="ttt-card party-feature" onClick={() => { if (guest) { setLockOpen("race-online"); return; } setView("party"); }}>
+            <button className="ttt-card party-feature" onClick={() => setView("party")}>
               <span className="feature-art party" aria-hidden="true"><b>🪢</b><b>🔔</b><b>🐉</b></span>
               <span className="ttt-card-body">
                 <span className="ttt-card-name">{lang === "ja" ? "🎉 みんなであそぶ" : "🎉 Party games"}<span className="feature-new">NEW</span></span>
-                <span className="ttt-card-sub">{lang === "ja" ? "つなひき・早押しクイズ・みんなでボス戦。友だちやクラスで最大50人！" : "Tug of War, Buzzer Quiz, Boss Battle — with friends or a whole class, up to 50!"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "つなひき・早押しクイズ・ボス戦。ひとりでも、友だちやクラス（最大50人）でも！" : "Tug of War, Buzzer Quiz, Boss Battle — solo, or with friends and classes (up to 50)!"}</span>
               </span>
               <span className="game-card-go">›</span>
             </button>
@@ -4817,7 +4817,8 @@ export function GameApp({
           <section className="view active">
             <PartyGames lang={lang} sound={sound} celebrate={() => confetti.burstCenter(110, 0.4)} game="tug"
               onCorrect={(n) => fireQuest("correct_answer", n)}
-              joinCode={partyJoinCode} onJoined={() => setPartyJoinCode(null)} onBack={() => setView("games")} />
+              joinCode={partyJoinCode} onJoined={() => setPartyJoinCode(null)} onBack={() => setView("games")}
+              guest={guest} onNeedAccount={() => setLockOpen("race-online")} />
           </section>
         )}
         {view === "race" && (

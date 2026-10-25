@@ -11,18 +11,20 @@ import { track } from "@/lib/analytics";
 import {
   partyCreateAction, partyJoinAction, partyRoomAction, partyStartAction, partyAnswerAction,
 } from "@/lib/actions/game-actions";
-import type { PartyRoomView } from "@/lib/game/partyOnline";
 import {
   PARTY_NAMES, PARTY_ROOM_MAX, TUG_WIN, BUZZ_QS, BUZZ_Q_MS, BOSS_HEARTS, BOSS_WAVE_MS,
-  partyQuestion, buzzQuestion, type PartyGame,
+  partyQuestion, buzzQuestion, buildPartyView, type PartyGame, type PartyState, type PartyView as PartyRoomView,
 } from "@/lib/game/party";
+import { soloStart, soloAnswer, soloTick, SOLO_LEVELS, SOLO_ME, type SoloLevel } from "@/lib/game/partySolo";
 
 /* ---------- party games: Tug of War, Buzzer Quiz, Boss Battle ----------
    One screen for all three. The room part (make / join by code / share /
    host starts / play again) is shared; the middle is drawn per game. Like
    the online race the room is polled once a second and the clock is lined
    up with the server's, so a countdown ends at the same moment on every
-   phone. Your own answers count on screen at once; the server confirms. */
+   phone. Your own answers count on screen at once; the server confirms.
+   Solo ("🤖 ひとりで") plays the same rules on the phone against computer
+   players (partySolo.ts) — no account or connection needed. */
 
 type Sound = ReturnType<typeof useSound>;
 type L = "en" | "ja";
@@ -32,9 +34,9 @@ const clock = () => Date.now();
 
 const TEAM: [[string, string], [string, string]] = [["Red", "あかぐみ"], ["White", "しろぐみ"]];
 
-export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, onCorrect }: {
+export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, onCorrect, guest, onNeedAccount }: {
   lang: L; sound: Sound; celebrate: () => void; game: PartyGame; joinCode: string | null; onJoined: () => void; onBack: () => void;
-  onCorrect?: (n: number) => void;
+  onCorrect?: (n: number) => void; guest: boolean; onNeedAccount: () => void;
 }) {
   const ja = lang === "ja";
   const [room, setRoom] = useState<PartyRoomView | null>(null);
@@ -48,16 +50,24 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   const [fx, setFx] = useState<{ k: number; kind: "hit" | "fire" | "pull" } | null>(null);
   const offset = useRef(0);
   const round = useRef(-1);
+  const roomRef = useRef("");
   const celebrated = useRef(-1);
   const lockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastHearts = useRef(0);
+  /* solo: the game state lives here instead of on the server */
+  const [solo, setSolo] = useState(false);
+  const [level, setLevel] = useState<SoloLevel>(1);
+  const soloRef = useRef<PartyState | null>(null);
+  const soloView = (st: PartyState) => buildPartyView(st, { code: "SOLO", hostId: SOLO_ME, viewerId: SOLO_ME, now: clock() });
   const game: PartyGame = room?.game ?? initialGame;
   const [icon, nameEn, nameJa] = PARTY_NAMES[game];
 
   function take(v: PartyRoomView) {
     offset.current = v.now - clock();
-    if (v.round !== round.current) {
+    /* a new round — or a different room — starts my count from zero */
+    if (v.round !== round.current || v.code !== roomRef.current) {
       round.current = v.round;
+      roomRef.current = v.code;
       lastHearts.current = 0;
       setMyDone(0); setPicked(null); setLock(false);
     }
@@ -71,21 +81,36 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     setRoom(v);
   }
 
+  /* solo rounds keep counting up across games, so each new game is a new round */
+  const soloRound = useRef(0);
+  function playSolo(g: PartyGame) {
+    soloRound.current = Math.max(soloRound.current, round.current) + 1;
+    const st = soloStart(g, ja, ja ? "きみ" : "You", soloRound.current, clock());
+    soloRef.current = st;
+    lastHearts.current = 0;
+    setMyDone(0); setPicked(null); setLock(false);
+    setSolo(true); setNote(null);
+    take(soloView(st));
+    track("party_solo", { game: g, level });
+  }
   async function create(g: PartyGame) {
+    if (guest) { onNeedAccount(); return; }
     setBusy(true); setNote(null);
-    try { take(await partyCreateAction(g)); track("party_create", { game: g }); } catch { setNote(ja ? "部屋を作れませんでした" : "Could not make a room"); }
+    try { const r = await partyCreateAction(g); setSolo(false); soloRef.current = null; take(r); track("party_create", { game: g }); } catch { setNote(ja ? "部屋を作れませんでした" : "Could not make a room"); }
     setBusy(false);
   }
   async function join(c: string) {
+    if (guest) { onNeedAccount(); return; }
     setBusy(true); setNote(null);
     try {
       const res = await partyJoinAction(c);
-      if ("error" in res) setNote(res.error); else { take(res); track("party_join", { game: res.game }); }
+      if ("error" in res) setNote(res.error); else { setSolo(false); soloRef.current = null; take(res); track("party_join", { game: res.game }); }
     } catch { setNote(ja ? "参加できませんでした" : "Could not join"); }
     setBusy(false);
   }
   async function start() {
     if (!room) return;
+    if (solo) { playSolo(room.game); return; }
     setBusy(true);
     try { const res = await partyStartAction(room.code); if ("error" in res) setNote(res.error); else { setNote(null); take(res); } } catch {}
     setBusy(false);
@@ -101,7 +126,21 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [joinCode]);
 
-  const roomCode = room?.code;
+  const roomCode = solo ? null : room?.code;
+  /* solo: the computer players move a few times a second */
+  useEffect(() => {
+    if (!solo) return;
+    const id = setInterval(() => {
+      const st = soloRef.current;
+      if (!st) return;
+      const next = soloTick(st, clock(), level);
+      if (next !== st) { soloRef.current = next; }
+      take(soloView(next));
+      setNow(clock());
+    }, 150);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solo, level]);
   useEffect(() => {
     if (!roomCode) return;
     const poll = setInterval(async () => {
@@ -150,6 +189,13 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     const idx = room.game === "buzz" ? room.buzz!.q : myDone;
     if (room.game !== "buzz") setMyDone(idx + 1);
     setTimeout(() => setPicked(null), 160);
+    if (solo) {
+      const st = soloRef.current;
+      if (!st) return;
+      const next = soloAnswer(st, clock(), idx, v);
+      if (next !== "wrong") { soloRef.current = next; take(soloView(next)); }
+      return;
+    }
     try {
       const res = await partyAnswerAction(room.code, idx, v);
       if (!("error" in res)) take(res);
@@ -170,14 +216,24 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       <div className="rg party">
         <div className="race-online-menu party-menu">
           <div className="rg-card-title">🎉 {ja ? "みんなであそぶ" : "Party games"}</div>
-          <p className="rg-card-sub">{ja ? `2〜${PARTY_ROOM_MAX}人。部屋を作ってコードを送ろう。クラスみんなでもOK！` : `2–${PARTY_ROOM_MAX} players. Make a room and send the code — a whole class works too!`}</p>
+          <p className="rg-card-sub">{ja ? `🤖 ひとりでコンピューターと、🌐 みんなで（2〜${PARTY_ROOM_MAX}人）でも。` : `🤖 Solo against the computer, or 🌐 with friends (2–${PARTY_ROOM_MAX}).`}</p>
+          <div className="party-levels" role="radiogroup" aria-label={ja ? "コンピューターの強さ" : "Computer strength"}>
+            <span>{ja ? "🤖 の強さ" : "🤖 strength"}</span>
+            {SOLO_LEVELS.map((lv) => (
+              <button key={lv.id} role="radio" aria-checked={level === lv.id} className={level === lv.id ? "on" : ""} onClick={() => setLevel(lv.id)}>{lv.icon} {ja ? lv.ja : lv.en}</button>
+            ))}
+          </div>
           <div className="party-picks">
             {(["tug", "buzz", "boss"] as PartyGame[]).map((g) => (
-              <button key={g} className={`party-pick ${g}`} onClick={() => create(g)} disabled={busy}>
+              <div key={g} className={`party-pick ${g}`}>
                 <span className="party-pick-ico">{PARTY_NAMES[g][0]}</span>
                 <b>{ja ? PARTY_NAMES[g][2] : PARTY_NAMES[g][1]}</b>
                 <small>{blurb(g, ja)}</small>
-              </button>
+                <span className="party-pick-btns">
+                  <button className="btn btn-primary" onClick={() => playSolo(g)} disabled={busy}>🤖 {ja ? "ひとりで" : "Solo"}</button>
+                  <button className="btn" onClick={() => create(g)} disabled={busy}>🌐 {ja ? "みんなで" : "Friends"}</button>
+                </span>
+              </div>
             ))}
           </div>
           <div className="party-or">{ja ? "コードをもらったら" : "Got a code?"}</div>
@@ -252,6 +308,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
             {room.isHost
               ? <button className="btn btn-primary" onClick={start} disabled={busy}>{ja ? "もう一回" : "Play again"}</button>
               : <p className="race-note">{ja ? "ホストが次のゲームを始めるのを待っています" : "Waiting for the host to start the next game"}</p>}
+            {solo && <button className="btn" onClick={() => create(room.game)} disabled={busy}>🌐 {ja ? "友だちとやる" : "Play with friends"}</button>}
           </div>
         )}
       </div>
@@ -267,8 +324,8 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
         <p className={`party-myteam t${me.team}`}>{ja ? `きみは ${TEAM[me.team][1]}！` : `You're on ${TEAM[me.team][0]}!`}</p>
       )}
       <div className="race-online-foot">
-        <span className="mono">{ja ? "部屋" : "Room"} {room.code}</span>
-        <button className="btn btn-ghost" onClick={() => { setRoom(null); onBack(); }}>{ja ? "退出" : "Leave"}</button>
+        <span className="mono">{solo ? `🤖 ${SOLO_LEVELS[level][ja ? "ja" : "en"]}` : `${ja ? "部屋" : "Room"} ${room.code}`}</span>
+        <button className="btn btn-ghost" onClick={() => { setRoom(null); setSolo(false); soloRef.current = null; if (!solo) onBack(); }}>{solo ? (ja ? "← ゲームをえらぶ" : "← Games") : (ja ? "退出" : "Leave")}</button>
       </div>
     </div>
   );
