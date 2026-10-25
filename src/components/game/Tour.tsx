@@ -17,18 +17,18 @@ export const TOUR_KEY = "sutraSprint.tourDone";
 function steps(guest: boolean): Step[] {
   const s: Step[] = [
     { sel: null, icon: "👋", title: ["Welcome!", "ようこそ！"],
-      text: ["Let me show you around — it takes 30 seconds.", "かんたんな使い方を案内するね。30秒でおわるよ。"] },
+      text: ["Let me show you around, it takes 30 seconds.", "かんたんな使い方を案内するね。30秒でおわるよ。"] },
     { sel: ".home-tabs .home-tab:nth-child(1)", icon: "📖", title: ["Learn", "まなぶ"],
       text: ["Lessons teach one Vedic maths trick at a time. You practise by battling monsters!", "インド式数学をひとつずつレッスンで覚えるよ。モンスターとのバトルで練習！"] },
     { sel: ".continue-card", icon: "▶️", title: ["Start here", "まずはここから"],
       text: ["Tap this to start your next lesson battle.", "ここをタップすると、つぎのレッスンバトルがはじまるよ。"] },
     { sel: ".dock-play", icon: "🎮", title: ["Games", "ゲーム"],
-      text: ["All the maths games are here — 20+ of them. Finish a game for the first time to win a Great Minds card 🃏", "ゲームはここ！20こ以上あるよ。はじめてクリアすると偉人カードがもらえる🃏"] },
+      text: ["All the maths games are here, 20+ of them. Finish a game for the first time to win a Great Minds card 🃏", "ゲームはここ！20こ以上あるよ。はじめてクリアすると偉人カードがもらえる🃏"] },
     { sel: ".stat-cards||.level-strip", icon: "🃏", title: ["Level up, win cards", "レベルアップでカード"],
-      text: ["Every new level wins you a Great Minds card 🃏 — and there's a new daily challenge each day.", "レベルが上がるたびに偉人カード🃏がもらえる。毎日のデイリーチャレンジもあるよ。"] },
+      text: ["Every new level wins you a Great Minds card 🃏, and there's a new daily challenge each day.", "レベルが上がるたびに偉人カード🃏がもらえる。毎日のデイリーチャレンジもあるよ。"] },
   ];
   if (guest) s.push({ sel: ".dock-save", icon: "💾", title: ["Free account", "無料アカウント"],
-    text: ["Sign up free with just your email, so your progress is never lost — and play every game.", "メールアドレスだけで無料登録！データが消えないし、全部のゲームであそべるよ。"] });
+    text: ["Sign up free with just your email, so your progress is never lost, and play every game.", "メールアドレスだけで無料登録！データが消えないし、全部のゲームであそべるよ。"] });
   s.push(
     { sel: ".install-banner||.avatar-btn", icon: "📲", title: ["Add to your home screen", "ホーム画面に追加"],
       text: ["Put the game on your home screen so it opens like an app. (iPhone: Share button → “Add to Home Screen”)", "ホーム画面に追加すると、アプリみたいにすぐ開けるよ。（iPhone：共有ボタン→「ホーム画面に追加」）"] },

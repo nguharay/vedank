@@ -290,7 +290,7 @@ export function RhythmTap({ lang, sound, celebrate, onCorrect }: Props) {
             <div className="rg-card-title">{ja ? "🎵 リズムタップ" : "🎵 Rhythm Tap"}</div>
             <p className="rg-card-sub">
               {ja ? "音楽にあわせて答えが落ちてくる！線に来たときに正しい答えのレーンをタップ。ぴったりならパーフェクト！（音を出してね）"
-                  : "Answers fall to the beat. Tap the lane with the right answer as it hits the line — on the beat for PERFECT! (Sound on!)"}
+                  : "Answers fall to the beat. Tap the lane with the right answer as it hits the line, on the beat for PERFECT! (Sound on!)"}
             </p>
             <button className="btn btn-primary" onClick={start}>{ja ? "スタート ♪" : "Start ♪"}</button>
           </div>

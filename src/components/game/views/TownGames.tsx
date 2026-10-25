@@ -43,7 +43,7 @@ function LevelUp({ lv, text, ja }: { lv: number; text: string; ja: boolean }) {
    strike. */
 const KONBINI_KEY = "sutraSprint.konbiniBest";
 const KONBINI_NOTES: Record<number, { en: string; ja: string }> = {
-  2: { en: "¥98 prices — all from 9, last from 10!", ja: "¥98の値段が登場！" },
+  2: { en: "¥98 prices, all from 9, last from 10!", ja: "¥98の値段が登場！" },
   3: { en: "Two items at a time", ja: "2つ買うお客さん" },
   4: { en: "Bigger baskets, ¥5,000 notes", ja: "たくさん買って5,000円札" },
   5: { en: "¥10,000 notes!", ja: "1万円札！" },
@@ -194,7 +194,7 @@ export function KonbiniCashier({ lang, sound, celebrate, onCorrect, autoStart }:
         {phase === "ready" && (
           <div className="rg-card">
             <div className="rg-card-title">{ja ? "🏪 コンビニのレジ" : "🏪 Konbini Cashier"}</div>
-            <p className="rg-card-sub">{ja ? "お客さんにおつりをわたそう！まちがえたり、おそかったりするとお客さんがおこるよ。" : "Give each customer the right change — quickly! Wrong or slow change makes them cross."}</p>
+            <p className="rg-card-sub">{ja ? "お客さんにおつりをわたそう！まちがえたり、おそかったりするとお客さんがおこるよ。" : "Give each customer the right change, quickly! Wrong or slow change makes them cross."}</p>
             <button className="btn btn-primary" onClick={start}>{ja ? "レジに入る" : "Open the register"}</button>
           </div>
         )}

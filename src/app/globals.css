@@ -4435,3 +4435,17 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .party-done .party-rec{ align-self:center; margin:2px auto 6px; display:inline-block; font-size:12px; }
 .party-best{ font:900 16px/1.2 "Baloo 2",system-ui,sans-serif; color:#e0457b; margin:2px 0; animation:ans-pop .45s cubic-bezier(.2,1.6,.4,1); }
 .party-or{ margin-top:0; }
+/* party: the room card before / after a game sits in the page, not over the game */
+.rg-card.party-panel{ position:relative; inset:auto; transform:none; margin:0 0 10px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
+.party-lobby-btns{ display:flex; flex-direction:column; gap:8px; width:100%; }
+.party-lobby-btns .btn{ width:100%; }
+.party-panel .race-players, .party-panel .race-results{ width:100%; max-height:none; }
+.party-done .race-results{ max-height:40vh; overflow-y:auto; }
+/* "type a code" reads as a field, Join reads as a button */
+.party-join{ display:flex; flex-direction:column; align-items:center; gap:6px; width:100%; margin-top:2px; padding:10px; border-radius:16px; background:#f3f1fb; }
+.race-join{ display:flex; gap:8px; justify-content:center; width:100%; }
+.race-join-input{ flex:1; min-width:0; max-width:170px; background:#fff !important; color:#1d1b33; border:2.5px dashed #8a86a8 !important; box-shadow:inset 0 2px 4px rgba(29,27,51,.12) !important; border-radius:12px; }
+.race-join-input::placeholder{ color:#c3bfd6; letter-spacing:.12em; font-weight:700; }
+.race-join-input:focus{ outline:none; border-style:solid !important; border-color:#7a58c0 !important; }
+.btn.btn-join{ flex:0 0 auto; margin:0; padding:10px 18px; background:#2E8B57; color:#fff; border:3px solid #1d1b33; box-shadow:0 4px 0 #1d1b33; }
+.btn.btn-join:disabled{ background:#d9d6e6; color:#8a86a8; box-shadow:0 2px 0 #b5b0c9; border-color:#b5b0c9; }

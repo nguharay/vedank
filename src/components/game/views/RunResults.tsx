@@ -112,12 +112,12 @@ export function RunResults({
   let nudge: string | null = null;
   if (!newBest && prevBest > 0 && score >= prevBest * 0.75 && score < prevBest) {
     const gap = fmtScore(game, prevBest - score);
-    nudge = ja ? `😤 ベストまであと ${gap}！もう一回でいけるよ` : `😤 Just ${gap} short of your best — one more go!`;
+    nudge = ja ? `😤 ベストまであと ${gap}！もう一回でいけるよ` : `😤 Just ${gap} short of your best, one more go!`;
   } else if (nextGoal !== undefined) {
     const gap = fmtScore(game, nextGoal - score);
     nudge = ja ? `⭐ あと ${gap} で星${run.stars + 1}つ！` : `⭐ ${gap} more for ${run.stars + 1} star${run.stars + 1 > 1 ? "s" : ""}!`;
   } else {
-    nudge = ja ? "🏆 星3つ！さすが！" : "🏆 Three stars — brilliant!";
+    nudge = ja ? "🏆 星3つ！さすが！" : "🏆 Three stars, brilliant!";
   }
 
   function openChest() {

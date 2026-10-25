@@ -186,7 +186,7 @@ export function BookMethodCard({
       </div>
 
       {/* The second Example box. The diagram draws the first, so this one is
-          listed out — two diagrams of the same method teach less than one
+          listed out, two diagrams of the same method teach less than one
           diagram and a second set of numbers to follow. */}
       {Diagram2 && (
         <div className="bookexample-card bookexample-second">

@@ -64,7 +64,7 @@ export function TownView({ lang, sound, celebrate, onPlay, guest }: {
     if (!visiting) return;
     const b = BUILDING(buildingId); if (!b) return;
     const price = shopPrice(buildingId);
-    if (!spendTownCoins(price)) { setNote(ja ? "コインが足りない！ゲームでかせごう" : "Not enough coins — earn some in a game!"); sound.wrong(); return; }
+    if (!spendTownCoins(price)) { setNote(ja ? "コインが足りない！ゲームでかせごう" : "Not enough coins, earn some in a game!"); sound.wrong(); return; }
     sound.correct();
     setNote(ja ? `${b.emoji} ${visiting.town.name}の${b.nameJa}で ${price}🪙 つかった！` : `${b.emoji} Spent ${price}🪙 at ${visiting.town.name}'s ${b.name.toLowerCase()}!`);
     try { await townBuyAction(visiting.town.id, buildingId, price); } catch {}
@@ -109,7 +109,7 @@ export function TownView({ lang, sound, celebrate, onPlay, guest }: {
           </div>
           <div className="town-coins mono">🪙 {town.coins}</div>
         </div>
-        <p className="town-lede">{ja ? "お店をタップして買い物すると、友だちにコインがとどくよ" : "Tap a shop to buy something — your friend gets the coins!"}</p>
+        <p className="town-lede">{ja ? "お店をタップして買い物すると、友だちにコインがとどくよ" : "Tap a shop to buy something, your friend gets the coins!"}</p>
         <div className="town-map" style={{ gridTemplateColumns: `repeat(${TOWN_COLS}, 1fr)` }}>
           {vt.plots.map((id, i) => {
             const b = id ? BUILDING(id) : null;

@@ -36,7 +36,7 @@ export function InviteSheet({ lang, onClose, extra }: { lang: "en" | "ja"; onClo
   const linkFor = (channel: string) => (origin ? `${origin}/?utm_source=invite&utm_medium=${channel}` : "");
   const text = (ja
     ? "インド式数学のゲームで一緒にあそぼう！🐉 暗算でモンスターをたおすよ。\n✨ 完全無料！今すぐ無料登録してはじめよう👇"
-    : "Play this Vedic maths game with me! 🐉 Beat monsters with mental maths.\n✨ It's 100% free — sign up free and start now 👇")
+    : "Play this Vedic maths game with me! 🐉 Beat monsters with mental maths.\n✨ It's 100% free, sign up free and start now 👇")
     + (extra ? `\n${extra}` : "");
 
   useEffect(() => {

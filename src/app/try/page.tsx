@@ -9,7 +9,7 @@ import { loadOverrides } from "@/lib/game/overrides";
    they've seen a single question. This is the same game, playable first. */
 
 export const metadata = {
-  title: "おためしプレイ — インド式数学ゲーム",
+  title: "おためしプレイ｜インド式数学ゲーム",
   description: "アカウントなしで、すぐに遊べます。",
 };
 

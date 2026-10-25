@@ -328,7 +328,7 @@ export const QUICK_GAMES: QuickGame[] = [
   {
     id: "div9", icon: "➗", tint: "var(--pink, #FF5A8A)",
     name: "Divisible by 9?", nameJa: "9で割れる？",
-    blurb: "Yes or no — without dividing.", blurbJa: "割らずに判定できるかな？",
+    blurb: "Yes or no, without dividing.", blurbJa: "割らずに判定できるかな？",
     hintJa: "数字の合計が9なら、9で割れる", hintEn: "Digit sum 9 means divisible by 9",
     next: (_streak, lang) => {
       const yes = Math.random() < 0.5;
@@ -343,7 +343,7 @@ export const QUICK_GAMES: QuickGame[] = [
   {
     id: "sq5", icon: "🟪", tint: "var(--indigo, #3A1D7A)",
     name: "Squares Ending in 5", nameJa: "5で終わる数の2乗",
-    blurb: "25², 35², 85² — in one step.", blurbJa: "25², 35², 85² を一発で。",
+    blurb: "25², 35², 85² in one step.", blurbJa: "25², 35², 85² を一発で。",
     hintJa: "十の位 × (十の位+1) のあとに 25", hintEn: "tens × (tens+1), then write 25",
     next: () => {
       const t = ri(1, 12), n = t * 10 + 5, sq = n * n;
@@ -574,10 +574,10 @@ export function sushiLevel(served: number): number {
   return 1 + Math.floor(served / SUSHI_PER_LEVEL);
 }
 export const SUSHI_LEVEL_NOTES: Record<number, { en: string; ja: string }> = {
-  2: { en: "Bigger stacks — and ¥99 kappa maki!", ja: "お皿がふえる！¥99のかっぱ巻きも登場" },
+  2: { en: "Bigger stacks, and ¥99 kappa maki!", ja: "お皿がふえる！¥99のかっぱ巻きも登場" },
   3: { en: "Two kinds of plate, and ¥1,000 notes for change", ja: "2種類のお皿と、1,000円札でおつり" },
   4: { en: "Salmon ¥150 joins the belt", ja: "¥150のサーモン登場" },
-  5: { en: "Three kinds of plate — and toro ¥300", ja: "3種類のお皿と¥300のトロ" },
+  5: { en: "Three kinds of plate, and toro ¥300", ja: "3種類のお皿と¥300のトロ" },
   6: { en: "Tax time: add 10%", ja: "消費税10%をたそう" },
   7: { en: "Big spenders pay with ¥5,000", ja: "5,000円札でお支払い" },
 };

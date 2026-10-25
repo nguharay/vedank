@@ -202,7 +202,7 @@ export default function SignupPage() {
             </label>
             <div className="phone-row">
               {/* Keyed on the dial code so choosing a country remounts this with
-                  that country's code already selected — one less thing to pick,
+                  that country's code already selected, one less thing to pick,
                   and it makes clear the code does not belong in the field beside it. */}
               <select name="phoneCode" key={dial} aria-label="Country code" defaultValue={dial}>
                 <option value="">+—</option>

@@ -206,7 +206,7 @@ export function HomeView({
       </div>
 
       {/* a slim level strip in place of the old banner: tap it to share */}
-      <button className="level-strip" onClick={() => onShare("level")} aria-label={`${t.share.statLevel} ${li.level} — ${t.share.shareBtn}`}>
+      <button className="level-strip" onClick={() => onShare("level")} aria-label={`${t.share.statLevel} ${li.level}, ${t.share.shareBtn}`}>
         <span className="level-strip-lv"><small>{t.home.level}</small><b className="mono">{li.level}</b></span>
         <span className="level-strip-main">
           <span className="level-strip-top"><span className="level-strip-rank">{rank}</span><span className="mono">{li.into} / 150</span></span>
@@ -447,7 +447,7 @@ export function HomeView({
           </div>
           {resetHours < 6 && (
             <div className="streak-urgent">
-              ⏳ {lang === "ja" ? `あと${resetHours}時間${resetMins}分でリセット！` : `Resets in ${resetHours}h ${resetMins}m — play today!`}
+              ⏳ {lang === "ja" ? `あと${resetHours}時間${resetMins}分でリセット！` : `Resets in ${resetHours}h ${resetMins}m, play today!`}
             </div>
           )}
         </div>
@@ -461,7 +461,7 @@ export function HomeView({
             {dailyPlayed
               ? lang === "ja"
                 ? "今日はクリア済み。また明日！"
-                : "Done for today — come back tomorrow!"
+                : "Done for today, come back tomorrow!"
               : lang === "ja"
               ? "世界中が同じ8問に挑戦中"
               : "The same 8 questions for everyone, today only"}
@@ -557,7 +557,7 @@ export function HomeView({
       <InviteCard lang={lang} />
 
       {/* Quests used to have a full card here, but they already have their own
-          nav tab with a badge — the same list twice was just scroll. Shop and
+          nav tab with a badge, the same list twice was just scroll. Shop and
           Friends are not in the nav, so they keep a slim row of their own.
           A guest has neither a gem balance nor friends, so the row would be
           two buttons that open empty drawers. */}
@@ -593,7 +593,7 @@ function DragonCard({ lang }: { lang: "en" | "ja" }) {
   const [draft, setDraft] = useState("");
   const name = d.name ?? (ja ? stage.nameJa : stage.name);
   const line =
-    mood === "full" ? (ja ? "おなかいっぱい！また明日ね" : "Full and happy — see you tomorrow!")
+    mood === "full" ? (ja ? "おなかいっぱい！また明日ね" : "Full and happy, see you tomorrow!")
     : mood === "sad" ? (ja ? "昨日ごはんがなかった…今日はたべさせて！" : "Missed a meal yesterday… feed me today!")
     : mood === "happy" ? (ja ? `あと${DAILY_GOAL - d.fedToday}問で満腹！` : `${DAILY_GOAL - d.fedToday} more to fill me up!`)
     : (ja ? `おなかすいた！正解${DAILY_GOAL}問がごはん` : `Hungry! ${DAILY_GOAL} right answers is a meal`);
@@ -652,7 +652,7 @@ function InviteCard({ lang }: { lang: "en" | "ja" }) {
       <span className="invite-card-ico" aria-hidden="true">🎁</span>
       <span className="invite-card-body">
         <b>{ja ? "友だちを招待しよう" : "Invite your friends"}</b>
-        <span>{ja ? "LINE・メッセージ・QRコードでかんたんにシェア" : "Share in a tap — LINE, WhatsApp, messages or a QR code"}</span>
+        <span>{ja ? "LINE・メッセージ・QRコードでかんたんにシェア" : "Share in a tap: LINE, WhatsApp, messages or a QR code"}</span>
       </span>
       <span className="invite-card-go">{ja ? "招待 ▶" : "Invite ▶"}</span>
     </button>

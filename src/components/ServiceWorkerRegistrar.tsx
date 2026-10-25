@@ -48,7 +48,7 @@ export function ServiceWorkerRegistrar() {
   if (online) return null;
   return (
     <div className="offline-strip" role="status">
-      オフライン · offline — おためしモードなら遊べます
+      オフライン · offline：おためしモードなら遊べます
     </div>
   );
 }

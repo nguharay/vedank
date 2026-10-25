@@ -87,7 +87,7 @@ const DEMOS: Record<string, Demo> = {
       <span className="dm-dash">💨</span>
     </>),
     tiles: row3(["21", "24", "18"]), taps: [0],
-    caps: [WATCH, ["👆 Tap the right answer", "👆 正しい答えをタップ"], ["💨 Every right answer is a dash — beat them to GOAL!", "💨 正解でダッシュ！先にゴールしよう"]],
+    caps: [WATCH, ["👆 Tap the right answer", "👆 正しい答えをタップ"], ["💨 Every right answer is a dash, beat them to GOAL!", "💨 正解でダッシュ！先にゴールしよう"]],
     turn: ["Answer fast to dash past your rivals.", "はやく答えて、ライバルをぬかそう！"],
   },
   sushi: {
@@ -122,7 +122,7 @@ const DEMOS: Record<string, Demo> = {
     </>),
     tiles: row3(["¥180", "¥280", "¥220"]), taps: [0],
     caps: [WATCH, ["👆 Work out the change and tap it", "👆 おつりを計算してタップ"], ["⚡ Quick and right keeps customers happy", "⚡ はやく正しく！お客さんがよろこぶ"]],
-    turn: ["Give every customer the right change — fast!", "お客さんにすばやく正しいおつりをわたそう！"],
+    turn: ["Give every customer the right change, fast!", "お客さんにすばやく正しいおつりをわたそう！"],
   },
   crossword: {
     title: ["🧩 Number Crossword", "🧩 数字クロスワード"], scene: "dm-cross",
@@ -185,13 +185,13 @@ const DEMOS: Record<string, Demo> = {
   odd: {
     title: ["🔍 Odd One Out", "🔍 仲間はずれ"], scene: "dm-table",
     tiles: grid2(["23", "41", "50", "33"]), taps: [3], note: "2+3 · 4+1 · 5+0 = 5   3+3 = 6",
-    caps: [WATCH, ["👆 Three have the same digit sum — tap the odd one", "👆 3つは数字の合計が同じ。ちがう1つをタップ"], ["🔍 No need to work out everything", "🔍 ぜんぶ計算しなくてOK"]],
+    caps: [WATCH, ["👆 Three have the same digit sum, tap the odd one", "👆 3つは数字の合計が同じ。ちがう1つをタップ"], ["🔍 No need to work out everything", "🔍 ぜんぶ計算しなくてOK"]],
     turn: ["Spot the number whose digits add up differently.", "数字の合計がちがう1つを見つけよう。"],
   },
   sortg: {
     title: ["📊 Smallest First", "📊 小さい順"], scene: "dm-table", badges: true,
     tiles: grid2(["2 × 3", "9 + 1", "4 × 4", "5 + 3"]), taps: [0, 3, 1, 2], note: "6 → 8 → 10 → 16",
-    caps: [WATCH, ["👆 Tap from smallest to largest", "👆 小さい順にタップ"], ["📊 Estimate — you don't need every exact answer", "📊 見積もりでOK"]],
+    caps: [WATCH, ["👆 Tap from smallest to largest", "👆 小さい順にタップ"], ["📊 Estimate, you don't need every exact answer", "📊 見積もりでOK"]],
     turn: ["Tap the four answers in order, smallest first.", "4つの答えを小さい順にタップしよう。"],
   },
   sprint: {
@@ -207,7 +207,7 @@ const DEMOS: Record<string, Demo> = {
     tiles: [{ x: 22, y: 113, w: 6, h: 23, label: "", cls: "dm-stick" }],
     taps: [{ i: 0, to: { x: 86, y: 96 } }],
     caps: [WATCH, ["✋ Drag one matchstick to make it true", "✋ マッチ棒を1本動かして正しい式に"], ["✨ 8 → 9 and − → +", "✨ 8 が 9、− が + に！"]],
-    turn: ["Move matchsticks to make each equation true — against the clock.", "マッチ棒を動かして式を正しく。タイムアタック！"],
+    turn: ["Move matchsticks to make each equation true, against the clock.", "マッチ棒を動かして式を正しく。タイムアタック！"],
   },
   ...Object.fromEntries(QUICK_GAMES.filter((g) => QUICK_EXAMPLES[g.id]).map((g) => {
     const ex = QUICK_EXAMPLES[g.id];

@@ -26,11 +26,11 @@ export type Card = {
 export const CARDS: Card[] = [
   /* ---- legendary ---- */
   { id: "tirtha", name: "Bharati Krishna Tirtha", nameJa: "バーラティー・クリシュナ・ティールタ", years: "1884–1960", glyph: "🕉", color: "#E07B39", rarity: "legendary", quote: false,
-    line: "Wrote the book “Vedic Mathematics” — the 16 sutras this app is built on.", lineJa: "インド式数学の本『Vedic Mathematics』を書いた人。このアプリの16のスートラはここから。" },
+    line: "Wrote the book “Vedic Mathematics”: the 16 sutras this app is built on.", lineJa: "インド式数学の本『Vedic Mathematics』を書いた人。このアプリの16のスートラはここから。" },
   { id: "ramanujan", name: "Srinivasa Ramanujan", nameJa: "シュリニヴァーサ・ラマヌジャン", years: "1887–1920", glyph: "∞", color: "#B84A6E", rarity: "legendary", quote: true,
     line: "An equation for me has no meaning, unless it expresses a thought of God.", lineJa: "数式は、神の思いを表していなければ意味がない。" },
   { id: "aryabhata", name: "Aryabhata", nameJa: "アーリヤバタ", years: "476–550", glyph: "π", color: "#7A58C0", rarity: "legendary", quote: false,
-    line: "Worked out π as about 3.1416 — over 1,500 years ago.", lineJa: "1500年以上前に、円周率を約3.1416と計算した。" },
+    line: "Worked out π as about 3.1416, over 1,500 years ago.", lineJa: "1500年以上前に、円周率を約3.1416と計算した。" },
   /* ---- rare ---- */
   { id: "shakuntala", name: "Shakuntala Devi", nameJa: "シャクンタラ・デヴィ", years: "1929–2013", glyph: "⚡", color: "#D4A233", rarity: "rare", quote: true,
     line: "Without mathematics, there's nothing you can do. Everything around you is mathematics.", lineJa: "数学がなければ何もできない。まわりのものはすべて数学。" },
@@ -39,7 +39,7 @@ export const CARDS: Card[] = [
   { id: "bhaskara", name: "Bhaskara II", nameJa: "バースカラ2世", years: "1114–1185", glyph: "📜", color: "#C0392B", rarity: "rare", quote: false,
     line: "Wrote “Lilavati”, a famous book of maths puzzles in verse.", lineJa: "詩でかかれた算数パズルの本『リーラーヴァティー』を書いた。" },
   { id: "seki", name: "Seki Takakazu", nameJa: "関孝和", years: "c.1642–1708", glyph: "算", color: "#3E7CC9", rarity: "rare", quote: false,
-    line: "Japan’s great wasan master — found determinants before European mathematicians.", lineJa: "和算の大家。ヨーロッパより早く「行列式」を見つけた。" },
+    line: "Japan’s great wasan master, found determinants before European mathematicians.", lineJa: "和算の大家。ヨーロッパより早く「行列式」を見つけた。" },
   { id: "ito", name: "Kiyoshi Itô", nameJa: "伊藤清", years: "1915–2008", glyph: "∫", color: "#4B5563", rarity: "rare", quote: false,
     line: "His “Itô formula” is used all over science and finance. First winner of the Gauss Prize (2006).", lineJa: "「伊藤の公式」は世界中で使われている。初代ガウス賞（2006年）。" },
   { id: "gauss", name: "Carl Friedrich Gauss", nameJa: "カール・フリードリヒ・ガウス", years: "1777–1855", glyph: "Σ", color: "#2F8FD8", rarity: "rare", quote: true,
