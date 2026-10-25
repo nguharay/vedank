@@ -32,8 +32,9 @@ export const BUZZ_GAP_MS = 2200;     /* "Riko got it!" before the next one */
 export const BOSS_WAVE_MS = 10_000;
 export const BOSS_WAVES = 12;        /* two minutes; a boss still standing then wins */
 export const BOSS_HEARTS = 5;
-export const bossHp = (players: number) => 14 * Math.max(2, players);
-export const bossNeed = (players: number) => 2 * Math.max(2, players);  /* hits a wave to block the fire */
+/* alone (solo) the dragon is smaller and a wave needs fewer hits */
+export const bossHp = (players: number) => (players <= 1 ? 20 : 14 * players);
+export const bossNeed = (players: number) => (players <= 1 ? 3 : 2 * players);  /* hits a wave to block the fire */
 
 export type PartyPlayer = { name: string; joinedAt: number; slot: number; team: 0 | 1; done: number };
 export type PartyState = {
@@ -107,3 +108,41 @@ export const PARTY_NAMES: Record<PartyGame, [string, string, string]> = {
   buzz: ["🔔", "Buzzer Quiz", "早押しクイズ"],
   boss: ["🐉", "Boss Battle", "みんなでボス戦"],
 };
+
+/* ---------- what a phone draws ----------
+   Built the same way for an online room (server) and a solo game (on the
+   phone), so one screen draws both. Player ids stay private: the view uses
+   p0, p1… keys in join order. */
+export type PartyView = {
+  code: string;
+  game: PartyGame;
+  status: PartyStatus;
+  isHost: boolean;
+  inRoom: boolean;
+  now: number;
+  startAt: number | null;
+  seed: number;
+  round: number;
+  mySlot: number;
+  players: { key: string; name: string; team: 0 | 1; done: number; me: boolean; host: boolean; score: number; cpu?: boolean }[];
+  tug: TugInfo | null;
+  boss: BossInfo | null;
+  buzz: { q: number; qAt: number; wins: (string | null)[] } | null;   /* wins hold player keys */
+};
+
+export function buildPartyView(st: PartyState, o: { code: string; hostId: string; viewerId: string; now: number }): PartyView {
+  const entries = Object.entries(st.players).sort((a, b) => a[1].joinedAt - b[1].joinedAt);
+  const keyOf = new Map(entries.map(([id], i) => [id, `p${i}`]));
+  const buzzScore = (id: string) => st.wins.filter((w) => w === id).length;
+  return {
+    code: o.code, game: st.game, status: partyStatus(st, o.now), isHost: o.hostId === o.viewerId, inRoom: o.viewerId in st.players,
+    now: o.now, startAt: st.startAt, seed: st.seed, round: st.round, mySlot: st.players[o.viewerId]?.slot ?? 0,
+    players: entries.map(([id, p]) => ({
+      key: keyOf.get(id)!, name: p.name, team: p.team, done: p.done, me: id === o.viewerId, host: id === o.hostId,
+      score: st.game === "buzz" ? buzzScore(id) : p.done, cpu: id.startsWith("cpu:") || undefined,
+    })),
+    tug: st.game === "tug" && st.startAt !== null ? tugInfo(st, o.now) : null,
+    boss: st.game === "boss" && st.startAt !== null ? bossInfo(st, o.now) : null,
+    buzz: st.game === "buzz" ? { q: st.q, qAt: st.qAt, wins: st.wins.map((w) => (w ? keyOf.get(w) ?? null : null)) } : null,
+  };
+}
