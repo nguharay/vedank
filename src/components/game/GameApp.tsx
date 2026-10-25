@@ -1498,14 +1498,37 @@ export function GameApp({
     }
   }
 
+  /* Try a save again a few times (5 s, 20 s, 60 s) — the result is already on
+     screen, this only makes sure the server keeps the progress. */
+  function retrySave(save: () => Promise<unknown>, attempt = 0) {
+    const waits = [5000, 20000, 60000];
+    if (attempt >= waits.length) return;
+    setTimeout(() => { save().catch(() => retrySave(save, attempt + 1)); }, waits[attempt]);
+  }
   async function finishStage() {
     if (!currentTopic) return;
     const { correct, n } = curStageRef.current;
     /* Same numbers either way: the server and the browser both call
        stageOutcome, so a guest's stars do not change when they sign up. */
-    const result = guest
-      ? stageOutcome(correct, n, topicProgressOf(progress, currentTopic.id).cleared)
-      : await finishStageAction(currentTopic.id, n, correct);
+    /* The result is worked out here with the same rule the server uses. For a
+       signed-in player the server's answer is preferred, but a failed or slow
+       save (weak signal, an expired session) must never leave the lesson
+       stuck on its last question: after 6 s the local result is shown and the
+       save keeps retrying in the background. */
+    const local = stageOutcome(correct, n, topicProgressOf(progress, currentTopic.id).cleared);
+    let result = local;
+    if (!guest) {
+      const topicId = currentTopic.id;
+      try {
+        result = await Promise.race([
+          finishStageAction(topicId, n, correct),
+          new Promise<never>((_, rej) => setTimeout(() => rej(new Error("timeout")), 6000)),
+        ]);
+      } catch (e) {
+        track("lesson_save_retry", { detail: String(e).slice(0, 60), topic: topicId, stage: n });
+        retrySave(() => finishStageAction(topicId, n, correct));
+      }
+    }
     const levelBefore = li.level;
 
     setProgress((prev) => {
@@ -1670,9 +1693,20 @@ export function GameApp({
       setBoardLocked(true);
       const p = PUZZLES[puzIdx];
       const already = !!progress.arena.solved[p.id];
-      const res = guest
-        ? { bestMoves: Math.min(progress.arena.bestMoves[p.id] ?? Infinity, moveCount + 1) }
-        : await solvePuzzleAction(p.id, moveCount + 1);
+      /* like a lesson stage: a failed or slow save must not leave the board locked */
+      const localRes = { bestMoves: Math.min(progress.arena.bestMoves[p.id] ?? Infinity, moveCount + 1) };
+      let res: { bestMoves: number } = localRes;
+      if (!guest) {
+        const moves = moveCount + 1;
+        try {
+          res = await Promise.race([
+            solvePuzzleAction(p.id, moves),
+            new Promise<never>((_, rej) => setTimeout(() => rej(new Error("timeout")), 6000)),
+          ]);
+        } catch {
+          retrySave(() => solvePuzzleAction(p.id, moves));
+        }
+      }
       fireQuest("puzzle_solved");
       sayLine("puzzleSolved");
       setProgress((prev) => ({
