@@ -124,9 +124,9 @@ export async function GET(req: Request) {
             )}
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "0.02em" }}>{ja ? "VedAnk Academy" : "Sutra Sprint"}</div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "0.02em" }}>{ja ? "VedAnk Academy" : "VedAnk Sprint"}</div>
             <div style={{ fontSize: 17, fontWeight: 700, opacity: 0.85, letterSpacing: "0.14em" }}>
-              SUTRA SPRINT · VEDIC MATH
+              VEDANK SPRINT · VEDIC MATH
             </div>
           </div>
         </div>

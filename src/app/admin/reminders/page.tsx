@@ -4,7 +4,7 @@ import { listReminders, recentRuns, reachCount } from "@/lib/game/reminders";
 import { pushConfigured } from "@/lib/game/push";
 import { RemindersAdmin } from "./RemindersAdmin";
 
-export const metadata = { title: "Reminders · Sutra Sprint Admin" };
+export const metadata = { title: "Reminders · VedAnk Sprint Admin" };
 export const dynamic = "force-dynamic";
 
 /* The marketing team's screen: write and schedule the daily reminder

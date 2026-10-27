@@ -676,12 +676,12 @@ export function GameApp({
   const [copiedRace, setCopiedRace] = useState<string | null>(null);
   async function onShareRace(id: string) {
     const url = `${SITE_URL}/r/${id}`;
-    const text = lang === "ja" ? "レースに参加してね！" : "Race me on Sutra Sprint!";
+    const text = lang === "ja" ? "レースに参加してね！" : "Race me on VedAnk Sprint!";
     /* The native sheet where there is one — on a phone this is the difference
        between sharing and copy-then-hunt-for-the-app. */
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Sutra Sprint", text, url });
+        await navigator.share({ title: "VedAnk Sprint", text, url });
         return;
       }
     } catch {
@@ -2585,7 +2585,7 @@ export function GameApp({
   async function shareTttRoom() {
     if (!tttRoom) return;
     const url = `${SITE_URL}/?ttt=${tttRoom.code}`;
-    try { if (navigator.share) { await navigator.share({ title: "Sutra Sprint", text: lang === "ja" ? "○×で対決しよう！" : "Tic-tac-toe me!", url }); return; } } catch { return; }
+    try { if (navigator.share) { await navigator.share({ title: "VedAnk Sprint", text: lang === "ja" ? "○×で対決しよう！" : "Tic-tac-toe me!", url }); return; } } catch { return; }
     try { await navigator.clipboard.writeText(url); spawnToast(lang === "ja" ? "リンクをコピーしました" : "Link copied", null); } catch {}
   }
 
@@ -3702,7 +3702,7 @@ export function GameApp({
                     <small>{ja ? "Safari：画面の下 ／ Chrome：右上のアドレスバー" : "Safari: bottom bar · Chrome: top-right, in the address bar"}</small>
                   </li>
                   <li>{ja ? "「ホーム画面に追加」を選ぶ" : "Choose \u201cAdd to Home Screen\u201d"}<small>{ja ? "見えないときは、メニューを下にスクロール" : "Not there? Scroll down the menu"}</small></li>
-                  <li>{ja ? "ホーム画面の「Sutra Sprint」アイコンからひらく" : "Open \u201cSutra Sprint\u201d from your Home Screen"}</li>
+                  <li>{ja ? "ホーム画面の「インド式数学ゲーム」アイコンからひらく" : "Open \u201cVedAnk Sprint\u201d from your Home Screen"}</li>
                   <li>{ja ? "アプリの中でもう一度ログイン（アプリは別にログインを覚えます）" : "Sign in once inside the app (it keeps its own login)"}</li>
                 </ol>
               </>

@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { myClassrooms } from "@/lib/game/classroom";
 import { ClassroomBoard } from "./ClassroomBoard";
 
-export const metadata = { title: "Classroom · Sutra Sprint" };
+export const metadata = { title: "Classroom · VedAnk Sprint" };
 export const dynamic = "force-dynamic";
 
 export default async function ClassroomPage() {

@@ -46,23 +46,23 @@ function blurbFor(focus: ShareFocus, s: ShareStats, t: UIDict, lang: LangCode): 
     case "streak":
       return ja
         ? `インド式数学ゲームを${s.dailyStreak}日連続で学習中です！🪔`
-        : `I'm on a ${s.dailyStreak}-day streak on Sutra Sprint! 🪔`;
+        : `I'm on a ${s.dailyStreak}-day streak on VedAnk Sprint! 🪔`;
     case "lessons":
       return ja
         ? `インド式数学のレッスンを${s.lessons}こクリアしました！📘`
-        : `I've cleared ${s.lessons} Vedic maths lessons on Sutra Sprint! 📘`;
+        : `I've cleared ${s.lessons} Vedic maths lessons on VedAnk Sprint! 📘`;
     case "cards":
       return ja
         ? `偉人カードを${s.cards}まい集めました！🃏 ぜんぶで${s.cardsTotal}まい`
-        : `I've collected ${s.cards} of ${s.cardsTotal} Great Minds cards on Sutra Sprint! 🃏`;
+        : `I've collected ${s.cards} of ${s.cardsTotal} Great Minds cards on VedAnk Sprint! 🃏`;
     case "bosses":
       return ja
         ? `インド式数学ゲームでボスを${s.bossClears}体倒しました！👹`
-        : `I've conquered ${s.bossClears} boss stages on Sutra Sprint! 👹`;
+        : `I've conquered ${s.bossClears} boss stages on VedAnk Sprint! 👹`;
     case "puzzles":
       return ja
         ? `マッチ棒パズルを${s.solvedCount}/${s.totalPuzzles}問クリアしました！🧩`
-        : `I've solved ${s.solvedCount} of ${s.totalPuzzles} matchstick puzzles on Sutra Sprint! 🧩`;
+        : `I've solved ${s.solvedCount} of ${s.totalPuzzles} matchstick puzzles on VedAnk Sprint! 🧩`;
     default:
       return t.share.blurb(s.level, s.rank);
   }
@@ -138,7 +138,7 @@ export function ShareSheet({
         const res = await fetch(`/api/share-card?${cardParams}`);
         if (res.ok) {
           const blob = await res.blob();
-          file = new File([blob], "sutra-sprint.png", { type: blob.type || "image/png" });
+          file = new File([blob], "vedank-sprint.png", { type: blob.type || "image/png" });
         }
       } catch {
         /* no card, no problem — the text-and-link share below still works */
@@ -165,7 +165,7 @@ export function ShareSheet({
       const url = URL.createObjectURL(await res.blob());
       const a = document.createElement("a");
       a.href = url;
-      a.download = "sutra-sprint.png";
+      a.download = "vedank-sprint.png";
       a.click();
       URL.revokeObjectURL(url);
     } catch {}

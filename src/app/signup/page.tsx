@@ -131,7 +131,7 @@ export default function SignupPage() {
               </>
             ) : (
               <>
-                <span className="auth-lockup-name">Sutra Sprint</span>
+                <span className="auth-lockup-name">VedAnk Sprint</span>
                 <span className="auth-lockup-tag">A Mental Math Game - Think Fast. Play Smart. Have Fun!</span>
               </>
             )}
