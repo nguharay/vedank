@@ -99,7 +99,7 @@ const CrossMath = dynamic(() => import("./views/TownGames").then((m) => m.CrossM
 const RhythmTap = dynamic(() => import("./views/RhythmTap").then((m) => m.RhythmTap), { ssr: false });
 const TownView = dynamic(() => import("./views/TownView").then((m) => m.TownView), { ssr: false });
 const NinjaSlice = dynamic(() => import("./views/NinjaSlice").then((m) => m.NinjaSlice), { ssr: false });
-import { bossBonusGame, type HomeGameId } from "./homeGames";
+import type { HomeGameId } from "./homeGames";
 import { addTownCoins, useTown } from "./town";
 import { feedDragon, stageOf } from "./dragon";
 import { StoryIntro } from "./StoryIntro";
@@ -984,6 +984,14 @@ export function GameApp({
   const [homeFocus, setHomeFocus] = useState<string | null>(null);
   function goHome() {
     setHomeFocus(null);
+    /* already on Home (say, on the Learn tab): Home still means "back to the
+       start" — the Play tab, at the top */
+    if (viewRef.current === "home") {
+      window.dispatchEvent(new CustomEvent("vedank:hometab", { detail: "play" }));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     setView("home");
   }
   function openTopic(id: string) {
@@ -1047,7 +1055,7 @@ export function GameApp({
       gameFromTownRef.current = false; setView("town");
     }
     else if (GAME_VIEWS.includes(view) && gameFromHomeRef.current) {
-      /* launched from Home (today's game, a map stop, a boss bonus) — go back there */
+      /* launched from Home (today's game) — go back there */
       gameFromHomeRef.current = false; goHome();
     }
     else if (GAME_VIEWS.includes(view) || (view === "arena" && (sprintRef.current || sprintOver))) {
@@ -5413,20 +5421,6 @@ export function GameApp({
               <div className={`result-gems${stageResult.isBoss && stageResult.passed && chestOpen ? " loot-open" : ""}`}><RollUp to={stageResult.gemsGained} prefix="+" /> 💎</div>
             )}
 
-            {stageResult.isBoss && stageResult.passed && (() => {
-              const g = bossBonusGame(TOPICS.findIndex((tp) => tp.id === currentTopicId));
-              return (
-                <button className="boss-bonus" style={{ background: g.tint }}
-                  onClick={() => { setStageResult(null); playGame(g.id); }}>
-                  <span className="boss-bonus-icon">{g.icon}</span>
-                  <span className="boss-bonus-body">
-                    <span className="boss-bonus-tag">{lang === "ja" ? "🎁 ボスをたおしたごほうび" : "🎁 BOSS REWARD"}</span>
-                    <span className="boss-bonus-name">{lang === "ja" ? `ボーナスゲーム：${g.nameJa}` : `Bonus round: ${g.name}`}</span>
-                  </span>
-                  <span className="boss-bonus-go">▶</span>
-                </button>
-              );
-            })()}
 
             {/* Stars say how you did; this says what to fix. Missed questions
                 lead, because those are the ones worth a second look. */}
