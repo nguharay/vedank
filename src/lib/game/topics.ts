@@ -1378,6 +1378,9 @@ export function makeDistractors(correct: number, howMany: number): number[] {
 }
 
 export const STAGE_COUNT = 5;
+/* How many topics a guest (no account) can play; the rest open with a free
+   account. Shared by the app and by the server's guest-progress import. */
+export const GUEST_TOPICS = 2;
 export const STAGE_DIFF: Difficulty[] = ["easy", "easy", "medium", "medium", "hard"];
 export const QUESTIONS_PER_STAGE = 5;
 export const PASS_THRESHOLD = 3;

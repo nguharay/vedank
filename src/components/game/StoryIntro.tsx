@@ -19,11 +19,11 @@ const SCENE_MS = 4200;
 type Scene = { cls: string; line: [string, string]; sub?: [string, string] };
 const SCENES: Scene[] = [
   { cls: "wi-hello", line: ["Welcome to Ray (礼)'s learning app!", "Ray（礼）の教育アプリへようこそ！"] },
-  { cls: "wi-play", line: ["Play with numbers and learn Vedic Maths the fun way! 🎮🔢", "数字で遊びながら、インド式数学を楽しく学ぼう！🎮🔢"] },
+  { cls: "wi-play", line: ["Play with numbers and learn Vedic Maths the fun way!", "数字で遊びながら、インド式数学を楽しく学ぼう！"] },
   { cls: "wi-free", line: ["Every game and every lesson is free!", "ゲームも数学の学習も、すべて無料！"] },
   { cls: "wi-account", line: ["Make a free account to unlock everything.", "すべてのコンテンツを利用するには、無料アカウントに登録してください。"],
     sub: ["Just your email. It keeps your progress safe on every device.", "メールアドレスだけでOK。どの端末でも記録が引きつげるよ。"] },
-  { cls: "wi-go", line: ["Let's dive into the world of numbers! ✨", "さあ、数字の世界を楽しもう！✨"] },
+  { cls: "wi-go", line: ["Let's dive into the world of numbers!", "さあ、数字の世界を楽しもう！"] },
 ];
 const WAITS = new Set([3, 4]);   /* scenes that wait for a tap */
 
@@ -94,7 +94,7 @@ export function StoryIntro({ lang, onDone, guest = true }: { lang: "en" | "ja"; 
       {/* the words */}
       <div key={`t${scene}`} className="wi-text">
         <p className="wi-line">{tx(s.line)}</p>
-        {s.sub && <p className="wi-sub">{guest ? tx(s.sub) : (ja ? "✅ もう登録ずみ！すべてのコンテンツが使えるよ。" : "✅ You're signed in. Everything is unlocked!")}</p>}
+        {s.sub && <p className="wi-sub">{guest ? tx(s.sub) : (ja ? "もう登録ずみ！すべてのコンテンツが使えるよ。" : "You're signed in. Everything is unlocked!")}</p>}
         {scene === 3 && guest && (
           <div className="wi-btns" onClick={(e) => e.stopPropagation()}>
             <a className="btn btn-primary wi-cta" href="/signup?from=%2F">{ja ? "無料で登録する" : "Sign up free"}</a>

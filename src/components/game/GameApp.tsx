@@ -19,6 +19,7 @@ import {
   QUESTIONS_PER_STAGE,
   makeDistractors,
   RANKS_JA,
+  GUEST_TOPICS,
   type Difficulty,
   type Problem,
   type Topic,
@@ -1013,7 +1014,6 @@ export function GameApp({
   /* Guests get a taste — the first two topics, Blitz, Game of the Day and
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
-  const GUEST_TOPICS = 2;
   const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   /* a room code from a shared ?rr= link, handed to the race view once */

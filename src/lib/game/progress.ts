@@ -2,7 +2,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { stageOutcome } from "./state";
 import { topicProgress, arenaProgress, users, inventory } from "@/db/schema";
-import { TOPICS, QUESTIONS_PER_STAGE, STAGE_COUNT } from "./topics";
+import { TOPICS, QUESTIONS_PER_STAGE, STAGE_COUNT, GUEST_TOPICS } from "./topics";
 import { PUZZLES } from "./matchstick";
 import type { ProgressState, TopicProgressRow } from "./state";
 
@@ -183,9 +183,12 @@ export async function importGuestProgress(
   incoming: ProgressState
 ): Promise<{ ok: boolean; topics: number }> {
   const db = getDb();
-  const entries = Object.entries(incoming?.topics ?? {}).filter(
-    ([id]) => typeof id === "string" && id.length > 0 && id.length < 64
-  );
+  /* A guest can only have played the free topics, so only those are taken
+     from the browser — anything else (another topic, a made-up id) was not
+     earned as a guest and is ignored. Without this, editing localStorage
+     before signing up put a full board on the leaderboard. */
+  const guestTopics = new Set(TOPICS.slice(0, GUEST_TOPICS).map((tp) => tp.id));
+  const entries = Object.entries(incoming?.topics ?? {}).filter(([id]) => guestTopics.has(id));
   if (!entries.length) return { ok: true, topics: 0 };
 
   const existing = await db
