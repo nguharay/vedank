@@ -311,7 +311,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     if (!room) return;
     const url = `${SITE_URL}/?pr=${room.code}`;
     const text = ja ? `「${nameJa}」でいっしょにあそぼう！コード ${room.code}` : `Play ${nameEn} with me! Code ${room.code}`;
-    try { if (navigator.share) { await navigator.share({ title: "Sutra Sprint", text, url }); return; } } catch { return; }
+    try { if (navigator.share) { await navigator.share({ title: "VedAnk Sprint", text, url }); return; } } catch { return; }
     try { await navigator.clipboard.writeText(`${text} ${url}`); setNote(ja ? "リンクをコピーしました" : "Link copied"); } catch {}
   }
 

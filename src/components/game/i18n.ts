@@ -93,8 +93,8 @@ export type UIDict = {
 
 export const UI: Record<LangCode, UIDict> = {
   en: {
-    appName: "Sutra Sprint",
-    headerTitles: { home: "Sutra Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Dojo", blitz: "Speed Quiz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "Games", bigger: "Which is Bigger?", odd: "Odd One Out", sortg: "Smallest First", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense", konbini: "Konbini Cashier", crossword: "Number Crossword", crossmath: "Cross Math", rhythm: "Rhythm Tap", town: "Math Town", ninja: "Ninja Slice", party: "Party Games" },
+    appName: "VedAnk Sprint",
+    headerTitles: { home: "VedAnk Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Dojo", blitz: "Speed Quiz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "Games", bigger: "Which is Bigger?", odd: "Odd One Out", sortg: "Smallest First", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense", konbini: "Konbini Cashier", crossword: "Number Crossword", crossmath: "Cross Math", rhythm: "Rhythm Tap", town: "Math Town", ninja: "Ninja Slice", party: "Party Games" },
     menu: {
       accountLabel: "Account menu",
       player: "Player",
@@ -112,7 +112,7 @@ export const UI: Record<LangCode, UIDict> = {
     home: {
       eyebrow: "⚔️ Number Quest",
       title: "Beat the monsters!",
-      brand: "Sutra Sprint",
+      brand: "VedAnk Sprint",
       level: "Level",
       dojo: "Matchstick Dojo",
       streakSuffix: "-day streak",
@@ -220,8 +220,8 @@ export const UI: Record<LangCode, UIDict> = {
       statPuzzles: "Puzzles solved",
       statLessons: "Lessons cleared",
       statCards: "Great Minds cards",
-      blurb: (level, rank) => `I'm level ${level}, ${rank}, in Sutra Sprint! 🪔`,
-      blitzBlurb: (score) => `I scored ${score} in Speed Quiz on Sutra Sprint! ⚡ Can you beat it?`,
+      blurb: (level, rank) => `I'm level ${level}, ${rank}, in VedAnk Sprint! 🪔`,
+      blitzBlurb: (score) => `I scored ${score} in Speed Quiz on VedAnk Sprint! ⚡ Can you beat it?`,
     },
   },
   ja: {

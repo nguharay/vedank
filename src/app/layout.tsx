@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "ja_JP",
     alternateLocale: ["en_US"],
-    siteName: "Sutra Sprint",
+    siteName: "VedAnk Sprint",
     title: TITLE,
     description: DESCRIPTION,
     images: [{ url: "/brand/og-ja.png", width: 1200, height: 630, alt: "インド式数学ゲーム" }],

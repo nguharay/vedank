@@ -8,11 +8,11 @@ import type { Metadata } from "next";
 type Q = { f?: string; v?: string; n?: string; s?: string; l?: string };
 
 const TITLES: Record<string, (v: string) => string> = {
-  level: (v) => `Level ${v} in Sutra Sprint`,
+  level: (v) => `Level ${v} in VedAnk Sprint`,
   lessons: (v) => `${v} Vedic maths lessons cleared`,
   cards: (v) => `${v} Great Minds cards collected`,
   gems: (v) => `${v} gems earned doing Vedic maths`,
-  streak: (v) => `${v}-day streak on Sutra Sprint`,
+  streak: (v) => `${v}-day streak on VedAnk Sprint`,
   hearts: (v) => `Still on ${v} hearts`,
   blitz: (v) => `${v} in Speed Quiz`,
   bosses: (v) => `${v} boss stages beaten`,
@@ -45,7 +45,7 @@ export async function generateMetadata({
   const img = cardUrl(q);
 
   return {
-    title: `${headline} · Sutra Sprint`,
+    title: `${headline} · VedAnk Sprint`,
     description: "Vedic maths as a game, 25 sutras, a matchstick dojo and a daily challenge.",
     openGraph: {
       title: headline,
@@ -81,7 +81,7 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
               </>
             ) : (
               <>
-                <span className="auth-lockup-name">Sutra Sprint</span>
+                <span className="auth-lockup-name">VedAnk Sprint</span>
                 <span className="auth-lockup-tag">A Mental Math Game - Think Fast. Play Smart. Have Fun!</span>
               </>
             )}
@@ -93,7 +93,7 @@ export default async function SharePage({ searchParams }: { searchParams: Promis
 
         <h1 className="share-landing-title">{headline}</h1>
         <p className="sub">
-          Sutra Sprint turns Vedic maths into a game, 25 sutras as stages, a matchstick dojo,
+          VedAnk Sprint turns Vedic maths into a game, 25 sutras as stages, a matchstick dojo,
           a daily challenge and timed Blitz runs.
         </p>
         <Link className="btn btn-primary share-landing-cta" href="/signup">
