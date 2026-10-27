@@ -4610,3 +4610,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .wi.wi-hello .wi-bubble{ bottom:62%; left:58%; }
 .wi-logo-bottom{ display:block; width:min(250px, 66vw); margin:auto 0 0; padding-top:18px; animation:wi-up .7s cubic-bezier(.2,1.2,.4,1) .4s both; filter:drop-shadow(0 6px 10px rgba(122,63,181,.2)); }
 .wi-line, .wi-sub{ text-wrap:balance; word-break:auto-phrase; }
+/* the brand is cased "VedAnk": no forced capitals on the login kicker */
+.auth-kicker{ text-transform:none; letter-spacing:.04em; }
+/* the brand keeps its own casing ("VedAnk Sprint"), even in the all-caps header */
+.header-title h1.brand{ text-transform:none; }

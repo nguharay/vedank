@@ -11,7 +11,7 @@ import { useLang } from "@/components/game/i18n";
    who the link is being shared with — with English kept alongside. */
 const COPY = {
   en: {
-    kicker: "VEDANK SPRINT",
+    kicker: "VedAnk Sprint",
     hero: "A Mental Math Game - Think Fast. Play Smart. Have Fun!",
     pitch:
       "A game that doesn't just teach Indian calculation methods, it teaches you to see mathematics differently.",
@@ -27,7 +27,7 @@ const COPY = {
     lang: "Language",
   },
   ja: {
-    kicker: "VEDANK ACADEMY",
+    kicker: "VedAnk Academy",
     hero: "インド式数学ゲーム",
     pitch: "インド式数学を覚えるアプリではなく、数学の「見方」を発見するゲーム。",
     title: "おかえりなさい",
