@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     icon: "/brand/vedank-mark.png",
     apple: "/brand/apple-icon.png",
   },
-  appleWebApp: { capable: true, title: "Sutra Sprint", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "インド式数学ゲーム", statusBarStyle: "default" },
   openGraph: {
     type: "website",
     locale: "ja_JP",

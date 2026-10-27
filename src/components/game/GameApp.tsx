@@ -3656,7 +3656,7 @@ export function GameApp({
         </>
       )}
 
-      {storyOpen && <StoryIntro lang={lang} onDone={closeStory} />}
+      {storyOpen && <StoryIntro lang={lang} guest={guest} onDone={closeStory} />}
       {invite && <InviteSheet lang={lang} extra={invite.extra} onClose={() => setInvite(null)} />}
       <RewardsLayer lang={lang} onPlay={launchGame} />
       {tourOpen && view === "home" && <Tour lang={lang} guest={guest} onDone={() => setTourOpen(false)} />}

@@ -3,96 +3,115 @@
 import { useEffect, useRef, useState } from "react";
 import { Mascot } from "./Mascot";
 
-/* ---------- the story, told in pictures ----------
-   A 4-scene animated intro shown the first time the game opens (and from the
-   menu any time). Almost no words — each scene is a moment you can read at a
-   glance, with at most a two-word caption:
-     1. The Number Kingdom: numbers float happily… until monsters swoop in
-        and grab them.
-     2. An old scroll rises from the ground, glowing. The boy finds it.
-     3. The boy runs at a monster, a sum flashes, ⚡ — the monster bursts into
-        sparkles and a number flies home.
-     4. On a hill an egg wobbles, cracks, a baby dragon pops out; a little
-        town grows behind it. "Your adventure begins."
-   Each scene auto-advances; tap anywhere for the next, or Skip. */
-const SCENE_MS = 3600;
+/* ---------- the welcome, told in five warm scenes ----------
+   Shown the first time the app opens (and from the menu any time). One short
+   line per scene, in big friendly type over a picture that moves:
+     1. Welcome to Ray's learning app — the buddy waves, the logo glows
+     2. Play with numbers, learn Vedic Maths — numbers float and turn into games
+     3. Everything is free — a ribbon, a burst of confetti
+     4. A free account unlocks it all — sign up (or "later"); a signed-in
+        player sees "you're all set" instead
+     5. Let's enjoy the world of numbers — the buddy jumps, sparkles
+   Scenes move on by themselves, except the account scene and the last one,
+   which wait for a tap. Tap anywhere for the next scene; Skip leaves. */
+const SCENE_MS = 4200;
 
-export function StoryIntro({ lang, onDone }: { lang: "en" | "ja"; onDone: () => void }) {
+type Scene = { cls: string; line: [string, string]; sub?: [string, string] };
+const SCENES: Scene[] = [
+  { cls: "wi-hello", line: ["Welcome to Ray's learning app! 😊", "Rayの教育アプリへようこそ！😊"] },
+  { cls: "wi-play", line: ["Play with numbers and learn Vedic Maths the fun way! 🎮🔢", "数字で遊びながら、インド式数学を楽しく学ぼう！🎮🔢"] },
+  { cls: "wi-free", line: ["Every game and every lesson is free!", "ゲームも数学の学習も、すべて無料！"] },
+  { cls: "wi-account", line: ["Make a free account to unlock everything.", "すべてのコンテンツを利用するには、無料アカウントに登録してください。"],
+    sub: ["Just your email. It keeps your progress safe on every device.", "メールアドレスだけでOK。どの端末でも記録が引きつげるよ。"] },
+  { cls: "wi-go", line: ["Let's dive into the world of numbers! ✨", "さあ、数字の世界を楽しもう！✨"] },
+];
+const WAITS = new Set([3, 4]);   /* scenes that wait for a tap */
+
+export function StoryIntro({ lang, onDone, guest = true }: { lang: "en" | "ja"; onDone: () => void; guest?: boolean }) {
   const ja = lang === "ja";
   const [scene, setScene] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scenes = 4;
+  const last = SCENES.length - 1;
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
-    if (scene >= scenes - 1) return;          /* the last scene waits for the button */
-    timer.current = setTimeout(() => setScene((s) => s + 1), SCENE_MS);
+    if (WAITS.has(scene)) return;
+    timer.current = setTimeout(() => setScene((s) => Math.min(last, s + 1)), SCENE_MS);
     return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [scene]);
+  }, [scene, last]);
 
-  const next = () => (scene < scenes - 1 ? setScene(scene + 1) : onDone());
-  const caps = ja
-    ? ["すうじの国", "ふしぎな巻物", "ひらめき！", "冒険のはじまり"]
-    : ["The Number Kingdom", "A secret scroll", "Aha!", "Your adventure begins"];
+  const next = () => (scene < last ? setScene(scene + 1) : onDone());
+  const s = SCENES[scene];
+  const tx = (p: [string, string]) => (ja ? p[1] : p[0]);
 
   return (
-    <div className="story" role="dialog" aria-modal="true" aria-label={ja ? "ものがたり" : "The story"} onClick={next}>
-      <button className="story-skip" onClick={(e) => { e.stopPropagation(); onDone(); }}>{ja ? "スキップ" : "Skip"}</button>
+    <div className={`wi ${s.cls}`} role="dialog" aria-modal="true" aria-label={ja ? "ようこそ" : "Welcome"} onClick={next}>
+      <button className="wi-skip" onClick={(e) => { e.stopPropagation(); onDone(); }}>{ja ? "スキップ" : "Skip"}</button>
 
-      <div key={scene} className={`story-scene s${scene + 1}`}>
+      {/* the picture: one per scene, re-mounted so its animation replays */}
+      <div key={scene} className="wi-art" aria-hidden="true">
         {scene === 0 && (
           <>
-            <span className="st-stars" aria-hidden="true" />
-            {["1", "2", "3", "5", "7", "9", "11"].map((n, i) => (
-              <span key={n} className={`st-num n${i + 1}`}>{n}</span>
-            ))}
-            <span className="st-monster m1" aria-hidden="true">👾</span>
-            <span className="st-monster m2" aria-hidden="true">👹</span>
+            <span className="wi-glow" />
+            <img className="wi-logo" src="/brand/vedank-full.png" alt="" />
+            <span className="wi-buddy wave"><Mascot animated={false} mood="excited" /></span>
+            <span className="wi-bubble">{ja ? "こんにちは！" : "Hello!"}</span>
+            {[0, 1, 2, 3, 4, 5].map((i) => <i key={i} className={`wi-spark k${i}`}>✨</i>)}
           </>
         )}
         {scene === 1 && (
           <>
-            <span className="st-moon" aria-hidden="true" />
-            <span className="st-ground" aria-hidden="true" />
-            <span className="st-scroll" aria-hidden="true">📜</span>
-            <span className="st-glow" aria-hidden="true" />
-            {[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className={`st-spark k${i}`} aria-hidden="true">✨</span>)}
-            <span className="st-boy look"><Mascot animated={false} mood="excited" /></span>
+            {["1", "2", "3", "5", "7", "9", "+", "×"].map((n, i) => <b key={n} className={`wi-num n${i}`}>{n}</b>)}
+            {["🎮", "🏁", "🐉", "🍣", "🎈", "🪢"].map((g, i) => <i key={g} className={`wi-game g${i}`}>{g}</i>)}
+            <span className="wi-buddy bob"><Mascot animated={false} mood="happy" /></span>
           </>
         )}
         {scene === 2 && (
           <>
-            <span className="st-ground" aria-hidden="true" />
-            <span className="st-boy run"><Mascot animated={false} mood="excited" /></span>
-            <span className="st-sum mono">32 × 11</span>
-            <span className="st-bolt" aria-hidden="true">⚡</span>
-            <span className="st-monster m3" aria-hidden="true">👾</span>
-            <span className="st-burst" aria-hidden="true">💥</span>
-            <span className="st-home mono" aria-hidden="true">352</span>
+            {Array.from({ length: 18 }, (_, i) => <i key={i} className={`wi-confetti c${i % 6}`} style={{ left: `${(i * 37) % 100}%`, animationDelay: `${(i % 6) * 0.18}s` }} />)}
+            <span className="wi-ribbon"><b>{ja ? "ぜんぶ無料！" : "100% FREE!"}</b><small>{ja ? "ゲーム ＋ レッスン" : "games + lessons"}</small></span>
+            <span className="wi-tiles">{["⚔️", "🎮", "🧩", "🃏"].map((g) => <i key={g}>{g}</i>)}</span>
           </>
         )}
         {scene === 3 && (
           <>
-            <span className="st-sun" aria-hidden="true" />
-            <span className="st-hill" aria-hidden="true" />
-            <span className="st-town" aria-hidden="true">🏠🏪🌳🏯🌸</span>
-            <span className="st-egg" aria-hidden="true">🥚</span>
-            <span className="st-hatch" aria-hidden="true">🐣</span>
-            <span className="st-dragon" aria-hidden="true">🐉</span>
-            <span className="st-boy wave"><Mascot animated={false} mood="excited" /></span>
+            <span className="wi-card">
+              <span className="wi-card-row">📧 <i>you@email</i></span>
+              <span className="wi-card-row ok">✅ {ja ? "無料アカウント" : "Free account"}</span>
+              <span className="wi-unlock">🔓</span>
+            </span>
+            <span className="wi-buddy point"><Mascot animated={false} mood="happy" /></span>
           </>
         )}
-        <div className="story-cap">{caps[scene]}</div>
+        {scene === 4 && (
+          <>
+            {Array.from({ length: 10 }, (_, i) => <i key={i} className={`wi-star s${i}`}>✦</i>)}
+            <span className="wi-buddy jump"><Mascot animated={false} mood="excited" /></span>
+            <span className="wi-firework f0" /><span className="wi-firework f1" /><span className="wi-firework f2" />
+          </>
+        )}
       </div>
 
-      <div className="story-dots" aria-hidden="true">
-        {Array.from({ length: scenes }, (_, i) => <i key={i} className={i === scene ? "on" : i < scene ? "done" : ""} />)}
+      {/* the words */}
+      <div key={`t${scene}`} className="wi-text">
+        <p className="wi-line">{tx(s.line)}</p>
+        {s.sub && <p className="wi-sub">{guest ? tx(s.sub) : (ja ? "✅ もう登録ずみ！すべてのコンテンツが使えるよ。" : "✅ You're signed in. Everything is unlocked!")}</p>}
+        {scene === 3 && guest && (
+          <div className="wi-btns" onClick={(e) => e.stopPropagation()}>
+            <a className="btn btn-primary wi-cta" href="/signup?from=%2F">{ja ? "無料で登録する" : "Sign up free"}</a>
+            <button className="btn btn-ghost wi-later" onClick={() => setScene(scene + 1)}>{ja ? "あとで" : "Later"}</button>
+          </div>
+        )}
+        {(scene === last || (scene === 3 && !guest)) && (
+          <button className="btn btn-primary wi-cta" onClick={(e) => { e.stopPropagation(); next(); }}>
+            {scene === last ? (ja ? "はじめる ▶" : "Let's go ▶") : (ja ? "つぎへ ▶" : "Next ▶")}
+          </button>
+        )}
       </div>
-      {scene === scenes - 1 && (
-        <button className="story-go" onClick={(e) => { e.stopPropagation(); onDone(); }}>
-          {ja ? "はじめる ▶" : "Let's go ▶"}
-        </button>
-      )}
+
+      <div className="wi-dots" aria-hidden="true">
+        {SCENES.map((_, i) => <i key={i} className={i === scene ? "on" : i < scene ? "done" : ""} />)}
+      </div>
     </div>
   );
 }

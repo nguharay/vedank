@@ -18,6 +18,22 @@ export function useLang(initialLang: LangCode = "en") {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* The name the app gets when it's added to the home screen follows the
+     language: Android reads it from the manifest at install time, iPhone from
+     the apple-mobile-web-app-title tag when "Add to Home Screen" is tapped. */
+  useEffect(() => {
+    try {
+      const name = lang === "ja" ? "インド式数学ゲーム" : "VedAnk Sprint";
+      const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+      if (link) link.href = `/manifest-${lang}.webmanifest`;
+      for (const n of ["apple-mobile-web-app-title", "application-name"]) {
+        let m = document.querySelector<HTMLMetaElement>(`meta[name="${n}"]`);
+        if (!m) { m = document.createElement("meta"); m.name = n; document.head.appendChild(m); }
+        m.content = name;
+      }
+    } catch {}
+  }, [lang]);
+
   function setLang(next: LangCode) {
     setLangState(next);
     try {
