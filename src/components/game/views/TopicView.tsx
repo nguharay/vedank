@@ -272,7 +272,7 @@ export function TopicView({
         <div className="classes-cta">
           <span className="classes-cta-badge" aria-hidden="true"><Mascot mood="excited" /></span>
           <div className="classes-cta-text">
-            <div className="classes-cta-title">この方法をRay先生と学びたい？</div>
+            <div className="classes-cta-title">この方法をRay（礼）先生と学びたい？</div>
             <div className="classes-cta-sub">日本で対面・オンライン授業あり</div>
           </div>
           <button className="classes-cta-btn" onClick={onOpenClasses}>問い合わせる →</button>

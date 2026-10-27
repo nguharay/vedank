@@ -11,7 +11,7 @@ export function ClassesPage({ enabled }: { enabled: boolean }) {
       <div className="auth-card auth-card-wide">
         <ClassesHero lang="ja" />
         <p className="interest-lede">
-          アプリで遊ぶだけでなく、Ray先生と一緒に学べます。この本とアプリに沿った授業です。お気軽にどうぞ！
+          アプリで遊ぶだけでなく、Ray（礼）先生と一緒に学べます。この本とアプリに沿った授業です。お気軽にどうぞ！
         </p>
         {enabled ? <InterestForm lang="ja" source="classes-page" /> : <ContactLinks lang="ja" />}
         <p className="sub" style={{ textAlign: "center", marginTop: 14 }}><Link href="/">← アプリにもどる</Link></p>
