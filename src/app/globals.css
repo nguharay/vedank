@@ -4589,3 +4589,16 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
   .wi-game{ opacity:1; } .wi-num{ display:none; }
 }
 .result-signup{ display:block; margin-top:10px; padding:10px 12px; border-radius:12px; background:#fff3cf; border:2px solid #d98a00; color:#7a4300; font-size:13px; font-weight:800; text-decoration:none; line-height:1.45; }
+/* welcome intro: picture + words centred together, the buddy right under the
+   logo — no empty gap in the middle of the screen */
+.wi{ justify-content:center; gap:6px; padding-top:calc(56px + env(safe-area-inset-top,0px)); }
+.wi-art{ flex:none; height:clamp(250px, 48vh, 380px); min-height:0; }
+.wi-logo{ top:2%; }
+.wi-glow{ top:-6%; }
+.wi.wi-hello .wi-buddy{ bottom:2%; }
+.wi.wi-hello .wi-bubble{ bottom:44%; }
+.wi-art{ height:clamp(240px, 42vh, 340px); }
+.wi.wi-hello .wi-logo{ top:6%; }
+.wi.wi-hello .wi-buddy{ width:140px; height:140px; margin-left:-70px; bottom:0; }
+.wi.wi-hello .wi-bubble{ bottom:40%; }
+.wi-text{ margin-top:4px; }
