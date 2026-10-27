@@ -6,7 +6,7 @@ import { Mascot } from "./Mascot";
 /* ---------- the welcome, told in five warm scenes ----------
    Shown the first time the app opens (and from the menu any time). One short
    line per scene, in big friendly type over a picture that moves:
-     1. Welcome to Ray's learning app — the buddy waves, the logo glows
+     1. Welcome to Ray's learning app — the buddy waves on top, the logo below
      2. Play with numbers, learn Vedic Maths — numbers float and turn into games
      3. Everything is free — a ribbon, a burst of confetti
      4. A free account unlocks it all — sign up (or "later"); a signed-in
@@ -18,7 +18,7 @@ const SCENE_MS = 4200;
 
 type Scene = { cls: string; line: [string, string]; sub?: [string, string] };
 const SCENES: Scene[] = [
-  { cls: "wi-hello", line: ["Welcome to Ray (礼)'s learning app! 😊", "Ray（礼）の教育アプリへようこそ！😊"] },
+  { cls: "wi-hello", line: ["Welcome to Ray (礼)'s learning app!", "Ray（礼）の教育アプリへようこそ！"] },
   { cls: "wi-play", line: ["Play with numbers and learn Vedic Maths the fun way! 🎮🔢", "数字で遊びながら、インド式数学を楽しく学ぼう！🎮🔢"] },
   { cls: "wi-free", line: ["Every game and every lesson is free!", "ゲームも数学の学習も、すべて無料！"] },
   { cls: "wi-account", line: ["Make a free account to unlock everything.", "すべてのコンテンツを利用するには、無料アカウントに登録してください。"],
@@ -53,7 +53,6 @@ export function StoryIntro({ lang, onDone, guest = true }: { lang: "en" | "ja"; 
         {scene === 0 && (
           <>
             <span className="wi-glow" />
-            <img className="wi-logo" src="/brand/vedank-full.png" alt="" />
             <span className="wi-buddy wave"><Mascot animated={false} mood="excited" /></span>
             <span className="wi-bubble">{ja ? "こんにちは！" : "Hello!"}</span>
             {[0, 1, 2, 3, 4, 5].map((i) => <i key={i} className={`wi-spark k${i}`}>✨</i>)}
@@ -108,6 +107,9 @@ export function StoryIntro({ lang, onDone, guest = true }: { lang: "en" | "ja"; 
           </button>
         )}
       </div>
+
+      {/* the welcome scene: buddy and greeting on top, the academy's logo below */}
+      {scene === 0 && <img key="logo" className="wi-logo-bottom" src="/brand/vedank-full.png" alt="VedAnk Academy" />}
 
       <div className="wi-dots" aria-hidden="true">
         {SCENES.map((_, i) => <i key={i} className={i === scene ? "on" : i < scene ? "done" : ""} />)}
