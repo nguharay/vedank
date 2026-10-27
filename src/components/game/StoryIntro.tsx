@@ -18,7 +18,7 @@ const SCENE_MS = 4200;
 
 type Scene = { cls: string; line: [string, string]; sub?: [string, string] };
 const SCENES: Scene[] = [
-  { cls: "wi-hello", line: ["Welcome to Ray's learning app! 😊", "Rayの教育アプリへようこそ！😊"] },
+  { cls: "wi-hello", line: ["Welcome to Ray (礼)'s learning app! 😊", "Ray（礼）の教育アプリへようこそ！😊"] },
   { cls: "wi-play", line: ["Play with numbers and learn Vedic Maths the fun way! 🎮🔢", "数字で遊びながら、インド式数学を楽しく学ぼう！🎮🔢"] },
   { cls: "wi-free", line: ["Every game and every lesson is free!", "ゲームも数学の学習も、すべて無料！"] },
   { cls: "wi-account", line: ["Make a free account to unlock everything.", "すべてのコンテンツを利用するには、無料アカウントに登録してください。"],

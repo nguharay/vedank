@@ -3378,7 +3378,7 @@ export function GameApp({
             {menuGroup === "contact" && (
               <div className="menu-sub-list">
               {classesEnabled && lang === "ja" && <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); setClassesFrom("menu"); }}>
-                <span>🧮 Ray先生と学ぶ（授業）</span>
+                <span>🧮 Ray（礼）先生と学ぶ（授業）</span>
                 <span className="menu-row-val">›</span>
               </button>}
               <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
@@ -3718,7 +3718,7 @@ export function GameApp({
             <button className="interest-close" aria-label="閉じる" onClick={() => setClassesFrom(null)}>✕</button>
             <ClassesHero lang="ja" />
             <p className="interest-lede">
-              詳しく知りたい方は、下のフォームを送るか、Ray先生に直接ご連絡ください。
+              詳しく知りたい方は、下のフォームを送るか、Ray（礼）先生に直接ご連絡ください。
             </p>
             <InterestForm lang="ja" source={classesFrom} onDone={() => setClassesFrom(null)} onClose={() => setClassesFrom(null)} />
           </div>

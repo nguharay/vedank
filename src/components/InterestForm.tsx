@@ -28,7 +28,7 @@ export function ContactLinks({ lang }: { lang: "ja" | "en" }) {
   const ja = lang === "ja";
   return (
     <div className="contact-box">
-      <div className="contact-title">{ja ? "Ray先生に直接お問い合わせもOK 👇" : "Prefer to talk? Contact Ray Sensei directly 👇"}</div>
+      <div className="contact-title">{ja ? "Ray（礼）先生に直接お問い合わせもOK 👇" : "Prefer to talk? Contact Ray (礼) Sensei directly 👇"}</div>
       <div className="contact-grid">
         {CONTACTS.map((c) => (
           <a key={c.key} className="contact-btn" href={c.href} target={c.key === "tel" || c.key === "mail" ? undefined : "_blank"} rel="noopener noreferrer"
@@ -55,7 +55,7 @@ export function ClassesHero({ lang }: { lang: "ja" | "en" }) {
       <div className="classes-hero-mascot"><Mascot mood="excited" /></div>
       <div className="classes-hero-text">
         <div className="classes-hero-kicker">{ja ? "オンライン ・ 対面（日本）" : "Online · In person in Japan"}</div>
-        <div className="classes-hero-title">{ja ? "Ray先生と一緒に、インド式数学！" : "Learn Vedic Maths with Ray Sensei!"}</div>
+        <div className="classes-hero-title">{ja ? "Ray（礼）先生と一緒に、インド式数学！" : "Learn Vedic Maths with Ray (礼) Sensei!"}</div>
         <div className="classes-hero-tags">
           <span>🧒 {ja ? "子ども" : "Kids"}</span><span>🧑 {ja ? "大人" : "Adults"}</span><span>📚 {ja ? "先生・学校" : "Teachers"}</span>
         </div>
@@ -105,7 +105,7 @@ export function InterestForm({ lang, source, onDone, onClose }: { lang: "ja" | "
         <div className="interest-burst" aria-hidden="true">{["🎉", "⭐", "✨", "🎈", "🌸", "⭐"].map((e, i) => <span key={i} style={{ "--k": i } as React.CSSProperties}>{e}</span>)}</div>
         <div className="interest-done-mascot"><Mascot mood="excited" /></div>
         <h3>{ja ? "ありがとうございます！" : "Thank you!"}</h3>
-        <p>{ja ? "内容を受け取りました。近日中にRay先生からご連絡します。" : "Ray Sensei has your details and will be in touch soon."}</p>
+        <p>{ja ? "内容を受け取りました。近日中にRay（礼）先生からご連絡します。" : "Ray (礼) Sensei has your details and will be in touch soon."}</p>
         <ContactLinks lang={lang} />
         {onDone && <button className="btn btn-primary" onClick={onDone}>{ja ? "閉じる" : "Close"}</button>}
       </div>
