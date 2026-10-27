@@ -4588,3 +4588,4 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
   .wi *, .wi-text{ animation-duration:.01s !important; animation-iteration-count:1 !important; }
   .wi-game{ opacity:1; } .wi-num{ display:none; }
 }
+.result-signup{ display:block; margin-top:10px; padding:10px 12px; border-radius:12px; background:#fff3cf; border:2px solid #d98a00; color:#7a4300; font-size:13px; font-weight:800; text-decoration:none; line-height:1.45; }

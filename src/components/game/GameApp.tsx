@@ -1593,6 +1593,10 @@ export function GameApp({
     }
   }
 
+  /* Is there a topic after this one that can be opened right now? (none after
+     the last topic; for a guest, none past the free topics) */
+  const nextTopicIdx = currentTopic ? TOPICS.findIndex((tp) => tp.id === currentTopic.id) + 1 : TOPICS.length;
+  const nextTopicOpen = nextTopicIdx < TOPICS.length && !(guest && nextTopicIdx >= GUEST_TOPICS);
   function afterStageResult(action: "next" | "retry" | "map" | "nextTopic") {
     const n = stageResult?.n ?? 1;
     setStageResult(null);
@@ -5464,7 +5468,7 @@ export function GameApp({
               {stageResult.passed ? (
                 stageResult.n < STAGE_COUNT ? (
                   <button className="btn btn-primary" onClick={() => afterStageResult("next")}>{t.result.nextStage}</button>
-                ) : currentTopic && TOPICS.findIndex((tp) => tp.id === currentTopic.id) < TOPICS.length - 1 ? (
+                ) : nextTopicOpen ? (
                   <button className="btn btn-primary" onClick={() => afterStageResult("nextTopic")}>
                     {lang === "ja" ? "次のトピックへ →" : "Next topic →"}
                   </button>
@@ -5476,6 +5480,11 @@ export function GameApp({
               )}
               <button className="btn btn-ghost" onClick={() => afterStageResult("map")}>{t.result.map}</button>
             </div>
+            {stageResult.passed && stageResult.n === STAGE_COUNT && !nextTopicOpen && guest && nextTopicIdx < TOPICS.length && (
+              <a className="result-signup" href="/signup?from=%2F">
+                🔓 {lang === "ja" ? "次のトピックは無料アカウントでひらくよ。登録してつづけよう！" : "The next topic opens with a free account. Sign up to keep going!"}
+              </a>
+            )}
           </div>
         </div>
       )}
