@@ -100,6 +100,8 @@ const CrossMath = dynamic(() => import("./views/TownGames").then((m) => m.CrossM
 const RhythmTap = dynamic(() => import("./views/RhythmTap").then((m) => m.RhythmTap), { ssr: false });
 const TownView = dynamic(() => import("./views/TownView").then((m) => m.TownView), { ssr: false });
 const NinjaSlice = dynamic(() => import("./views/NinjaSlice").then((m) => m.NinjaSlice), { ssr: false });
+const SpaceBlaster = dynamic(() => import("./views/SpaceBlaster").then((m) => m.SpaceBlaster), { ssr: false });
+const RiverHop = dynamic(() => import("./views/RiverHop").then((m) => m.RiverHop), { ssr: false });
 import type { HomeGameId } from "./homeGames";
 import { addTownCoins, useTown } from "./town";
 import { feedDragon, stageOf } from "./dragon";
@@ -226,7 +228,7 @@ export function GameApp({
     viewRef.current = next;
     transition(() => flushSync(() => setViewRaw(next)), back ? "back" : "forward");
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja", "party"];
+  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja", "party", "space", "river"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
@@ -1014,7 +1016,7 @@ export function GameApp({
   /* Guests get a taste — the first two topics, Blitz, Game of the Day and
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
-  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja"]);
+  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja", "space", "river"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   /* a room code from a shared ?rr= link, handed to the race view once */
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
@@ -2105,6 +2107,8 @@ export function GameApp({
         crossmath: Number(localStorage.getItem("sutraSprint.crossMathBest") || 0),
         rhythm: Number(localStorage.getItem("sutraSprint.rhythmBest") || 0),
         ninja: Number(localStorage.getItem("sutraSprint.ninjaBest") || 0),
+        space: Number(localStorage.getItem("sutraSprint.spaceBest") || 0),
+        river: Number(localStorage.getItem("sutraSprint.riverBest") || 0),
         ...Object.fromEntries(QUICK_GAMES.map((g) => [g.id, Number(localStorage.getItem(`sutraSprint.quick.${g.id}`) || 0)])),
       });
     } catch {}
@@ -2162,6 +2166,7 @@ export function GameApp({
       sushi: () => setView("sushi"), castle: () => setView("castle"),
       konbini: () => setView("konbini"), crossword: () => setView("crossword"),
       rhythm: () => setView("rhythm"), ninja: () => setView("ninja"),
+      space: () => setView("space"), river: () => setView("river"),
       pop: startPop, ttt: openTtt,
     };
     /* from the town, "back" returns to the town (gameFromTownRef); otherwise Home */
@@ -4815,6 +4820,24 @@ export function GameApp({
                 </button>
               ))}
             </div>
+            <button className={`ttt-card space-feature${isUnlocked("space") ? "" : " prog-locked"}`} onClick={shelf(() => setView("space"), "space")}>
+              <span className="feature-art space" aria-hidden="true"><b className="fa-rocket">🚀</b><b className="fa-rock">☄️</b></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🚀 スペースシューター" : "🚀 Space Blaster"}<ArcadeMarks id="space" lang={lang} /></span>
+                <span className="ttt-card-sub">{lang === "ja" ? "答えのいん石をレーザーでうちおとせ！UFOもやってくるぞ。" : "Blast the number rock with the answer. Watch out for the UFO!"}</span>
+                {(gameBests.space ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.space}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
+            <button className={`ttt-card river-feature${isUnlocked("river") ? "" : " prog-locked"}`} onClick={shelf(() => setView("river"), "river")}>
+              <span className="feature-art river" aria-hidden="true"><b className="fa-frog">🐸</b><b className="fa-pad" /></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "🐸 かえるジャンプ" : "🐸 River Hop"}<ArcadeMarks id="river" lang={lang} /></span>
+                <span className="ttt-card-sub">{lang === "ja" ? "答えのハスの葉にジャンプして、川をわたろう！" : "Hop on the lily pad with the answer and cross the river!"}</span>
+                {(gameBests.river ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.river}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
             <button className={`ttt-card ninja-feature${isUnlocked("ninja") ? "" : " prog-locked"}`} onClick={shelf(() => setView("ninja"), "ninja")}>
               <span className="feature-art ninja" aria-hidden="true"><b className="fa-fruit">🍉</b><b className="fa-slash">／</b></span>
               <span className="ttt-card-body">
@@ -4844,6 +4867,18 @@ export function GameApp({
         {view === "runner" && (
           <section className="view active">
             <RunnerGame lang={lang} sound={sound} autoStart={autoStartFor === "runner"} celebrate={() => confetti.burstCenter(60, 0.35)}
+              onCorrect={(n) => fireQuest("correct_answer", n)} />
+          </section>
+        )}
+        {view === "space" && (
+          <section className="view active">
+            <SpaceBlaster lang={lang} sound={sound} autoStart={autoStartFor === "space"} celebrate={() => confetti.burstCenter(80, 0.35)}
+              onCorrect={(n) => fireQuest("correct_answer", n)} />
+          </section>
+        )}
+        {view === "river" && (
+          <section className="view active">
+            <RiverHop lang={lang} sound={sound} autoStart={autoStartFor === "river"} celebrate={() => confetti.burstCenter(80, 0.35)}
               onCorrect={(n) => fireQuest("correct_answer", n)} />
           </section>
         )}

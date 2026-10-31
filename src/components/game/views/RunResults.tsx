@@ -15,8 +15,8 @@ import { isUnlocked } from "@/lib/game/progression";
      - one "hot game" a day pays double
    It sits over the game; closing it leaves the game's own card underneath. */
 
-export type ArcadeId = "runner" | "ninja" | "castle" | "sushi" | "konbini" | "rhythm";
-export const ARCADE_IDS: ArcadeId[] = ["ninja", "runner", "castle", "sushi", "konbini", "rhythm"];
+export type ArcadeId = "runner" | "ninja" | "castle" | "sushi" | "konbini" | "rhythm" | "space" | "river";
+export const ARCADE_IDS: ArcadeId[] = ["ninja", "runner", "castle", "sushi", "konbini", "rhythm", "space", "river"];
 
 /* the score for 1, 2 and 3 stars */
 const GOALS: Record<ArcadeId, [number, number, number]> = {
@@ -26,6 +26,8 @@ const GOALS: Record<ArcadeId, [number, number, number]> = {
   sushi: [1500, 4000, 8000],
   konbini: [5, 12, 20],
   rhythm: [600, 1500, 3000],
+  space: [150, 400, 800],
+  river: [150, 400, 800],
 };
 const NAMES: Record<ArcadeId, [string, string]> = {
   runner: ["Math Runner", "計算ランナー"],
@@ -34,6 +36,8 @@ const NAMES: Record<ArcadeId, [string, string]> = {
   sushi: ["Sushi Shop", "おすし屋さん"],
   konbini: ["Konbini Cashier", "コンビニのレジ"],
   rhythm: ["Rhythm Tap", "リズムタップ"],
+  space: ["Space Blaster", "スペースシューター"],
+  river: ["River Hop", "かえるジャンプ"],
 };
 
 export function starsFor(id: ArcadeId, score: number): number {
