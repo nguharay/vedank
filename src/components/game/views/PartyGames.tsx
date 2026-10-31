@@ -12,12 +12,13 @@ import {
   partyCreateAction, partyJoinAction, partyRoomAction, partyStartAction, partyAnswerAction, partySwitchAction,
 } from "@/lib/actions/game-actions";
 import {
-  PARTY_NAMES, PARTY_ROOM_MAX, TUG_WIN, BUZZ_QS, BUZZ_Q_MS, BOSS_HEARTS, BOSS_WAVE_MS,
+  PARTY_NAMES, PARTY_ROOM_MAX, TUG_WIN, BUZZ_QS, BUZZ_Q_MS, BINGO_CALLS, BINGO_CALL_MS, BINGO_LINES,
+  bingoCalls, marksOf,
   partyQuestion, buzzQuestion, buildPartyView, joinErrorText, roomLink, type PartyGame, type PartyState, type PartyView as PartyRoomView,
 } from "@/lib/game/party";
 import { soloStart, soloAnswer, soloTick, SOLO_LEVELS, SOLO_ME, type SoloLevel } from "@/lib/game/partySolo";
 
-/* ---------- party games: Tug of War, Buzzer Quiz, Boss Battle ----------
+/* ---------- party games: Tug of War, Buzzer Quiz, Math Bingo ----------
    One screen for all three. The room part (make / join by code / share /
    host starts / play again) is shared; the middle is drawn per game. Like
    the online race the room is polled once a second and the clock is lined
@@ -35,7 +36,7 @@ const clock = () => Date.now();
 const TEAM: [[string, string], [string, string]] = [["Red", "あかぐみ"], ["White", "しろぐみ"]];
 
 /* ---- personal records, kept on the phone (solo and online alike) ----
-   tug: wins · buzz: best score out of BUZZ_QS · boss: fastest win in seconds */
+   tug: wins · buzz: best score out of BUZZ_QS · bingo: fewest calls to a BINGO */
 type Record_ = { plays: number; wins: number; best: number };
 const recKey = (g: PartyGame) => `sutraSprint.party.${g}`;
 function readRec(g: PartyGame): Record_ {
@@ -44,7 +45,7 @@ function readRec(g: PartyGame): Record_ {
 /* returns true when this game set a new best */
 function saveRec(g: PartyGame, won: boolean, value: number): boolean {
   const r = readRec(g);
-  const better = g === "boss" ? won && (r.best === 0 || value < r.best) : g === "buzz" ? value > r.best : false;
+  const better = g === "bingo" ? won && (r.best === 0 || value < r.best) : g === "buzz" ? value > r.best : false;
   const next: Record_ = { plays: r.plays + 1, wins: r.wins + (won ? 1 : 0), best: better ? value : r.best };
   try { localStorage.setItem(recKey(g), JSON.stringify(next)); } catch {}
   return better;
@@ -53,7 +54,7 @@ function recChip(g: PartyGame, r: Record_, ja: boolean): string | null {
   if (!r.plays) return null;
   if (g === "tug") return ja ? `🏆 ${r.wins}勝 / ${r.plays}回` : `🏆 ${r.wins} won of ${r.plays}`;
   if (g === "buzz") return ja ? `⭐ ベスト ${r.best}/${BUZZ_QS}` : `⭐ Best ${r.best}/${BUZZ_QS}`;
-  return r.best ? (ja ? `⏱ ベスト ${r.best}秒` : `⏱ Best ${r.best}s`) : (ja ? `🐉 ${r.plays}回挑戦` : `🐉 ${r.plays} tries`);
+  return r.best ? (ja ? `🎯 ${r.wins}勝・最速 ${r.best}問` : `🎯 ${r.wins} wins · fastest ${r.best} calls`) : (ja ? `🎯 ${r.plays}回挑戦` : `🎯 ${r.plays} tries`);
 }
 
 export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, onCorrect, guest, onNeedAccount }: {
@@ -90,7 +91,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   const [recs, setRecs] = useState<Record<PartyGame, Record_> | null>(null);
   const [newBest, setNewBest] = useState(false);
   useEffect(() => {
-    const t0 = setTimeout(() => setRecs({ tug: readRec("tug"), buzz: readRec("buzz"), boss: readRec("boss") }), 0);
+    const t0 = setTimeout(() => setRecs({ tug: readRec("tug"), buzz: readRec("buzz"), bingo: readRec("bingo") }), 0);
     return () => clearTimeout(t0);
   }, [room?.round, solo]);
   const soloView = (st: PartyState) => buildPartyView(st, { code: "SOLO", hostId: SOLO_ME, viewerId: SOLO_ME, now: clock() });
@@ -108,7 +109,8 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       setMyDone(0); setPicked(null); setLock(false);
     }
     const mine = v.players.find((p) => p.me);
-    if (mine && v.game !== "buzz") setMyDone((d) => Math.max(d, mine.done));
+    if (mine && v.game === "bingo") setMyDone((d) => d | mine.done);
+    else if (mine && v.game !== "buzz") setMyDone((d) => Math.max(d, mine.done));
     /* host: a friend just joined — say so, so the host knows to press Start */
     if (v.isHost && v.status === "lobby" && roomRef.current === v.code && v.players.length > lastCount.current && lastCount.current > 0) {
       const newest = v.players[v.players.length - 1];
@@ -121,11 +123,6 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       lastQ.current = v.buzz.q;
       setLock(false); setTaken(null); setPicked(null);
     }
-    /* the dragon's fire got through: shake the screen */
-    if (v.boss && v.boss.heartsLost > lastHearts.current) {
-      lastHearts.current = v.boss.heartsLost;
-      setFx({ k: clock(), kind: "fire" }); sound.wrong(); haptic(40);
-    }
     setRoom(v);
   }
 
@@ -133,7 +130,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   const soloRound = useRef(0);
   function playSolo(g: PartyGame) {
     soloRound.current = Math.max(soloRound.current, round.current) + 1;
-    const st = soloStart(g, ja, ja ? "きみ" : "You", soloRound.current, clock());
+    const st = soloStart(g, ja, ja ? "きみ" : "You", soloRound.current, clock(), level);
     soloRef.current = st;
     lastHearts.current = 0;
     setMyDone(0); setPicked(null); setLock(false);
@@ -234,6 +231,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   const me = room?.players.find((p) => p.me);
   const buzzOpen = !!room?.buzz && status === "playing" && now >= room.buzz.qAt && room.buzz.q < BUZZ_QS;
   const q = !room || status !== "playing" ? null
+    : room.game === "bingo" ? null
     : room.game === "buzz" ? (buzzOpen ? buzzQuestion(room.seed, room.buzz!.q) : null)
     : partyQuestion(room.seed, room.mySlot, myDone);
 
@@ -244,14 +242,14 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     const r = room.round;
     setTimeout(() => setResultsFor(r), room.startAt === null ? 0 : 1400);
     const won = room.game === "tug" ? room.tug?.winner === me?.team
-      : room.game === "boss" ? room.boss?.result === "win"
+      : room.game === "bingo" ? (room.bingo?.winnerKey ? room.bingo.winnerKey === me?.key : !!me && Math.max(...room.players.map((p) => p.score)) === me.score && me.score > 0)
       : !!me && Math.max(...room.players.map((p) => p.score)) === me.score && me.score > 0;
     if (won) { celebrate(); sound.levelUp(); }
     const value = room.game === "buzz" ? me?.score ?? 0
-      : room.game === "boss" ? Math.round((clock() + offset.current - (room.startAt ?? 0)) / 1000)
+      : room.game === "bingo" ? room.bingo?.called ?? 0
       : me?.score ?? 0;
     setNewBest(saveRec(room.game, !!won, value));
-    setRecs({ tug: readRec("tug"), buzz: readRec("buzz"), boss: readRec("boss") });
+    setRecs({ tug: readRec("tug"), buzz: readRec("buzz"), bingo: readRec("bingo") });
     track("party_end", { game: room.game, won, players: room.players.length, solo, score: value });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, room?.round]);
@@ -291,7 +289,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       return;
     }
     sound.correct(); haptic(12); onCorrect?.(1);
-    setFx({ k: clock(), kind: room.game === "boss" ? "hit" : "pull" });
+    setFx({ k: clock(), kind: "pull" });
     if (room.game !== "buzz") setMyDone(idx + 1);
     setTimeout(() => setPicked(null), 160);
     if (solo) {
@@ -303,6 +301,32 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     }
     try {
       const res = await partyAnswerAction(room.code, idx, v);
+      if (!("error" in res)) take(res);
+    } catch {}
+  }
+
+  /* bingo: tap a number on my card. It counts if that number has been
+     called; a wrong tap locks the card for a moment. */
+  async function markCell(cell: number) {
+    if (!room?.bingo || status !== "playing" || lock || (myDone & (1 << cell))) return;
+    const value = room.bingo.card[cell];
+    const called = bingoCalls(room.seed).slice(0, room.bingo.called).map((c) => c.answer);
+    if (!called.includes(value)) {
+      setLock(true); setPicked(cell); sound.wrong(); haptic(30);
+      lockTimer.current = setTimeout(() => { setLock(false); setPicked(null); }, 1200);
+      return;
+    }
+    sound.correct(); haptic(12); onCorrect?.(1);
+    setMyDone((d) => d | (1 << cell));
+    if (solo) {
+      const st = soloRef.current;
+      if (!st) return;
+      const next = soloAnswer(st, clock(), cell, value);
+      if (next !== "wrong") { soloRef.current = next; take(soloView(next)); }
+      return;
+    }
+    try {
+      const res = await partyAnswerAction(room.code, cell, value);
       if (!("error" in res)) take(res);
     } catch {}
   }
@@ -329,7 +353,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
             ))}
           </div>
           <div className="party-picks">
-            {(["tug", "buzz", "boss"] as PartyGame[]).map((g) => (
+            {(["tug", "buzz", "bingo"] as PartyGame[]).map((g) => (
               <div key={g} className={`party-pick ${g}`}>
                 <span className="party-pick-ico">{PARTY_NAMES[g][0]}</span>
                 <span className="party-pick-txt">
@@ -369,7 +393,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
         <span className="party-meta mono">
           {status === "playing" && game === "tug" && room.tug && `⏱ ${secsLeft(room.tug.endsAt)}s`}
           {status === "playing" && game === "buzz" && room.buzz && `Q${Math.min(BUZZ_QS, room.buzz.q + 1)}/${BUZZ_QS}`}
-          {status === "playing" && game === "boss" && room.boss && `${ja ? "ウェーブ" : "Wave"} ${room.boss.wave + 1}`}
+          {status === "playing" && game === "bingo" && room.bingo && `🎯 ${room.bingo.called}/${BINGO_CALLS}`}
           {status === "lobby" && `👥 ${n}`}
         </span>
       </div>
@@ -381,7 +405,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       <div className="party-stage">
         {game === "tug" && <TugStage room={room} ja={ja} myTeam={me?.team ?? 0} pulse={fx?.kind === "pull" ? fx.k : 0} />}
         {game === "buzz" && <BuzzStage room={room} ja={ja} now={now} q={q?.prompt ?? null} ranked={ranked} />}
-        {game === "boss" && <BossStage room={room} ja={ja} now={now} hit={fx?.kind === "hit" ? fx.k : 0} fire={fx?.kind === "fire" ? fx.k : 0} />}
+        {game === "bingo" && <BingoStage room={room} ja={ja} now={now} mask={myDone} lock={lock} wrongCell={lock ? picked : null} onMark={markCell} />}
 
         {status === "countdown" && room.startAt !== null && (
           <div key={secsLeft(room.startAt)} className="race-count mono">{Math.max(1, secsLeft(room.startAt))}</div>
@@ -429,7 +453,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
               {(game === "tug" ? [...room.players].sort((a, b) => a.team - b.team || b.score - a.score) : ranked).map((p) => (
                 <li key={p.key} className={p.me ? "me" : ""}>
                   <span>{game === "tug" ? (p.team === 0 ? "🔴 " : "⚪ ") : ""}{p.me ? (ja ? "きみ" : "You") : p.name}</span>
-                  <span className="mono">{game === "buzz" ? `${p.score} ${ja ? "問" : "pts"}` : `${p.score} ${game === "boss" ? (ja ? "ヒット" : "hits") : (ja ? "回" : "pulls")}`}</span>
+                  <span className="mono">{game === "buzz" ? `${p.score} ${ja ? "問" : "pts"}` : `${p.score} ${game === "bingo" ? (ja ? "マス" : "marks") : (ja ? "回" : "pulls")}`}</span>
                 </li>
               ))}
             </ol>
@@ -480,7 +504,7 @@ function GamePicker({ current, ja, canPick, busy, onPick, label }: {
     <div className="party-picker">
       <span className="party-picker-lab">{label}</span>
       <span className="party-picker-row">
-        {(["tug", "buzz", "boss"] as PartyGame[]).map((g) => (
+        {(["tug", "buzz", "bingo"] as PartyGame[]).map((g) => (
           <button key={g} className={`party-chip${g === current ? " on" : ""}`} disabled={!canPick || busy} onClick={() => onPick(g)} aria-pressed={g === current}>
             <span>{PARTY_NAMES[g][0]}</span>{ja ? PARTY_NAMES[g][2] : PARTY_NAMES[g][1]}
           </button>
@@ -493,12 +517,12 @@ function GamePicker({ current, ja, canPick, busy, onPick, label }: {
 function blurb(g: PartyGame, ja: boolean) {
   if (g === "tug") return ja ? "2チームで対決。正解でつなを引こう！" : "Two teams. Every right answer pulls the rope!";
   if (g === "buzz") return ja ? "同じ問題を早いもの勝ち！" : "Same sum for all, fastest wins the point!";
-  return ja ? "みんなで力をあわせてドラゴンをたおせ！" : "Team up and beat the dragon together!";
+  return ja ? "自分のカードで計算ビンゴ！1列そろえたら勝ち。" : "Mark the sums on your own card. First full line wins!";
 }
 
 function resultIcon(room: PartyRoomView, myTeam: 0 | 1, myKey?: string) {
   if (room.game === "tug") return room.tug?.winner === "draw" ? "🤝" : room.tug?.winner === myTeam ? "🏆" : "💪";
-  if (room.game === "boss") return room.boss?.result === "win" ? "🏆" : "🐉";
+  if (room.game === "bingo" && room.bingo?.winnerKey) return room.bingo.winnerKey === myKey ? "🎯" : "🙌";
   const top = Math.max(...room.players.map((p) => p.score));
   return room.players.find((p) => p.key === myKey)?.score === top && top > 0 ? "🥇" : "🔔";
 }
@@ -509,7 +533,10 @@ function resultTitle(room: PartyRoomView, ja: boolean, myTeam: 0 | 1, myKey?: st
     const name = w === 0 ? TEAM[0] : TEAM[1];
     return w === myTeam ? (ja ? `${name[1]}の勝ち！きみのチームだ！` : `${name[0]} wins, that's your team!`) : (ja ? `${name[1]}の勝ち！` : `${name[0]} wins!`);
   }
-  if (room.game === "boss") return room.boss?.result === "win" ? (ja ? "ドラゴンをたおした！" : "Dragon defeated!") : (ja ? "ドラゴンの勝ち…もう一回！" : "The dragon won… try again!");
+  if (room.game === "bingo" && room.bingo?.winnerKey) {
+    const w = room.players.find((p) => p.key === room.bingo!.winnerKey);
+    return w?.key === myKey ? (ja ? "ビンゴ！きみの勝ち！" : "BINGO! You win!") : (ja ? `${w?.name ?? "?"} がビンゴ！` : `${w?.name ?? "?"} got BINGO!`);
+  }
   const top = Math.max(...room.players.map((p) => p.score));
   const winners = room.players.filter((p) => p.score === top);
   if (winners.some((p) => p.key === myKey) && top > 0) return ja ? "きみが1位！" : "You're the champion!";
@@ -572,28 +599,42 @@ function BuzzStage({ room, ja, now, q, ranked }: { room: PartyRoomView; ja: bool
   );
 }
 
-/* ---- 🐉 Boss Battle: HP bar, hearts, and the wave's "block the fire" meter ---- */
-function BossStage({ room, ja, now, hit, fire }: { room: PartyRoomView; ja: boolean; now: number; hit: number; fire: number }) {
-  const b = room.boss;
-  const n = room.players.length;
-  const hp = b ? b.hp - b.dmg : 0;
-  const need = b?.need ?? 0;
-  const waveLeft = b ? Math.max(0, b.waveEndsAt - now) : BOSS_WAVE_MS;
-  const blocked = b ? b.waveHits >= need : false;
+/* ---- 🎯 Math Bingo: the call, the last few calls, my card, and who's close ---- */
+function BingoStage({ room, ja, now, mask, lock, wrongCell, onMark }: {
+  room: PartyRoomView; ja: boolean; now: number; mask: number; lock: boolean; wrongCell: number | null; onMark: (cell: number) => void;
+}) {
+  const b = room.bingo;
+  if (!b) return null;
+  const calls = bingoCalls(room.seed);
+  const cur = b.called > 0 ? calls[b.called - 1] : null;
+  const prev = calls.slice(Math.max(0, b.called - 4), Math.max(0, b.called - 1)).reverse();
+  const left = Math.max(0, b.callEndsAt - now);
+  /* リーチ: one cell short of a line */
+  const reach = (m: number) => BINGO_LINES.some((l) => marksOf(m & l) === 2);
+  const board = [...room.players].sort((x, y) => y.score - x.score).slice(0, 5);
   return (
-    <div className="boss-stage">
-      <div className="boss-hearts" aria-label={ja ? "チームのハート" : "Team hearts"}>
-        {Array.from({ length: BOSS_HEARTS }, (_, i) => <span key={i} className={i < BOSS_HEARTS - (b?.heartsLost ?? 0) ? "on" : ""}>❤️</span>)}
+    <div className="bingo-stage">
+      <div className="bingo-call">
+        <small>{ja ? `${b.called}問目` : `Call ${b.called}`}</small>
+        <b className="mono">{cur ? `${cur.prompt} = ?` : "…"}</b>
+        <span className="bingo-call-bar"><i style={{ width: `${(left / BINGO_CALL_MS) * 100}%` }} /></span>
       </div>
-      <div className="boss-hp"><i style={{ width: `${b ? (hp / b.hp) * 100 : 100}%` }} /><span className="mono">{b ? `${hp} / ${b.hp}` : `HP ${n * 14}`}</span></div>
-      <div key={hit} className={`boss-dragon${hit ? " hit" : ""}${b?.result === "win" ? " down" : ""}`}>🐉</div>
-      {fire > 0 && now - fire < 900 && <div key={fire} className="boss-fire">🔥🔥🔥</div>}
-      {b && !b.result && (
-        <div className={`boss-wave${blocked ? " ok" : ""}`}>
-          <span>{blocked ? (ja ? "🛡️ ほのおをガードできる！" : "🛡️ Fire blocked this wave!") : (ja ? `🛡️ あと ${need - b.waveHits} ヒットでほのおをガード` : `🛡️ ${need - b.waveHits} more hits to block the fire`)}</span>
-          <span className="boss-wave-bar"><i style={{ width: `${(waveLeft / BOSS_WAVE_MS) * 100}%` }} /></span>
-        </div>
+      {prev.length > 0 && (
+        <div className="bingo-prev">{ja ? "前の問題：" : "Before: "}{prev.map((c) => <span key={c.prompt} className="mono">{c.prompt}</span>)}</div>
       )}
+      <div className={`bingo-card${lock ? " locked" : ""}`}>
+        {b.card.map((n, i) => (
+          <button key={i} className={`bingo-cell${mask & (1 << i) ? " on" : ""}${wrongCell === i ? " wrong" : ""}`} onClick={() => onMark(i)} disabled={!!(mask & (1 << i))}>
+            <span className="mono">{n}</span>
+          </button>
+        ))}
+      </div>
+      <div className="bingo-board">
+        {board.map((p) => (
+          <span key={p.key} className={p.me ? "me" : ""}>{p.me ? (ja ? "きみ" : "You") : p.name} <b className="mono">{p.score}</b>{reach(p.done) && !(b.winnerKey) && <em>{ja ? "🔥リーチ" : "🔥1 to go"}</em>}</span>
+        ))}
+      </div>
+      {b.winnerKey && <div className="bingo-win">BINGO!</div>}
     </div>
   );
 }

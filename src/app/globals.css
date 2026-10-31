@@ -4614,3 +4614,29 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .auth-kicker{ text-transform:none; letter-spacing:.04em; }
 /* the brand keeps its own casing ("VedAnk Sprint"), even in the all-caps header */
 .header-title h1.brand{ text-transform:none; }
+
+/* 🎯 math bingo: a bright card on a game-show board */
+.party-bingo .party-stage{ height:auto; min-height:min(560px, calc(100dvh - 260px)); background:radial-gradient(circle at 50% 0%, #fff3c4 0, #ffd36b 30%, #ff8a5b 70%, #e0457b 100%); }
+.bingo-stage{ position:relative; display:flex; flex-direction:column; align-items:center; gap:10px; padding:12px; }
+.bingo-call{ width:100%; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 12px 12px; border-radius:18px; background:#fff; border:3px solid #1d1b33; box-shadow:0 4px 0 #1d1b33; color:#1d1b33; }
+.bingo-call small{ font-size:12px; font-weight:900; color:#e0457b; letter-spacing:.06em; }
+.bingo-call b{ font:900 30px/1.1 "Baloo 2",system-ui,sans-serif; }
+.bingo-call-bar{ width:100%; height:8px; border-radius:6px; background:#f0eaf7; overflow:hidden; }
+.bingo-call-bar i{ display:block; height:100%; background:linear-gradient(90deg,#3cbf74,#ffcf3a); transition:width .1s linear; }
+.bingo-prev{ font-size:12px; font-weight:800; color:#3b1d2a; display:flex; flex-wrap:wrap; gap:5px; align-items:center; justify-content:center; }
+.bingo-prev span{ background:rgba(255,255,255,.75); border-radius:999px; padding:2px 9px; font-weight:900; }
+.bingo-card{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:min(300px, 100%); padding:10px; border-radius:20px; background:#1d1b33; box-shadow:0 6px 0 rgba(29,27,51,.35); }
+.bingo-card.locked{ opacity:.7; }
+.bingo-cell{ position:relative; aspect-ratio:1; border:none; border-radius:14px; background:#fffaf0; color:#1d1b33; font:900 28px/1 "Baloo 2",system-ui,sans-serif; cursor:pointer; box-shadow:inset 0 -5px 0 #e6dcc8; transition:transform .1s; }
+.bingo-cell:active{ transform:scale(.94); }
+.bingo-cell.on{ background:#fffaf0; }
+.bingo-cell.on::after{ content:""; position:absolute; inset:10%; border-radius:50%; border:5px solid #e0457b; background:rgba(224,69,123,.18); animation:bingo-stamp .35s cubic-bezier(.2,1.8,.4,1) both; }
+.bingo-cell.wrong{ animation:rg-shake .35s 2; background:#ffd6d6; }
+@keyframes bingo-stamp{ from{ transform:scale(1.8) rotate(-20deg); opacity:0; } }
+.bingo-board{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+.bingo-board span{ display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,.88); color:#1d1b33; border-radius:999px; padding:4px 10px; font-size:12.5px; font-weight:800; }
+.bingo-board span.me{ background:#1d1b33; color:#fff; }
+.bingo-board em{ font-style:normal; font-size:11px; font-weight:900; color:#e0457b; }
+.bingo-board span.me em{ color:#ffcf3a; }
+.bingo-win{ position:absolute; left:50%; top:40%; transform:translate(-50%,-50%) rotate(-8deg); font:900 64px/1 "Baloo 2",system-ui,sans-serif; color:#ffcf3a; -webkit-text-stroke:4px #1d1b33; paint-order:stroke fill; text-shadow:0 6px 0 #1d1b33; animation:bingo-win .7s cubic-bezier(.2,1.8,.4,1) both; pointer-events:none; }
+@keyframes bingo-win{ from{ transform:translate(-50%,-50%) rotate(-8deg) scale(2.4); opacity:0; } }

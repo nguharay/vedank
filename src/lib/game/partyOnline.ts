@@ -4,12 +4,13 @@ import { getDb } from "@/db";
 import { partyRooms, raceRooms, tttRooms, users } from "@/db/schema";
 import { roomCode, normaliseRoomCode } from "./ttt";
 import {
-  PARTY_GAMES, PARTY_ROOM_MAX, PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS, BOSS_WAVE_MS,
+  PARTY_GAMES, PARTY_ROOM_MAX, PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS,
+  bingoCalls, bingoCard, bingoCalled, hasBingo,
   partyQuestion, buzzQuestion, partyStatus, buildPartyView,
   type PartyGame, type PartyPlayer, type PartyState, type PartyView,
 } from "./party";
 
-/* Party rooms (Tug of War, Buzzer Quiz, Boss Battle) — the rules are in
+/* Party rooms (Tug of War, Buzzer Quiz, Math Bingo) — the rules are in
    party.ts; this file stores them. Same shape as the online race: the host
    makes a room and shares the code, friends join in the lobby, the host
    starts with a few seconds' countdown, and every answer is checked here
@@ -154,7 +155,7 @@ export async function switchPartyGame(userId: string, code: string, game: PartyG
   return view(saved, userId);
 }
 
-/* One answer. Tug / Boss: your own next sum (idx = how many you've done) —
+/* One answer. Tug: your own next sum (idx = how many you've done) —
    the write lands only if you are still on it, so a double tap counts once.
    Buzzer: idx is the question number; the first right answer takes it. */
 export async function answerPartyRoom(userId: string, code: string, idx: number, answer: number): Promise<PartyRoomView | { error: string }> {
@@ -179,18 +180,31 @@ export async function answerPartyRoom(userId: string, code: string, idx: number,
                '{qAt}', to_jsonb(${now + BUZZ_GAP_MS}::bigint)),
              updated_at = now()
        where code = ${row.code}::text and (state->>'q')::int = ${idx}::int and (state->>'round')::int = ${st.round}::int`);
+  } else if (st.game === "bingo") {
+    /* idx = the card cell (0–8). It counts if its number has been called. */
+    const cell = Math.floor(idx);
+    if (cell < 0 || cell > 8 || (me.done & (1 << cell))) return view(row, userId);
+    const value = bingoCard(st.seed, me.slot)[cell];
+    const called = bingoCalls(st.seed).slice(0, bingoCalled(st, now)).map((c) => c.answer);
+    if (!called.includes(value)) return { error: "wrong" };
+    const mask = me.done | (1 << cell);
+    await db.execute(raw`
+      update party_rooms
+         set state = jsonb_set(state, array['players', ${userId}::text, 'done'], to_jsonb(${mask}::int)),
+             updated_at = now()
+       where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int
+         and (state->'players'->(${userId}::text)->>'done')::int = ${me.done}::int`);
+    /* a full line: the first one to land takes BINGO */
+    if (hasBingo(mask)) await db.execute(raw`
+      update party_rooms
+         set state = jsonb_set(state, '{wins}', jsonb_build_array(${userId}::text)), updated_at = now()
+       where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int
+         and (state->'wins'->0) is null
+         and (state->'players'->(${userId}::text)->>'done')::int = ${mask}::int`);
   } else {
     if (me.done !== idx) return view(row, userId);
     if (partyQuestion(st.seed, me.slot, idx).answer !== answer) return { error: "wrong" };
-    const wave = String(Math.floor((now - (st.startAt ?? now)) / BOSS_WAVE_MS));
-    await db.execute(st.game === "boss" ? raw`
-      update party_rooms
-         set state = jsonb_set(jsonb_set(state,
-               array['players', ${userId}::text, 'done'], to_jsonb(${idx + 1}::int)),
-               array['waves', ${wave}::text], to_jsonb(coalesce((state->'waves'->>${wave}::text)::int, 0) + 1)),
-             updated_at = now()
-       where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int
-         and (state->'players'->(${userId}::text)->>'done')::int = ${idx}::int` : raw`
+    await db.execute(raw`
       update party_rooms
          set state = jsonb_set(state, array['players', ${userId}::text, 'done'], to_jsonb(${idx + 1}::int)),
              updated_at = now()

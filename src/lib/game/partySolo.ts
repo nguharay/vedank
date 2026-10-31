@@ -6,12 +6,15 @@
      🪢 Tug of War   you (red) against a CPU team that pulls at a steady pace
      🔔 Buzzer Quiz  you against three CPU contestants who buzz in after a
                      few seconds — and sometimes get it wrong
-     🐉 Boss Battle  you alone against a smaller dragon (party.ts bossHp(1))
+     🎯 Math Bingo   you against three CPU players marking their own cards;
+                     they spot each number after a few seconds, and now and
+                     then miss one
 
    `level` sets how quick the computer is. */
 import {
-  PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS, BOSS_WAVE_MS,
-  partyQuestion, buzzQuestion, partyStatus, type PartyGame, type PartyPlayer, type PartyState,
+  PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS, BINGO_CALL_MS,
+  partyQuestion, buzzQuestion, partyStatus, bingoCalls, bingoCard, bingoCalled, hasBingo,
+  type PartyGame, type PartyPlayer, type PartyState,
 } from "./party";
 
 export type SoloLevel = 0 | 1 | 2;
@@ -25,6 +28,13 @@ export const SOLO_ME = "me";
 /* ms per answer for a CPU tug team, and how soon a CPU buzzes in */
 const TUG_PACE = [4300, 3200, 2400];
 const BUZZ_BASE = [7000, 5000, 3600];
+/* how long a CPU takes to spot a called number on its bingo card */
+const BINGO_REACT = [3600, 2700, 1900];
+/* bingo: how many CPU players at each strength, and how often (1 in N) a CPU
+   never notices a called number — easy is one sleepy opponent, strong is
+   three sharp ones */
+const BINGO_CPUS = [1, 2, 3];
+const BINGO_MISS = [3, 5, 9];
 const CPU_NAMES: [string, string][] = [["Ray", "レイ"], ["Mimi", "ミミ"], ["Taro", "タロウ"]];
 
 /* a small deterministic hash so a CPU's timing is fixed for a given question */
@@ -34,12 +44,12 @@ const hash = (a: number, b: number, c: number) => {
   return (h ^ (h >>> 13)) >>> 0;
 };
 
-export function soloStart(game: PartyGame, ja: boolean, myName: string, round: number, now: number): PartyState {
+export function soloStart(game: PartyGame, ja: boolean, myName: string, round: number, now: number, level: SoloLevel = 1): PartyState {
   const seed = Math.floor(Math.random() * 2 ** 31);
   const startAt = now + PARTY_COUNTDOWN_MS;
   const p = (name: string, team: 0 | 1, i: number): PartyPlayer => ({ name, joinedAt: i, slot: 1000 + i * 37, team, done: 0 });
   const players: Record<string, PartyPlayer> = { [SOLO_ME]: p(myName, 0, 0) };
-  const cpus = game === "tug" ? 1 : game === "buzz" ? 3 : 0;
+  const cpus = game === "tug" ? 1 : game === "bingo" ? BINGO_CPUS[level] : 3;
   for (let i = 0; i < cpus; i++) players[`cpu:${i}`] = p(CPU_NAMES[i][ja ? 1 : 0], 1, i + 1);
   return { game, seed, startAt, round, players, q: 0, qAt: startAt, wins: [], waves: {} };
 }
@@ -53,13 +63,19 @@ export function soloAnswer(st: PartyState, now: number, idx: number, answer: num
     if (buzzQuestion(st.seed, idx).answer !== answer) return "wrong";
     return { ...st, wins: [...st.wins.slice(0, idx), SOLO_ME], q: idx + 1, qAt: now + BUZZ_GAP_MS };
   }
+  if (st.game === "bingo") {
+    /* idx = the card cell; it counts if its number has been called */
+    if (idx < 0 || idx > 8 || (me.done & (1 << idx))) return st;
+    const value = bingoCard(st.seed, me.slot)[idx];
+    if (!bingoCalls(st.seed).slice(0, bingoCalled(st, now)).some((c) => c.answer === value)) return "wrong";
+    const mask = me.done | (1 << idx);
+    const players = { ...st.players, [SOLO_ME]: { ...me, done: mask } };
+    const wins = hasBingo(mask) && !st.wins[0] ? [SOLO_ME] : st.wins;
+    return { ...st, players, wins };
+  }
   if (me.done !== idx) return st;
   if (partyQuestion(st.seed, me.slot, idx).answer !== answer) return "wrong";
   const players = { ...st.players, [SOLO_ME]: { ...me, done: idx + 1 } };
-  if (st.game === "boss") {
-    const w = String(Math.floor((now - (st.startAt ?? now)) / BOSS_WAVE_MS));
-    return { ...st, players, waves: { ...st.waves, [w]: (st.waves[w] ?? 0) + 1 } };
-  }
   return { ...st, players };
 }
 
@@ -96,6 +112,30 @@ export function soloTick(st: PartyState, now: number, level: SoloLevel): PartySt
     }
     /* nobody got it in time */
     if (now >= st.qAt + BUZZ_Q_MS) return { ...st, wins: [...st.wins.slice(0, st.q), null], q: st.q + 1, qAt: now + BUZZ_GAP_MS };
+  }
+
+  if (st.game === "bingo") {
+    /* each CPU marks a called number once its "spotting" time has passed;
+       now and then (BINGO_MISS) it never notices one */
+    const calls = bingoCalls(st.seed), called = bingoCalled(st, now);
+    let players = st.players, wins = st.wins;
+    Object.entries(st.players).forEach(([id, p], i) => {
+      if (!id.startsWith("cpu:")) return;
+      const card = bingoCard(st.seed, p.slot);
+      let mask = p.done;
+      for (let k = 0; k < called; k++) {
+        const cell = card.indexOf(calls[k].answer);
+        if (cell < 0 || (mask & (1 << cell))) continue;
+        const h = hash(st.seed, k, i);
+        if (h % BINGO_MISS[level] === 0) continue;
+        if (now >= (st.startAt ?? now) + k * BINGO_CALL_MS + BINGO_REACT[level] + (h % 1500)) mask |= 1 << cell;
+      }
+      if (mask !== p.done) {
+        players = { ...players, [id]: { ...p, done: mask } };
+        if (hasBingo(mask) && !wins[0]) wins = [id];
+      }
+    });
+    return players === st.players ? st : { ...st, players, wins };
   }
   return st;
 }
