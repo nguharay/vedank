@@ -24,7 +24,7 @@ const BEST_KEY = "sutraSprint.riverBest";
 const LIVES = 3;
 const LANES = 4;
 const PADS = 3;
-const PAD_HALF = 38;               /* pads are 76px wide */
+const PAD_HALF = 46;               /* pads are 92px wide */
 const HOP_MS = 360;
 const SCENES = 4;                  /* day, sunset, night, autumn — one per river */
 const laneSpeed = (river: number, lane: number) => Math.min(70, 18 + river * 7) * (0.8 + 0.14 * lane);   /* px/s */
