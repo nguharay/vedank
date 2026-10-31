@@ -4640,3 +4640,143 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .bingo-board span.me em{ color:#ffcf3a; }
 .bingo-win{ position:absolute; left:50%; top:40%; transform:translate(-50%,-50%) rotate(-8deg); font:900 64px/1 "Baloo 2",system-ui,sans-serif; color:#ffcf3a; -webkit-text-stroke:4px #1d1b33; paint-order:stroke fill; text-shadow:0 6px 0 #1d1b33; animation:bingo-win .7s cubic-bezier(.2,1.8,.4,1) both; pointer-events:none; }
 @keyframes bingo-win{ from{ transform:translate(-50%,-50%) rotate(-8deg) scale(2.4); opacity:0; } }
+
+/* ---------- 🚀 Space Blaster ---------- */
+.space-arena{ position:relative; height:470px; border-radius:22px; overflow:hidden; border:3px solid var(--ink); touch-action:none; user-select:none;
+  background:radial-gradient(ellipse at 50% 120%, #3a2a8a 0%, #141640 55%, #070a20 100%); }
+.space-bg{ position:absolute; inset:0; pointer-events:none; }
+.space-stars{ position:absolute; inset:-100% 0 0; background-repeat:repeat; animation:space-scroll linear infinite; }
+.space-stars.s1{ background-image:radial-gradient(1.5px 1.5px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 120px 80px,#cfe3ff,transparent),radial-gradient(1.5px 1.5px at 200px 150px,#fff,transparent),radial-gradient(1px 1px at 70px 190px,#fff,transparent);
+  background-size:240px 220px; animation-duration:14s; opacity:.7; }
+.space-stars.s2{ background-image:radial-gradient(2px 2px at 60px 50px,#fff,transparent),radial-gradient(2px 2px at 180px 120px,#ffe9a8,transparent);
+  background-size:260px 200px; animation-duration:8s; }
+.space-stars.s3{ background-image:radial-gradient(2.5px 2.5px at 100px 90px,#fff,transparent); background-size:320px 260px; animation-duration:5s; }
+@keyframes space-scroll{ to{ transform:translateY(50%); } }
+.space-planet{ position:absolute; right:-18px; top:108px; display:flex; flex-direction:column; align-items:center; opacity:.95;
+  animation:space-planet-in 1.4s ease-out both, space-planet-float 6s ease-in-out 1.4s infinite alternate; }
+.space-planet em{ margin-top:-6px; font-style:normal; font-size:11px; font-weight:900; letter-spacing:.06em; color:#fff; background:rgba(255,255,255,.14);
+  border:1.5px solid rgba(255,255,255,.35); border-radius:999px; padding:1px 9px; }
+@keyframes space-planet-in{ from{ opacity:0; transform:translateY(-40px) scale(.7); } }
+@keyframes space-planet-float{ to{ transform:translateY(14px) rotate(-3deg); } }
+.space-nebula{ position:absolute; left:-60px; top:180px; width:240px; height:160px; border-radius:50%; background:radial-gradient(ellipse, rgba(255,79,154,.22), transparent 70%); }
+.space-hud, .river-hud{ position:absolute; left:10px; right:10px; top:8px; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:8px; pointer-events:none; }
+.space-score, .river-score{ font-size:22px; font-weight:900; color:#fff; text-shadow:0 2px 0 #1d1b33; }
+.space-level, .river-level{ font-size:12px; font-weight:900; color:#1d1b33; background:#ffd84a; border:2px solid #1d1b33; border-radius:999px; padding:2px 10px; display:flex; gap:6px; align-items:center; }
+.space-level em, .river-level em{ font-style:normal; color:#c2185b; }
+.space-shields{ display:flex; gap:4px; }
+.space-shields i{ width:18px; height:20px; clip-path:polygon(50% 0,100% 18%,92% 70%,50% 100%,8% 70%,0 18%); background:#3d3a5c; }
+.space-shields i.on{ background:linear-gradient(#7fe7ff,#2b9fd8); }
+.space-screen, .river-sign{ position:absolute; top:44px; left:50%; transform:translateX(-50%); z-index:5; white-space:nowrap; font-size:26px; font-weight:900;
+  color:#7fffb0; background:#0d1b2a; border:3px solid #7fffb0; border-radius:14px; padding:2px 18px 4px; box-shadow:0 0 18px rgba(127,255,176,.45), 0 4px 0 #1d1b33;
+  animation:space-screen-in .3s ease-out both; pointer-events:none; }
+@keyframes space-screen-in{ from{ opacity:0; transform:translate(-50%,-10px) scale(.9); } }
+.space-rock{ position:absolute; left:0; top:0; width:68px; height:68px; padding:0; border:0; background:none; cursor:pointer; will-change:transform; z-index:3; -webkit-tap-highlight-color:transparent; }
+.space-rock-body{ position:absolute; inset:0; border-radius:46% 54% 50% 50% / 52% 46% 54% 48%; border:3px solid #1d1b33;
+  background:radial-gradient(circle at 32% 30%, #b7a48f, #7e6a58 60%, #574537); box-shadow:inset -6px -6px 0 rgba(0,0,0,.18); }
+.space-rock-body i{ position:absolute; border-radius:50%; background:rgba(60,45,35,.55); box-shadow:inset 2px 2px 0 rgba(0,0,0,.25); }
+.space-rock-body .c1{ width:14px; height:14px; left:10px; top:12px; } .space-rock-body .c2{ width:9px; height:9px; right:12px; top:20px; } .space-rock-body .c3{ width:11px; height:11px; left:28px; bottom:9px; }
+.space-rock-num{ position:relative; z-index:1; display:inline-block; font-size:19px; font-weight:900; color:#1d1b33; background:#fff; border:2px solid #1d1b33; border-radius:10px; padding:0 7px; }
+.space-rock:active .space-rock-body{ filter:brightness(1.2); }
+.space-ship{ position:absolute; bottom:22px; z-index:4; width:56px; height:70px; transform:translateX(-50%); transition:left .14s ease-out; pointer-events:none; }
+.space-flame{ position:absolute; left:50%; bottom:-14px; width:14px; height:20px; margin-left:-7px; border-radius:50% 50% 50% 50% / 30% 30% 70% 70%;
+  background:linear-gradient(#ffe066,#ff7a3d 60%,transparent); animation:space-flame .12s ease-in-out infinite alternate; }
+@keyframes space-flame{ to{ height:26px; opacity:.8; } }
+.space-shield{ position:absolute; inset:-12px -14px -6px; border-radius:50%; border:2px solid rgba(127,231,255,.55); box-shadow:0 0 14px rgba(127,231,255,.4); }
+.space-shield.n1{ border-color:rgba(255,122,122,.6); box-shadow:0 0 14px rgba(255,122,122,.45); animation:space-blink .5s steps(2) infinite; }
+@keyframes space-blink{ 50%{ opacity:.3; } }
+.space-laser{ position:absolute; z-index:3; width:6px; border-radius:3px; background:linear-gradient(#fff,#7fffb0 40%,#2bd67b); box-shadow:0 0 12px #7fffb0; pointer-events:none;
+  animation:space-laser .26s ease-out forwards; }
+@keyframes space-laser{ from{ opacity:1; } to{ opacity:0; } }
+.space-boom{ position:absolute; z-index:3; width:0; height:0; pointer-events:none; }
+.space-boom::before{ content:""; position:absolute; left:-30px; top:-30px; width:60px; height:60px; border-radius:50%; background:radial-gradient(circle,#fff 0,#ffe066 30%,#ff7a3d 60%,transparent 70%);
+  animation:space-flash .45s ease-out forwards; }
+.space-boom i{ position:absolute; width:8px; height:8px; margin:-4px; border-radius:2px; background:#b7a48f; border:1.5px solid #1d1b33;
+  transform:rotate(var(--a)) translateY(0); animation:space-debris .6s ease-out forwards; }
+.space-boom.zap::before{ background:radial-gradient(circle,#fff 0,#ff7a7a 40%,transparent 70%); }
+.space-boom.bossboom::before{ left:-70px; top:-70px; width:140px; height:140px; animation-duration:.9s; }
+.space-boom.bossboom i{ background:#8a5cf5; width:12px; height:12px; animation-duration:1s; }
+@keyframes space-flash{ from{ transform:scale(.3); opacity:1; } to{ transform:scale(1.4); opacity:0; } }
+@keyframes space-debris{ to{ transform:rotate(var(--a)) translateY(-56px) rotate(200deg); opacity:0; } }
+.space-pop{ position:absolute; z-index:6; transform:translate(-50%,-50%); font:900 22px/1 "Baloo 2",system-ui,sans-serif; pointer-events:none; animation:run-pop .8s ease-out forwards; text-shadow:0 2px 0 #1d1b33; white-space:nowrap; }
+.space-pop.good{ color:#7ED957; } .space-pop.bad{ color:#FF7A7A; } .space-pop.boss{ color:#ffd84a; font-size:30px; }
+.space-banner{ position:absolute; left:50%; top:38%; z-index:7; transform:translate(-50%,-50%); text-align:center; white-space:nowrap; pointer-events:none;
+  background:rgba(13,27,42,.88); border:3px solid #ffd84a; border-radius:18px; padding:8px 18px; color:#fff; animation:space-banner 1.8s ease-out forwards; }
+.space-banner b{ display:block; font:900 24px/1.2 "Baloo 2",system-ui,sans-serif; color:#ffd84a; }
+.space-banner span{ font-size:12.5px; font-weight:800; }
+.space-banner.river{ background:rgba(255,255,255,.94); border-color:#1d4a2a; color:#1d4a2a; }
+.space-banner.river b{ color:#2e8b57; }
+@keyframes space-banner{ 0%{ opacity:0; transform:translate(-50%,-50%) scale(.6); } 12%{ opacity:1; transform:translate(-50%,-50%) scale(1.05); } 20%{ transform:translate(-50%,-50%) scale(1); } 80%{ opacity:1; } 100%{ opacity:0; } }
+.space-boss{ position:absolute; left:0; top:0; z-index:2; width:120px; will-change:transform; pointer-events:none; filter:drop-shadow(0 0 10px rgba(138,92,245,.6)); }
+.space-boss .ufo-light{ animation:space-blink .6s steps(2) infinite; } .space-boss .l1, .space-boss .l3{ animation-delay:.3s; }
+.space-boss-hp{ display:flex; justify-content:center; gap:3px; margin-top:-2px; }
+.space-boss-hp i{ width:16px; height:6px; border-radius:3px; background:#ff5a5f; border:1.5px solid #1d1b33; }
+.space-hurt{ position:absolute; inset:0; z-index:6; pointer-events:none; box-shadow:inset 0 0 50px 10px rgba(255,60,60,.65); animation:space-hurt .5s ease-out forwards; }
+@keyframes space-hurt{ to{ opacity:0; } }
+.ttt-card.space-feature{ background:linear-gradient(130deg,#070a20,#141640 55%,#3a2a8a); }
+.feature-art.space{ background:radial-gradient(1.5px 1.5px at 10px 12px,#fff,transparent),radial-gradient(1.5px 1.5px at 40px 30px,#fff,transparent),radial-gradient(circle at 50% 120%,#3a2a8a,#070a20 70%); }
+.fa-rocket{ left:8px; bottom:6px; font-size:24px; animation:run-bob .4s ease-in-out infinite alternate; }
+.feature-art .fa-rock{ right:6px; top:6px; font-size:20px; }
+
+/* ---------- 🐸 River Hop ---------- */
+.river-arena{ position:relative; height:480px; border-radius:22px; overflow:hidden; border:3px solid var(--ink); touch-action:none; user-select:none;
+  --grass:#8fd16a; --grass-d:#5ea844; --water:#3fa7d6; --water-d:#2a7fb8; --sky:transparent; }
+.river-arena.scene-1{ --grass:#c9d36a; --grass-d:#9aa544; --water:#e98b5a; --water-d:#b85a6e; --sky:rgba(255,140,80,.12); }
+.river-arena.scene-2{ --grass:#3e6b52; --grass-d:#2b4c3b; --water:#24306e; --water-d:#151c4a; --sky:rgba(10,10,40,.25); }
+.river-arena.scene-3{ --grass:#e0a24a; --grass-d:#b8742e; --water:#3c8fa8; --water-d:#2a6680; --sky:rgba(200,90,30,.1); }
+.river-bg{ position:absolute; inset:0; pointer-events:none; display:flex; flex-direction:column; }
+.river-bank{ position:relative; flex:0 0 70px; background:linear-gradient(var(--grass), var(--grass-d)); }
+.river-bank.far{ border-bottom:4px solid #6b4a2a; } .river-bank.near{ border-top:4px solid #6b4a2a; }
+.river-water{ position:relative; flex:1; display:flex; flex-direction:column; background:linear-gradient(var(--water-d), var(--water)); }
+.river-flow{ flex:1; border-bottom:1px dashed rgba(255,255,255,.18); opacity:.5;
+  background-image:repeating-linear-gradient(90deg, transparent 0 34px, rgba(255,255,255,.35) 34px 52px, transparent 52px 90px); background-size:90px 3px; background-repeat:repeat-x; background-position:0 60%;
+  animation:river-flow 3s linear infinite; }
+.river-flow.left{ animation-direction:reverse; }
+@keyframes river-flow{ to{ background-position:90px 60%; } }
+.river-sky{ position:absolute; inset:0; background:var(--sky); }
+.scene-2 .river-sky{ background:radial-gradient(circle at 85% 8%, #fff7c2 0 10px, transparent 12px), var(--sky); }
+.reed{ position:absolute; bottom:4px; width:6px; height:34px; border-radius:3px; background:#2e6b3a; }
+.reed::after{ content:""; position:absolute; top:-12px; left:-2px; width:10px; height:16px; border-radius:5px; background:#7a4a2a; }
+.reed.r1{ left:8px; } .reed.r2{ left:20px; height:26px; } .reed.r3{ right:14px; } .reed.r4{ right:10px; top:6px; } .reed.r5{ left:14px; top:10px; height:22px; }
+.river-lives{ font-size:16px; } .river-lives s{ text-decoration:none; filter:grayscale(1); opacity:.35; }
+.river-sign{ top:auto; bottom:6px; color:#1d1b33; background:#fff6dc; border-color:#6b4a2a; box-shadow:0 4px 0 #6b4a2a; }
+.river-pad{ position:absolute; left:0; top:0; width:76px; height:76px; padding:0; border:0; background:none; cursor:pointer; will-change:transform; z-index:2;
+  display:grid; place-items:center; -webkit-tap-highlight-color:transparent; }
+.river-pad-art{ position:absolute; left:0; top:10px; width:76px; height:56px; filter:drop-shadow(0 3px 0 rgba(0,0,0,.2)); }
+.river-pad.live .river-pad-art{ filter:drop-shadow(0 0 6px #fff59a) drop-shadow(0 3px 0 rgba(0,0,0,.2)); }
+.river-pad.sunk .river-pad-art{ animation:river-sink .7s ease-in-out; }
+@keyframes river-sink{ 40%{ transform:translateY(10px) scale(.85); opacity:.4; filter:hue-rotate(-90deg); } }
+.river-num{ position:relative; z-index:1; font-size:19px; font-weight:900; color:#1d1b33; background:#fff; border:2px solid #1d4a2a; border-radius:10px; padding:0 8px; }
+.river-flower{ position:absolute; z-index:2; width:60px; height:52px; padding:0; border:0; background:none; cursor:pointer; display:grid; place-items:center; }
+.river-flower-art{ position:absolute; inset:4px 8px; border-radius:50%;
+  background:radial-gradient(circle,#ffd84a 0 7px,transparent 8px), conic-gradient(from 0deg,#ff8fb1 0 30deg,#ffc2d4 30deg 60deg,#ff8fb1 60deg 90deg,#ffc2d4 90deg 120deg,#ff8fb1 120deg 150deg,#ffc2d4 150deg 180deg,#ff8fb1 180deg 210deg,#ffc2d4 210deg 240deg,#ff8fb1 240deg 270deg,#ffc2d4 270deg 300deg,#ff8fb1 300deg 330deg,#ffc2d4 330deg 360deg);
+  border:2px solid #b84a6e; opacity:.75; }
+.river-flower.live .river-flower-art{ opacity:1; animation:run-bob .5s ease-in-out infinite alternate; }
+.river-frog{ position:absolute; left:0; top:0; width:52px; height:52px; z-index:4; will-change:transform; pointer-events:none; filter:drop-shadow(0 4px 2px rgba(0,0,0,.3)); }
+.river-splash{ position:absolute; z-index:5; width:0; height:0; pointer-events:none; }
+.river-splash::before{ content:""; position:absolute; left:-30px; top:-14px; width:60px; height:28px; border-radius:50%; border:3px solid #fff; animation:river-ring .6s ease-out forwards; }
+.river-splash i{ position:absolute; width:8px; height:8px; margin:-4px; border-radius:50%; background:#bfe9ff; transform:rotate(var(--a)); animation:space-debris .6s ease-out forwards; }
+@keyframes river-ring{ from{ transform:scale(.3); opacity:1; } to{ transform:scale(1.6); opacity:0; } }
+.ttt-card.river-feature{ background:linear-gradient(130deg,#1e6a8a,#1e8a6e 55%,#5cbf5a); }
+.feature-art.river{ background:linear-gradient(#3fa7d6,#2a7fb8); }
+.fa-frog{ left:8px; top:6px; font-size:22px; z-index:1; animation:run-bob .45s ease-in-out infinite alternate; }
+.fa-pad{ left:6px; bottom:6px; width:34px; height:14px; border-radius:50%; background:#5cbf5a; border:2px solid #1d4a2a; }
+
+/* demos */
+.dm-space{ background:radial-gradient(1.5px 1.5px at 30px 40px,#fff,transparent),radial-gradient(1.5px 1.5px at 200px 90px,#fff,transparent),radial-gradient(circle at 50% 120%,#3a2a8a,#070a20 70%); }
+.dm-rock{ border-radius:46% 54% 50% 50%; border:3px solid #1d1b33; background:radial-gradient(circle at 32% 30%, #b7a48f, #7e6a58 60%, #574537); font:900 20px/1 "Baloo 2",system-ui,sans-serif; color:#fff; text-shadow:0 2px 0 #1d1b33; animation:dm-fall 3s linear both; }
+.dm-rock.hit{ animation:dm-burst .3s both; }
+@keyframes dm-fall{ from{ transform:translateY(-90px); } to{ transform:translateY(40px); } }
+.dm-ship{ position:absolute; left:50%; bottom:10px; transform:translateX(-50%) rotate(-45deg); font-size:34px; z-index:3; transition:left .2s; }
+.dm-ship.fire{ left:50%; }
+.dm-beam{ position:absolute; left:calc(50% - 3px); bottom:50px; width:6px; height:120px; background:linear-gradient(#fff,#7fffb0); box-shadow:0 0 10px #7fffb0; animation:space-laser .4s ease-out forwards; z-index:2; }
+.dm-river{ background:linear-gradient(#8fd16a 0 40px, #2a7fb8 40px, #3fa7d6 210px, #8fd16a 210px); }
+.dm-lily{ border-radius:50%; background:#5cbf5a; border:3px solid #1d4a2a; font:900 20px/1 "Baloo 2",system-ui,sans-serif; color:#1d1b33; }
+.dm-lily.l0{ animation:dm-drift 3s ease-in-out infinite alternate; } .dm-lily.l2{ animation:dm-drift 3s ease-in-out infinite alternate-reverse; }
+.dm-lily.hit{ background:#7ED957; }
+@keyframes dm-drift{ to{ transform:translateX(10px); } }
+.dm-frog{ position:absolute; left:50%; top:214px; transform:translateX(-50%); font-size:34px; z-index:3; transition:top .35s cubic-bezier(.3,1.6,.6,1); }
+.dm-frog.hop{ top:112px; }
+/* the cockpit bar over the top of space: HUD + the sum; rocks drop from under it */
+.space-arena::before{ content:""; position:absolute; left:0; right:0; top:0; height:100px; z-index:4; pointer-events:none;
+  background:linear-gradient(#1b1f4a,#11143a); border-bottom:3px solid #1d1b33; box-shadow:0 4px 0 rgba(127,255,176,.25); }
+.space-arena .space-screen{ top:46px; font-size:24px; padding:1px 18px 3px; }

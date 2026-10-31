@@ -115,6 +115,7 @@ export const UNLOCK_AT: Record<string, number> = {
   rhythm: 0, sortg: 0, div9: 0,
   crossword: 0, sq5: 0, x11: 0, crossmath: 0,
   race: 0, sprint: 0, estimate: 0,
+  space: 0, river: 0,
 };
 export const GAME_NAMES: Record<string, [string, string]> = {
   ninja: ["Ninja Slice", "忍者スライス"], runner: ["Math Runner", "計算ランナー"], pop: ["Number Pop", "かずの風船ポップ"],
@@ -125,6 +126,7 @@ export const GAME_NAMES: Record<string, [string, string]> = {
   sortg: ["Smallest First", "小さい順"], div9: ["Divisible by 9?", "9でわれる？"], crossword: ["Number Crossword", "数字クロスワード"], crossmath: ["Cross Math", "クロス計算"],
   sq5: ["Squares ending in 5", "5で終わる数の2乗"], x11: ["× 11", "×11"], race: ["Math Race", "計算レース"],
   sprint: ["Matchstick Sprint", "マッチ棒スプリント"], estimate: ["Estimate", "見積もり"], ttt: ["Tic-Tac-Toe", "三目ならべ"], town: ["Math Town", "マスタウン"],
+  space: ["Space Blaster", "スペースシューター"], river: ["River Hop", "かえるジャンプ"],
 };
 
 /* ?unlockall in the address (or the saved flag) opens everything — for teachers and testing */

@@ -50,7 +50,7 @@ export function useLang(initialLang: LangCode = "en") {
 
 export type UIDict = {
   appName: string;
-  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string; blitz: string; tricks: string; daily: string; review: string; comp: string; match: string; games: string; bigger: string; odd: string; sortg: string; memory: string; quick: string; ttt: string; pop: string; runner: string; race: string; sushi: string; castle: string; konbini: string; crossword: string; crossmath: string; rhythm: string; town: string; ninja: string; party: string };
+  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string; blitz: string; tricks: string; daily: string; review: string; comp: string; match: string; games: string; bigger: string; odd: string; sortg: string; memory: string; quick: string; ttt: string; pop: string; runner: string; race: string; sushi: string; castle: string; konbini: string; crossword: string; crossmath: string; rhythm: string; town: string; ninja: string; party: string; space: string; river: string };
   menu: {
     accountLabel: string; player: string; sound: string; on: string; off: string;
     theme: string; auto: string; light: string; dark: string; skins: string; language: string; signOut: string;
@@ -94,7 +94,7 @@ export type UIDict = {
 export const UI: Record<LangCode, UIDict> = {
   en: {
     appName: "VedAnk Sprint",
-    headerTitles: { home: "VedAnk Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Dojo", blitz: "Speed Quiz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "Games", bigger: "Which is Bigger?", odd: "Odd One Out", sortg: "Smallest First", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense", konbini: "Konbini Cashier", crossword: "Number Crossword", crossmath: "Cross Math", rhythm: "Rhythm Tap", town: "Math Town", ninja: "Ninja Slice", party: "Party Games" },
+    headerTitles: { home: "VedAnk Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Dojo", blitz: "Speed Quiz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "Games", bigger: "Which is Bigger?", odd: "Odd One Out", sortg: "Smallest First", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense", konbini: "Konbini Cashier", crossword: "Number Crossword", crossmath: "Cross Math", rhythm: "Rhythm Tap", town: "Math Town", ninja: "Ninja Slice", party: "Party Games", space: "Space Blaster", river: "River Hop" },
     menu: {
       accountLabel: "Account menu",
       player: "Player",
@@ -226,7 +226,7 @@ export const UI: Record<LangCode, UIDict> = {
   },
   ja: {
     appName: "インド式数学",
-    headerTitles: { home: "インド式数学", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒道場", blitz: "スピードクイズ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "ゲーム", bigger: "どっちが大きい？", odd: "仲間はずれ", sortg: "小さい順", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！", konbini: "コンビニのレジ", crossword: "数字クロスワード", crossmath: "クロス計算", rhythm: "リズムタップ", town: "計算タウン", ninja: "忍者スライス", party: "みんなであそぶ" },
+    headerTitles: { home: "インド式数学", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒道場", blitz: "スピードクイズ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "ゲーム", bigger: "どっちが大きい？", odd: "仲間はずれ", sortg: "小さい順", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！", konbini: "コンビニのレジ", crossword: "数字クロスワード", crossmath: "クロス計算", rhythm: "リズムタップ", town: "計算タウン", ninja: "忍者スライス", party: "みんなであそぶ", space: "スペースシューター", river: "かえるジャンプ" },
     menu: {
       accountLabel: "アカウントメニュー",
       player: "プレイヤー",

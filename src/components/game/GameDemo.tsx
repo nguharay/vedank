@@ -157,6 +157,25 @@ const DEMOS: Record<string, Demo> = {
     caps: [WATCH, ["👆 When the answer reaches the line, tap its lane", "👆 答えが線に来たら、そのレーンをタップ"], ["🎵 Right on the beat = Perfect!", "🎵 ぴったりでパーフェクト！"]],
     turn: ["Tap the lane of the right answer on the beat. Sound on!", "リズムにあわせて答えのレーンをタップ。音を出してね！"],
   },
+  space: {
+    title: ["🚀 Space Blaster", "🚀 スペースシューター"], scene: "dm-space", prompt: "4 × 3",
+    decor: (c) => (<>
+      <span className={`dm-ship${c.hits > 0 ? " fire" : ""}`}>🚀</span>
+      {c.hits > 0 && <span className="dm-beam" />}
+    </>),
+    tiles: ["14", "12", "9"].map((label, i) => ({ x: 22 + i * 92, y: 62 + (i % 2) * 22, w: 66, h: 66, label, cls: `dm-rock r${i}` })),
+    taps: [1],
+    caps: [WATCH, ["👆 Tap the rock with the answer", "👆 答えのいん石をタップ"], ["🛡️ Wrong taps cost a shield", "🛡️ まちがえるとシールドがへる"]],
+    turn: ["Blast the rock with the answer before it reaches your ship.", "いん石が船にとどく前に、答えのいん石をうちおとそう！"],
+  },
+  river: {
+    title: ["🐸 River Hop", "🐸 かえるジャンプ"], scene: "dm-river", prompt: "7 + 5",
+    decor: (c) => <span className={`dm-frog${c.hits > 0 ? " hop" : ""}`}>🐸</span>,
+    tiles: ["13", "12", "11"].map((label, i) => ({ x: 20 + i * 94, y: 112, w: 72, h: 52, label, cls: `dm-lily l${i}` })),
+    taps: [1],
+    caps: [WATCH, ["👆 Tap the lily pad with the answer", "👆 答えのハスの葉をタップ"], ["🌊 Don't drift off the edge!", "🌊 はしまで流されないでね"]],
+    turn: ["Hop on the right pads and cross the river.", "答えのハスの葉にジャンプして、川をわたろう！"],
+  },
   pop: {
     title: ["🎈 Number Pop", "🎈 かずの風船ポップ"], scene: "dm-sky", prompt: "6 + 7",
     tiles: ["11", "13", "15"].map((label, i) => ({ x: 26 + i * 92, y: 70, w: 64, h: 80, label, cls: `dm-balloon b${i}` })),
