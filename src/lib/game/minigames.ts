@@ -398,41 +398,55 @@ export function popUpMs(streak: number): number {
 }
 /* Pop sums are meant to be read and answered in a second or two — this is a
    reflex game, so the arithmetic stays small. It ramps gently: single digits,
-   then teens and the small tables, then the book's easiest tricks. */
+   then teens and the small tables, then the book's easiest tricks. Each tier
+   has ten kinds of sum (about a third ×/÷), so a game doesn't keep opening
+   with the same handful — and no throwaways like "1 × 1". */
 export function popSum(streak: number): { prompt: string; answer: number } {
   const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const coin = () => Math.random() < 0.5;
   const tier = streak < 6 ? 0 : streak < 14 ? 1 : 2;
-  /* six kinds per tier, two of them multiplication — so roughly a third of
-     the sums are ×, and the × ones start very easy (×2, ×3, ×10, doubles) */
-  const k = ri(0, 5);
+  const k = ri(0, 9);
   if (tier === 0) {
     if (k === 0) { const a = ri(2, 9), b = ri(2, 9); return { prompt: `${a} + ${b}`, answer: a + b }; }
-    if (k === 1) { const a = ri(6, 15), b = ri(1, a - 1); return { prompt: `${a} − ${b}`, answer: a - b }; }
-    if (k === 2) { const a = ri(1, 9); return Math.random() < 0.5 ? { prompt: `${a} + 10`, answer: a + 10 } : { prompt: `${a + 10} − 10`, answer: a }; }
-    if (k === 3) { const a = ri(2, 9); return { prompt: `${a} + ${a}`, answer: a + a }; }                 /* doubles */
-    if (k === 4) { const a = ri(1, 9), m = Math.random() < 0.6 ? 2 : 3; return Math.random() < 0.5 ? { prompt: `${a} × ${m}`, answer: a * m } : { prompt: `${m} × ${a}`, answer: a * m }; }
-    const a = ri(1, 9); return Math.random() < 0.5 ? { prompt: `${a} × 10`, answer: a * 10 } : { prompt: `${a} × 1`, answer: a };
+    if (k === 1) { const a = ri(8, 18), b = ri(2, Math.min(9, a - 1)); return { prompt: `${a} − ${b}`, answer: a - b }; }
+    if (k === 2) { const a = ri(2, 9); return coin() ? { prompt: `${a} + 10`, answer: a + 10 } : { prompt: `${a + 10} − 10`, answer: a }; }
+    if (k === 3) { const a = ri(3, 12); return { prompt: `${a} + ${a}`, answer: a + a }; }                       /* doubles */
+    if (k === 4) { const a = ri(3, 9); return { prompt: `${a} + ${a + 1}`, answer: a + a + 1 }; }               /* near doubles */
+    if (k === 5) { const t = coin() ? 10 : 20, a = ri(2, t - 2); return { prompt: `${t} − ${a}`, answer: t - a }; } /* from 10 / 20 */
+    if (k === 6) { const a = ri(2, 6), b = ri(2, 6), c = ri(1, 5); return { prompt: `${a} + ${b} + ${c}`, answer: a + b + c }; }
+    if (k === 7) { const a = ri(2, 9), m = [2, 2, 3, 5][ri(0, 3)]; return coin() ? { prompt: `${a} × ${m}`, answer: a * m } : { prompt: `${m} × ${a}`, answer: a * m }; }
+    if (k === 8) { const a = ri(2, 9); return { prompt: `${a} × 10`, answer: a * 10 }; }
+    const m = ri(2, 3), a = ri(2, 9); return { prompt: `${a * m} ÷ ${m}`, answer: a };                         /* sharing */
   }
   if (tier === 1) {
-    if (k === 0) { const a = ri(11, 29), b = ri(2, 9); return { prompt: `${a} + ${b}`, answer: a + b }; }
-    if (k === 1) { const a = ri(11, 30), b = ri(2, 9); return { prompt: `${a} − ${b}`, answer: a - b }; }
-    if (k === 2) { const a = ri(1, 9) * 10, b = ri(1, 9) * 10; return Math.random() < 0.5 ? { prompt: `${a} + ${b}`, answer: a + b } : { prompt: `${Math.max(a, b)} − ${Math.min(a, b)}`, answer: Math.abs(a - b) }; }
+    if (k === 0) { const a = ri(11, 29), b = ri(3, 9); return { prompt: `${a} + ${b}`, answer: a + b }; }
+    if (k === 1) { const a = ri(12, 35), b = ri(3, 9); return { prompt: `${a} − ${b}`, answer: a - b }; }
+    if (k === 2) { const a = ri(2, 9) * 10, b = ri(1, a / 10 - 1) * 10; return coin() ? { prompt: `${a} + ${b}`, answer: a + b } : { prompt: `${a} − ${b}`, answer: a - b }; }
     if (k === 3) { const a = ri(2, 9), m = [4, 5][ri(0, 1)]; return { prompt: `${a} × ${m}`, answer: a * m }; }   /* ×4, ×5 */
-    if (k === 4) { const a = ri(2, 9), b = ri(2, 9); return { prompt: `${a} × ${b}`, answer: a * b }; }          /* the tables */
-    const a = ri(11, 49); return { prompt: `${a} + 9`, answer: a + 9 };                                       /* +9: add 10, take 1 */
+    if (k === 4) { const a = ri(3, 9), b = ri(3, 9); return { prompt: `${a} × ${b}`, answer: a * b }; }          /* the tables */
+    if (k === 5) { const a = ri(11, 49); return coin() ? { prompt: `${a} + 9`, answer: a + 9 } : { prompt: `${a + 9} − 9`, answer: a }; } /* ±9: ±10, ∓1 */
+    if (k === 6) { const a = ri(1, 4) * 10 + ri(1, 4), b = ri(1, 4) * 10 + ri(1, 5); return { prompt: `${a} + ${b}`, answer: a + b }; } /* no carrying */
+    if (k === 7) { const a = ri(6, 25) * 2; return { prompt: `${a} ÷ 2`, answer: a / 2 }; }                      /* halves */
+    if (k === 8) { const a = ri(3, 47); return { prompt: `50 − ${a}`, answer: 50 - a }; }
+    const m = ri(3, 6), a = ri(3, 9); return { prompt: `${a * m} ÷ ${m}`, answer: a };
   }
-  if (k === 0) { const a = ri(12, 25); return { prompt: `${a} × 11`, answer: a * 11 }; }
+  if (k === 0) { const a = ri(12, 35); return { prompt: `${a} × 11`, answer: a * 11 }; }
   if (k === 1) { const a = ri(11, 89); return { prompt: `100 − ${a}`, answer: 100 - a }; }
   if (k === 2) { const a = ri(1, 2) * 10 + 5; return { prompt: `${a}²`, answer: a * a }; }
   if (k === 3) { const a = ri(12, 49) * 2; return { prompt: `${a} × 5`, answer: a * 5 }; }                    /* ×5 = half of ×10 */
-  if (k === 4) { const a = ri(11, 19), b = ri(2, 5); return { prompt: `${a} × ${b}`, answer: a * b }; }
-  const a = ri(12, 40), b = ri(1, 2) * 10 + 9; return { prompt: `${a} + ${b}`, answer: a + b };
+  if (k === 4) { const a = ri(11, 19), b = ri(2, 6); return { prompt: `${a} × ${b}`, answer: a * b }; }
+  if (k === 5) { const a = ri(12, 40), b = ri(1, 3) * 10 + 9; return { prompt: `${a} + ${b}`, answer: a + b }; }
+  if (k === 6) { const a = ri(3, 12); return { prompt: `${a} × 9`, answer: a * 9 }; }                         /* ×9 = ×10 − once */
+  if (k === 7) { const a = ri(2, 9); return { prompt: `${a} × 25`, answer: a * 25 }; }
+  if (k === 8) { const a = ri(11, 19), b = ri(11, 19); return { prompt: `${a} + ${b}`, answer: a + b }; }
+  const m = ri(6, 9), a = ri(4, 12); return { prompt: `${a * m} ÷ ${m}`, answer: a };
 }
 
 /* Variety rules for a run of sums: never the same sum within the last few,
-   never three of one kind (+, −, ×) in a row, and a × at least every fourth.
-   A sum that breaks a rule is drawn again (a few tries, then let through). */
-const opOf = (p: string) => (p.includes("×") || p.includes("²") ? "×" : p.includes("−") ? "−" : "+");
+   never three of one kind (+, −, ×/÷) in a row, and a ×/÷ at least every
+   fourth. A sum that breaks a rule is drawn again (a few tries, then let
+   through). */
+const opOf = (p: string) => (p.includes("×") || p.includes("²") || p.includes("÷") ? "×" : p.includes("−") ? "−" : "+");
 function fitsRun(prompt: string, recent: string[]): boolean {
   if (recent.slice(-8).includes(prompt)) return false;
   const op = opOf(prompt), last = recent.slice(-3).map(opOf);
@@ -445,12 +459,40 @@ function pickFor(streak: number, recent: string[]): { prompt: string; answer: nu
   for (let i = 0; i < 12 && !fitsRun(s.prompt, recent); i++) s = popSum(streak);
   return s;
 }
+
+/* The sums this phone has shown lately, across every game and every visit,
+   so the next game doesn't open with the ones you just did. (Room races
+   draw from a shared seed instead — they must match on every phone.) */
+const SEEN_KEY = "sutraSprint.seenSums";
+const SEEN_MAX = 80;
+let seen: string[] | null = null;
+function seenList(): string[] {
+  if (seen) return seen;
+  try { const v = JSON.parse(localStorage.getItem(SEEN_KEY) || "[]"); seen = Array.isArray(v) ? v.filter((x) => typeof x === "string") : []; } catch { seen = []; }
+  return seen!;
+}
+function markSeen(prompt: string) {
+  const list = seenList();
+  list.push(prompt);
+  if (list.length > SEEN_MAX) list.splice(0, list.length - SEEN_MAX);
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify(list)); } catch {}
+}
+/* draw until a sum fits the run and wasn't seen lately (then settle for one that fits) */
+function drawFresh(draw: () => { prompt: string; answer: number }, recent: string[], fits = fitsRun): { prompt: string; answer: number } {
+  const old = seenList();
+  let s = draw();
+  for (let i = 0; i < 24; i++) {
+    if (fits(s.prompt, recent) && (i >= 16 || !old.includes(s.prompt))) break;
+    s = draw();
+  }
+  recent.push(s.prompt);
+  if (recent.length > 10) recent.shift();
+  markSeen(s.prompt);
+  return s;
+}
 const recentPrompts: string[] = [];
 function freshSum(streak: number): { prompt: string; answer: number } {
-  const s = pickFor(streak, recentPrompts);
-  recentPrompts.push(s.prompt);
-  if (recentPrompts.length > 10) recentPrompts.shift();
-  return s;
+  return drawFresh(() => popSum(streak), recentPrompts);
 }
 
 export function buildPopRound(streak: number): PopRound {
@@ -712,17 +754,24 @@ export function castlePoints(wave: number, boss: boolean): number {
      w5+ 100 − x, 2-digit ×11, 15²–45², ×9, x + 29
      w8+ 1000 − x, teens × teens (base 10), up to 95², ×5, 9-ending adds
    Each wave also mixes in some of the previous tier so it never jumps. */
+const castleRecent: string[] = [];
 export function castleQuestion(wave: number): ChoiceRound {
   const ri = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
   const tiers: (() => { prompt: string; answer: number })[][] = [
     [
-      () => { const a = ri(1, 9), b = ri(1, 9); return { prompt: `${a} + ${b}`, answer: a + b }; },
-      () => { const a = ri(5, 10), b = ri(1, a - 1); return { prompt: `${a} − ${b}`, answer: a - b }; },
+      () => { const a = ri(2, 9), b = ri(2, 9); return { prompt: `${a} + ${b}`, answer: a + b }; },
+      () => { const a = ri(6, 12), b = ri(2, a - 2); return { prompt: `${a} − ${b}`, answer: a - b }; },
+      () => { const a = ri(2, 9); return { prompt: `${a} + ${a}`, answer: a + a }; },
+      () => { const a = ri(2, 8); return { prompt: `10 − ${a}`, answer: 10 - a }; },
+      () => { const a = ri(2, 9); return { prompt: `${a} + 10`, answer: a + 10 }; },
     ],
     [
       () => { const a = ri(11, 19), b = ri(2, 9); return { prompt: `${a} + ${b}`, answer: a + b }; },
       () => { const a = ri(11, 20), b = ri(2, 9); return { prompt: `${a} − ${b}`, answer: a - b }; },
-      () => { const a = ri(2, 5), b = ri(2, 5); return { prompt: `${a} × ${b}`, answer: a * b }; },
+      () => { const a = ri(2, 5), b = ri(2, 6); return { prompt: `${a} × ${b}`, answer: a * b }; },
+      () => { const a = ri(3, 9); return { prompt: `${a} + ${a + 1}`, answer: a + a + 1 }; },
+      () => { const a = ri(3, 10) * 2; return { prompt: `${a} ÷ 2`, answer: a / 2 }; },
+      () => { const a = ri(3, 17); return { prompt: `20 − ${a}`, answer: 20 - a }; },
     ],
     [
       () => { const a = ri(3, 9), b = ri(3, 9); return { prompt: `${a} × ${b}`, answer: a * b }; },
@@ -755,7 +804,8 @@ export function castleQuestion(wave: number): ChoiceRound {
   /* a third of the time, a sum from the tier below */
   const tier = top > 0 && Math.random() < 0.33 ? top - 1 : top;
   const gens = tiers[Math.max(0, tier)];
-  return choiceFor(gens[Math.floor(Math.random() * gens.length)]());
+  /* castle waves set their own mix of kinds, so only "not a repeat" applies */
+  return choiceFor(drawFresh(() => gens[Math.floor(Math.random() * gens.length)](), castleRecent, (p, r) => !r.slice(-8).includes(p)));
 }
 
 /* ---------- 🏪 Konbini Cashier ----------

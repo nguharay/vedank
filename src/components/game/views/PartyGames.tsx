@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { ChoiceRound } from "@/lib/game/minigames";
 import { SITE_URL } from "@/lib/site";
-import { haptic } from "../util";
+import { fmt, haptic } from "../util";
 import { Person } from "../Person";
 import { Mascot } from "../Mascot";
 import type { useSound } from "../useSound";
@@ -19,7 +20,7 @@ import {
 } from "@/lib/game/party";
 import { soloStart, soloAnswer, soloTick, SOLO_LEVELS, SOLO_ME, type SoloLevel } from "@/lib/game/partySolo";
 
-/* ---------- party games: Tug of War, Buzzer Quiz, Math Bingo, Space Race, Frog Race ----------
+/* ---------- party games: Tug of War, Buzzer Quiz, Math Bingo, Space Blaster, River Hop ----------
    One screen for all five. The room part (make / join by code / share /
    host starts / play again) is shared; the middle is drawn per game. Like
    the online race the room is polled once a second and the clock is lined
@@ -361,8 +362,8 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
             ))}
           </div>
           <div className="party-picks">
-            {PARTY_GAMES.map((g) => (
-              <div key={g} className={`party-pick ${g}`}>
+            {(initialGame === "tug" ? PARTY_GAMES : [initialGame, ...PARTY_GAMES.filter((g) => g !== initialGame)]).map((g) => (
+              <div key={g} className={`party-pick ${g}${g === initialGame && g !== "tug" ? " first" : ""}`}>
                 <span className="party-pick-ico">{PARTY_NAMES[g][0]}</span>
                 <span className="party-pick-txt">
                   <b>{ja ? PARTY_NAMES[g][2] : PARTY_NAMES[g][1]}</b>
@@ -484,8 +485,12 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
 
       {q && (
         <>
-          <div className="race-q mono">{q.prompt} = ?</div>
-          <div className={`party-ans-${game}`}><Answers round={q} onPick={pick} picked={picked} disabled={lock} /></div>
+          {isRaceGame(game)
+            ? <ArcadeAnswers game={game} round={q} idx={myDone} onPick={pick} picked={picked} disabled={lock} ja={ja} />
+            : <>
+                <div className="race-q mono">{q.prompt} = ?</div>
+                <Answers round={q} onPick={pick} picked={picked} disabled={lock} />
+              </>}
           {lock && game === "buzz" && <p className="party-lock">{taken
             ? (ja ? `🔔 ${taken} が先に答えた！次の問題を待ってね` : `🔔 ${taken} answered first! Wait for the next one`)
             : (ja ? "おてつき！ちょっと待ってね" : "Oops, wait a moment")}</p>}
@@ -531,8 +536,8 @@ function GamePicker({ current, ja, canPick, busy, onPick, label }: {
 function blurb(g: PartyGame, ja: boolean) {
   if (g === "tug") return ja ? "2チームで対決。正解でつなを引こう！" : "Two teams. Every right answer pulls the rope!";
   if (g === "buzz") return ja ? "同じ問題を早いもの勝ち！" : "Same sum for all, fastest wins the point!";
-  if (g === "space") return ja ? "正解でいん石を撃って、ロケットで星までレース！" : "Blast asteroids and race your rocket to the planet!";
-  if (g === "river") return ja ? "正解でジャンプ！先に川をわたったら勝ち。" : "Every right answer is a hop. First across the river wins!";
+  if (g === "space") return ja ? "答えのいん石をうちおとして、先に星に着いたら勝ち！" : "Blast the answer rocks. First rocket to the planet wins!";
+  if (g === "river") return ja ? "答えのハスの葉にジャンプ！先に川をわたったら勝ち。" : "Hop to the answer pads. First across the river wins!";
   return ja ? "自分のカードで計算ビンゴ！1列そろえたら勝ち。" : "Mark the sums on your own card. First full line wins!";
 }
 
@@ -670,7 +675,7 @@ function lanesOf(ranked: PartyRoomView["players"], n: number) {
   return top;
 }
 
-/* ---- 🚀 Space Race: rockets fly up to a friendly planet ---- */
+/* ---- 🚀 Space Blaster race: rockets fly up to a friendly planet ---- */
 function SpaceRaceStage({ room, ja, ranked, pulse }: { room: PartyRoomView; ja: boolean; ranked: PartyRoomView["players"]; pulse: number }) {
   const goal = RACE_GOAL.space;
   const lanes = lanesOf(ranked, 6);
@@ -704,7 +709,7 @@ function SpaceRaceStage({ room, ja, ranked, pulse }: { room: PartyRoomView; ja: 
   );
 }
 
-/* ---- 🐸 Frog Race: each player's frog hops along a row of lily pads ---- */
+/* ---- 🐸 River Hop race: each player's frog hops along a row of lily pads ---- */
 function FrogRaceStage({ ja, ranked, pulse }: { ja: boolean; ranked: PartyRoomView["players"]; pulse: number }) {
   const goal = RACE_GOAL.river;
   const lanes = lanesOf(ranked, 6);
@@ -732,6 +737,70 @@ function FrogRaceStage({ ja, ranked, pulse }: { ja: boolean; ranked: PartyRoomVi
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/* ---- the races play like the arcade games: the choices are asteroids to
+   blast (Space Blaster) or lily pads to hop onto (River Hop). The field is
+   rebuilt for each sum (keyed by idx), so the rocks start falling afresh. ---- */
+const SLOT_X = [18, 50, 82];
+function ArcadeAnswers({ game, round, idx, onPick, picked, disabled, ja }: {
+  game: "space" | "river"; round: ChoiceRound; idx: number; onPick: (v: number) => void; picked: number | null; disabled: boolean; ja: boolean;
+}) {
+  const [shot, setShot] = useState<{ k: number; x: number; y: number } | null>(null);
+  const [k, setK] = useState(0);
+  function tap(v: number, i: number, el: HTMLElement) {
+    if (disabled || picked !== null) return;
+    if (v === round.answer) {
+      const nk = k + 1;
+      /* where the rock is right now, so the laser and the blast meet it */
+      const box = el.closest(".parc")?.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      setK(nk); setShot({ k: nk, x: SLOT_X[i], y: box ? r.top + r.height / 2 - box.top : 120 });
+      setTimeout(() => setShot((cur) => (cur?.k === nk ? null : cur)), 520);
+    }
+    onPick(v);
+  }
+  const x = shot?.x ?? 50;
+  return (
+    <div className={`parc parc-${game}`}>
+      {game === "space" ? <span className="parc-stars" aria-hidden="true" /> : <span className="parc-water" aria-hidden="true" />}
+      <div className="parc-screen mono">{round.prompt} = ?</div>
+      <div key={`f${idx}`} className="parc-field">
+        {round.options.map((o, i) => (
+          <button key={o} className={`parc-item i${i}${disabled && picked === o && o !== round.answer ? " wrong" : ""}`} style={{ left: `${SLOT_X[i]}%` }}
+            onPointerDown={(e) => { e.preventDefault(); tap(o, i, e.currentTarget); }} disabled={disabled} aria-label={fmt(o)}>
+            <span className="parc-body mono">{fmt(o)}</span>
+          </button>
+        ))}
+      </div>
+      {game === "space" && shot && (
+        <span key={`s${shot.k}`} aria-hidden="true">
+          <i className="parc-laser" style={{ left: `${shot.x}%`, top: shot.y }} />
+          <i className="parc-boom" style={{ left: `${shot.x}%`, top: shot.y }} />
+        </span>
+      )}
+      {game === "space" ? (
+        <span className="parc-ship" style={{ left: `${x}%` }} aria-hidden="true">
+          <svg viewBox="0 0 64 80" width="44" height="55">
+            <path d="M32 4 C44 16 48 34 46 56 L18 56 C16 34 20 16 32 4Z" fill="#ffd84a" stroke="#1d1b33" strokeWidth="4" />
+            <circle cx="32" cy="28" r="8" fill="#5bc8f5" stroke="#1d1b33" strokeWidth="3.5" />
+            <path d="M18 40 L6 60 L18 56Z M46 40 L58 60 L46 56Z" fill="#ff5a5f" stroke="#1d1b33" strokeWidth="3.5" strokeLinejoin="round" />
+          </svg>
+          <i className="srace-flame" />
+        </span>
+      ) : (
+        <span key={`frog${shot?.k ?? 0}`} className={`parc-frog${shot ? " jump" : ""}`} style={{ left: `${x}%` }} aria-hidden="true">
+          <svg viewBox="0 0 52 52" width="46" height="46">
+            <ellipse cx="26" cy="32" rx="19" ry="15" fill="#7ed957" stroke="#1d4a2a" strokeWidth="3.5" />
+            <circle cx="16" cy="17" r="8" fill="#7ed957" stroke="#1d4a2a" strokeWidth="3.5" /><circle cx="36" cy="17" r="8" fill="#7ed957" stroke="#1d4a2a" strokeWidth="3.5" />
+            <circle cx="17" cy="16" r="3" fill="#1d1b33" /><circle cx="37" cy="16" r="3" fill="#1d1b33" />
+            <path d="M17 34 Q26 41 35 34" stroke="#1d4a2a" strokeWidth="3" fill="none" strokeLinecap="round" />
+          </svg>
+        </span>
+      )}
+      <span className="parc-tip">{game === "space" ? (ja ? "答えのいん石をタップ！" : "Tap the answer rock!") : (ja ? "答えのハスの葉にジャンプ！" : "Hop to the answer pad!")}</span>
     </div>
   );
 }

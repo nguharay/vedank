@@ -7,7 +7,7 @@ import type { useSound } from "../useSound";
 import { castleQuestion } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
-type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; autoStart?: boolean; onCorrect?: (n: number) => void };
+type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; autoStart?: boolean; onCorrect?: (n: number) => void; onFriends?: () => void };
 
 /* ---------- 🚀 Space Blaster ----------
    Asteroids drift down from the top of space, each carrying a number. A sum
@@ -54,7 +54,7 @@ function readBest() { try { return Number(localStorage.getItem(BEST_KEY) || 0); 
 function writeBest(v: number) { try { localStorage.setItem(BEST_KEY, String(v)); } catch {} }
 const rand = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 
-export function SpaceBlaster({ lang, sound, celebrate, autoStart, onCorrect }: Props) {
+export function SpaceBlaster({ lang, sound, celebrate, autoStart, onCorrect, onFriends }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "play" | "over">("ready");
   const [rocks, setRocks] = useState<Rock[]>([]);
@@ -345,6 +345,7 @@ export function SpaceBlaster({ lang, sound, celebrate, autoStart, onCorrect }: P
                   : "Number rocks are falling! Tap the rock with the answer to blast it. Wrong taps cost a shield. Every 8 answers a UFO attacks!"}
             </p>
             <button className="btn btn-primary" onClick={start}>{ja ? "発進！" : "Launch!"}</button>
+            {onFriends && <button className="btn arcade-friends" onClick={onFriends}>👥 {ja ? "友だちと対戦" : "Race your friends"}</button>}
           </div>
         )}
         {phase === "over" && <RunResults game="space" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} detail={ja ? `${hits}こ撃破・Lv ${level}` : `${hits} blasted · Lv ${level}`} />}
@@ -353,6 +354,7 @@ export function SpaceBlaster({ lang, sound, celebrate, autoStart, onCorrect }: P
             <div className="rg-card-title">{newBest && score > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "ミッション終了" : "Mission over")}</div>
             <div className="match-done-line mono">{score} {ja ? "点" : "pts"} · {ja ? `${hits}こ撃破` : `${hits} blasted`} · {ja ? "ベスト" : "best"} {best}</div>
             <button className="btn btn-primary" onClick={start}>{ja ? "もう一回" : "Again"}</button>
+            {onFriends && <button className="btn arcade-friends" onClick={onFriends}>👥 {ja ? "友だちと対戦" : "Race your friends"}</button>}
           </div>
         )}
       </div>
