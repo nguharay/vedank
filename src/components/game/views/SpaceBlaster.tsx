@@ -23,7 +23,7 @@ type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; autoStart
    (like Ninja Slice); taps are plain pointer-downs on the rocks. */
 const BEST_KEY = "sutraSprint.spaceBest";
 const SHIELDS = 3;
-const ROCK_HALF = 34;             /* rocks are 68px; positions are their centres */
+const ROCK_HALF = 42;             /* rocks are 84px; positions are their centres */
 const SHIP_Y = 58;                /* the ship's centre, from the bottom */
 const TOP = 100;                  /* the cockpit bar: rocks and the UFO come out from under it */
 const BOSS_EVERY = 8;
@@ -106,7 +106,7 @@ export function SpaceBlaster({ lang, sound, celebrate, autoStart, onCorrect, onF
     const from = st.boss;
     opts.forEach((value, i) => {
       const lane = lanes[i];
-      const x = w * (0.13 + (0.74 * (lane + 0.5)) / n) + rand(-10, 10);
+      const x = w * (0.08 + (0.84 * (lane + 0.5)) / n) + rand(-6, 6);
       /* from the boss (when there is one) or from just above the top */
       const y = from ? from.y + 40 : TOP - ROCK_HALF - rand(0, 50);
       st.rocks.push({ id: st.nextId++, x: from ? from.x : x, y, vy: fallSpeed(st.level) * rand(0.9, 1.12), spin: rand(-40, 40), value, wave: st.wave, gone: false });

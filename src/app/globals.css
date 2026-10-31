@@ -4670,12 +4670,12 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
   color:#7fffb0; background:#0d1b2a; border:3px solid #7fffb0; border-radius:14px; padding:2px 18px 4px; box-shadow:0 0 18px rgba(127,255,176,.45), 0 4px 0 #1d1b33;
   animation:space-screen-in .3s ease-out both; pointer-events:none; }
 @keyframes space-screen-in{ from{ opacity:0; transform:translate(-50%,-10px) scale(.9); } }
-.space-rock{ position:absolute; left:0; top:0; width:68px; height:68px; padding:0; border:0; background:none; cursor:pointer; will-change:transform; z-index:3; -webkit-tap-highlight-color:transparent; }
+.space-rock{ position:absolute; left:0; top:0; width:84px; height:84px; padding:0; border:0; background:none; cursor:pointer; will-change:transform; z-index:3; -webkit-tap-highlight-color:transparent; }
 .space-rock-body{ position:absolute; inset:0; border-radius:46% 54% 50% 50% / 52% 46% 54% 48%; border:3px solid #1d1b33;
   background:radial-gradient(circle at 32% 30%, #b7a48f, #7e6a58 60%, #574537); box-shadow:inset -6px -6px 0 rgba(0,0,0,.18); }
 .space-rock-body i{ position:absolute; border-radius:50%; background:rgba(60,45,35,.55); box-shadow:inset 2px 2px 0 rgba(0,0,0,.25); }
-.space-rock-body .c1{ width:14px; height:14px; left:10px; top:12px; } .space-rock-body .c2{ width:9px; height:9px; right:12px; top:20px; } .space-rock-body .c3{ width:11px; height:11px; left:28px; bottom:9px; }
-.space-rock-num{ position:relative; z-index:1; display:inline-block; font-size:19px; font-weight:900; color:#1d1b33; background:#fff; border:2px solid #1d1b33; border-radius:10px; padding:0 7px; }
+.space-rock-body .c1{ width:17px; height:17px; left:12px; top:15px; } .space-rock-body .c2{ width:11px; height:11px; right:15px; top:24px; } .space-rock-body .c3{ width:14px; height:14px; left:35px; bottom:11px; }
+.space-rock-num{ position:relative; z-index:1; display:inline-block; font-size:23px; font-weight:900; color:#1d1b33; background:#fff; border:2px solid #1d1b33; border-radius:10px; padding:0 7px; }
 .space-rock:active .space-rock-body{ filter:brightness(1.2); }
 .space-ship{ position:absolute; bottom:22px; z-index:4; width:56px; height:70px; transform:translateX(-50%); transition:left .14s ease-out; pointer-events:none; }
 .space-flame{ position:absolute; left:50%; bottom:-14px; width:14px; height:20px; margin-left:-7px; border-radius:50% 50% 50% 50% / 30% 30% 70% 70%;
@@ -4739,13 +4739,13 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .reed.r1{ left:8px; } .reed.r2{ left:20px; height:26px; } .reed.r3{ right:14px; } .reed.r4{ right:10px; top:6px; } .reed.r5{ left:14px; top:10px; height:22px; }
 .river-lives{ font-size:16px; } .river-lives s{ text-decoration:none; filter:grayscale(1); opacity:.35; }
 .river-sign{ top:auto; bottom:6px; color:#1d1b33; background:#fff6dc; border-color:#6b4a2a; box-shadow:0 4px 0 #6b4a2a; }
-.river-pad{ position:absolute; left:0; top:0; width:76px; height:76px; padding:0; border:0; background:none; cursor:pointer; will-change:transform; z-index:2;
+.river-pad{ position:absolute; left:0; top:0; width:92px; height:92px; padding:0; border:0; background:none; cursor:pointer; will-change:transform; z-index:2;
   display:grid; place-items:center; -webkit-tap-highlight-color:transparent; }
-.river-pad-art{ position:absolute; left:0; top:10px; width:76px; height:56px; filter:drop-shadow(0 3px 0 rgba(0,0,0,.2)); }
+.river-pad-art{ position:absolute; left:0; top:12px; width:92px; height:68px; filter:drop-shadow(0 3px 0 rgba(0,0,0,.2)); }
 .river-pad.live .river-pad-art{ filter:drop-shadow(0 0 6px #fff59a) drop-shadow(0 3px 0 rgba(0,0,0,.2)); }
 .river-pad.sunk .river-pad-art{ animation:river-sink .7s ease-in-out; }
 @keyframes river-sink{ 40%{ transform:translateY(10px) scale(.85); opacity:.4; filter:hue-rotate(-90deg); } }
-.river-num{ position:relative; z-index:1; font-size:19px; font-weight:900; color:#1d1b33; background:#fff; border:2px solid #1d4a2a; border-radius:10px; padding:0 8px; }
+.river-num{ position:relative; z-index:1; font-size:22px; font-weight:900; color:#1d1b33; background:#fff; border:2px solid #1d4a2a; border-radius:10px; padding:0 8px; }
 .river-flower{ position:absolute; z-index:2; width:60px; height:52px; padding:0; border:0; background:none; cursor:pointer; display:grid; place-items:center; }
 .river-flower-art{ position:absolute; inset:4px 8px; border-radius:50%;
   background:radial-gradient(circle,#ffd84a 0 7px,transparent 8px), conic-gradient(from 0deg,#ff8fb1 0 30deg,#ffc2d4 30deg 60deg,#ff8fb1 60deg 90deg,#ffc2d4 90deg 120deg,#ff8fb1 120deg 150deg,#ffc2d4 150deg 180deg,#ff8fb1 180deg 210deg,#ffc2d4 210deg 240deg,#ff8fb1 240deg 270deg,#ffc2d4 270deg 300deg,#ff8fb1 300deg 330deg,#ffc2d4 330deg 360deg);
@@ -4832,7 +4832,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 
 /* ---------- party races, arcade style: blast the rock / hop to the pad ---------- */
 .party-space .party-stage, .party-river .party-stage{ height:clamp(150px, calc(100dvh - 590px), 230px); }
-.parc{ position:relative; height:clamp(230px, 34dvh, 300px); margin-top:10px; border-radius:22px; overflow:hidden; border:3px solid var(--ink-line); touch-action:manipulation; user-select:none; }
+.parc{ position:relative; height:clamp(260px, 38dvh, 340px); margin-top:10px; border-radius:22px; overflow:hidden; border:3px solid var(--ink-line); touch-action:manipulation; user-select:none; }
 .parc-space{ background:radial-gradient(ellipse at 50% 120%, #3a2a8a 0%, #141640 55%, #070a20 100%); }
 .parc-stars{ position:absolute; inset:-100% 0 0; opacity:.8; animation:space-scroll 9s linear infinite;
   background-image:radial-gradient(1.5px 1.5px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 120px 80px,#cfe3ff,transparent),radial-gradient(2px 2px at 200px 150px,#fff,transparent),radial-gradient(1px 1px at 70px 190px,#fff,transparent);
@@ -4845,13 +4845,13 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
   font-size:clamp(22px, 5vw, 30px); font-weight:900; white-space:nowrap; background:#11143a; color:#7fffb0; border:3px solid #1d1b33; box-shadow:0 0 0 2px rgba(127,255,176,.35); }
 .parc-river .parc-screen{ top:26px; background:#fff; color:#1d1b33; box-shadow:0 4px 0 #1d4a2a; border-color:#1d4a2a; }
 .parc-field{ position:absolute; inset:0; z-index:2; }
-.parc-item{ position:absolute; top:0; width:clamp(74px, 22vw, 96px); height:clamp(74px, 22vw, 96px); margin-left:calc(clamp(74px, 22vw, 96px) / -2);
+.parc-item{ position:absolute; top:0; width:clamp(90px, 27vw, 118px); height:clamp(90px, 27vw, 118px); margin-left:calc(clamp(90px, 27vw, 118px) / -2);
   padding:0; border:0; background:none; cursor:pointer; -webkit-tap-highlight-color:transparent; }
-.parc-body{ display:grid; place-items:center; width:100%; height:100%; font-size:clamp(22px, 6vw, 30px); font-weight:900; }
+.parc-body{ display:grid; place-items:center; width:100%; height:100%; font-size:clamp(26px, 7.5vw, 36px); font-weight:900; }
 .parc-space .parc-field{ top:64px; bottom:76px; }
 .parc-space .parc-item{ animation:parc-fall 9s cubic-bezier(.2,.4,.5,1) both; }
 .parc-space .parc-item.i1{ animation-delay:-.7s; } .parc-space .parc-item.i2{ animation-delay:-.3s; }
-@keyframes parc-fall{ from{ top:0; } to{ top:calc(100% - clamp(74px, 22vw, 96px)); } }
+@keyframes parc-fall{ from{ top:0; } to{ top:calc(100% - clamp(90px, 27vw, 118px)); } }
 /* the rock spins, the number on it stays upright (no 6/9 mix-ups) */
 .parc-space .parc-body{ position:relative; color:#fff; text-shadow:0 2px 0 #1d1b33, 0 0 6px #1d1b33; }
 .parc-space .parc-body::before{ content:""; position:absolute; inset:0; z-index:-1; border:3px solid #1d1b33; border-radius:46% 54% 50% 50% / 52% 46% 54% 48%;
