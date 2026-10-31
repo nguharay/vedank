@@ -9,16 +9,18 @@
      🔔 Buzzer Quiz  everyone sees the same sum; the first right answer takes
                      the point. BUZZ_QS questions; a wrong tap locks you out
                      of that question for a moment.
-     🐉 Boss Battle  everyone against one dragon. Right answers hit it. Every
-                     BOSS_WAVE_MS it breathes fire — the team blocks it if they
-                     landed enough hits in that wave, otherwise a heart is lost.
+     🎯 Math Bingo   everyone has their own 3×3 card of answers; a sum is
+                     called every BINGO_CALL_MS for all. Tap its answer on your
+                     card (any sum called so far counts). First full line —
+                     across, down or diagonal — wins; if nobody gets one before
+                     the calls run out, the most marks wins.
 
    Pure functions only: the server stores the state and checks answers, the
    client draws it. */
 import { raceQuestion, type ChoiceRound } from "./minigames";
 
-export type PartyGame = "tug" | "buzz" | "boss";
-export const PARTY_GAMES: PartyGame[] = ["tug", "buzz", "boss"];
+export type PartyGame = "tug" | "buzz" | "bingo";
+export const PARTY_GAMES: PartyGame[] = ["tug", "buzz", "bingo"];
 export const PARTY_ROOM_MAX = 50;
 export const PARTY_COUNTDOWN_MS = 3500;
 
@@ -29,13 +31,11 @@ export const BUZZ_QS = 10;
 export const BUZZ_Q_MS = 15_000;     /* a question nobody gets moves on after this */
 export const BUZZ_GAP_MS = 2200;     /* "Riko got it!" before the next one */
 
-export const BOSS_WAVE_MS = 10_000;
-export const BOSS_WAVES = 12;        /* two minutes; a boss still standing then wins */
-export const BOSS_HEARTS = 5;
-/* alone (solo) the dragon is smaller and a wave needs fewer hits */
-export const bossHp = (players: number) => (players <= 1 ? 20 : 14 * players);
-export const bossNeed = (players: number) => (players <= 1 ? 3 : 2 * players);  /* hits a wave to block the fire */
+export const BINGO_CALLS = 20;
+export const BINGO_CALL_MS = 5000;   /* a new sum every 5 s — 1 m 40 s at most */
+export const BINGO_POOL = 14;        /* cards are drawn from the first 14 calls, so lines come in time */
 
+/* `done`: answers so far (tug); for bingo, the marked cells as a 9-bit mask */
 export type PartyPlayer = { name: string; joinedAt: number; slot: number; team: 0 | 1; done: number };
 export type PartyState = {
   game: PartyGame;
@@ -43,15 +43,15 @@ export type PartyState = {
   startAt: number | null;
   round: number;
   players: Record<string, PartyPlayer>;
-  /* buzz */
+  /* buzz: the winner of each question; bingo: wins[0] is who called BINGO first */
   q: number;
   qAt: number;
   wins: (string | null)[];
-  /* boss: hits landed in each wave, keyed by wave number */
+  /* (kept for rooms made before Boss Battle left; unused) */
   waves: Record<string, number>;
 };
 
-/* Each player's own sums (tug, boss): seeded by the room and their slot, so
+/* Each player's own sums (tug): seeded by the room and their slot, so
    the server can check an answer without storing the questions. */
 export const partyQuestion = (seed: number, slot: number, idx: number): ChoiceRound => raceQuestion((seed + slot * 7919) >>> 0, idx);
 /* The buzzer's shared sum for question q. */
@@ -74,39 +74,61 @@ export function tugInfo(st: PartyState, now: number): TugInfo {
   return { red: sum(0), white: sum(1), redN: side(0).length, whiteN: side(1).length, pos, endsAt, winner };
 }
 
-export type BossInfo = { hp: number; dmg: number; need: number; wave: number; waveHits: number; heartsLost: number; waveEndsAt: number; result: "win" | "lose" | null; lostIn: number[] };
-export function bossInfo(st: PartyState, now: number): BossInfo {
-  const n = Object.keys(st.players).length;
-  const hp = bossHp(n), need = bossNeed(n);
-  const dmg = Object.values(st.players).reduce((a, p) => a + p.done, 0);
-  const t = Math.max(0, now - (st.startAt ?? now));
-  const wave = Math.min(BOSS_WAVES - 1, Math.floor(t / BOSS_WAVE_MS));
-  /* waves that have finished: did the team block the fire? */
-  const finished = Math.min(BOSS_WAVES, Math.floor(t / BOSS_WAVE_MS));
-  const lostIn: number[] = [];
-  for (let w = 0; w < finished; w++) if ((st.waves[String(w)] ?? 0) < need) lostIn.push(w);
-  /* the boss falls the moment the hits reach its HP — waves after that don't count */
-  let result: BossInfo["result"] = null;
-  if (dmg >= hp) result = "win";
-  else if (lostIn.length >= BOSS_HEARTS || finished >= BOSS_WAVES) result = "lose";
-  return {
-    hp, dmg: Math.min(dmg, hp), need, wave, waveHits: st.waves[String(wave)] ?? 0,
-    heartsLost: Math.min(BOSS_HEARTS, lostIn.length), waveEndsAt: (st.startAt ?? now) + (wave + 1) * BOSS_WAVE_MS, result, lostIn,
-  };
+/* ---------- bingo ----------
+   The calls are the room's seeded sums with every answer different; a card
+   is 9 of the first BINGO_POOL answers, shuffled by the player's slot, so no
+   two cards are alike but every card can be finished in time. */
+export type BingoCall = { prompt: string; answer: number };
+const bingoCache = new Map<number, BingoCall[]>();
+export function bingoCalls(seed: number): BingoCall[] {
+  const hit = bingoCache.get(seed);
+  if (hit) return hit;
+  const out: BingoCall[] = [], seen = new Set<number>();
+  for (let i = 0; out.length < BINGO_CALLS && i < 200; i++) {
+    const q = raceQuestion((seed ^ 0x5bd1e995) >>> 0, i);
+    if (seen.has(q.answer)) continue;
+    seen.add(q.answer); out.push({ prompt: q.prompt, answer: q.answer });
+  }
+  if (bingoCache.size > 200) bingoCache.delete(bingoCache.keys().next().value!);
+  bingoCache.set(seed, out);
+  return out;
+}
+export function bingoCard(seed: number, slot: number): number[] {
+  const pool = bingoCalls(seed).slice(0, BINGO_POOL).map((c) => c.answer);
+  /* a small seeded shuffle (mulberry32) keyed by the room and the player */
+  let s = (seed ^ Math.imul(slot + 1, 2654435761)) >>> 0;
+  const rnd = () => { s = (s + 0x6d2b79f5) >>> 0; let x = s; x = Math.imul(x ^ (x >>> 15), x | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  return pool.slice(0, 9);
+}
+export const BINGO_LINES = [0b000000111, 0b000111000, 0b111000000, 0b001001001, 0b010010010, 0b100100100, 0b100010001, 0b001010100];
+export const hasBingo = (mask: number) => BINGO_LINES.some((l) => (mask & l) === l);
+export const marksOf = (mask: number) => { let n = 0; for (let m = mask; m; m &= m - 1) n++; return n; };
+/* how many sums have been called (the one on screen included) */
+export function bingoCalled(st: PartyState, now: number): number {
+  if (st.startAt === null || now < st.startAt) return 0;
+  return Math.min(BINGO_CALLS, Math.floor((now - st.startAt) / BINGO_CALL_MS) + 1);
+}
+export type BingoInfo = { called: number; callEndsAt: number; winner: string | null; over: boolean };
+export function bingoInfo(st: PartyState, now: number): BingoInfo {
+  const called = bingoCalled(st, now);
+  const winner = st.wins[0] ?? null;
+  const timeUp = st.startAt !== null && now >= st.startAt + BINGO_CALLS * BINGO_CALL_MS;
+  return { called, callEndsAt: (st.startAt ?? now) + called * BINGO_CALL_MS, winner, over: !!winner || timeUp };
 }
 
 export function partyStatus(st: PartyState, now: number): PartyStatus {
   if (st.startAt === null) return "lobby";
   if (now < st.startAt) return "countdown";
   if (st.game === "tug") return tugInfo(st, now).winner !== null ? "done" : "playing";
-  if (st.game === "boss") return bossInfo(st, now).result ? "done" : "playing";
+  if (st.game === "bingo") return bingoInfo(st, now).over ? "done" : "playing";
   return st.q >= BUZZ_QS ? "done" : "playing";
 }
 
 export const PARTY_NAMES: Record<PartyGame, [string, string, string]> = {
   tug: ["🪢", "Tug of War", "つなひき"],
   buzz: ["🔔", "Buzzer Quiz", "早押しクイズ"],
-  boss: ["🐉", "Boss Battle", "みんなでボス戦"],
+  bingo: ["🎯", "Math Bingo", "計算ビンゴ"],
 };
 
 /* ---------- what a phone draws ----------
@@ -126,7 +148,7 @@ export type PartyView = {
   mySlot: number;
   players: { key: string; name: string; team: 0 | 1; done: number; me: boolean; host: boolean; score: number; cpu?: boolean }[];
   tug: TugInfo | null;
-  boss: BossInfo | null;
+  bingo: (BingoInfo & { card: number[]; winnerKey: string | null }) | null;
   buzz: { q: number; qAt: number; wins: (string | null)[] } | null;   /* wins hold player keys */
 };
 
@@ -139,10 +161,13 @@ export function buildPartyView(st: PartyState, o: { code: string; hostId: string
     now: o.now, startAt: st.startAt, seed: st.seed, round: st.round, mySlot: st.players[o.viewerId]?.slot ?? 0,
     players: entries.map(([id, p]) => ({
       key: keyOf.get(id)!, name: p.name, team: p.team, done: p.done, me: id === o.viewerId, host: id === o.hostId,
-      score: st.game === "buzz" ? buzzScore(id) : p.done, cpu: id.startsWith("cpu:") || undefined,
+      score: st.game === "buzz" ? buzzScore(id) : st.game === "bingo" ? marksOf(p.done) : p.done, cpu: id.startsWith("cpu:") || undefined,
     })),
     tug: st.game === "tug" && st.startAt !== null ? tugInfo(st, o.now) : null,
-    boss: st.game === "boss" && st.startAt !== null ? bossInfo(st, o.now) : null,
+    bingo: st.game === "bingo" ? (() => {
+      const info = bingoInfo(st, o.now);
+      return { ...info, card: bingoCard(st.seed, st.players[o.viewerId]?.slot ?? 0), winnerKey: info.winner ? keyOf.get(info.winner) ?? null : null };
+    })() : null,
     buzz: st.game === "buzz" ? { q: st.q, qAt: st.qAt, wins: st.wins.map((w) => (w ? keyOf.get(w) ?? null : null)) } : null,
   };
 }
