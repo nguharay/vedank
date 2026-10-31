@@ -14,10 +14,10 @@
                      card (any sum called so far counts). First full line —
                      across, down or diagonal — wins; if nobody gets one before
                      the calls run out, the most marks wins.
-     🚀 Space Race   everyone gets the same sums; each right answer blasts an
+     🚀 Space Blaster everyone gets the same sums; each right answer blasts an
                      asteroid and flies your rocket up. First to the planet
                      (RACE_GOAL.space) wins, else the highest when time is up.
-     🐸 Frog Race    the same, hopping a frog across the river's lily pads.
+     🐸 River Hop    the same, hopping a frog across the river's lily pads.
 
    Pure functions only: the server stores the state and checks answers, the
    client draws it. */
@@ -154,8 +154,8 @@ export const PARTY_NAMES: Record<PartyGame, [string, string, string]> = {
   tug: ["🪢", "Tug of War", "つなひき"],
   buzz: ["🔔", "Buzzer Quiz", "早押しクイズ"],
   bingo: ["🎯", "Math Bingo", "計算ビンゴ"],
-  space: ["🚀", "Space Race", "宇宙レース"],
-  river: ["🐸", "Frog Race", "かえるレース"],
+  space: ["🚀", "Space Blaster", "スペースシューター"],
+  river: ["🐸", "River Hop", "かえるジャンプ"],
 };
 
 /* ---------- what a phone draws ----------

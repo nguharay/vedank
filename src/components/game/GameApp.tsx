@@ -1022,6 +1022,8 @@ export function GameApp({
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
   /* the same for a party room (?pr=CODE): tug of war, buzzer quiz, boss battle */
   const [partyJoinCode, setPartyJoinCode] = useState<string | null>(null);
+  /* the party game to show first — the arcade games open their own race */
+  const [partyFirst, setPartyFirst] = useState<"tug" | "space" | "river">("tug");
   function guestLocked(kind: string): boolean {
     if (!guest) return false;
     setLockOpen(kind);
@@ -4722,7 +4724,7 @@ export function GameApp({
               <span className="feature-art party" aria-hidden="true"><b>🪢</b><b>🔔</b><b>🐉</b></span>
               <span className="ttt-card-body">
                 <span className="ttt-card-name">{lang === "ja" ? "🎉 みんなであそぶ" : "🎉 Party games"}<span className="feature-new">NEW</span></span>
-                <span className="ttt-card-sub">{lang === "ja" ? "つなひき・早押しクイズ・計算ビンゴ・宇宙レース・かえるレース。ひとりでも、友だちやクラス（最大50人）でも！" : "Tug of War, Buzzer Quiz, Math Bingo, Space Race and Frog Race. Play solo, or with friends and classes (up to 50)!"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "つなひき・早押しクイズ・計算ビンゴ・スペースシューター・かえるジャンプ。ひとりでも、友だちやクラス（最大50人）でも！" : "Tug of War, Buzzer Quiz, Math Bingo, Space Blaster and River Hop. Play solo, or with friends and classes (up to 50)!"}</span>
               </span>
               <span className="game-card-go">›</span>
             </button>
@@ -4873,13 +4875,13 @@ export function GameApp({
         {view === "space" && (
           <section className="view active">
             <SpaceBlaster lang={lang} sound={sound} autoStart={autoStartFor === "space"} celebrate={() => confetti.burstCenter(80, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} />
+              onCorrect={(n) => fireQuest("correct_answer", n)} onFriends={() => { setPartyFirst("space"); setView("party"); }} />
           </section>
         )}
         {view === "river" && (
           <section className="view active">
             <RiverHop lang={lang} sound={sound} autoStart={autoStartFor === "river"} celebrate={() => confetti.burstCenter(80, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} />
+              onCorrect={(n) => fireQuest("correct_answer", n)} onFriends={() => { setPartyFirst("river"); setView("party"); }} />
           </section>
         )}
         {view === "ninja" && (
@@ -4932,9 +4934,9 @@ export function GameApp({
         )}
         {view === "party" && (
           <section className="view active">
-            <PartyGames lang={lang} sound={sound} celebrate={() => confetti.burstCenter(110, 0.4)} game="tug"
+            <PartyGames key={partyFirst} lang={lang} sound={sound} celebrate={() => confetti.burstCenter(110, 0.4)} game={partyFirst}
               onCorrect={(n) => fireQuest("correct_answer", n)}
-              joinCode={partyJoinCode} onJoined={() => setPartyJoinCode(null)} onBack={() => setView("games")}
+              joinCode={partyJoinCode} onJoined={() => setPartyJoinCode(null)} onBack={() => { setPartyFirst("tug"); setView("games"); }}
               guest={guest} onNeedAccount={() => setLockOpen("race-online")} />
           </section>
         )}

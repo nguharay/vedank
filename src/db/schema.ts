@@ -366,7 +366,7 @@ export const raceRooms = pgTable("race_rooms", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-/* Party games (Tug of War, Buzzer Quiz, Math Bingo, Space Race, Frog Race): see lib/game/party.ts */
+/* Party games (Tug of War, Buzzer Quiz, Math Bingo, Space Blaster, River Hop): see lib/game/party.ts */
 export const partyRooms = pgTable("party_rooms", {
   code: text("code").primaryKey(),
   hostId: uuid("host_id").notNull().references(() => users.id, { onDelete: "cascade" }),

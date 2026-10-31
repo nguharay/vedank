@@ -10,7 +10,7 @@ import {
   type PartyGame, type PartyPlayer, type PartyState, type PartyView,
 } from "./party";
 
-/* Party rooms (Tug of War, Buzzer Quiz, Math Bingo, Space Race, Frog Race) — the rules are in
+/* Party rooms (Tug of War, Buzzer Quiz, Math Bingo, Space Blaster, River Hop) — the rules are in
    party.ts; this file stores them. Same shape as the online race: the host
    makes a room and shares the code, friends join in the lobby, the host
    starts with a few seconds' countdown, and every answer is checked here
