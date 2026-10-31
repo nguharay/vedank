@@ -122,6 +122,8 @@ export function ArenaView({
   total -= gap;
   const startX = Math.max(10, (440 - total) / 2);
   const y = 24;
+  // Crop the board to the equation itself so the sticks fill the width.
+  const vbX = startX - 14, vbW = total + 28;
 
   const sticks: React.ReactElement[] = [];
   let x = startX;
@@ -149,7 +151,7 @@ export function ArenaView({
           data-drag-slot={slot}
           onPointerDown={(e) => handlePointerDown(e, "board", gi, slot, null)}
         >
-          <line className="stick-hit" x1={x1} y1={y1} x2={x2} y2={y2} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
+          <line className="stick-hit" x1={x1} y1={y1} x2={x2} y2={y2} stroke="transparent" strokeWidth={18} strokeLinecap="round" />
           <line className={lineCls} x1={x1} y1={y1} x2={x2} y2={y2} />
           <circle className={tipCls} cx={tipX} cy={tipY} r={isSel ? 6 : on ? 5.5 : 4} />
         </g>
@@ -187,7 +189,7 @@ export function ArenaView({
       <div className="puzzle-board">
         <svg className="mandala-watermark" viewBox="0 0 100 100"><Mandala stroke="#7A4E2C" /></svg>
         <div className={`board-svg-wrap${selection ? " picking" : ""}`}>
-          <svg ref={svgRef} viewBox="0 0 440 140" width="440" height="140">{sticks}</svg>
+          <svg ref={svgRef} viewBox={`${vbX} 12 ${vbW} 112`} width={vbW} height={112}>{sticks}</svg>
         </div>
       </div>
       <div className="tray-wrap">

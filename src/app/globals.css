@@ -722,14 +722,14 @@ main{ scroll-padding-top:104px; }
   box-shadow: inset 0 2px 10px rgba(0,0,0,.12), 0 6px 0 var(--wood-line); border:2px solid var(--wood-line); }
 .puzzle-board .mandala-watermark{ position:absolute; left:50%; top:50%; width:260px; height:260px; transform:translate(-50%,-50%); opacity:.1; }
 .board-svg-wrap{ display:flex; justify-content:center; overflow-x:auto; position:relative; z-index:1; }
-.board-svg-wrap svg{ width:100%; max-width:460px; height:auto; }
+.board-svg-wrap svg{ width:100%; max-width:620px; height:auto; }
 .stick-active{ stroke:#F4A63A; filter:drop-shadow(0 0 4px rgba(224,71,43,.35)); }
 .stick-inactive{ stroke:rgba(255,255,255,.2); stroke-dasharray:3 6; }
 /* once a stick is picked up the empty spots are the targets — show them */
 .board-svg-wrap.picking .stick-inactive{ stroke:rgba(255,255,255,.55); }
 .board-svg-wrap.picking .stick-tip-off{ stroke:rgba(255,255,255,.5); }
 .stick-inactive:hover{ stroke:rgba(255,255,255,.6); }
-.stick{ stroke-width:10; stroke-linecap:round; cursor:pointer; transition:stroke .15s, opacity .15s, filter .15s; touch-action:none; }
+.stick{ stroke-width:11; stroke-linecap:round; cursor:pointer; transition:stroke .15s, opacity .15s, filter .15s; touch-action:none; }
 .stick-hit{ cursor:pointer; touch-action:none; }
 .drag-ghost{ position:fixed; z-index:70; width:22px; height:22px; border-radius:50%; background:#2B6FEA;
   box-shadow:0 0 10px rgba(43,111,234,.8), 0 4px 8px rgba(0,0,0,.3); transform:translate(-50%,-50%); pointer-events:none; }
@@ -738,7 +738,7 @@ main{ scroll-padding-top:104px; }
 .stick-tip-off{ fill:none; stroke:rgba(255,255,255,.22); stroke-width:2; }
 .stick-selected{ stroke:#2B6FEA !important; filter:drop-shadow(0 0 8px rgba(43,111,234,.7)); animation:stickPulse 1s ease-in-out infinite; }
 circle.stick-tip.sel-tip{ fill:#2B6FEA; }
-@keyframes stickPulse{ 0%,100%{ stroke-width:10; } 50%{ stroke-width:13; } }
+@keyframes stickPulse{ 0%,100%{ stroke-width:11; } 50%{ stroke-width:14; } }
 /* the hinted stick glows mint green — a colour no other stick state uses
    (lit = orange, picked up = blue) — so it can't be mistaken for either */
 .stick-hint{ stroke:#2EE6A8 !important; filter:drop-shadow(0 0 7px rgba(46,230,168,.95)) drop-shadow(0 0 14px rgba(46,230,168,.6));
