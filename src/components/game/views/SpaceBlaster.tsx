@@ -34,7 +34,7 @@ const fallSpeed = (level: number) => Math.min(78, 30 + (level - 1) * 7);   /* px
 /* The planets you fly past, one per level. They are scenery only — nothing
    ever hits a planet; the rocks you blast are stray asteroids. Each is drawn
    friendly: a soft glow, a little shine, a smile. */
-type Planet = { en: string; ja: string; a: string; b: string; c: string; ring?: string; bands?: string; spots?: string };
+export type Planet = { en: string; ja: string; a: string; b: string; c: string; ring?: string; bands?: string; spots?: string };
 const PLANETS: Planet[] = [
   { en: "Saturn", ja: "土星", a: "#ffe2a8", b: "#f0b45a", c: "#b9783a", ring: "#ffe9b8" },
   { en: "Earth", ja: "地球", a: "#9fe3ff", b: "#3f9be0", c: "#1d5fa8", spots: "#6fd16a" },
@@ -385,7 +385,7 @@ function shatter(rocks: Rock[], wave: number): Rock[] {
 function insertSomewhere<T>(list: T[], v: T) { list.splice(Math.floor(Math.random() * (list.length + 1)), 0, v); }
 
 /* a friendly planet: glow, shading, an optional ring / bands / land, a shine and a smile */
-function PlanetArt({ p, label }: { p: Planet; label: string }) {
+export function PlanetArt({ p, label }: { p: Planet; label: string }) {
   const id = `pl-${p.en}`;
   return (
     <span className="space-planet">

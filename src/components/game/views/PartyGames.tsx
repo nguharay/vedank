@@ -7,19 +7,20 @@ import { Person } from "../Person";
 import { Mascot } from "../Mascot";
 import type { useSound } from "../useSound";
 import { Answers } from "./RunGames";
+import { PlanetArt, planetFor } from "./SpaceBlaster";
 import { track } from "@/lib/analytics";
 import {
   partyCreateAction, partyJoinAction, partyRoomAction, partyStartAction, partyAnswerAction, partySwitchAction,
 } from "@/lib/actions/game-actions";
 import {
-  PARTY_NAMES, PARTY_ROOM_MAX, TUG_WIN, BUZZ_QS, BUZZ_Q_MS, BINGO_CALLS, BINGO_CALL_MS, BINGO_LINES,
+  PARTY_NAMES, PARTY_GAMES, PARTY_ROOM_MAX, RACE_GOAL, isRaceGame, myPartyQuestion, TUG_WIN, BUZZ_QS, BUZZ_Q_MS, BINGO_CALLS, BINGO_CALL_MS, BINGO_LINES,
   bingoCalls, marksOf,
-  partyQuestion, buzzQuestion, buildPartyView, joinErrorText, roomLink, type PartyGame, type PartyState, type PartyView as PartyRoomView,
+  buzzQuestion, buildPartyView, joinErrorText, roomLink, type PartyGame, type PartyState, type PartyView as PartyRoomView,
 } from "@/lib/game/party";
 import { soloStart, soloAnswer, soloTick, SOLO_LEVELS, SOLO_ME, type SoloLevel } from "@/lib/game/partySolo";
 
-/* ---------- party games: Tug of War, Buzzer Quiz, Math Bingo ----------
-   One screen for all three. The room part (make / join by code / share /
+/* ---------- party games: Tug of War, Buzzer Quiz, Math Bingo, Space Race, Frog Race ----------
+   One screen for all five. The room part (make / join by code / share /
    host starts / play again) is shared; the middle is drawn per game. Like
    the online race the room is polled once a second and the clock is lined
    up with the server's, so a countdown ends at the same moment on every
@@ -36,7 +37,8 @@ const clock = () => Date.now();
 const TEAM: [[string, string], [string, string]] = [["Red", "あかぐみ"], ["White", "しろぐみ"]];
 
 /* ---- personal records, kept on the phone (solo and online alike) ----
-   tug: wins · buzz: best score out of BUZZ_QS · bingo: fewest calls to a BINGO */
+   tug: wins · buzz: best score out of BUZZ_QS · bingo: fewest calls to a BINGO ·
+   the races: fastest win, in seconds */
 type Record_ = { plays: number; wins: number; best: number };
 const recKey = (g: PartyGame) => `sutraSprint.party.${g}`;
 function readRec(g: PartyGame): Record_ {
@@ -45,7 +47,7 @@ function readRec(g: PartyGame): Record_ {
 /* returns true when this game set a new best */
 function saveRec(g: PartyGame, won: boolean, value: number): boolean {
   const r = readRec(g);
-  const better = g === "bingo" ? won && (r.best === 0 || value < r.best) : g === "buzz" ? value > r.best : false;
+  const better = g === "bingo" || isRaceGame(g) ? won && value > 0 && (r.best === 0 || value < r.best) : g === "buzz" ? value > r.best : false;
   const next: Record_ = { plays: r.plays + 1, wins: r.wins + (won ? 1 : 0), best: better ? value : r.best };
   try { localStorage.setItem(recKey(g), JSON.stringify(next)); } catch {}
   return better;
@@ -54,8 +56,11 @@ function recChip(g: PartyGame, r: Record_, ja: boolean): string | null {
   if (!r.plays) return null;
   if (g === "tug") return ja ? `🏆 ${r.wins}勝 / ${r.plays}回` : `🏆 ${r.wins} won of ${r.plays}`;
   if (g === "buzz") return ja ? `⭐ ベスト ${r.best}/${BUZZ_QS}` : `⭐ Best ${r.best}/${BUZZ_QS}`;
+  if (isRaceGame(g)) return r.best ? (ja ? `🏁 ${r.wins}勝・最速 ${r.best}秒` : `🏁 ${r.wins} wins · fastest ${r.best}s`) : (ja ? `🏁 ${r.wins}勝 / ${r.plays}回` : `🏁 ${r.wins} won of ${r.plays}`);
   return r.best ? (ja ? `🎯 ${r.wins}勝・最速 ${r.best}問` : `🎯 ${r.wins} wins · fastest ${r.best} calls`) : (ja ? `🎯 ${r.plays}回挑戦` : `🎯 ${r.plays} tries`);
 }
+
+const allRecs = () => Object.fromEntries(PARTY_GAMES.map((g) => [g, readRec(g)])) as Record<PartyGame, Record_>;
 
 export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, onCorrect, guest, onNeedAccount }: {
   lang: L; sound: Sound; celebrate: () => void; game: PartyGame; joinCode: string | null; onJoined: () => void; onBack: () => void;
@@ -91,7 +96,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   const [recs, setRecs] = useState<Record<PartyGame, Record_> | null>(null);
   const [newBest, setNewBest] = useState(false);
   useEffect(() => {
-    const t0 = setTimeout(() => setRecs({ tug: readRec("tug"), buzz: readRec("buzz"), bingo: readRec("bingo") }), 0);
+    const t0 = setTimeout(() => setRecs(allRecs()), 0);
     return () => clearTimeout(t0);
   }, [room?.round, solo]);
   const soloView = (st: PartyState) => buildPartyView(st, { code: "SOLO", hostId: SOLO_ME, viewerId: SOLO_ME, now: clock() });
@@ -233,7 +238,8 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   const q = !room || status !== "playing" ? null
     : room.game === "bingo" ? null
     : room.game === "buzz" ? (buzzOpen ? buzzQuestion(room.seed, room.buzz!.q) : null)
-    : partyQuestion(room.seed, room.mySlot, myDone);
+    : isRaceGame(room.game) && myDone >= RACE_GOAL[room.game] ? null
+    : myPartyQuestion(room.game, room.seed, room.mySlot, myDone);
 
   /* celebrate a win once per round */
   useEffect(() => {
@@ -242,14 +248,16 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     const r = room.round;
     setTimeout(() => setResultsFor(r), room.startAt === null ? 0 : 1400);
     const won = room.game === "tug" ? room.tug?.winner === me?.team
+      : isRaceGame(room.game) && room.race?.winnerKey ? room.race.winnerKey === me?.key
       : room.game === "bingo" ? (room.bingo?.winnerKey ? room.bingo.winnerKey === me?.key : !!me && Math.max(...room.players.map((p) => p.score)) === me.score && me.score > 0)
       : !!me && Math.max(...room.players.map((p) => p.score)) === me.score && me.score > 0;
     if (won) { celebrate(); sound.levelUp(); }
     const value = room.game === "buzz" ? me?.score ?? 0
       : room.game === "bingo" ? room.bingo?.called ?? 0
+      : isRaceGame(room.game) ? (won && room.startAt !== null ? Math.max(1, Math.round((clock() + offset.current - room.startAt) / 1000)) : 0)
       : me?.score ?? 0;
     setNewBest(saveRec(room.game, !!won, value));
-    setRecs({ tug: readRec("tug"), buzz: readRec("buzz"), bingo: readRec("bingo") });
+    setRecs(allRecs());
     track("party_end", { game: room.game, won, players: room.players.length, solo, score: value });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, room?.round]);
@@ -353,7 +361,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
             ))}
           </div>
           <div className="party-picks">
-            {(["tug", "buzz", "bingo"] as PartyGame[]).map((g) => (
+            {PARTY_GAMES.map((g) => (
               <div key={g} className={`party-pick ${g}`}>
                 <span className="party-pick-ico">{PARTY_NAMES[g][0]}</span>
                 <span className="party-pick-txt">
@@ -394,6 +402,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
           {status === "playing" && game === "tug" && room.tug && `⏱ ${secsLeft(room.tug.endsAt)}s`}
           {status === "playing" && game === "buzz" && room.buzz && `Q${Math.min(BUZZ_QS, room.buzz.q + 1)}/${BUZZ_QS}`}
           {status === "playing" && game === "bingo" && room.bingo && `🎯 ${room.bingo.called}/${BINGO_CALLS}`}
+          {status === "playing" && room.race && `⏱ ${secsLeft(room.race.endsAt)}s`}
           {status === "lobby" && `👥 ${n}`}
         </span>
       </div>
@@ -405,6 +414,8 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       <div className="party-stage">
         {game === "tug" && <TugStage room={room} ja={ja} myTeam={me?.team ?? 0} pulse={fx?.kind === "pull" ? fx.k : 0} />}
         {game === "buzz" && <BuzzStage room={room} ja={ja} now={now} q={q?.prompt ?? null} ranked={ranked} />}
+        {game === "space" && <SpaceRaceStage room={room} ja={ja} ranked={ranked} pulse={fx?.kind === "pull" ? fx.k : 0} />}
+        {game === "river" && <FrogRaceStage ja={ja} ranked={ranked} pulse={fx?.kind === "pull" ? fx.k : 0} />}
         {game === "bingo" && <BingoStage room={room} ja={ja} now={now} mask={myDone} lock={lock} wrongCell={lock ? picked : null} onMark={markCell} />}
 
         {status === "countdown" && room.startAt !== null && (
@@ -453,7 +464,10 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
               {(game === "tug" ? [...room.players].sort((a, b) => a.team - b.team || b.score - a.score) : ranked).map((p) => (
                 <li key={p.key} className={p.me ? "me" : ""}>
                   <span>{game === "tug" ? (p.team === 0 ? "🔴 " : "⚪ ") : ""}{p.me ? (ja ? "きみ" : "You") : p.name}</span>
-                  <span className="mono">{game === "buzz" ? `${p.score} ${ja ? "問" : "pts"}` : `${p.score} ${game === "bingo" ? (ja ? "マス" : "marks") : (ja ? "回" : "pulls")}`}</span>
+                  <span className="mono">{game === "buzz" ? `${p.score} ${ja ? "問" : "pts"}`
+                    : game === "space" ? `${p.score}/${RACE_GOAL.space} ${ja ? "こ" : "blasts"}`
+                    : game === "river" ? `${p.score}/${RACE_GOAL.river} ${ja ? "ジャンプ" : "hops"}`
+                    : `${p.score} ${game === "bingo" ? (ja ? "マス" : "marks") : (ja ? "回" : "pulls")}`}</span>
                 </li>
               ))}
             </ol>
@@ -471,7 +485,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       {q && (
         <>
           <div className="race-q mono">{q.prompt} = ?</div>
-          <Answers round={q} onPick={pick} picked={picked} disabled={lock} />
+          <div className={`party-ans-${game}`}><Answers round={q} onPick={pick} picked={picked} disabled={lock} /></div>
           {lock && game === "buzz" && <p className="party-lock">{taken
             ? (ja ? `🔔 ${taken} が先に答えた！次の問題を待ってね` : `🔔 ${taken} answered first! Wait for the next one`)
             : (ja ? "おてつき！ちょっと待ってね" : "Oops, wait a moment")}</p>}
@@ -504,7 +518,7 @@ function GamePicker({ current, ja, canPick, busy, onPick, label }: {
     <div className="party-picker">
       <span className="party-picker-lab">{label}</span>
       <span className="party-picker-row">
-        {(["tug", "buzz", "bingo"] as PartyGame[]).map((g) => (
+        {PARTY_GAMES.map((g) => (
           <button key={g} className={`party-chip${g === current ? " on" : ""}`} disabled={!canPick || busy} onClick={() => onPick(g)} aria-pressed={g === current}>
             <span>{PARTY_NAMES[g][0]}</span>{ja ? PARTY_NAMES[g][2] : PARTY_NAMES[g][1]}
           </button>
@@ -517,12 +531,15 @@ function GamePicker({ current, ja, canPick, busy, onPick, label }: {
 function blurb(g: PartyGame, ja: boolean) {
   if (g === "tug") return ja ? "2チームで対決。正解でつなを引こう！" : "Two teams. Every right answer pulls the rope!";
   if (g === "buzz") return ja ? "同じ問題を早いもの勝ち！" : "Same sum for all, fastest wins the point!";
+  if (g === "space") return ja ? "正解でいん石を撃って、ロケットで星までレース！" : "Blast asteroids and race your rocket to the planet!";
+  if (g === "river") return ja ? "正解でジャンプ！先に川をわたったら勝ち。" : "Every right answer is a hop. First across the river wins!";
   return ja ? "自分のカードで計算ビンゴ！1列そろえたら勝ち。" : "Mark the sums on your own card. First full line wins!";
 }
 
 function resultIcon(room: PartyRoomView, myTeam: 0 | 1, myKey?: string) {
   if (room.game === "tug") return room.tug?.winner === "draw" ? "🤝" : room.tug?.winner === myTeam ? "🏆" : "💪";
   if (room.game === "bingo" && room.bingo?.winnerKey) return room.bingo.winnerKey === myKey ? "🎯" : "🙌";
+  if (room.race?.winnerKey) return room.race.winnerKey === myKey ? (room.game === "space" ? "🚀" : "🐸") : "🙌";
   const top = Math.max(...room.players.map((p) => p.score));
   return room.players.find((p) => p.key === myKey)?.score === top && top > 0 ? "🥇" : "🔔";
 }
@@ -532,6 +549,12 @@ function resultTitle(room: PartyRoomView, ja: boolean, myTeam: 0 | 1, myKey?: st
     if (w === "draw") return ja ? "ひきわけ！" : "It's a draw!";
     const name = w === 0 ? TEAM[0] : TEAM[1];
     return w === myTeam ? (ja ? `${name[1]}の勝ち！きみのチームだ！` : `${name[0]} wins, that's your team!`) : (ja ? `${name[1]}の勝ち！` : `${name[0]} wins!`);
+  }
+  if (room.race?.winnerKey) {
+    const w = room.players.find((p) => p.key === room.race!.winnerKey);
+    const mine = w?.key === myKey;
+    if (room.game === "space") return mine ? (ja ? "一番乗りで星に着いた！" : "First to the planet. You win!") : (ja ? `${w?.name ?? "?"} が一番乗り！` : `${w?.name ?? "?"} reached the planet first!`);
+    return mine ? (ja ? "一番に川をわたった！" : "First across the river. You win!") : (ja ? `${w?.name ?? "?"} が一番にわたった！` : `${w?.name ?? "?"} crossed first!`);
   }
   if (room.game === "bingo" && room.bingo?.winnerKey) {
     const w = room.players.find((p) => p.key === room.bingo!.winnerKey);
@@ -635,6 +658,80 @@ function BingoStage({ room, ja, now, mask, lock, wrongCell, onMark }: {
         ))}
       </div>
       {b.winnerKey && <div className="bingo-win">BINGO!</div>}
+    </div>
+  );
+}
+
+/* the racers to draw: the leaders, and always me */
+function lanesOf(ranked: PartyRoomView["players"], n: number) {
+  const top = ranked.slice(0, n);
+  const me = ranked.find((p) => p.me);
+  if (me && !top.includes(me)) top[top.length - 1] = me;
+  return top;
+}
+
+/* ---- 🚀 Space Race: rockets fly up to a friendly planet ---- */
+function SpaceRaceStage({ room, ja, ranked, pulse }: { room: PartyRoomView; ja: boolean; ranked: PartyRoomView["players"]; pulse: number }) {
+  const goal = RACE_GOAL.space;
+  const lanes = lanesOf(ranked, 6);
+  const planet = planetFor(1 + (room.round % 6));
+  return (
+    <div className="srace">
+      <span className="srace-stars" aria-hidden="true" />
+      <div className="srace-planet"><PlanetArt p={planet} label={ja ? `ゴール：${planet.ja}` : `Goal: ${planet.en}`} /></div>
+      <div className="srace-lanes">
+        {lanes.map((p, i) => {
+          const f = Math.min(1, p.score / goal);
+          return (
+            <div key={p.key} className={`srace-lane${p.me ? " me" : ""}`}>
+              <span className="srace-trail" style={{ height: `${f * 100}%` }} />
+              <span key={p.me ? pulse : 0} className={`srace-rocket${p.me && pulse ? " zap" : ""}`} style={{ bottom: `calc(${f} * (100% - 64px))` }}>
+                <svg viewBox="0 0 64 80" width="30" height="38" aria-hidden="true">
+                  <path d="M32 4 C44 16 48 34 46 56 L18 56 C16 34 20 16 32 4Z" fill={p.me ? "#ffd84a" : ["#f4f1ea", "#9fe3ff", "#ffc2d4", "#c8f4b0", "#e0c8ff"][i % 5]} stroke="#1d1b33" strokeWidth="4" />
+                  <circle cx="32" cy="28" r="8" fill="#5bc8f5" stroke="#1d1b33" strokeWidth="3.5" />
+                  <path d="M18 40 L6 60 L18 56Z M46 40 L58 60 L46 56Z" fill="#ff5a5f" stroke="#1d1b33" strokeWidth="3.5" strokeLinejoin="round" />
+                </svg>
+                <i className="srace-flame" />
+              </span>
+              <span className="srace-name">{p.me ? (ja ? "きみ" : "You") : p.name}</span>
+              <span className="srace-score mono">{p.score}</span>
+            </div>
+          );
+        })}
+      </div>
+      {pulse > 0 && <span key={pulse} className="srace-boom" aria-hidden="true">☄️</span>}
+    </div>
+  );
+}
+
+/* ---- 🐸 Frog Race: each player's frog hops along a row of lily pads ---- */
+function FrogRaceStage({ ja, ranked, pulse }: { ja: boolean; ranked: PartyRoomView["players"]; pulse: number }) {
+  const goal = RACE_GOAL.river;
+  const lanes = lanesOf(ranked, 6);
+  return (
+    <div className="frace">
+      <span className="frace-bank start" aria-hidden="true" />
+      <span className="frace-bank goal" aria-hidden="true"><i>🌸</i><i>🌸</i><i>🌸</i></span>
+      <div className="frace-lanes">
+        {lanes.map((p) => {
+          const at = Math.min(goal, p.score);
+          return (
+            <div key={p.key} className={`frace-lane${p.me ? " me" : ""}`}>
+              <span className="frace-name">{p.me ? (ja ? "きみ" : "You") : p.name}</span>
+              <span className="frace-pads" aria-hidden="true">{Array.from({ length: goal - 1 }, (_, i) => <i key={i} className={i < at ? "done" : ""} />)}</span>
+              <span key={p.me ? pulse : 0} className={`frace-frog${p.me && pulse ? " hop" : ""}`} style={{ left: `calc(36px + ${at / goal} * (100% - 72px))` }}>
+                <svg viewBox="0 0 52 52" width="30" height="30" aria-hidden="true">
+                  <ellipse cx="26" cy="32" rx="19" ry="15" fill={p.me ? "#7ed957" : "#a8d8a0"} stroke="#1d4a2a" strokeWidth="3.5" />
+                  <circle cx="16" cy="17" r="8" fill={p.me ? "#7ed957" : "#a8d8a0"} stroke="#1d4a2a" strokeWidth="3.5" /><circle cx="36" cy="17" r="8" fill={p.me ? "#7ed957" : "#a8d8a0"} stroke="#1d4a2a" strokeWidth="3.5" />
+                  <circle cx="17" cy="16" r="3" fill="#1d1b33" /><circle cx="37" cy="16" r="3" fill="#1d1b33" />
+                  <path d="M17 34 Q26 41 35 34" stroke="#1d4a2a" strokeWidth="3" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="frace-score mono">{p.score}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

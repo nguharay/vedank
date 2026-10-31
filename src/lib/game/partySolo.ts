@@ -9,11 +9,12 @@
      🎯 Math Bingo   you against three CPU players marking their own cards;
                      they spot each number after a few seconds, and now and
                      then miss one
+     🚀🐸 the races  you against three CPU racers, each at its own pace
 
    `level` sets how quick the computer is. */
 import {
   PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS, BINGO_CALL_MS,
-  partyQuestion, buzzQuestion, partyStatus, bingoCalls, bingoCard, bingoCalled, hasBingo,
+  myPartyQuestion, buzzQuestion, partyStatus, bingoCalls, bingoCard, bingoCalled, hasBingo, isRaceGame, RACE_GOAL,
   type PartyGame, type PartyPlayer, type PartyState,
 } from "./party";
 
@@ -35,6 +36,8 @@ const BINGO_REACT = [3600, 2700, 1900];
    three sharp ones */
 const BINGO_CPUS = [1, 2, 3];
 const BINGO_MISS = [3, 5, 9];
+/* ms per answer for a CPU racer (each a little different) */
+const RACE_PACE = [5200, 3900, 2900];
 const CPU_NAMES: [string, string][] = [["Ray", "レイ"], ["Mimi", "ミミ"], ["Taro", "タロウ"]];
 
 /* a small deterministic hash so a CPU's timing is fixed for a given question */
@@ -74,9 +77,10 @@ export function soloAnswer(st: PartyState, now: number, idx: number, answer: num
     return { ...st, players, wins };
   }
   if (me.done !== idx) return st;
-  if (partyQuestion(st.seed, me.slot, idx).answer !== answer) return "wrong";
+  if (myPartyQuestion(st.game, st.seed, me.slot, idx).answer !== answer) return "wrong";
   const players = { ...st.players, [SOLO_ME]: { ...me, done: idx + 1 } };
-  return { ...st, players };
+  const wins = isRaceGame(st.game) && idx + 1 >= RACE_GOAL[st.game] && !st.wins[0] ? [SOLO_ME] : st.wins;
+  return { ...st, players, wins };
 }
 
 /* the computer's turn: called a few times a second */
@@ -94,6 +98,22 @@ export function soloTick(st: PartyState, now: number, level: SoloLevel): PartySt
       if (done > p.done) players = { ...players, [id]: { ...p, done } };
     }
     return players === st.players ? st : { ...st, players };
+  }
+
+  if (isRaceGame(st.game)) {
+    /* each CPU racer answers at its own steady pace, up to the goal */
+    const goal = RACE_GOAL[st.game];
+    let players = st.players, wins = st.wins;
+    Object.entries(st.players).filter(([id]) => id.startsWith("cpu:")).forEach(([id, p], i) => {
+      /* one quick, one steady, one slower — and a little uneven per game */
+      const pace = RACE_PACE[level] * [0.9, 1.04, 1.2][i % 3] * (0.95 + (hash(st.seed, p.slot, 3) % 10) / 100);
+      const done = Math.min(goal, Math.floor(t / pace));
+      if (done > p.done) {
+        players = { ...players, [id]: { ...p, done } };
+        if (done >= goal && !wins[0]) wins = [id];
+      }
+    });
+    return players === st.players ? st : { ...st, players, wins };
   }
 
   if (st.game === "buzz") {
