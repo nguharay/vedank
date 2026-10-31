@@ -4722,7 +4722,7 @@ export function GameApp({
               <span className="feature-art party" aria-hidden="true"><b>🪢</b><b>🔔</b><b>🐉</b></span>
               <span className="ttt-card-body">
                 <span className="ttt-card-name">{lang === "ja" ? "🎉 みんなであそぶ" : "🎉 Party games"}<span className="feature-new">NEW</span></span>
-                <span className="ttt-card-sub">{lang === "ja" ? "つなひき・早押しクイズ・ボス戦。ひとりでも、友だちやクラス（最大50人）でも！" : "Tug of War, Buzzer Quiz and Boss Battle. Play solo, or with friends and classes (up to 50)!"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "つなひき・早押しクイズ・計算ビンゴ・宇宙レース・かえるレース。ひとりでも、友だちやクラス（最大50人）でも！" : "Tug of War, Buzzer Quiz, Math Bingo, Space Race and Frog Race. Play solo, or with friends and classes (up to 50)!"}</span>
               </span>
               <span className="game-card-go">›</span>
             </button>

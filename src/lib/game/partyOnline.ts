@@ -6,11 +6,11 @@ import { roomCode, normaliseRoomCode } from "./ttt";
 import {
   PARTY_GAMES, PARTY_ROOM_MAX, PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS,
   bingoCalls, bingoCard, bingoCalled, hasBingo,
-  partyQuestion, buzzQuestion, partyStatus, buildPartyView,
+  myPartyQuestion, buzzQuestion, partyStatus, buildPartyView, isRaceGame, RACE_GOAL,
   type PartyGame, type PartyPlayer, type PartyState, type PartyView,
 } from "./party";
 
-/* Party rooms (Tug of War, Buzzer Quiz, Math Bingo) — the rules are in
+/* Party rooms (Tug of War, Buzzer Quiz, Math Bingo, Space Race, Frog Race) — the rules are in
    party.ts; this file stores them. Same shape as the online race: the host
    makes a room and shares the code, friends join in the lobby, the host
    starts with a few seconds' countdown, and every answer is checked here
@@ -155,7 +155,7 @@ export async function switchPartyGame(userId: string, code: string, game: PartyG
   return view(saved, userId);
 }
 
-/* One answer. Tug: your own next sum (idx = how many you've done) —
+/* One answer. Tug / the races: your own next sum (idx = how many you've done) —
    the write lands only if you are still on it, so a double tap counts once.
    Buzzer: idx is the question number; the first right answer takes it. */
 export async function answerPartyRoom(userId: string, code: string, idx: number, answer: number): Promise<PartyRoomView | { error: string }> {
@@ -203,13 +203,20 @@ export async function answerPartyRoom(userId: string, code: string, idx: number,
          and (state->'players'->(${userId}::text)->>'done')::int = ${mask}::int`);
   } else {
     if (me.done !== idx) return view(row, userId);
-    if (partyQuestion(st.seed, me.slot, idx).answer !== answer) return { error: "wrong" };
+    if (myPartyQuestion(st.game, st.seed, me.slot, idx).answer !== answer) return { error: "wrong" };
     await db.execute(raw`
       update party_rooms
          set state = jsonb_set(state, array['players', ${userId}::text, 'done'], to_jsonb(${idx + 1}::int)),
              updated_at = now()
        where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int
          and (state->'players'->(${userId}::text)->>'done')::int = ${idx}::int`);
+    /* a race: the first to land the goal answer takes it */
+    if (isRaceGame(st.game) && idx + 1 >= RACE_GOAL[st.game]) await db.execute(raw`
+      update party_rooms
+         set state = jsonb_set(state, '{wins}', jsonb_build_array(${userId}::text)), updated_at = now()
+       where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int
+         and (state->'wins'->0) is null
+         and (state->'players'->(${userId}::text)->>'done')::int = ${idx + 1}::int`);
   }
   const fresh = await load(row.code);
   return fresh ? view(fresh, userId) : { error: "No such room." };
