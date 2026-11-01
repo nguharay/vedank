@@ -4902,3 +4902,15 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 /* the picture beside a design-lesson question */
 .qvis{ display:flex; justify-content:center; margin:2px 0 10px; }
 .qvis-svg{ width:100%; max-width:220px; height:auto; display:block; }
+
+/* league: the plain-words status, and the labelled up/down lines in the table */
+.league-status{ margin:8px 0 2px; padding:10px 12px; border-radius:12px; font-size:13px; font-weight:800; line-height:1.5; background:var(--surface-2); color:var(--ink); text-wrap:pretty; }
+.league-status.up{ background:color-mix(in srgb,#3fbf2a 16%,var(--surface)); }
+.league-status.down{ background:color-mix(in srgb,#e5484d 14%,var(--surface)); }
+.league-divider{ display:flex; align-items:center; gap:8px; margin:6px 0; font-size:11.5px; font-weight:800; }
+.league-divider::before,.league-divider::after{ content:""; flex:1; height:2px; border-radius:2px; }
+.league-divider span{ flex:0 1 auto; text-align:center; line-height:1.35; }
+.league-divider.up{ color:#2f8f1f; }
+.league-divider.up::before,.league-divider.up::after{ background:#3fbf2a; }
+.league-divider.down{ color:#c2373b; }
+.league-divider.down::before,.league-divider.down::after{ background:#e5484d; }
