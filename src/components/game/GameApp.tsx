@@ -1195,7 +1195,7 @@ export function GameApp({
 
   function newStageQuestion(topic: Topic, n: number) {
     wrongRunRef.current = 0;
-    const problem = topic.gen(STAGE_DIFF[n - 1] as Difficulty);
+    const problem = topic.gen(STAGE_DIFF[n - 1] as Difficulty, n);
     const mode =
       n === 1
         ? weightedPick<Mode>([["type", 1], ["choice", 2], ["truefalse", 2]])
