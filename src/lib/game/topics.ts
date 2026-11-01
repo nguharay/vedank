@@ -1,7 +1,12 @@
 export type Difficulty = "easy" | "medium" | "hard";
 export type Lang = "en" | "ja";
 
-export type Problem = { prompt: string; answer: number };
+/* A picture shown with the question in a lesson's stages. The prompt still has
+   to stand on its own, because Blitz, daily and races show only the text. */
+export type QuestionVisual =
+  | { kind: "circle"; t: number; k: number }
+  | { kind: "square"; cell?: [number, number]; key?: boolean };
+export type Problem = { prompt: string; answer: number; visual?: QuestionVisual };
 
 export type ExStep = [string, string];
 
@@ -1450,7 +1455,7 @@ export const TOPICS: Topic[] = [
       const t = diff === "hard" ? ri(11, 29) : ri(2, 9);
       const k = diff === "easy" ? ri(1, 10) : diff === "medium" ? ri(11, 30) : ri(2, 12);
       const p = t * k;
-      return { prompt: `DS(${t} × ${k})`, answer: 1 + ((p - 1) % 9) };
+      return { prompt: `DS(${t} × ${k})`, answer: 1 + ((p - 1) % 9), visual: { kind: "circle", t, k } };
     },
   },
   {
@@ -1494,11 +1499,11 @@ export const TOPICS: Topic[] = [
          reduce each number to its digit sum first, then look up the box. */
       if (diff === "easy") {
         const r = ri(1, 9), c = ri(1, 9);
-        return { prompt: `DS(${r} × ${c})`, answer: 1 + ((r * c - 1) % 9) };
+        return { prompt: `DS(${r} × ${c})`, answer: 1 + ((r * c - 1) % 9), visual: { kind: "square", cell: [r, c] } };
       }
       const a = diff === "medium" ? ri(12, 99) : ri(101, 999);
       const b = ri(12, 99);
-      return { prompt: `DS(${a} × ${b})`, answer: 1 + ((a * b - 1) % 9) };
+      return { prompt: `DS(${a} × ${b})`, answer: 1 + ((a * b - 1) % 9), visual: { kind: "square", key: true } };
     },
   },
 ];
