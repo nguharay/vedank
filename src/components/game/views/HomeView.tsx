@@ -13,7 +13,6 @@ import type { UIDict } from "../i18n";
 import type { CompetitionSummary } from "@/lib/game/competition";
 import type { ReviewStats } from "@/lib/game/engagement";
 import type { ChallengeRow } from "@/lib/game/friends";
-import { PUZZLES } from "@/lib/game/matchstick";
 import { levelInfo, topicProgressOf, topicUnlocked } from "@/lib/game/state";
 import type { ProgressState } from "@/lib/game/state";
 import { RANKS_JA, STAGE_COUNT, TOPICS, gradCss } from "@/lib/game/topics";
@@ -29,10 +28,8 @@ import { StreakIcon } from "../StreakIcon";
 export function HomeView({
   progress,
   li,
-  solvedCount,
   dailyStreak,
   onOpenTopic,
-  onOpenArena,
   onOpenBlitz,
   onOpenTricks,
   onOpenDaily,
@@ -65,10 +62,8 @@ export function HomeView({
 }: {
   progress: ProgressState;
   li: ReturnType<typeof levelInfo>;
-  solvedCount: number;
   dailyStreak: number;
   onOpenTopic: (id: string) => void;
-  onOpenArena: () => void;
   onOpenBlitz: () => void;
   onOpenTricks: () => void;
   onOpenDaily: () => void;
@@ -347,22 +342,8 @@ export function HomeView({
           const p = topicProgressOf(progress, tp.id);
           const locked = !topicUnlocked(progress, tp.id) || i >= guestTopicLimit;
           const isCurrent = i === firstIncompleteIdx;
-          const boss =
-            i === 6 ? (
-              <div className="boss-row" key="boss">
-                <div className="node-wrap">
-                  <div className="boss-node" onClick={onOpenArena}>
-                    🔥
-                    <span className="boss-chip">{solvedCount}/{PUZZLES.length}</span>
-                  </div>
-                  <span className="node-platform" />
-                  <div className="node-label">{t.home.dojo}</div>
-                </div>
-              </div>
-            ) : null;
           return (
             <div key={tp.id}>
-              {boss}
               <div className={`path-row pos-${PATH_POS[i % PATH_POS.length]}`} data-topic={tp.id}>
                 <div className="node-wrap">
                   {isCurrent && <div className="node-bubble">{t.home.play}</div>}
