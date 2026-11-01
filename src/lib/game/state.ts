@@ -25,9 +25,20 @@ export function starsForStage(state: ProgressState, id: string, n: number): numb
 // advances one stage at a time across topics.
 export function stageUnlocked(state: ProgressState, topicId: string, n: number): boolean {
   if (n > topicProgressOf(state, topicId).cleared + 1) return false;
-  const idx = TOPICS.findIndex((t) => t.id === topicId);
-  if (idx <= 0) return true;
-  return topicProgressOf(state, TOPICS[idx - 1].id).cleared >= n;
+  const gate = gateOf(topicId);
+  return !gate || topicProgressOf(state, gate.id).cleared >= n;
+}
+
+/* Lessons added in the middle of the course after players had already passed
+   that point. They open as usual, but do not gate the lesson after them, so no
+   one finds a lesson they were playing locked again. */
+const LATE_ADDED = new Set(["verifyDS"]);
+
+// The topic whose stages gate this one: the one before it, skipping late additions.
+function gateOf(topicId: string) {
+  let idx = TOPICS.findIndex((t) => t.id === topicId) - 1;
+  while (idx >= 0 && LATE_ADDED.has(TOPICS[idx].id)) idx--;
+  return idx >= 0 ? TOPICS[idx] : null;
 }
 
 // The topic that gates this one, and the stage of it still to clear — used to
@@ -37,9 +48,8 @@ export function stageBlocker(
   topicId: string,
   n: number
 ): { topicId: string; stage: number } | null {
-  const idx = TOPICS.findIndex((t) => t.id === topicId);
-  if (idx <= 0) return null;
-  const prev = TOPICS[idx - 1];
+  const prev = gateOf(topicId);
+  if (!prev) return null;
   const prevCleared = topicProgressOf(state, prev.id).cleared;
   return prevCleared >= n ? null : { topicId: prev.id, stage: prevCleared + 1 };
 }

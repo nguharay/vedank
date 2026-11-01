@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Lang } from "@/lib/game/topics";
 
 // Diagrams redrawn from the printed book's "how it works" pages, one per topic.
@@ -1724,6 +1725,305 @@ const FLAGDIV_SPECS: Record<string, FlagDivSpec> = {
 };
 
 
+/* ---------- pp.204–209 · designs with the digit sum ---------- */
+const dsOf = (n: number) => 1 + ((n - 1) % 9);
+/* The book's colour for each digit sum, 1 to 9. */
+const DS_COL = ["", "#C0392B", "#E07020", "#C08A1E", "#3F8E5A", "#2D8794", "#2A5BC9", "#5B3FA0", "#C0307A", "#26215C"];
+
+function dsShape(t: number, ja: boolean) {
+  const r = t % 9;
+  if (r === 0) return ja ? "1つの点" : "a single point";
+  if (r === 1 || r === 8) return ja ? "リング（九角形）" : "a ring";
+  if (r === 2 || r === 7) return ja ? "9つの角の星" : "a 9-point star";
+  if (r === 4 || r === 5) return ja ? "するどい星" : "a sharper star";
+  return ja ? "三角形" : "a triangle";
+}
+
+/* p.204: the table written out with each answer's DS boxed in its colour, and the
+   9-Point Circle (9 at the top, 1 to 8 clockwise) with the points joined in order.
+   The line draws itself, so the star is seen being made rather than handed over. */
+function DsCircleFig({ t, lang }: { t: number; lang: Lang }) {
+  const ja = lang === "ja";
+  const rows = Array.from({ length: 10 }, (_, i) => ({ k: i + 1, p: t * (i + 1), ds: dsOf(t * (i + 1)) }));
+  const cx = 256, cy = 112, R = 64;
+  const pt = (d: number) => {
+    const a = ((-90 + d * 40) * Math.PI) / 180;
+    return [cx + R * Math.cos(a), cy + R * Math.sin(a)] as const;
+  };
+  const path = rows.map((r, i) => `${i ? "L" : "M"}${pt(r.ds)[0].toFixed(1)},${pt(r.ds)[1].toFixed(1)}`).join(" ");
+  const num = { fontFamily: "var(--font-num)", fontWeight: 800 } as const;
+  const single = t % 9 === 0;
+  return (
+    <svg viewBox="0 0 340 236" className="bd-svg bd-svg-wide">
+      {rows.map((r, i) => {
+        const y = 20 + i * 21;
+        return (
+          <g key={r.k}>
+            <text x="6" y={y + 4} style={{ ...num, fontSize: 12.5, fill: "var(--ink)" }}>{t} × {r.k} = {r.p}</text>
+            <text x="104" y={y + 4} style={{ fontSize: 10.5, fontWeight: 700, fill: "var(--muted)" }}>DS =</text>
+            <rect x="134" y={y - 9} width="24" height="18" rx="5" fill={DS_COL[r.ds]} fillOpacity=".12" stroke={DS_COL[r.ds]} strokeWidth="1.4" />
+            <text x="146" y={y + 4.5} textAnchor="middle" style={{ ...num, fontSize: 12.5, fill: DS_COL[r.ds] }}>{r.ds}</text>
+          </g>
+        );
+      })}
+      <circle cx={cx} cy={cy} r={R} fill="none" stroke="var(--muted)" strokeOpacity=".55" strokeWidth="1.6" />
+      {!single && <path key={t} d={path} pathLength={1} className="bd-dsline" fill="none" stroke="#D63A3A" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />}
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => {
+        const [x, y] = pt(d);
+        const on = single && d === 9;
+        return (
+          <g key={d}>
+            <circle cx={x} cy={y} r="10" fill={on ? "#D63A3A" : "var(--surface)"} stroke={on ? "#D63A3A" : "#5B3FA0"} strokeWidth="1.5" />
+            <text x={x} y={y + 4} textAnchor="middle" style={{ ...num, fontSize: 11, fill: on ? "#fff" : "#5B3FA0" }}>{d}</text>
+          </g>
+        );
+      })}
+      <text x={cx} y={cy + R + 34} textAnchor="middle" style={{ fontSize: 11, fontWeight: 800, fill: "var(--ink)" }}>
+        {ja ? `${t}の段 → ${dsShape(t, ja)}` : `Table of ${t} → ${dsShape(t, ja)}`}
+      </text>
+    </svg>
+  );
+}
+
+/* The 1-to-9 picker under the "your turn" cards (pp.205–206, 208–209). */
+function DigitPicker({ value, onPick, label }: { value: number; onPick: (d: number) => void; label: string }) {
+  return (
+    <div className="bd-dspick" role="group" aria-label={label}>
+      <span>{label}</span>
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
+        <button key={d} type="button" className={d === value ? "on" : ""} style={{ ["--c" as string]: DS_COL[d] }} onClick={() => onPick(d)} aria-pressed={d === value}>{d}</button>
+      ))}
+    </div>
+  );
+}
+
+function DsCircleExplorer({ lang }: { lang: Lang }) {
+  const ja = lang === "ja";
+  const [t, setT] = useState(4);
+  return (
+    <div>
+      <DsCircleFig t={t} lang={lang} />
+      <DigitPicker value={t} onPick={setT} label={ja ? "段をえらぶ" : "Pick a table"} />
+      <p className="bd-dsnote">{ja ? "気づいた？ 2と7、4と5は同じ形になるよ。" : "Did you notice? The tables of 2 & 7 draw the same shape, and so do 4 & 5."}</p>
+    </div>
+  );
+}
+
+/* p.207: the Digit-Sum square — row × column, each cell in its digit's colour.
+   With `pick`, only that digit's boxes are coloured (pp.208–209), and `lines`
+   joins them in turn around the centre, which is the shape they hide. */
+function DsSquareFig({ pick, lines = false }: { pick?: number; lines?: boolean }) {
+  const C = 30, x0 = 34, y0 = 26;
+  const num = { fontFamily: "var(--font-num)", fontWeight: 800 } as const;
+  const cells: { r: number; c: number; d: number }[] = [];
+  for (let r = 1; r <= 9; r++) for (let c = 1; c <= 9; c++) cells.push({ r, c, d: dsOf(r * c) });
+  const ctr = (r: number, c: number) => [x0 + (c - 0.5) * C, y0 + (r - 0.5) * C] as const;
+  const mine = pick ? cells.filter((q) => q.d === pick) : [];
+  /* 1, 2, 4, 5, 7 and 8 sit once in each row: join them in order of their angle
+     around the centre and the line traces a ring. 3, 6 and 9 share rows and
+     columns, so they are joined along those, which draws a lattice. */
+  const shared = pick !== undefined && pick % 3 === 0;
+  let d = "";
+  if (shared) {
+    const runs = new Map<string, (readonly [number, number])[]>();
+    for (const q of mine) {
+      for (const key of [`r${q.r}`, `c${q.c}`]) runs.set(key, [...(runs.get(key) ?? []), ctr(q.r, q.c)]);
+    }
+    for (const run of runs.values()) {
+      if (run.length < 2) continue;
+      const [a, b] = [run[0], run[run.length - 1]];
+      d += `M${a[0].toFixed(1)},${a[1].toFixed(1)} L${b[0].toFixed(1)},${b[1].toFixed(1)} `;
+    }
+  } else if (mine.length > 1) {
+    d = mine
+      .map((q) => ({ q, a: Math.atan2(q.r - 5, q.c - 5) }))
+      .sort((m, n) => m.a - n.a)
+      .map(({ q }, i) => `${i ? "L" : "M"}${ctr(q.r, q.c)[0].toFixed(1)},${ctr(q.r, q.c)[1].toFixed(1)}`)
+      .join(" ") + " Z";
+  }
+  const W = x0 + 9 * C + 6, H = y0 + 9 * C + 6;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="bd-svg bd-svg-wide">
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+        <g key={i}>
+          <text x={x0 + (i - 0.5) * C} y={y0 - 9} textAnchor="middle" style={{ ...num, fontSize: 11, fill: "#5B3FA0" }}>{i}</text>
+          <text x={x0 - 12} y={y0 + (i - 0.5) * C + 4} textAnchor="middle" style={{ ...num, fontSize: 11, fill: "#5B3FA0" }}>{i}</text>
+        </g>
+      ))}
+      {cells.map(({ r, c, d }) => {
+        const on = pick === d;
+        const dim = pick !== undefined && !on;
+        return (
+          <g key={`${r}-${c}`}>
+            <rect
+              x={x0 + (c - 1) * C} y={y0 + (r - 1) * C} width={C} height={C}
+              fill={dim ? "var(--surface)" : DS_COL[d]} fillOpacity={on ? 0.9 : dim ? 1 : 0.13}
+              stroke="#5B3FA0" strokeOpacity=".7" strokeWidth=".8"
+            />
+            <text
+              x={x0 + (c - 0.5) * C} y={y0 + (r - 0.5) * C + 5} textAnchor="middle"
+              style={{ ...num, fontSize: 14, fill: on ? "#fff" : dim ? "var(--muted)" : DS_COL[d], opacity: dim ? 0.35 : 1 }}
+            >
+              {d}
+            </text>
+          </g>
+        );
+      })}
+      {lines && d && (
+        <path
+          key={pick}
+          d={d}
+          pathLength={1} className="bd-dsline" fill="none" stroke="var(--ink)" strokeWidth="2.4" strokeLinejoin="round"
+        />
+      )}
+    </svg>
+  );
+}
+
+function DsSquareExplorer({ lang }: { lang: Lang }) {
+  const ja = lang === "ja";
+  const [d, setD] = useState(6);
+  const [lines, setLines] = useState(false);
+  return (
+    <div>
+      <DsSquareFig pick={d} lines={lines} />
+      <DigitPicker value={d} onPick={setD} label={ja ? "数字をえらぶ" : "Pick a digit"} />
+      <div className="bd-dsmode">
+        <button type="button" className={!lines ? "on" : ""} onClick={() => setLines(false)}>{ja ? "🖍️ ぬる" : "🖍️ Colour"}</button>
+        <button type="button" className={lines ? "on" : ""} onClick={() => setLines(true)}>{ja ? "📏 線でつなぐ" : "📏 Draw lines"}</button>
+      </div>
+    </div>
+  );
+}
+
+/* The book's closing notes for each design page. */
+function DsCircleNote({ lang }: { lang: Lang }) {
+  return (
+    <div>
+      <DsCircleFig t={2} lang={lang} />
+      <p className="bd-dsnote">
+        {lang === "ja"
+          ? "2の段も7の段と同じ星。ただし向きが逆（鏡うつし）。2 + 7 = 9 だね！"
+          : "The table of 2 draws the same star as 7, only mirrored — and 2 + 7 = 9!"}
+      </p>
+    </div>
+  );
+}
+function DsSquareColour({ lang }: { lang: Lang }) {
+  return (
+    <div>
+      <DsSquareFig pick={8} />
+      <p className="bd-dsnote">
+        {lang === "ja"
+          ? "8のマスだけをぬると、対角線に対して対称な形があらわれる。"
+          : "Colour only the 8s and a design symmetric about the diagonal appears."}
+      </p>
+    </div>
+  );
+}
+
+/* pp.126–127 — verifying with the digit sum. The working on the left as the book
+   sets it (answer in orange), the digit sums worked the same way on the right,
+   then the two DS lines that must agree. */
+type VerifySpec = {
+  kind: [string, string];
+  /* the column set-out: operands, then the operator for the last one */
+  cols: string[]; op: string; answer: string;
+  /* right-hand column: [number, its DS] and the operator, then the total and how it reduces */
+  dsRows: [string, number][]; dsOp: string; dsTotal: string; dsReduce?: string;
+  left: [string, string]; check: string;
+  divide?: { divisor: string; dividend: string; q: string; r: string };
+};
+const VERIFY_SPECS: Record<string, VerifySpec> = {
+  add: {
+    kind: ["Addition", "たし算"], cols: ["5963", "3278", "5649"], op: "+", answer: "14890",
+    dsRows: [["5963", 5], ["3278", 2], ["5649", 6]], dsOp: "+", dsTotal: "13",
+    left: ["DS: 5 + 2 + 6 = 13 → 4", "DS：5 + 2 + 6 = 13 → 4"], check: "4",
+  },
+  sub: {
+    kind: ["Subtraction", "ひき算"], cols: ["7342", "4786"], op: "−", answer: "2546",
+    dsRows: [["7342", 7], ["4786", 8]], dsOp: "−", dsTotal: "−1", dsReduce: "→ −1 + 9 → 8",
+    left: ["DS: 7 − 8 = −1 → −1 + 9 → 8", "DS：7 − 8 = −1 → −1 + 9 → 8"], check: "8",
+  },
+  mul: {
+    kind: ["Multiplication", "かけ算"], cols: ["342", "874"], op: "×", answer: "298908",
+    dsRows: [["342", 9], ["874", 1]], dsOp: "×", dsTotal: "9",
+    left: ["DS: 9 × 1 → 9", "DS：9 × 1 → 9"], check: "9",
+  },
+  div: {
+    kind: ["Division", "わり算"], cols: [], op: "÷", answer: "",
+    dsRows: [], dsOp: "", dsTotal: "",
+    divide: { divisor: "99", dividend: "123123", q: "1243", r: "66" },
+    left: ["DS: Divisor 0 × Quotient 1 + Remainder 3 → 3", "DS：わる数 0 × 商 1 + あまり 3 → 3"], check: "3",
+  },
+};
+
+function VerifyFig({ which, lang }: { which: keyof typeof VERIFY_SPECS; lang: Lang }) {
+  const ja = lang === "ja";
+  const v = VERIFY_SPECS[which];
+  const ORANGE = "#E07020";
+  const num = { fontFamily: "var(--font-num)", fontSize: 14, fontWeight: 700, fill: "var(--ink)" } as const;
+  const small = { fontFamily: "var(--font-num)", fontSize: 12, fontWeight: 700, fill: "var(--ink)" } as const;
+  const lab = { fontSize: 11.5, fontWeight: 800, fill: "#5B3FA0" } as const;
+  const dv = v.divide;
+  const answerShown = dv ? dv.dividend : v.answer;
+  const rows = dv ? 4 : Math.max(v.cols.length + 1, v.dsRows.length + (v.dsReduce ? 2 : 1));
+  const top = 50, lh = 20;
+  const yBottom = top + rows * lh + 22;
+  const H = yBottom + (dv ? 44 : 26);
+  return (
+    <svg viewBox={`0 0 340 ${H}`} className="bd-svg bd-svg-wide">
+      <rect x="8" y="8" width={ja ? 70 : 112} height="24" rx="7" fill="#5B3FA0" fillOpacity=".12" stroke="#5B3FA0" strokeWidth="1.3" />
+      <text x={ja ? 43 : 64} y="25" textAnchor="middle" style={lab}>{ja ? v.kind[1] : v.kind[0]}</text>
+
+      {dv ? (
+        <g>
+          <text x="104" y={top + 4} textAnchor="end" style={{ ...num, fill: ORANGE }}>{dv.q}</text>
+          <text x="38" y={top + 26} style={num}>{dv.divisor}</text>
+          <path d={`M60,${top + 10} q6,10 0,22 M60,${top + 10} H112`} fill="none" stroke="var(--ink)" strokeWidth="1.3" />
+          <text x="66" y={top + 26} style={num}>{dv.dividend}</text>
+          <line x1="66" y1={top + 46} x2="112" y2={top + 46} stroke="var(--ink)" strokeWidth="1.3" />
+          <text x="104" y={top + 64} textAnchor="end" style={{ ...num, fill: ORANGE }}>{dv.r}</text>
+          {[
+            [ja ? `わられる数 ${dv.dividend} の数字和` : `DS of Dividend ${dv.dividend}`, "3"],
+            [ja ? `わる数 ${dv.divisor} の数字和` : `DS of Divisor ${dv.divisor}`, ja ? "9 または 0" : "9 or 0"],
+            [ja ? `商 ${dv.q} の数字和` : `DS of Quotient ${dv.q}`, "1"],
+            [ja ? `あまり ${dv.r} の数字和` : `DS of Remainder ${dv.r}`, "3"],
+          ].map(([l, val], i) => (
+            <text key={i} x="134" y={top + 4 + i * 20} style={small}>{l} → {val}</text>
+          ))}
+        </g>
+      ) : (
+        <g>
+          {v.cols.map((c, i) => (
+            <text key={i} x="110" y={top + i * lh} textAnchor="end" style={num}>
+              {i === v.cols.length - 1 ? `${v.op} ` : ""}{c}
+            </text>
+          ))}
+          <line x1="44" y1={top + (v.cols.length - 1) * lh + 6} x2="114" y2={top + (v.cols.length - 1) * lh + 6} stroke="var(--ink)" strokeWidth="1.3" />
+          <text x="110" y={top + v.cols.length * lh + 4} textAnchor="end" style={{ ...num, fill: ORANGE }}>{v.answer}</text>
+          <text x="8" y={top + v.cols.length * lh + 4} style={{ ...small, fontSize: 11 }}>{ja ? "答え =" : "Answer ="}</text>
+
+          {v.dsRows.map(([n, d], i) => (
+            <g key={i}>
+              <text x="132" y={top + i * lh} style={small}>{ja ? `${n} の数字和 =` : `Digit Sum of ${n} =`}</text>
+              <text x="318" y={top + i * lh} textAnchor="end" style={num}>{i === v.dsRows.length - 1 ? `${v.dsOp} ` : ""}{d}</text>
+            </g>
+          ))}
+          <line x1="290" y1={top + (v.dsRows.length - 1) * lh + 6} x2="322" y2={top + (v.dsRows.length - 1) * lh + 6} stroke="var(--ink)" strokeWidth="1.3" />
+          <text x="318" y={top + v.dsRows.length * lh + 4} textAnchor="end" style={{ ...num, fontWeight: 900 }}>{v.dsTotal}</text>
+          {v.dsReduce && <text x="326" y={top + (v.dsRows.length + 1) * lh} textAnchor="end" style={{ ...small, fontSize: 11 }}>{v.dsReduce}</text>}
+        </g>
+      )}
+
+      <text x="8" y={yBottom} style={small}>{ja ? v.left[1] : v.left[0]}</text>
+      <text x={dv ? 8 : 216} y={dv ? yBottom + 20 : yBottom} style={small}>
+        {ja ? "" : "DS of "}<tspan fill={ORANGE}>{answerShown}</tspan>{ja ? " の数字和" : ""} → {v.check} <tspan fill="#3F8E5A" fontWeight="900">✓</tspan>
+      </text>
+    </svg>
+  );
+}
+
 export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.ReactElement>> = {
   mult1x: ({ lang }: { lang: Lang }) => <Mult1xFig a={14} b={12} lang={lang} />,
   ...Object.fromEntries(
@@ -1761,6 +2061,9 @@ export const BOOK_DIAGRAMS: Partial<Record<string, (p: { lang: Lang }) => React.
   subOtherThan10s: ({ lang }: { lang: Lang }) => <SubRoundFig a="4000" b="628" lang={lang} />,
   squareStart5: Sq54,
   duplexSquare: ({ lang }: { lang: Lang }) => <DuplexFig n="56" lang={lang} />,
+  dsCircle: ({ lang }: { lang: Lang }) => <DsCircleFig t={7} lang={lang} />,
+  verifyDS: ({ lang }: { lang: Lang }) => <VerifyFig which="add" lang={lang} />,
+  dsSquare: () => <DsSquareFig />,
 };
 
 // The worked example each diagram draws, shown in the card header.
@@ -1813,6 +2116,9 @@ export const BOOK_DIAGRAMS2: Partial<Record<string, (p: { lang: Lang }) => React
   baseBelow20to90: () => <BaseMethodDiagram spec={BASE_BELOW2090_EX2} />,
   squareStart5: Sq512,
   duplexSquare: ({ lang }: { lang: Lang }) => <DuplexFig n="648" lang={lang} />,
+  dsCircle: DsCircleNote,
+  verifyDS: ({ lang }: { lang: Lang }) => <VerifyFig which="sub" lang={lang} />,
+  dsSquare: DsSquareColour,
   additionGeneral: BorrowFriendFig,
   subtractionGeneral: ({ lang }: { lang: Lang }) => <SubGenFig a="62535" b="26756" lang={lang} />,
   subOtherThan10s: ({ lang }: { lang: Lang }) => <SubRoundFig a="8000" b="5732" lang={lang} />,
@@ -1834,6 +2140,9 @@ export const BOOK_DIAGRAM_EQ2: Partial<Record<string, string>> = {
   baseBelow20to90: "76 × 77  (base 80)",
   squareStart5: "512²",
   duplexSquare: "648²",
+  dsCircle: "Table of 2",
+  verifyDS: "Verify: 7342 − 4786 = 2546",
+  dsSquare: "Colour all 8s",
   additionGeneral: "54 + 39",
   subtractionGeneral: "62535 − 26756",
   subOtherThan10s: "8000 − 5732",
@@ -1855,18 +2164,49 @@ export const BOOK_INTRO: Partial<Record<string, { title: string; titleJa: string
 
 /* Further example cards, where the book page has more than two. */
 export const BOOK_MORE: Partial<Record<string, { eq: string; D: (p: { lang: Lang }) => React.ReactElement }[]>> = {
+  dsCircle: [{ eq: "Your turn — any table", D: DsCircleExplorer }],
+  verifyDS: [
+    { eq: "Verify: 342 × 874 = 298908", D: ({ lang }) => <VerifyFig which="mul" lang={lang} /> },
+    { eq: "Verify: 123123 ÷ 99 = Q 1243, R 66", D: ({ lang }) => <VerifyFig which="div" lang={lang} /> },
+  ],
+  dsSquare: [{ eq: "Your turn — any digit", D: DsSquareExplorer }],
   digitsum: [
     { eq: "DS of 6379", D: Ds6379 },
     { eq: "DS of 34278318", D: Ds34278318 },
   ],
 };
 /* Pages whose example headers are just the sum ("DS of 512"), without "Example:". */
-export const BOOK_BARE_HEADERS = new Set(["digitsum"]);
+export const BOOK_BARE_HEADERS = new Set(["digitsum", "dsCircle", "dsSquare", "verifyDS"]);
+
+/* Japanese for the headers above that are words rather than a sum. */
+export const BOOK_EQ_JA: Partial<Record<string, string>> = {
+  "Worked example — DS of the 7 times table": "例 — 7の段の数字和",
+  "Table of 2": "2の段",
+  "Verify: 5963 + 3278 + 5649 = 14890": "たしかめ：5963 + 3278 + 5649 = 14890",
+  "Verify: 7342 − 4786 = 2546": "たしかめ：7342 − 4786 = 2546",
+  "Verify: 342 × 874 = 298908": "たしかめ：342 × 874 = 298908",
+  "Verify: 123123 ÷ 99 = Q 1243, R 66": "たしかめ：123123 ÷ 99 = 商 1243、あまり 66",
+  "Your turn — any table": "やってみよう — 好きな段で",
+  "DS of the tables 1 to 9": "1〜9の段の数字和",
+  "Colour all 8s": "8をぜんぶぬる",
+  "Your turn — any digit": "やってみよう — 好きな数字で",
+};
+
+/* The line between the method and the examples, where "calculate from left
+   to right" does not describe the page. */
+export const BOOK_FLOW: Partial<Record<string, [string, string, string, string]>> = {
+  verifyDS: ["Digit Sum of each number", "Same sum on the digit sums → match?", "それぞれの数字和", "数字和で同じ計算 → 一致する？"],
+  dsCircle: ["Find each Digit Sum", "Mark it, then join in order", "数字和を出す", "円に印して順につなぐ"],
+  dsSquare: ["Fill in the Digit Sums", "Colour or join one digit", "数字和をうめる", "1つの数字をぬる・つなぐ"],
+};
 
 export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {
   baseBelow20to90: "19 × 16  (base 20)",
   baseAbove20to90: "23 × 24  (base 20)",
   duplexSquare: "56²",
+  dsCircle: "Worked example — DS of the 7 times table",
+  verifyDS: "Verify: 5963 + 3278 + 5649 = 14890",
+  dsSquare: "DS of the tables 1 to 9",
   add9: "36 + 9",
   sub9: "36 − 9",
   add8sub8: "73 + 8",

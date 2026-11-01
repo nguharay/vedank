@@ -1,7 +1,7 @@
 "use client";
 
 import { STAGE_POS } from "../util";
-import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ, BOOK_DIAGRAMS2, BOOK_DIAGRAM_EQ2, BOOK_MORE, BOOK_BARE_HEADERS, BOOK_INTRO } from "../BookDiagrams";
+import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ, BOOK_DIAGRAMS2, BOOK_DIAGRAM_EQ2, BOOK_MORE, BOOK_BARE_HEADERS, BOOK_INTRO, BOOK_EQ_JA, BOOK_FLOW } from "../BookDiagrams";
 import { Mascot } from "../Mascot";
 import type { UIDict } from "../i18n";
 import { DIGIT_ARROW_EX, DIGIT_FLOW_TOPICS } from "./shared";
@@ -134,6 +134,8 @@ export function BookMethodCard({
   const intro = BOOK_INTRO[topic.id];
   const bare = BOOK_BARE_HEADERS.has(topic.id);
   const pattern = lang === "ja" ? topic.patternJa : topic.pattern;
+  const eqText = (e: string) => (lang === "ja" ? (BOOK_EQ_JA[e] ?? e) : e);
+  const flow = BOOK_FLOW[topic.id];
   return (
     <div className="bookmethod-wrap">
       {pattern && (
@@ -153,7 +155,9 @@ export function BookMethodCard({
         </div>
       </div>
       <div className="bookexample-flow-title">
-        {lang === "ja" ? (
+        {flow ? (
+          <>{lang === "ja" ? flow[2] : flow[0]} <span>→</span> {lang === "ja" ? flow[3] : flow[1]}</>
+        ) : lang === "ja" ? (
           <>まずパターンを見つける <span>→</span> それから左から右へ計算</>
         ) : (
           <>Spot the Pattern First <span>→</span> Then Calculate From Left to Right</>
@@ -169,7 +173,7 @@ export function BookMethodCard({
       )}
       <div className="bookexample-card">
         <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
-          {bare ? "" : lang === "ja" ? "例：" : "Example: "}{Diagram ? diagramEq! : eq}
+          {bare ? "" : lang === "ja" ? "例：" : "Example: "}{Diagram ? eqText(diagramEq!) : eq}
         </div>
         {Diagram ? (
           <Diagram lang={lang} />
@@ -191,7 +195,7 @@ export function BookMethodCard({
       {Diagram2 && (
         <div className="bookexample-card bookexample-second">
           <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
-            {bare ? "" : lang === "ja" ? "例2：" : "Example 2: "}{BOOK_DIAGRAM_EQ2[topic.id]}
+            {bare ? "" : lang === "ja" ? "例2：" : "Example 2: "}{eqText(BOOK_DIAGRAM_EQ2[topic.id]!)}
           </div>
           <Diagram2 lang={lang} />
         </div>
@@ -199,7 +203,7 @@ export function BookMethodCard({
       {more.map(({ eq: moreEq, D }, i) => (
         <div className="bookexample-card bookexample-second" key={moreEq}>
           <div className="bookexample-header mono" style={{ background: gradCss(topic.grad) }}>
-            {bare ? "" : lang === "ja" ? `例${i + 3}：` : `Example ${i + 3}: `}{moreEq}
+            {bare ? "" : lang === "ja" ? `例${i + 3}：` : `Example ${i + 3}: `}{eqText(moreEq)}
           </div>
           <D lang={lang} />
         </div>

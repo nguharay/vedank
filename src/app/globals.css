@@ -4886,3 +4886,16 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 @media (prefers-reduced-motion: reduce){ .parc-space .parc-item, .parc-body, .parc-body::before, .parc-stars, .parc-water, .parc-river .parc-item{ animation:none; } }
 .party-pick.first{ outline:3px solid var(--sun1); outline-offset:2px; }
 .arcade-friends{ margin-top:8px; width:100%; }
+
+/* ---------- digit-sum design lessons (book pp.204–209) ---------- */
+.bd-dsline{ stroke-dasharray:1; stroke-dashoffset:1; animation:bdDsDraw 2.4s ease-in-out .2s forwards; }
+@keyframes bdDsDraw{ to{ stroke-dashoffset:0; } }
+@media (prefers-reduced-motion: reduce){ .bd-dsline{ animation:none; stroke-dashoffset:0; } }
+.bd-dspick{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:5px; padding:0 10px 8px; }
+.bd-dspick span{ width:100%; text-align:center; font-size:12px; font-weight:800; color:var(--muted); }
+.bd-dspick button{ flex:1 1 0; min-width:0; max-width:36px; aspect-ratio:1; padding:0; border-radius:10px; border:2px solid var(--c); background:var(--surface); color:var(--c); font:800 15px var(--font-num); cursor:pointer; }
+.bd-dspick button.on{ background:var(--c); color:#fff; }
+.bd-dsmode{ display:flex; justify-content:center; gap:8px; padding:0 10px 12px; }
+.bd-dsmode button{ padding:7px 14px; border-radius:999px; border:2px solid var(--line-strong); background:var(--surface); color:var(--ink); font-weight:800; font-size:13px; cursor:pointer; }
+.bd-dsmode button.on{ border-color:var(--ink); background:var(--ink); color:var(--surface); }
+.bd-dsnote{ margin:0 14px 12px; padding:9px 12px; border-radius:10px; background:var(--surface-2); font-size:12.5px; font-weight:700; line-height:1.5; text-wrap:balance; }

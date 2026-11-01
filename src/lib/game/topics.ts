@@ -27,7 +27,9 @@ export type Topic = {
   stepsJa: string[];
   example: () => Record<string, number | string>;
   exSteps: (ex: Record<string, number | string>, lang: Lang) => ExStep[];
-  gen: (diff: Difficulty) => Problem;
+  /* `stage` (1–5) is passed by the stage map, for topics whose stages each
+     practise a different operation. Blitz, daily and races leave it out. */
+  gen: (diff: Difficulty, stage?: number) => Problem;
   /* The book prints a second worked example on most lesson pages. Optional,
      because a handful of pages show only one. */
   example2?: () => Record<string, number | string>;
@@ -735,6 +737,72 @@ export const TOPICS: Topic[] = [
       return { prompt: `Digit sum of ${fmt(n)}`, answer: ds };
     },
   },
+  /* ---------- after Digit Sum · checking answers with it (p126, p127) ---------- */
+  {
+    id: "verifyDS",
+    icon: "✓",
+    grad: ["#5B3FA0", "#FF4E9E"],
+    illus: "loop",
+    title: "Verify with Digit Sum",
+    titleJa: "数字和でたしかめ算",
+    sutraSa: "Verify · Digit Sum check",
+    sutraEn: "Do the sum on the digit sums",
+    sutraEnJa: "数字和どうしで計算する",
+    blurb: "Addition: DS(A) + DS(B) = DS(Answer).\nSubtraction: DS(A) − DS(B) = DS(Answer). If negative, add 9.\nMultiplication: DS(A) × DS(B) = DS(Answer).\nDivision: Dividend = Divisor × Quotient + Remainder (check via DS).\nIf the two sides do not match, the answer is wrong.",
+    blurbJa: "たし算：DS(A) + DS(B) = DS(答え)。\nひき算：DS(A) − DS(B) = DS(答え)。マイナスになったら9をたす。\nかけ算：DS(A) × DS(B) = DS(答え)。\nわり算：わられる数 = わる数 × 商 + あまり（DSでたしかめる）。\n両方が合わなければ、答えはまちがい。",
+    methodTitle: "Rules",
+    methodTitleJa: "ルール",
+    steps: [
+      "Find the Digit Sum of each number in the question.",
+      "Do the same operation on those Digit Sums, and reduce to one digit.",
+      "Find the Digit Sum of the answer.",
+      "If they match, the answer checks out ✓. If not, it is wrong.",
+    ],
+    stepsJa: [
+      "問題のそれぞれの数の数字和を求める。",
+      "その数字和どうしで同じ計算をし、1桁にする。",
+      "答えの数字和を求める。",
+      "一致すれば答えは正しい ✓。ちがえばまちがい。",
+    ],
+    example: () => ({ q: "5963 + 3278 + 5649", ans: 14890 }),
+    example2: () => ({ q: "7342 − 4786", ans: 2546 }),
+    exSteps: (ex, lang) => {
+      const ans = ex.ans as number;
+      const ds = 1 + ((ans - 1) % 9);
+      return [
+        [`${ex.q} = ${ans}`, ""],
+        [lang === "ja" ? "答えの数字和" : "DS of the answer", `${ds}`],
+      ];
+    },
+    tip: "Check every answer with its Digit Sum!",
+    tipJa: "答えは 数字和で たしかめよう！",
+    gen: (diff, stage) => {
+      /* The question is the check itself: work the sum on the digit sums. The
+         stage map gives each stage one operation (1 +, 2 −, 3 ×, 4 ÷, 5 mixed);
+         without a stage the operation is picked at random. */
+      const op = stage && stage <= 4 ? stage : ri(1, 4);
+      const big = diff === "hard";
+      const ds = (n: number) => (n === 0 ? 9 : 1 + ((n - 1) % 9));
+      if (op === 1) {
+        const n = diff === "easy" ? 2 : 3;
+        const xs = Array.from({ length: n }, () => ri(big ? 1000 : 100, big ? 9999 : 999));
+        return { prompt: `DS(${xs.join(" + ")})`, answer: ds(xs.reduce((a, b) => a + b, 0)) };
+      }
+      if (op === 2) {
+        let a = ri(big ? 2000 : 200, big ? 9999 : 999), b = ri(big ? 1000 : 100, big ? 9999 : 999);
+        if (a < b) [a, b] = [b, a];
+        if (a === b) a += ri(1, 99);
+        return { prompt: `DS(${a} − ${b})`, answer: ds(a - b) };
+      }
+      if (op === 3) {
+        const a = ri(big ? 100 : 12, big ? 999 : 99), b = ri(12, big ? 999 : 99);
+        return { prompt: `DS(${a} × ${b})`, answer: ds(a * b) };
+      }
+      /* Division is checked by rebuilding the dividend: divisor × quotient + remainder. */
+      const d = ri(big ? 11 : 3, big ? 99 : 9), q = ri(big ? 100 : 12, big ? 9999 : 999), r = ri(1, d - 1);
+      return { prompt: `DS(${d} × ${q} + ${r})`, answer: ds(d * q + r) };
+    },
+  },
   {
     id: "mult9",
     icon: "✕",
@@ -1337,7 +1405,102 @@ export const TOPICS: Topic[] = [
       return { prompt: `${n}²`, answer: n * n };
     },
   },
-  /* ---------- World 8 · division masters (p188, p195, p196, p199) ---------- */
+  /* ---------- World 8 · designs with the digit sum (p204–209) ---------- */
+  {
+    id: "dsCircle",
+    icon: "✶",
+    grad: ["#D63A3A", "#7B3FA0"],
+    illus: "loop",
+    title: "Design with Digit Sum in a Circle",
+    titleJa: "9点の円で描く数字和のデザイン",
+    sutraSa: "Design · 9-Point Circle",
+    sutraEn: "Plot each Digit Sum, join in order",
+    sutraEnJa: "数字和を円に印して、順につなぐ",
+    blurb: "Write out a multiplication table and find each answer's Digit Sum (DS).\nMark each DS on the 9-Point Circle and join the points in order.\nTables that add to 9 draw the same shape, mirrored: 1 & 8 make rings, 2 & 7 make stars, 4 & 5 make sharper stars, 3 & 6 make triangles. The table of 9 stays on a single point.",
+    blurbJa: "かけ算の九九を書き、それぞれの答えの数字和（DS）を求める。\nDSを9点の円に印して、順番に線でつなぐ。\nたして9になる段どうしは、同じ形の鏡うつし：1と8はリング、2と7は星、4と5はするどい星、3と6は三角形。9の段は1つの点にとどまる。",
+    methodTitle: "How it works",
+    methodTitleJa: "やり方",
+    steps: [
+      "Write the table: 7 × 1, 7 × 2, … 7 × 10.",
+      "Find the Digit Sum of every answer.",
+      "Mark each Digit Sum on the 9-Point Circle.",
+      "Join the points in order — a design appears.",
+    ],
+    stepsJa: [
+      "九九を書く：7 × 1、7 × 2、… 7 × 10。",
+      "それぞれの答えの数字和を求める。",
+      "数字和を9点の円に印す。",
+      "順番に線でつなぐと、デザインがあらわれる。",
+    ],
+    example: () => ({ t: 7 }),
+    example2: () => ({ t: 2 }),
+    exSteps: (ex, lang) => {
+      const t = ex.t as number;
+      const ds = Array.from({ length: 10 }, (_, i) => 1 + ((t * (i + 1) - 1) % 9));
+      return [
+        [lang === "ja" ? `${t}の段の数字和` : `DS of the ${t} times table`, ""],
+        [lang === "ja" ? "数字和" : "digit sums", ds.join(" → ")],
+      ];
+    },
+    tip: "Work out every Digit Sum in your head!",
+    tipJa: "数字和は 頭の中で 出そう！",
+    gen: (diff) => {
+      /* The table and the step. Hard uses a two-digit table, whose digit sum
+         draws the same shape as its one-digit twin (16 → 7). */
+      const t = diff === "hard" ? ri(11, 29) : ri(2, 9);
+      const k = diff === "easy" ? ri(1, 10) : diff === "medium" ? ri(11, 30) : ri(2, 12);
+      const p = t * k;
+      return { prompt: `DS(${t} × ${k})`, answer: 1 + ((p - 1) % 9) };
+    },
+  },
+  {
+    id: "dsSquare",
+    icon: "▦",
+    grad: ["#2A5BC9", "#00849A"],
+    illus: "squaregrid",
+    title: "Design with Digit Sum in a Square",
+    titleJa: "四角の中の数字和デザイン",
+    sutraSa: "Design · Digit-Sum Square",
+    sutraEn: "Colour or join the same digit",
+    sutraEnJa: "同じ数字をぬる・つなぐ",
+    blurb: "Each box holds the Digit Sum of row × column, so every row is one table's digit sums.\nEvery row ends in 9, and the whole grid is symmetric about the diagonal.\nColour — or join with lines — every box holding the same digit, and a symmetric design appears.\nThe grid is also a key: DS(38 × 47) = DS(2 × 2) = 4.",
+    blurbJa: "それぞれのマスは「行 × 列」の数字和。だから1行が1つの段の数字和になる。\nどの行も最後は9。表全体は対角線に対して対称。\n同じ数字のマスをぬる（または線でつなぐ）と、対称なデザインがあらわれる。\nこの表は早見表にもなる：DS(38 × 47) = DS(2 × 2) = 4。",
+    methodTitle: "How it works",
+    methodTitleJa: "やり方",
+    steps: [
+      "Fill each box with the Digit Sum of row × column.",
+      "Pick one digit.",
+      "Colour every box that holds it — or join them with straight lines.",
+      "Each digit hides its own symmetric design.",
+    ],
+    stepsJa: [
+      "各マスに「行 × 列」の数字和を書く。",
+      "数字を1つ選ぶ。",
+      "その数字のマスをすべてぬる（または直線でつなぐ）。",
+      "数字ごとに、ちがう対称のデザインがかくれている。",
+    ],
+    example: () => ({ d: 8 }),
+    exSteps: (ex, lang) => {
+      const d = ex.d as number;
+      const cells: string[] = [];
+      for (let r = 1; r <= 9; r++) for (let c = 1; c <= 9; c++) if (1 + ((r * c - 1) % 9) === d) cells.push(`${r}×${c}`);
+      return [
+        [lang === "ja" ? `${d}のマス` : `boxes holding ${d}`, ""],
+        [lang === "ja" ? "行×列" : "row × column", cells.join(", ")],
+      ];
+    },
+    gen: (diff) => {
+      /* Easy reads a box off the grid. Above that the grid is used as a key:
+         reduce each number to its digit sum first, then look up the box. */
+      if (diff === "easy") {
+        const r = ri(1, 9), c = ri(1, 9);
+        return { prompt: `DS(${r} × ${c})`, answer: 1 + ((r * c - 1) % 9) };
+      }
+      const a = diff === "medium" ? ri(12, 99) : ri(101, 999);
+      const b = ri(12, 99);
+      return { prompt: `DS(${a} × ${b})`, answer: 1 + ((a * b - 1) % 9) };
+    },
+  },
 ];
 
 export const TOPIC_BY_ID: Record<string, Topic> = Object.fromEntries(
@@ -1350,6 +1513,15 @@ export function gradCss(g: [string, string]) {
 
 /* ---- distractor generator (shared by all tap-based question modes) ---- */
 export function makeDistractors(correct: number, howMany: number): number[] {
+  /* A digit sum is 1 to 9, so a decoy of 15 or −3 gives the answer away. */
+  if (correct >= 1 && correct <= 9 && howMany <= 8) {
+    const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => d !== correct);
+    for (let i = digits.length - 1; i > 0; i--) {
+      const j = ri(0, i);
+      [digits[i], digits[j]] = [digits[j], digits[i]];
+    }
+    return digits.slice(0, howMany);
+  }
   const pool = new Set<number>();
   let tries = 0;
   while (pool.size < howMany && tries < 60) {
@@ -1454,6 +1626,8 @@ export const BLITZ_MAX_DIFF: Record<string, Difficulty | null> = {
      sub-base multiplications stay in at their easy form, where 19 x 16 is a
      genuine one-step sutra, and are capped above that. */
   duplexSquare: null,
+  /* Three-digit times two-digit is too much to reduce in five seconds. */
+  dsSquare: "medium",
   baseBelow20to90: "easy",
   baseAbove20to90: "easy",
 };
