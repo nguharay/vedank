@@ -502,7 +502,7 @@ export function HomeView({
       {/* The Play tab shows three games; this says there are many more. */}
       <button className="arcade-card" onClick={onOpenGames}>
         <span className="arcade-card-art" aria-hidden="true">🥷🏃🍣🏯🎵🏪</span>
-        <span className="arcade-card-title">{lang === "ja" ? "🕹️ ゲームをぜんぶ見る" : "🕹️ Explore all the games"}</span>
+        <span className="arcade-card-title">{lang === "ja" ? "🕹️ ゲームセンター" : "🕹️ Game Center"}</span>
         <span className="arcade-card-sub">
           {lang === "ja" ? "忍者スライス、計算ランナー、おすし屋さん…25以上のアーケードゲーム！" : "Ninja Slice, Math Runner, Sushi Shop… 25+ arcade games!"}
         </span>
