@@ -4899,3 +4899,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .bd-dsmode button{ padding:7px 14px; border-radius:999px; border:2px solid var(--line-strong); background:var(--surface); color:var(--ink); font-weight:800; font-size:13px; cursor:pointer; }
 .bd-dsmode button.on{ border-color:var(--ink); background:var(--ink); color:var(--surface); }
 .bd-dsnote{ margin:0 14px 12px; padding:9px 12px; border-radius:10px; background:var(--surface-2); font-size:12.5px; font-weight:700; line-height:1.5; text-wrap:balance; }
+/* the picture beside a design-lesson question */
+.qvis{ display:flex; justify-content:center; margin:2px 0 10px; }
+.qvis-svg{ width:100%; max-width:220px; height:auto; display:block; }

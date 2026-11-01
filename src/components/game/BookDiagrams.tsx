@@ -1728,7 +1728,7 @@ const FLAGDIV_SPECS: Record<string, FlagDivSpec> = {
 /* ---------- pp.204–209 · designs with the digit sum ---------- */
 const dsOf = (n: number) => 1 + ((n - 1) % 9);
 /* The book's colour for each digit sum, 1 to 9. */
-const DS_COL = ["", "#C0392B", "#E07020", "#C08A1E", "#3F8E5A", "#2D8794", "#2A5BC9", "#5B3FA0", "#C0307A", "#26215C"];
+export const DS_COL = ["", "#C0392B", "#E07020", "#C08A1E", "#3F8E5A", "#2D8794", "#2A5BC9", "#5B3FA0", "#C0307A", "#26215C"];
 
 function dsShape(t: number, ja: boolean) {
   const r = t % 9;

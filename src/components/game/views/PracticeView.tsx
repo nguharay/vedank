@@ -1,5 +1,6 @@
 "use client";
 
+import { QuestionVisual } from "../QuestionVisual";
 import { fmt } from "../util";
 import type { Mode } from "../util";
 import type { UIDict } from "../i18n";
@@ -190,6 +191,7 @@ export function PracticeView({
           <div className={`question mono${shakeQuestion ? " shake" : ""}`}>{problem.prompt} = ?</div>
         )}
         {mode === "truefalse" && <div className={`question mono${shakeQuestion ? " shake" : ""}`} />}
+        {problem.visual && <QuestionVisual v={problem.visual} />}
 
         {mode === "type" && (
           <input
