@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { transition } from "./util";
 import { UiIcon, GameArt } from "./Art";
@@ -121,7 +121,7 @@ import { makeQuoteCycle, quoteText } from "@/lib/game/quotes";
 import { useBuddyPos } from "./useBuddyPos";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI } from "./i18n";
-import { LEAGUES } from "@/lib/game/daily";
+import { LEAGUES, leagueOf, TOP_LEAGUE } from "@/lib/game/daily";
 import { ri, shuffle, weightedPick, urlBase64ToUint8Array, RollUp, fmt, sameLoc, haptic, rankLabel, SPRINT_LEN, BLITZ_DEFAULT_LEVEL, BLITZ_BOOST_MS } from "./util";
 import type { View, Mode, Loc } from "./util";
 import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, TricksView, BlitzView } from "./views";
@@ -275,6 +275,22 @@ export function GameApp({
   /* the League's "how it works" (the ⓘ button) */
   const [leagueInfo, setLeagueInfo] = useState(false);
   /* time until the league week ends (Monday 00:00 UTC, when the server starts a new week) */
+  /* The labelled lines in a league table: under the last player who moves up,
+     and above the first who moves down, so the ⬆️/⬇️ zones explain themselves. */
+  function leagueDivider(kind: "up" | "down", tier: number, jaText: boolean) {
+    const to = leagueOf(kind === "up" ? tier + 1 : tier - 1);
+    const name = jaText ? `${to.nameJa}リーグ` : to.name;
+    return (
+      <div className={`league-divider ${kind}`} role="separator">
+        <span>
+          {kind === "up"
+            ? (jaText ? `⬆️ ここまでの人は 月曜に ${to.icon} ${name} へ上がる` : `⬆️ Above this line: up to ${to.icon} ${name} on Monday`)
+            : (jaText ? `⬇️ ここから下の人は 月曜に ${to.icon} ${name} へ下がる` : `⬇️ Below this line: down to ${to.icon} ${name} on Monday`)}
+        </span>
+      </div>
+    );
+  }
+
   function leagueTimeLeft(jaText: boolean): string {
     const now = new Date();
     const dow = (now.getUTCDay() + 6) % 7;            /* Monday = 0 */
@@ -4165,14 +4181,18 @@ export function GameApp({
                   <div key={tb.league.tier} className="league-all-group">
                     <div className="league-all-head" style={{ ["--lc" as string]: tb.league.color }}>
                       <span>{tb.league.icon} {ja ? tb.league.nameJa : tb.league.name}</span>
-                      <small>{ja ? `${tb.size}人` : `${tb.size} players`}{tb.promote ? ` · ⬆️${tb.promote}` : ""}{tb.relegate ? ` · ⬇️${tb.relegate}` : ""}</small>
+                      <small>{ja ? `${tb.size}人` : `${tb.size} players`}{tb.promote ? (ja ? ` · 上へ${tb.promote}人` : ` · ${tb.promote} go up`) : ""}{tb.relegate ? (ja ? ` · 下へ${tb.relegate}人` : ` · ${tb.relegate} go down`) : ""}</small>
                     </div>
                     {tb.rows.map((r) => (
-                      <div key={r.userId} className={`leaderboard-row${r.isMe ? " me" : ""}${tb.promote > 0 && r.rank <= tb.promote ? " zone-up" : ""}${tb.relegate > 0 && r.rank > tb.size - tb.relegate ? " zone-down" : ""}`}>
+                      <Fragment key={r.userId}>
+                      {tb.relegate > 0 && r.rank === tb.size - tb.relegate + 1 && leagueDivider("down", tb.league.tier, ja)}
+                      <div className={`leaderboard-row${r.isMe ? " me" : ""}${tb.promote > 0 && r.rank <= tb.promote ? " zone-up" : ""}${tb.relegate > 0 && r.rank > tb.size - tb.relegate ? " zone-down" : ""}`}>
                         <span className="leaderboard-rank">{r.rank}</span>
                         <span className="leaderboard-name">{r.name}</span>
                         <span className="leaderboard-gems"><i className="lb-ico" aria-hidden="true">⚡</i>{r.points}</span>
                       </div>
+                      {tb.promote > 0 && r.rank === tb.promote && r.rank < tb.size && leagueDivider("up", tb.league.tier, ja)}
+                      </Fragment>
                     ))}
                   </div>
                 ))}
@@ -4196,6 +4216,34 @@ export function GameApp({
             </ol>
             </div>)}
             <div className="league-ends">⏳ {ja ? `今週のしめきりまで ${leagueTimeLeft(true)}` : `Week ends in ${leagueTimeLeft(false)}`}</div>
+            {league && !leagueLoading && (() => {
+              /* One plain sentence: where you are, and what Monday will do. */
+              const L = league.league, up = leagueOf(L.tier + 1), down = leagueOf(L.tier - 1);
+              const upName = ja ? `${up.icon} ${up.nameJa}リーグ` : `${up.icon} ${up.name}`;
+              const downName = ja ? `${down.icon} ${down.nameJa}リーグ` : `${down.icon} ${down.name}`;
+              const r = league.myRank;
+              let tone = "mid", line: string;
+              if (!r) {
+                line = ja ? "「今日のチャレンジ」をやると、今週のリーグに参加できるよ！" : "Play today's Daily Challenge to join this week's league!";
+              } else if (!league.promote && !league.relegate) {
+                line = L.tier === TOP_LEAGUE
+                  ? (ja ? "いちばん上のリーグ！ この調子でがんばろう。" : "You're in the top league! Keep it up.")
+                  : (ja ? `${league.size}人しかいないので、今週はだれも上がり下がりしないよ（5人以上で動く）。` : `Only ${league.size} players, so nobody moves this week (it takes 5 or more).`);
+              } else if (league.promote && r <= league.promote) {
+                tone = "up";
+                line = ja ? `${r}位！ このまま上位${league.promote}人に入っていれば、月曜に ${upName} へ上がるよ⬆️` : `#${r}! Stay in the top ${league.promote} and you move up to ${upName} on Monday ⬆️`;
+              } else if (league.relegate && r > league.size - league.relegate) {
+                tone = "down";
+                line = ja ? `${r}位。このままだと月曜に ${downName} へ下がっちゃう。チャレンジでポイントをかせごう！` : `#${r}. If it stays like this you drop to ${downName} on Monday. Play the Daily Challenge to climb!`;
+              } else {
+                const cut = league.promote ? league.rows[league.promote - 1] : undefined;
+                const need = cut ? cut.points - league.myPoints + 1 : 0;
+                line = league.promote && cut
+                  ? (ja ? `${r}位。あと ${need}pt で上位${league.promote}人に入って ${upName} へ上がれるよ！` : `#${r}. ${need} more pts to reach the top ${league.promote} and move up to ${upName}!`)
+                  : (ja ? `${r}位。このまま今のリーグにのこれるよ。` : `#${r}. You'll stay in this league.`);
+              }
+              return <div className={`league-status ${tone}`}>{line}</div>;
+            })()}
 
             <div className="leaderboard-panel">
               {leagueLoading && <div className="leaderboard-loading">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>}
@@ -4206,7 +4254,9 @@ export function GameApp({
               )}
               {!leagueLoading &&
                 league?.rows.map((r) => (
-                  <div key={r.userId} className={`leaderboard-row${r.isMe ? " me" : ""}${league.promote > 0 && r.rank <= league.promote ? " zone-up" : ""}${league.relegate > 0 && r.rank > league.size - league.relegate ? " zone-down" : ""}`}>
+                  <Fragment key={r.userId}>
+                  {league.relegate > 0 && r.rank === league.size - league.relegate + 1 && leagueDivider("down", league.league.tier, ja)}
+                  <div className={`leaderboard-row${r.isMe ? " me" : ""}${league.promote > 0 && r.rank <= league.promote ? " zone-up" : ""}${league.relegate > 0 && r.rank > league.size - league.relegate ? " zone-down" : ""}`}>
                     <span className={`leaderboard-rank${r.rank <= 3 ? ` top${r.rank}` : ""}`}>
                       {r.rank <= 3 ? ["🥇", "🥈", "🥉"][r.rank - 1] : r.rank}
                     </span>
@@ -4215,6 +4265,8 @@ export function GameApp({
                     {league.relegate > 0 && r.rank > league.size - league.relegate && <span className="zone-tag down">⬇️</span>}
                     <span className="leaderboard-gems"><i className="lb-ico" aria-hidden="true">⚡</i>{r.points}</span>
                   </div>
+                  {league.promote > 0 && r.rank === league.promote && r.rank < league.size && leagueDivider("up", league.league.tier, ja)}
+                  </Fragment>
                 ))}
             </div>
             </>)}
