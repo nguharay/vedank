@@ -2224,6 +2224,14 @@ export function GameApp({
       best: gameBests.sortg ?? 0, start: shelf(startSort, "sortg"),
     },
     {
+      /* the dojo used to be a stop on the learning map; it lives here now */
+      id: "dojo", icon: "🔥", tint: "var(--sun1)",
+      name: "Matchstick Dojo", nameJa: "マッチ棒道場",
+      blurb: "Move one matchstick to fix the sum.",
+      blurbJa: "マッチ棒を1本動かして式を直そう。",
+      best: solvedCount, start: shelf(() => { if (guestLocked("arena")) return; refreshShop(); loadPuzzle(puzIdx); setView("arena"); }),
+    },
+    {
       id: "sprint", icon: "🔥", tint: "var(--sun1)",
       name: "Matchstick Sprint", nameJa: "マッチ棒スプリント",
       blurb: `${SPRINT_LEN} dojo puzzles against the clock.`,
@@ -4330,10 +4338,8 @@ export function GameApp({
             guestTopicLimit={guest ? GUEST_TOPICS : Infinity}
             progress={progress}
             li={li}
-            solvedCount={solvedCount}
             dailyStreak={dailyStreak}
             onOpenTopic={openTopic}
-            onOpenArena={() => { if (guestLocked("arena")) return; refreshShop(); loadPuzzle(puzIdx); setView("arena"); }}
             onOpenBlitz={openBlitzPicker}
             onOpenTricks={() => { if (guestLocked("tricks")) return; setTrickId(null); setView("tricks"); }}
             onOpenDaily={() => { if (guestLocked("daily")) return; startDaily(); }}
@@ -4815,7 +4821,7 @@ export function GameApp({
                   {!gameLocked(g.id) && !isUnlocked(g.id) && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock(g.id)}回` : `${gamesToUnlock(g.id)} to go`}</span>}
                   {g.best > 0 && !gameLocked(g.id) && (
                     <span className="game-card-best mono">
-                      {lang === "ja" ? "ベスト" : "best"} {g.best}
+                      {g.id === "dojo" ? `✓ ${g.best}/${PUZZLES.length}` : `${lang === "ja" ? "ベスト" : "best"} ${g.best}`}
                     </span>
                   )}
                   <span className="game-card-go">›</span>

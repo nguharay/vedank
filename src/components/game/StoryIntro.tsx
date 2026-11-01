@@ -95,6 +95,7 @@ export function StoryIntro({ lang, onDone, guest = true }: { lang: "en" | "ja"; 
       <div key={`t${scene}`} className="wi-text">
         <p className="wi-line">{tx(s.line)}</p>
         {s.sub && <p className="wi-sub">{guest ? tx(s.sub) : (ja ? "もう登録ずみ！すべてのコンテンツが使えるよ。" : "You're signed in. Everything is unlocked!")}</p>}
+        {s.sub && !guest && <p className="wi-privacy">{ja ? "メールアドレスは、ご本人の許可なく他の目的には使用しません。" : "Your email address will not be used for other purposes without your permission."}</p>}
         {scene === 3 && guest && (
           <div className="wi-btns" onClick={(e) => e.stopPropagation()}>
             <a className="btn btn-primary wi-cta" href="/signup?from=%2F">{ja ? "無料で登録する" : "Sign up free"}</a>
