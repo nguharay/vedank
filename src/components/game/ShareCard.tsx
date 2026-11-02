@@ -255,7 +255,7 @@ export function ShareSheet({
             {sharing ? "…" : `📤 ${t.share.shareBtn}`}
           </button>
           <button className="btn btn-ghost share-copy" onClick={copy}>
-            {copied ? `✅ ${t.share.copied}` : `📋 ${t.share.copy}`}
+            {copied ? `⭕ ${t.share.copied}` : `📋 ${t.share.copy}`}
           </button>
         </div>
         <button className="share-save" onClick={saveCard}>

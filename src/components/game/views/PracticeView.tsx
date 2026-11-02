@@ -1,6 +1,7 @@
 "use client";
 
 import { QuestionVisual } from "../QuestionVisual";
+import { DrawCircle } from "../DrawCircle";
 import { fmt } from "../util";
 import type { Mode } from "../util";
 import type { UIDict } from "../i18n";
@@ -189,7 +190,15 @@ export function PracticeView({
           {comboTier > 0 && <span className="combo-badge">×{comboTier + 1}</span>}
         </div>
         <div className="mode-eyebrow">{modeTag}</div>
-        {mode !== "truefalse" && (
+        {mode === "draw" && problem.draw && (
+          <>
+            <div className="question verify-ask">
+              {lang === "ja" ? `${problem.draw.t}の段の数字和を、9点の円に順番につなごう。` : `Join the Digit Sums of the table of ${problem.draw.t} on the 9-Point Circle, in order.`}
+            </div>
+            <DrawCircle key={qIndex} t={problem.draw.t} lang={lang} onDone={(ok) => onSelect(ok ? problem.answer : -1)} />
+          </>
+        )}
+        {mode !== "truefalse" && mode !== "draw" && (
           <div className={`question mono${shakeQuestion ? " shake" : ""}`}>{problem.prompt} = ?</div>
         )}
         {mode === "truefalse" && (
@@ -347,13 +356,13 @@ export function PracticeView({
                 className={`tf-btn${curSelection === true ? " picked true" : ""}${curSelection === true && shakeTile ? " shake-tile" : ""}`}
                 onClick={() => onSelect(true)}
               >
-                <span className="ic">{lang === "ja" ? <b className="maru">◯</b> : "✅"}</span>{t.practice.true}
+                <span className="ic"><b className="maru">◯</b></span>{t.practice.true}
               </button>
               <button
                 className={`tf-btn${curSelection === false ? " picked false" : ""}${curSelection === false && shakeTile ? " shake-tile" : ""}`}
                 onClick={() => onSelect(false)}
               >
-                <span className="ic">{lang === "ja" ? <b className="batsu">✕</b> : "❌"}</span>{t.practice.false}
+                <span className="ic"><b className="batsu">✕</b></span>{t.practice.false}
               </button>
             </div>
           </>

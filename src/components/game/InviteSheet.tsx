@@ -105,7 +105,7 @@ export function InviteSheet({ lang, onClose, extra }: { lang: "en" | "ja"; onClo
             </a>
           ))}
           <button className="invite-ch" onClick={copy}>
-            <span className="invite-ch-ico" style={{ background: "#7a58c0" }}>{copied ? "✅" : "🔗"}</span>
+            <span className="invite-ch-ico" style={{ background: "#7a58c0" }}>{copied ? "⭕" : "🔗"}</span>
             <span className="invite-ch-lab">{copied ? (ja ? "コピーした" : "Copied") : (ja ? "リンクをコピー" : "Copy link")}</span>
           </button>
         </div>

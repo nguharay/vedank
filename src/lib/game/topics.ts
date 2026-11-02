@@ -10,7 +10,9 @@ export type QuestionVisual =
    `prompt = right` or `prompt = wrong` at random and the player judges it; the
    why lines explain the digit-sum check afterwards, [en, ja]. */
 export type VerifyQ = { right: string; wrong: string; whyRight: [string, string]; whyWrong: [string, string] };
-export type Problem = { prompt: string; answer: number; visual?: QuestionVisual; verify?: VerifyQ };
+/* "Draw the design" questions (Digit Sum in a Circle): tap the 9-Point Circle
+   in the order of the table's digit sums. The answer is the table. */
+export type Problem = { prompt: string; answer: number; visual?: QuestionVisual; verify?: VerifyQ; draw?: { t: number } };
 
 export type ExStep = [string, string];
 
@@ -749,7 +751,7 @@ export const TOPICS: Topic[] = [
   /* ---------- after Digit Sum · checking answers with it (p126, p127) ---------- */
   {
     id: "verifyDS",
-    icon: "✓",
+    icon: "◯",
     grad: ["#3A1F78", "#2B1A63"],
     illus: "loop",
     title: "Verify with Digit Sum",
@@ -765,7 +767,7 @@ export const TOPICS: Topic[] = [
       "Find the Digit Sum of each number in the question.",
       "Do the same operation on those Digit Sums, and reduce to one digit.",
       "Find the Digit Sum of the answer.",
-      "If they match, the answer checks out ✓. If not, it is wrong.",
+      "If they match, the answer checks out ◯. If not, it is wrong.",
     ],
     stepsJa: [
       "問題のそれぞれの数の数字和を求める。",
@@ -814,7 +816,7 @@ export const TOPICS: Topic[] = [
         const why = (shown: number): [string, string] => {
           const ok = ds(shown) === chk;
           return [
-            `DS of ${a} → ${da}, DS of ${b} → ${db}. ${verb}: ${step}. DS of ${shown} → ${ds(shown)}, so the answer is ${ok ? "correct ✓" : "not correct ✗"}`,
+            `DS of ${a} → ${da}, DS of ${b} → ${db}. ${verb}: ${step}. DS of ${shown} → ${ds(shown)}, so the answer is ${ok ? "correct ◯" : "not correct ✕"}`,
             `${a} の数字和 → ${da}、${b} の数字和 → ${db}。${verbJa}：${step}。${shown} の数字和 → ${ds(shown)}。だから答えは${ok ? "正しい ◯" : "まちがい ✕"}`,
           ];
         };
@@ -845,7 +847,7 @@ export const TOPICS: Topic[] = [
         const raw = ds(d) * ds(qq) + ds(rr);
         const ok = ds(raw) === ds(n);
         return [
-          `DS: Divisor ${ds(d)} × Quotient ${ds(qq)} + Remainder ${ds(rr)} = ${raw} → ${ds(raw)}. DS of Dividend ${n} → ${ds(n)}, so the answer is ${ok ? "correct ✓" : "not correct ✗"}`,
+          `DS: Divisor ${ds(d)} × Quotient ${ds(qq)} + Remainder ${ds(rr)} = ${raw} → ${ds(raw)}. DS of Dividend ${n} → ${ds(n)}, so the answer is ${ok ? "correct ◯" : "not correct ✕"}`,
           `数字和：わる数 ${ds(d)} × 商 ${ds(qq)} + あまり ${ds(rr)} = ${raw} → ${ds(raw)}。わられる数 ${n} の数字和 → ${ds(n)}。だから答えは${ok ? "正しい ◯" : "まちがい ✕"}`,
         ];
       };
@@ -1496,9 +1498,17 @@ export const TOPICS: Topic[] = [
     },
     tip: "Work out every Digit Sum in your head!",
     tipJa: "数字和は 頭の中で 出そう！",
-    gen: (diff) => {
-      /* The table and the step. Hard uses a two-digit table, whose digit sum
-         draws the same shape as its one-digit twin (16 → 7). */
+    gen: (diff, stage) => {
+      /* In the lesson's stages the player draws the design (pp.205–206): stage 1
+         the stars 2 and 7, stage 2 the rings 1 and 8, stage 3 the sharper stars
+         4 and 5, stage 4 the triangles 3 and 6, stage 5 any of them. */
+      if (stage) {
+        const pool = [[2, 7], [1, 8], [4, 5], [3, 6]][stage - 1] ?? [1, 2, 3, 4, 5, 6, 7, 8];
+        const t = pool[ri(0, pool.length - 1)];
+        return { prompt: `DS(${t} × 1…10)`, answer: t, draw: { t } };
+      }
+      /* Elsewhere (Blitz, daily) it is one step of a table. Hard uses a two-digit
+         table, whose digit sum draws the same shape as its one-digit twin. */
       const t = diff === "hard" ? ri(11, 29) : ri(2, 9);
       const k = diff === "easy" ? ri(1, 10) : diff === "medium" ? ri(11, 30) : ri(2, 12);
       const p = t * k;

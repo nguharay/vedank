@@ -674,7 +674,7 @@ function BalanceFig({ segs, lang }: { segs: number[]; lang: Lang }) {
         return (
           <g key={ri}>
             <circle cx="14" cy={y} r="9" fill={final ? BLUE : "var(--ink)"} />
-            <text x="14" y={y + 4} textAnchor="middle" style={{ ...small, fill: "#fff" }}>{final ? "✓" : ri + 1}</text>
+            <text x="14" y={y + 4} textAnchor="middle" style={{ ...small, fill: "#fff" }}>{final ? "◯" : ri + 1}</text>
             {r.vals.map((v, i) => {
               const p = pos[i];
               const done = final || (r.cur !== null && i > r.cur);
@@ -1797,18 +1797,6 @@ function DigitPicker({ value, onPick, label }: { value: number; onPick: (d: numb
   );
 }
 
-function DsCircleExplorer({ lang }: { lang: Lang }) {
-  const ja = lang === "ja";
-  const [t, setT] = useState(4);
-  return (
-    <div>
-      <DsCircleFig t={t} lang={lang} />
-      <DigitPicker value={t} onPick={setT} label={ja ? "段をえらぶ" : "Pick a table"} />
-      <p className="bd-dsnote">{ja ? "気づいた？ 2と7、4と5は同じ形になるよ。" : "Did you notice? The tables of 2 & 7 draw the same shape, and so do 4 & 5."}</p>
-    </div>
-  );
-}
-
 /* p.207: the Digit-Sum square — row × column, each cell in its digit's colour.
    With `pick`, only that digit's boxes are coloured (pp.208–209), and `lines`
    joins them in turn around the centre, which is the shape they hide. */
@@ -1925,7 +1913,7 @@ function DsSquareColour({ lang }: { lang: Lang }) {
 /* pp.126–127 — verifying with the digit sum, set out as the book prints it:
    the operation pill, the working on the left with "Answer =" and the answer in
    orange, the "Digit Sum of … =" column on the right worked the same way, the
-   two DS lines that must agree, and the ✓ box under them. */
+   two DS lines that must agree, and the ◯ box under them. */
 type VerifySpec = {
   kind: [string, string];
   cols: string[]; op: string; answer: string;
@@ -1962,11 +1950,11 @@ function VerifyPill({ label }: { label: string }) {
     </g>
   );
 }
-function VerifyTick({ y, ja = false }: { y: number; ja?: boolean }) {
+function VerifyTick({ y }: { y: number }) {
   return (
     <g>
       <rect x="112" y={y} width="116" height="30" rx="6" fill="#EDE8FA" stroke={V_PURPLE} strokeWidth="1.4" />
-      <text x="170" y={y + 21} textAnchor="middle" style={{ ...VF, fontSize: 16, fontWeight: 700 }}>{ja ? "◯" : "✓"}</text>
+      <text x="170" y={y + 21} textAnchor="middle" style={{ ...VF, fontSize: 16, fontWeight: 700 }}>◯</text>
     </g>
   );
 }
@@ -2034,9 +2022,9 @@ function VerifyFig({ which, lang }: { which: keyof typeof VERIFY_SPECS; lang: La
       {/* the two sides that must agree */}
       <text x="20" y={yB} style={{ ...VF, fontSize: 13 }}>{ja ? v.left[1] : v.left[0]}</text>
       <text x={stack ? 20 : 188} y={yC} style={{ ...VF, fontSize: 13 }}>
-        {ja ? <><tspan fill={V_ORANGE}>{v.answer}</tspan> の数字和 → {ds} ◯</> : <>DS of <tspan fill={V_ORANGE}>{v.answer}</tspan> → {ds} ✓</>}
+        {ja ? <><tspan fill={V_ORANGE}>{v.answer}</tspan> の数字和 → {ds} ◯</> : <>DS of <tspan fill={V_ORANGE}>{v.answer}</tspan> → {ds} ◯</>}
       </text>
-      <VerifyTick y={yC + 14} ja={ja} />
+      <VerifyTick y={yC + 14} />
     </svg>
     </div>
   );
@@ -2069,8 +2057,8 @@ function VerifyDivFig({ lang }: { lang: Lang }) {
       </g>
 
       <text x="14" y="178" style={{ ...VF, fontSize: 13 }}>{ja ? "DS：わる数 0 × 商 1 + あまり 3 → 3" : "DS:  Divisor 0 × Quotient 1 + Remainder 3 → 3"}</text>
-      <text x="14" y="198" style={{ ...VF, fontSize: 13 }}>{ja ? "わられる数 123123 の数字和 → 3 ◯" : "DS of Dividend 123123 → 3 ✓"}</text>
-      <VerifyTick y={210} ja={ja} />
+      <text x="14" y="198" style={{ ...VF, fontSize: 13 }}>{ja ? "わられる数 123123 の数字和 → 3 ◯" : "DS of Dividend 123123 → 3 ◯"}</text>
+      <VerifyTick y={210} />
     </svg>
     </div>
   );
@@ -2216,7 +2204,6 @@ export const BOOK_INTRO: Partial<Record<string, { title: string; titleJa: string
 
 /* Further example cards, where the book page has more than two. */
 export const BOOK_MORE: Partial<Record<string, { eq: string; D: (p: { lang: Lang }) => React.ReactElement }[]>> = {
-  dsCircle: [{ eq: "Your turn — any table", D: DsCircleExplorer }],
   verifyDS: [
     { eq: "Verify: 342 × 874 = 298908", D: ({ lang }) => <VerifyFig which="mul" lang={lang} /> },
     { eq: "Verify: 123123 ÷ 99 = Q 1243, R 66", D: VerifyDivFig },
@@ -2238,7 +2225,6 @@ export const BOOK_EQ_JA: Partial<Record<string, string>> = {
   "Verify: 7342 − 4786 = 2546": "たしかめ：7342 − 4786 = 2546",
   "Verify: 342 × 874 = 298908": "たしかめ：342 × 874 = 298908",
   "Verify: 123123 ÷ 99 = Q 1243, R 66": "たしかめ：123123 ÷ 99 = 商 1243、あまり 66",
-  "Your turn — any table": "やってみよう — 好きな段で",
   "DS of the tables 1 to 9": "1〜9の段の数字和",
   "Colour all 8s": "8をぜんぶぬる",
   "Your turn — any digit": "やってみよう — 好きな数字で",

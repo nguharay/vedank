@@ -110,7 +110,7 @@ export const BLITZ_BOOST_MS = 4000;
 
 export type View = "home" | "topic" | "stagemap" | "practice" | "arena" | "blitz" | "tricks" | "daily" | "review" | "comp" | "match" | "games" | "bigger" | "odd" | "sortg" | "memory" | "quick" | "ttt" | "pop" | "runner" | "race" | "sushi" | "castle" | "konbini" | "crossword" | "crossmath" | "rhythm" | "town" | "ninja" | "party" | "space" | "river";
 
-export type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline";
+export type Mode = "type" | "choice" | "target" | "truefalse" | "arcade" | "catch" | "balloon" | "numberline" | "draw";
 
 export type Loc = { loc: "board" | "tray"; gi: number | null; slot: string | null; idx: number | null };
 

@@ -64,7 +64,7 @@ export type UIDict = {
   practice: {
     question: string; lesson: string; check: string; continueBtn: string; correct: string; incorrect: string; bossStage: string;
     stageOf: (n: number, total: number) => string;
-    modeTags: { type: string; choice: string; target: string; arcade: string; catch: string; truefalse: string; balloon: string; numberline: string };
+    modeTags: { type: string; choice: string; target: string; arcade: string; catch: string; truefalse: string; balloon: string; numberline: string; draw: string };
     runs: string; scoreIt: string; homeRun: string; strike: string; true: string; false: string;
   };
   result: {
@@ -155,6 +155,7 @@ export const UI: Record<LangCode, UIDict> = {
         truefalse: "🔎 True or false?",
         balloon: "🎈 Pop the answer!",
         numberline: "📏 Tap the number line",
+        draw: "✏️ Draw the design",
       },
       runs: "RUNS",
       scoreIt: "➕ Score it!",
@@ -287,6 +288,7 @@ export const UI: Record<LangCode, UIDict> = {
         truefalse: "🔎 正か誤か？",
         balloon: "🎈 風船をポップ！",
         numberline: "📏 数直線をタップ",
+        draw: "✏️ デザインをかこう",
       },
       runs: "得点",
       scoreIt: "➕ 得点を入れる！",

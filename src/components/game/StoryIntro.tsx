@@ -76,7 +76,7 @@ export function StoryIntro({ lang, onDone, guest = true }: { lang: "en" | "ja"; 
           <>
             <span className="wi-card">
               <span className="wi-card-row">📧 <i>you@email</i></span>
-              <span className="wi-card-row ok">✅ {ja ? "無料アカウント" : "Free account"}</span>
+              <span className="wi-card-row ok">⭕ {ja ? "無料アカウント" : "Free account"}</span>
               <span className="wi-unlock">🔓</span>
             </span>
             <span className="wi-buddy point"><Mascot animated={false} mood="happy" /></span>
