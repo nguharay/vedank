@@ -329,6 +329,7 @@ export function HomeView({
         </div>
       ) : null}
 
+      <ThreeStarList progress={progress} lang={lang} onOpenTopic={onOpenTopic} locked={(id, i) => !topicUnlocked(progress, id) || i >= guestTopicLimit} />
       <SectionHead icon="🗺️" title={lang === "ja" ? "インド式数学の学びのマップ" : "Learning map for Vedic Math"} sub={lang === "ja" ? "トピックを順番にクリアして、先へ進もう" : "Clear topics in order to move ahead"} />
 
       <div className="path-wrap" ref={pathWrapRef}>
@@ -355,9 +356,11 @@ export function HomeView({
                   >
                     {locked ? "🔒" : tp.icon}
                     <span className="stage-pips">
-                      {Array.from({ length: STAGE_COUNT }, (_, k) => (
-                        <i key={k} className={k < p.cleared ? "on" : ""}>★</i>
-                      ))}
+                      {/* gold = 3 stars, pale = cleared with 1–2 stars (try again), grey = not cleared */}
+                      {Array.from({ length: STAGE_COUNT }, (_, k) => {
+                        const st = p.stageStars[String(k + 1)] || 0;
+                        return <i key={k} className={st >= 3 ? "on" : st > 0 ? "part" : ""}>★</i>;
+                      })}
                     </span>
                   </div>
                   {!locked && (
@@ -624,5 +627,53 @@ function InviteCard({ lang }: { lang: "en" | "ja" }) {
       </span>
       <span className="invite-card-go">{ja ? "招待 ▶" : "Invite ▶"}</span>
     </button>
+  );
+}
+
+/* Every cleared stage that has fewer than 3 stars, grouped by lesson — so a
+   player can see what to replay for a full set. Collapsed until tapped. */
+function ThreeStarList({ progress, lang, onOpenTopic, locked }: {
+  progress: ProgressState; lang: Lang; onOpenTopic: (id: string) => void; locked: (id: string, i: number) => boolean;
+}) {
+  const ja = lang === "ja";
+  const [open, setOpen] = useState(false);
+  const items = TOPICS.flatMap((tp, i) => {
+    if (locked(tp.id, i)) return [];
+    const p = topicProgressOf(progress, tp.id);
+    const short = Array.from({ length: STAGE_COUNT }, (_, k) => ({ n: k + 1, st: p.stageStars[String(k + 1)] || 0 }))
+      .filter((x) => x.st > 0 && x.st < 3);
+    return short.length ? [{ tp, i, short }] : [];
+  });
+  const count = items.reduce((a, x) => a + x.short.length, 0);
+  if (!count) return null;
+  return (
+    <div className={`star-list${open ? " open" : ""}`}>
+      <button className="star-list-head" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <span className="star-list-ico" aria-hidden="true">⭐</span>
+        <span className="star-list-txt">
+          <b>{ja ? "3つ星をねらおう" : "Go for 3 stars"}</b>
+          <small>{ja ? `まだ3つ星じゃないステージ：${count}こ` : `${count} stage${count > 1 ? "s" : ""} not at 3 stars yet`}</small>
+        </span>
+        <span className="star-list-chev" aria-hidden="true">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="star-list-body">
+          {items.map(({ tp, i, short }) => (
+            <button key={tp.id} className="star-list-row" onClick={() => onOpenTopic(tp.id)}>
+              <span className="star-list-n mono">{i + 1}</span>
+              <span className="star-list-name">{ja ? tp.titleJa : tp.title}</span>
+              <span className="star-list-stages">
+                {short.map((x) => (
+                  <span key={x.n} className="star-list-stage">
+                    <small>{ja ? `ステージ${x.n}` : `Stage ${x.n}`}</small>
+                    {[0, 1, 2].map((k) => <i key={k} className={k < x.st ? "on" : ""}>★</i>)}
+                  </span>
+                ))}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

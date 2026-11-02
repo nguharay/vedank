@@ -4914,3 +4914,23 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .league-divider.up::before,.league-divider.up::after{ background:#3fbf2a; }
 .league-divider.down{ color:#c2373b; }
 .league-divider.down::before,.league-divider.down::after{ background:#e5484d; }
+
+/* map pips: pale star = cleared but under 3 stars */
+.stage-pips i.part{ color:#b9b4d9; text-shadow:none; }
+/* the "go for 3 stars" list above the map */
+.star-list{ margin:4px 0 14px; border-radius:16px; background:var(--surface); border:2px solid var(--line); overflow:hidden; }
+.star-list-head{ width:100%; display:flex; align-items:center; gap:10px; padding:10px 14px; background:none; border:0; cursor:pointer; text-align:left; color:var(--ink); font:inherit; }
+.star-list-ico{ font-size:22px; }
+.star-list-txt{ flex:1; display:flex; flex-direction:column; line-height:1.3; }
+.star-list-txt b{ font-size:14px; font-weight:900; }
+.star-list-txt small{ font-size:12px; font-weight:700; color:var(--muted); }
+.star-list-chev{ font-size:11px; color:var(--muted); }
+.star-list-body{ display:flex; flex-direction:column; gap:6px; padding:0 10px 12px; max-height:340px; overflow:auto; }
+.star-list-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:12px; background:var(--surface-2); border:0; cursor:pointer; text-align:left; color:var(--ink); font:inherit; }
+.star-list-n{ width:24px; height:24px; flex:none; border-radius:50%; display:grid; place-items:center; background:var(--ink); color:var(--surface); font-size:11px; font-weight:900; }
+.star-list-name{ flex:1; min-width:0; font-size:13px; font-weight:800; line-height:1.3; }
+.star-list-stages{ display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px 10px; max-width:55%; }
+.star-list-stage{ display:inline-flex; align-items:center; gap:1px; white-space:nowrap; }
+.star-list-stage small{ font-size:10.5px; font-weight:800; color:var(--muted); margin-right:3px; }
+.star-list-stage i{ font-style:normal; font-size:13px; color:var(--line-strong); }
+.star-list-stage i.on{ color:#ffc21a; }
