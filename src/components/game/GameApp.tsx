@@ -1200,6 +1200,8 @@ export function GameApp({
   /* admin only: "all leagues" tab in the league sheet */
   const [leagueAll, setLeagueAll] = useState<{ weekStart: string; tables: LeagueTable[] } | null>(null);
   const [leagueTab, setLeagueTab] = useState<"mine" | "all">("mine");
+  /* Admin "All leagues": hide last week's players who have not played this week. */
+  const [leagueHideIdle, setLeagueHideIdle] = useState(true);
   const [stageIntro, setStageIntro] = useState<number | null>(null);
   const isBoss = curStage.n === STAGE_COUNT;
 
@@ -4187,13 +4189,19 @@ export function GameApp({
               <div className="leaderboard-panel league-all">
                 {!leagueAll && <div className="leaderboard-loading">{ja ? "読み込み中…" : "Loading…"}</div>}
                 {leagueAll && !leagueAll.tables.length && <div className="leaderboard-loading">{ja ? "まだ誰もいません" : "Nobody in a league yet"}</div>}
-                {leagueAll?.tables.map((tb) => (
+                {leagueAll?.tables.some((tb) => tb.rows.some((r) => r.waiting)) && (
+                  <label className="league-idle-filter">
+                    <input type="checkbox" checked={leagueHideIdle} onChange={(e) => setLeagueHideIdle(e.target.checked)} />
+                    {ja ? `今週まだプレイしていない人をかくす（${leagueAll.tables.reduce((n, tb) => n + tb.rows.filter((r) => r.waiting).length, 0)}人）` : `Hide players who haven't played this week (${leagueAll.tables.reduce((n, tb) => n + tb.rows.filter((r) => r.waiting).length, 0)})`}
+                  </label>
+                )}
+                {leagueAll?.tables.filter((tb) => !leagueHideIdle || tb.size > 0).map((tb) => (
                   <div key={tb.league.tier} className="league-all-group">
                     <div className="league-all-head" style={{ ["--lc" as string]: tb.league.color }}>
                       <span>{tb.league.icon} {ja ? tb.league.nameJa : tb.league.name}</span>
                       <small>{ja ? `${tb.size}人` : `${tb.size} players`}{tb.rows.some((r) => r.waiting) ? (ja ? `（まだ ${tb.rows.filter((r) => r.waiting).length}人）` : ` (+${tb.rows.filter((r) => r.waiting).length} yet to play)`) : ""}{tb.promote ? (ja ? ` · 上へ${tb.promote}人` : ` · ${tb.promote} go up`) : ""}{tb.relegate ? (ja ? ` · 下へ${tb.relegate}人` : ` · ${tb.relegate} go down`) : ""}</small>
                     </div>
-                    {tb.rows.map((r) => (
+                    {tb.rows.filter((r) => !leagueHideIdle || !r.waiting).map((r) => (
                       <Fragment key={r.userId}>
                       {tb.relegate > 0 && r.rank === tb.size - tb.relegate + 1 && leagueDivider("down", tb.league.tier, ja)}
                       <div className={`leaderboard-row${r.isMe ? " me" : ""}${r.waiting ? " waiting" : ""}${tb.promote > 0 && r.rank > 0 && r.rank <= tb.promote ? " zone-up" : ""}${tb.relegate > 0 && r.rank > tb.size - tb.relegate ? " zone-down" : ""}`}>
