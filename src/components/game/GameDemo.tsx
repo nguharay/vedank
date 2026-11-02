@@ -63,7 +63,7 @@ const QUICK_EXAMPLES: Record<string, { prompt: string; tiles: Tile[]; tap: numbe
   missing: { prompt: "□ + 15 = 40", tiles: row3(["35", "25", "15"]), tap: 1, note: "40 − 15 = 25" },
   lastdigit: { prompt: "37 × 23 → ?", tiles: row3(["1", "3", "9"]), tap: 0, note: "7 × 3 = 21 → 1" },
   digitsum: { prompt: "487 → ?", tiles: row3(["1", "10", "19"]), tap: 0, note: "4+8+7 = 19 → 1+9 = 10 → 1" },
-  div9: { prompt: "4,383 ÷ 9 ?", tiles: row2(["○", "×"]).map((t) => ({ ...t, cls: "dm-ans big" })), tap: 0, note: "4+3+8+3 = 18 ✓" },
+  div9: { prompt: "4,383 ÷ 9 ?", tiles: row2(["○", "×"]).map((t) => ({ ...t, cls: "dm-ans big" })), tap: 0, note: "4+3+8+3 = 18 ◯" },
   sq5: { prompt: "35²", tiles: row3(["1,225", "925", "1,525"]), tap: 0, note: "3 × 4 = 12 → 1225" },
   x11: { prompt: "43 × 11", tiles: row3(["443", "473", "4,733"]), tap: 1, note: "4 (4+3) 3 → 473" },
   estimate: { prompt: "49 × 21 ≈ ?", tiles: row3(["500", "1,000", "2,000"]), tap: 1, note: "≈ 50 × 20 = 1,000" },
@@ -129,7 +129,7 @@ const DEMOS: Record<string, Demo> = {
     decor: (c) => (<>
       <span className="dm-sum" style={{ left: 180, top: 52 }}>= 8</span><span className="dm-sum" style={{ left: 180, top: 106 }}>= 6</span>
       <span className="dm-sum" style={{ left: 74, top: 152 }}>5</span><span className="dm-sum" style={{ left: 128, top: 152 }}>9</span>
-      {c.win && <span className="dm-ok">✓</span>}
+      {c.win && <span className="dm-ok">◯</span>}
     </>),
     tiles: [
       { x: 70, y: 44, w: 46, h: 46, label: "3", cls: "dm-cell" },
@@ -142,7 +142,7 @@ const DEMOS: Record<string, Demo> = {
       { x: 200, y: 200, w: 82, h: 44, label: "Check", cls: "dm-key go" },
     ],
     taps: [1, 5, 7],
-    caps: [WATCH, ["👆 Tap a blank, then pick a number", "👆 空いたマス → 数字をタップ"], ["✅ Every row and column must add up", "✅ たても横も合計があえばクリア"]],
+    caps: [WATCH, ["👆 Tap a blank, then pick a number", "👆 空いたマス → 数字をタップ"], ["⭕ Every row and column must add up", "⭕ たても横も合計があえばクリア"]],
     turn: ["Fill the blanks so every row and column adds up.", "たて・よこの合計があうようにマスをうめよう。"],
   },
   rhythm: {
@@ -221,7 +221,7 @@ const DEMOS: Record<string, Demo> = {
       <Digit d="1" x={118} y={82} />
       <span className="dm-eq" style={{ left: 160, top: 98 }} /><span className="dm-eq" style={{ left: 160, top: 112 }} />
       <Digit d="1" x={196} y={82} /><Digit d="0" x={236} y={82} />
-      {c.win && <span className="dm-ok">✓</span>}
+      {c.win && <span className="dm-ok">◯</span>}
     </>),
     tiles: [{ x: 22, y: 113, w: 6, h: 23, label: "", cls: "dm-stick" }],
     taps: [{ i: 0, to: { x: 86, y: 96 } }],

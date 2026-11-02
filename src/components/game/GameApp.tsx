@@ -609,7 +609,7 @@ export function GameApp({
       setGemBalance(res.balance ?? null);
       sound.correct();
       const item = SHOP_ITEMS.find((i) => i.id === itemId);
-      spawnToast(`${item?.icon ?? "✅"} ${lang === "ja" ? "購入しました" : "Bought!"}`, null);
+      spawnToast(`${item?.icon ?? "⭕"} ${lang === "ja" ? "購入しました" : "Bought!"}`, null);
     } else {
       setShopNote(res.error ?? null);
       sound.wrong();
@@ -947,7 +947,7 @@ export function GameApp({
       <div className="quest-list">
         {quests.map((q) => (
           <div key={q.id} className={`quest-row${q.claimed ? " claimed" : q.done ? " ready" : ""}`}>
-            <span className="quest-icon">{q.claimed ? "✅" : q.icon}</span>
+            <span className="quest-icon">{q.claimed ? "⭕" : q.icon}</span>
             <div className="quest-body">
               <div className="quest-title">{lang === "ja" ? q.titleJa : q.title}</div>
               <div className="quest-track">
@@ -1231,7 +1231,7 @@ export function GameApp({
     let forced: Mode | null = null;
     if (process.env.NODE_ENV !== "production") { try { forced = localStorage.getItem("dev.forceMode") as Mode | null; } catch {} }
     /* A verify question is always "is this answer correct?". */
-    const useMode: Mode = problem.verify ? "truefalse" : forced ?? mode;
+    const useMode: Mode = problem.draw ? "draw" : problem.verify ? "truefalse" : forced ?? mode;
     setCurProblem(problem);
     setCurMode(useMode);
     setCurSelection(null);
@@ -1242,7 +1242,8 @@ export function GameApp({
     setEliminated([]);
     answeredRef.current = false;
     /* Verifying is three digit sums and a comparison, so it gets twice as long. */
-    setTimerMs((problem.verify ? 60 + 15 * (n - 1) : 30 + 10 * (n - 1)) * 1000);
+    /* Drawing a design is ten digit sums and ten taps. */
+    setTimerMs((problem.draw ? 120 : problem.verify ? 60 + 15 * (n - 1) : 30 + 10 * (n - 1)) * 1000);
     setTimerKey((k) => k + 1);
     questionStartRef.current = Date.now();
     if (useMode === "choice") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
@@ -1422,7 +1423,8 @@ export function GameApp({
       /* Bank the miss for review. Silent on failure — a dropped mistake is a
          smaller problem than an interrupted question. */
       if (currentTopic) {
-        if (!guest) recordMistakeAction(currentTopic.id, curProblem.prompt, curProblem.answer)
+        /* a missed drawing has no single number to review later */
+        if (!guest && !curProblem.draw) recordMistakeAction(currentTopic.id, curProblem.prompt, curProblem.answer)
           .then(refreshReview)
           .catch(() => {});
       }
@@ -1452,7 +1454,7 @@ export function GameApp({
     setFeedback({
       show: true,
       ok,
-      t2: vq ? `${timedOut ? "⏰ " : ""}${why}` : ok ? "" : `${timedOut ? "⏰ " : ""}${curProblem.prompt} = ${fmt(curProblem.answer)}`,
+      t2: vq ? `${timedOut ? "⏰ " : ""}${why}` : curProblem.draw ? (ok ? "" : `${timedOut ? "⏰ " : ""}${Array.from({ length: 10 }, (_, i) => 1 + ((curProblem.draw!.t * (i + 1) - 1) % 9)).join(" → ")}`) : ok ? "" : `${timedOut ? "⏰ " : ""}${curProblem.prompt} = ${fmt(curProblem.answer)}`,
     });
     hasFeedbackRef.current = true;
     if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
@@ -3386,7 +3388,7 @@ export function GameApp({
                             {unlocked ? skinBlurb(s, ja) : skinUnlockLabel(s, ja)}
                           </span>
                         </span>
-                        {skin.skinId === s.id && <span className="skin-row-check" aria-hidden="true">✓</span>}
+                        {skin.skinId === s.id && <span className="skin-row-check" aria-hidden="true">◯</span>}
                       </button>
                     );
                   })}
@@ -3779,7 +3781,7 @@ export function GameApp({
               </div>
               <button className="friend-code mono" onClick={copyFriendCode}>
                 {friendCode ?? "…"}
-                <span className="friend-code-copy">{codeCopied ? "✅" : "📋"}</span>
+                <span className="friend-code-copy">{codeCopied ? "⭕" : "📋"}</span>
               </button>
               <div className="friend-code-hint">
                 {lang === "ja"
@@ -3915,7 +3917,7 @@ export function GameApp({
                       aria-label={lang === "ja" ? "招待リンクを共有" : "Share invite link"}
                       onClick={() => onShareRace(c.id)}
                     >
-                      {copiedRace === c.id ? "✅" : "🔗"}
+                      {copiedRace === c.id ? "⭕" : "🔗"}
                     </button>
                   )}
                   {c.hostedByMe && c.status === "live" && (
@@ -4884,7 +4886,7 @@ export function GameApp({
                   {!gameLocked(g.id) && !isUnlocked(g.id) && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock(g.id)}回` : `${gamesToUnlock(g.id)} to go`}</span>}
                   {g.best > 0 && !gameLocked(g.id) && (
                     <span className="game-card-best mono">
-                      {g.id === "dojo" ? `✓ ${g.best}/${PUZZLES.length}` : `${lang === "ja" ? "ベスト" : "best"} ${g.best}`}
+                      {g.id === "dojo" ? `◯ ${g.best}/${PUZZLES.length}` : `${lang === "ja" ? "ベスト" : "best"} ${g.best}`}
                     </span>
                   )}
                   <span className="game-card-go">›</span>
@@ -5470,7 +5472,7 @@ export function GameApp({
         <div className={`feedback-banner show ${feedback.ok ? "good" : "bad"}`} style={{ bottom: footerH }}>
           <div className="feedback-sfx-stamp">{feedback.ok ? "ピンポン♪" : "ブブー"}</div>
           <div className="feedback-inner">
-            <div className="feedback-icon">{feedback.ok ? (lang === "ja" ? "◯" : "✓") : "✕"}</div>
+            <div className="feedback-icon">{feedback.ok ? "◯" : "✕"}</div>
             <div className="feedback-text">
               <div className="t1">{feedback.ok ? t.practice.correct : t.practice.incorrect}</div>
               <div className="t2">{feedback.t2}</div>
@@ -5539,7 +5541,7 @@ export function GameApp({
                 <div className="run-recap-head">
                   {lang === "ja" ? "このステージのふりかえり" : "How it went"}
                   {stageLog.some((e) => !e.ok) && (
-                    <span className="run-recap-cta">{lang === "ja" ? "✗をタップして解き方を見る" : "tap a ✗ for the method"}</span>
+                    <span className="run-recap-cta">{lang === "ja" ? "✕をタップして解き方を見る" : "tap a ✕ for the method"}</span>
                   )}
                 </div>
                 {[...stageLog]
@@ -5555,7 +5557,7 @@ export function GameApp({
                       onKeyDown={e.ok ? undefined : (ev) => { if (ev.key === "Enter" || ev.key === " ") setHintOpen(true); }}
                       title={e.ok ? undefined : lang === "ja" ? "解き方を見る" : "Show me how"}
                     >
-                      <span className="run-mark">{e.ok ? (lang === "ja" ? "◯" : "✓") : (lang === "ja" ? "✕" : "✗")}</span>
+                      <span className="run-mark">{e.ok ? "◯" : "✕"}</span>
                       <span className="run-q mono">{e.prompt}</span>
                       <span className="run-a mono">
                         {e.ok ? (

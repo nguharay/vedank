@@ -365,7 +365,7 @@ export function HomeView({
                   </div>
                   {!locked && (
                     <span className={`node-monster${p.cleared >= STAGE_COUNT ? " beaten" : ""}`} aria-hidden="true">
-                      {monsterFor(tp.id, 1, lang).emoji}{p.cleared >= STAGE_COUNT && <i>✓</i>}
+                      {monsterFor(tp.id, 1, lang).emoji}{p.cleared >= STAGE_COUNT && <i>◯</i>}
                     </span>
                   )}
                   <span className="node-platform" />
@@ -425,7 +425,7 @@ export function HomeView({
       )}
 
       <div className={`blitz-cta daily-cta${dailyPlayed ? " played" : ""}`} onClick={onOpenDaily}>
-        <div className="blitz-cta-icon">{dailyPlayed ? "✅" : "🗓️"}</div>
+        <div className="blitz-cta-icon">{dailyPlayed ? "⭕" : "🗓️"}</div>
         <div className="blitz-cta-info">
           <div className="blitz-cta-title">{lang === "ja" ? "デイリーチャレンジ" : "Daily Challenge"}</div>
           <div className="blitz-cta-sub">

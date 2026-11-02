@@ -141,7 +141,7 @@ export function BookMethodCard({
     <div className="bookmethod-wrap">
       {pattern && (
         <div className="bookmethod-card bookpattern-card" style={{ background: `color-mix(in srgb, ${topic.grad[0]} 14%, var(--surface-2))`, borderColor: topic.grad[0] }}>
-          <span className="bookmethod-badge bookpattern-badge">✓</span>
+          <span className="bookmethod-badge bookpattern-badge">◯</span>
           <div>
             <div className="bookmethod-title">{lang === "ja" ? "パターン" : "Pattern"}</div>
             <div className="bookmethod-desc">{pattern}</div>

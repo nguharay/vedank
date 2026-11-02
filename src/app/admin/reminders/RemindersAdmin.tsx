@@ -77,7 +77,7 @@ export function RemindersAdmin({ rows: initial, runs, reach, adminEmail, pushOn 
           <div className="admin-stat"><b className="mono">{reach.players}</b><span>signed-in players reachable</span></div>
           <div className="admin-stat"><b className="mono">{reach.guests}</b><span>guests reachable</span></div>
           <div className="admin-stat"><b className="mono">{rows.filter((r) => r.enabled).length}</b><span>messages on</span></div>
-          <div className="admin-stat"><b>{pushOn ? "✅" : "⚠️"}</b><span>{pushOn ? "push configured" : "push keys missing"}</span></div>
+          <div className="admin-stat"><b>{pushOn ? "⭕" : "⚠️"}</b><span>{pushOn ? "push configured" : "push keys missing"}</span></div>
         </div>
         <p className="rem-help">
           <b>One notification goes out a day, at 19:00 JST</b>, from the <b>evening</b> list. Each day the next message in that list is sent,

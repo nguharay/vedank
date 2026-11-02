@@ -414,7 +414,7 @@ export function ClassroomBoard({
                 <div className="cls-invite-sub">Scan the QR code, or enter the code under 🏫 Class in the app menu.</div>
                 <div className="cls-invite-btns">
                   <button className="cls-chip-btn" onClick={() => setInviteBig(true)}>🖥 Show on screen</button>
-                  <button className="cls-chip-btn" onClick={copyLink} disabled={!inviteUrl}>{copied ? "✓ Copied" : "🔗 Copy link"}</button>
+                  <button className="cls-chip-btn" onClick={copyLink} disabled={!inviteUrl}>{copied ? "◯ Copied" : "🔗 Copy link"}</button>
                 </div>
               </div>
             </div>

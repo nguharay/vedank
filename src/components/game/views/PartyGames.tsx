@@ -437,7 +437,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
                 ? <button className="btn btn-primary" onClick={start} disabled={busy || n < 2}>{n < 2 ? (ja ? "2人以上でスタート" : "Needs 2 players") : (ja ? `${n}人でスタート！` : `Start with ${n}!`)}</button>
                 : (
                   <div className="party-waiting">
-                    <b>✅ {ja ? "参加しました！" : "You're in!"}</b>
+                    <b>⭕ {ja ? "参加しました！" : "You're in!"}</b>
                     <span>{(() => { const h = room.players.find((p) => p.host)?.name ?? (ja ? "ホスト" : "the host"); return ja ? `${h} さんがスタートするのを待っています` : `Waiting for ${h} to start`; })()}<i className="party-dots"><i>.</i><i>.</i><i>.</i></i></span>
                   </div>
                 )}
