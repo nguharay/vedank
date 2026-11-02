@@ -17,6 +17,9 @@ export type LeagueRow = {
   points: number;
   rank: number;
   isMe: boolean;
+  /* admin view: played last week, not yet this week — shown in the league
+     they have moved into, with no points and no rank */
+  waiting?: boolean;
 };
 
 export type LeagueStanding = {
@@ -172,14 +175,35 @@ export async function getLeagueStanding(userId: string, limit = 25): Promise<Lea
 export type LeagueTable = { league: League; size: number; promote: number; relegate: number; rows: LeagueRow[] };
 
 export async function getAllLeagues(viewerId: string, week = weekStartKey()): Promise<{ weekStart: string; tables: LeagueTable[] }> {
-  const rows = await getDb()
-    .select({ userId: leaguePoints.userId, points: leaguePoints.points, tier: leaguePoints.tier, name: users.name, username: users.username })
-    .from(leaguePoints)
+  const db = getDb();
+  const pick = { userId: leaguePoints.userId, points: leaguePoints.points, tier: leaguePoints.tier, name: users.name, username: users.username };
+  const rows = await db.select(pick).from(leaguePoints)
     .innerJoin(users, eq(users.id, leaguePoints.userId))
     .where(eq(leaguePoints.weekStart, week))
     .orderBy(desc(leaguePoints.tier), desc(leaguePoints.points));
+
+  /* A new week starts empty until people play, so on a Monday whole leagues
+     vanished. Last week's players who have not played yet are listed in the
+     league they move into (the same settlement tierForWeek applies). */
+  const prevDate = new Date(week + "T00:00:00");
+  prevDate.setDate(prevDate.getDate() - 7);
+  const prev = await db.select(pick).from(leaguePoints)
+    .innerJoin(users, eq(users.id, leaguePoints.userId))
+    .where(eq(leaguePoints.weekStart, todayKey(prevDate)))
+    .orderBy(desc(leaguePoints.points));
+  const played = new Set(rows.map((r) => r.userId));
+  const prevByTier = new Map<number, typeof prev>();
+  for (const r of prev) prevByTier.set(r.tier, [...(prevByTier.get(r.tier) ?? []), r]);
+  const waiting: { userId: string; name: string; tier: number }[] = [];
+  for (const [tier, list] of prevByTier) {
+    list.forEach((r, i) => {
+      if (!played.has(r.userId)) waiting.push({ userId: r.userId, name: r.username || r.name, tier: nextTier(tier, i + 1, list.length) });
+    });
+  }
+
   const byTier = new Map<number, typeof rows>();
   for (const r of rows) byTier.set(r.tier, [...(byTier.get(r.tier) ?? []), r]);
+  for (const w of waiting) if (!byTier.has(w.tier)) byTier.set(w.tier, []);
   const tables: LeagueTable[] = [...byTier.entries()].sort((a, b) => b[0] - a[0]).map(([tier, list]) => {
     const size = list.length;
     const moving = size >= 5 ? Math.max(1, Math.floor(size * 0.2)) : 0;
@@ -187,7 +211,10 @@ export async function getAllLeagues(viewerId: string, week = weekStartKey()): Pr
       league: leagueOf(tier), size,
       promote: tier < TOP_LEAGUE ? moving : 0,
       relegate: tier > 0 ? moving : 0,
-      rows: list.map((r, i) => ({ userId: r.userId, name: r.username || r.name, points: r.points, rank: i + 1, isMe: r.userId === viewerId })),
+      rows: [
+        ...list.map((r, i) => ({ userId: r.userId, name: r.username || r.name, points: r.points, rank: i + 1, isMe: r.userId === viewerId })),
+        ...waiting.filter((w) => w.tier === tier).map((w) => ({ userId: w.userId, name: w.name, points: 0, rank: 0, isMe: w.userId === viewerId, waiting: true })),
+      ],
     };
   });
   return { weekStart: week, tables };

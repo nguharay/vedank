@@ -4184,20 +4184,22 @@ export function GameApp({
             {isAdmin && leagueTab === "all" ? (
               <div className="leaderboard-panel league-all">
                 {!leagueAll && <div className="leaderboard-loading">{ja ? "読み込み中…" : "Loading…"}</div>}
-                {leagueAll && !leagueAll.tables.length && <div className="leaderboard-loading">{ja ? "今週はまだ誰もいません" : "Nobody has played this week yet"}</div>}
+                {leagueAll && !leagueAll.tables.length && <div className="leaderboard-loading">{ja ? "まだ誰もいません" : "Nobody in a league yet"}</div>}
                 {leagueAll?.tables.map((tb) => (
                   <div key={tb.league.tier} className="league-all-group">
                     <div className="league-all-head" style={{ ["--lc" as string]: tb.league.color }}>
                       <span>{tb.league.icon} {ja ? tb.league.nameJa : tb.league.name}</span>
-                      <small>{ja ? `${tb.size}人` : `${tb.size} players`}{tb.promote ? (ja ? ` · 上へ${tb.promote}人` : ` · ${tb.promote} go up`) : ""}{tb.relegate ? (ja ? ` · 下へ${tb.relegate}人` : ` · ${tb.relegate} go down`) : ""}</small>
+                      <small>{ja ? `${tb.size}人` : `${tb.size} players`}{tb.rows.some((r) => r.waiting) ? (ja ? `（まだ ${tb.rows.filter((r) => r.waiting).length}人）` : ` (+${tb.rows.filter((r) => r.waiting).length} yet to play)`) : ""}{tb.promote ? (ja ? ` · 上へ${tb.promote}人` : ` · ${tb.promote} go up`) : ""}{tb.relegate ? (ja ? ` · 下へ${tb.relegate}人` : ` · ${tb.relegate} go down`) : ""}</small>
                     </div>
                     {tb.rows.map((r) => (
                       <Fragment key={r.userId}>
                       {tb.relegate > 0 && r.rank === tb.size - tb.relegate + 1 && leagueDivider("down", tb.league.tier, ja)}
-                      <div className={`leaderboard-row${r.isMe ? " me" : ""}${tb.promote > 0 && r.rank <= tb.promote ? " zone-up" : ""}${tb.relegate > 0 && r.rank > tb.size - tb.relegate ? " zone-down" : ""}`}>
-                        <span className="leaderboard-rank">{r.rank}</span>
+                      <div className={`leaderboard-row${r.isMe ? " me" : ""}${r.waiting ? " waiting" : ""}${tb.promote > 0 && r.rank > 0 && r.rank <= tb.promote ? " zone-up" : ""}${tb.relegate > 0 && r.rank > tb.size - tb.relegate ? " zone-down" : ""}`}>
+                        <span className="leaderboard-rank">{r.waiting ? "–" : r.rank}</span>
                         <span className="leaderboard-name">{r.name}</span>
-                        <span className="leaderboard-gems"><i className="lb-ico" aria-hidden="true">⚡</i>{r.points}</span>
+                        {r.waiting
+                          ? <span className="leaderboard-gems waiting-tag">{ja ? "今週まだ" : "not played yet"}</span>
+                          : <span className="leaderboard-gems"><i className="lb-ico" aria-hidden="true">⚡</i>{r.points}</span>}
                       </div>
                       {tb.promote > 0 && r.rank === tb.promote && r.rank < tb.size && leagueDivider("up", tb.league.tier, ja)}
                       </Fragment>
@@ -5468,7 +5470,7 @@ export function GameApp({
         <div className={`feedback-banner show ${feedback.ok ? "good" : "bad"}`} style={{ bottom: footerH }}>
           <div className="feedback-sfx-stamp">{feedback.ok ? "ピンポン♪" : "ブブー"}</div>
           <div className="feedback-inner">
-            <div className="feedback-icon">{feedback.ok ? "✓" : "✕"}</div>
+            <div className="feedback-icon">{feedback.ok ? (lang === "ja" ? "◯" : "✓") : "✕"}</div>
             <div className="feedback-text">
               <div className="t1">{feedback.ok ? t.practice.correct : t.practice.incorrect}</div>
               <div className="t2">{feedback.t2}</div>
@@ -5553,7 +5555,7 @@ export function GameApp({
                       onKeyDown={e.ok ? undefined : (ev) => { if (ev.key === "Enter" || ev.key === " ") setHintOpen(true); }}
                       title={e.ok ? undefined : lang === "ja" ? "解き方を見る" : "Show me how"}
                     >
-                      <span className="run-mark">{e.ok ? "✓" : "✗"}</span>
+                      <span className="run-mark">{e.ok ? (lang === "ja" ? "◯" : "✓") : (lang === "ja" ? "✕" : "✗")}</span>
                       <span className="run-q mono">{e.prompt}</span>
                       <span className="run-a mono">
                         {e.ok ? (
