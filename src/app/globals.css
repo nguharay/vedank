@@ -4304,6 +4304,8 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .league-admin-tabs{ display:flex; gap:6px; margin:0 10px 8px; padding:4px; border-radius:12px; background:var(--surface-2); border:2px solid var(--line); }
 .league-admin-tabs button{ flex:1; border:none; border-radius:9px; padding:7px 4px; font:800 12px/1.1 inherit; font-family:inherit; color:var(--muted); background:none; cursor:pointer; }
 .league-admin-tabs button.on{ background:var(--surface); color:var(--ink); box-shadow:0 2px 0 var(--ink-line); }
+.league-idle-filter{ display:flex; align-items:center; gap:8px; margin:0 4px 10px; font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer; }
+.league-idle-filter input{ width:16px; height:16px; accent-color:var(--brand, #5B3FA0); }
 .league-all-group{ display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
 .league-all-head{ display:flex; align-items:baseline; justify-content:space-between; padding:6px 10px; border-radius:10px; font-weight:900; font-size:13.5px; color:#fff; background:var(--lc, #7a58c0); }
 .league-all-head small{ font-size:11px; font-weight:800; opacity:.9; }
