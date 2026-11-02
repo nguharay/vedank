@@ -347,13 +347,13 @@ export function PracticeView({
                 className={`tf-btn${curSelection === true ? " picked true" : ""}${curSelection === true && shakeTile ? " shake-tile" : ""}`}
                 onClick={() => onSelect(true)}
               >
-                <span className="ic">✅</span>{t.practice.true}
+                <span className="ic">{lang === "ja" ? <b className="maru">◯</b> : "✅"}</span>{t.practice.true}
               </button>
               <button
                 className={`tf-btn${curSelection === false ? " picked false" : ""}${curSelection === false && shakeTile ? " shake-tile" : ""}`}
                 onClick={() => onSelect(false)}
               >
-                <span className="ic">❌</span>{t.practice.false}
+                <span className="ic">{lang === "ja" ? <b className="batsu">✕</b> : "❌"}</span>{t.practice.false}
               </button>
             </div>
           </>

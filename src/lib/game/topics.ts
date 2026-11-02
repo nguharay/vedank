@@ -771,7 +771,7 @@ export const TOPICS: Topic[] = [
       "問題のそれぞれの数の数字和を求める。",
       "その数字和どうしで同じ計算をし、1桁にする。",
       "答えの数字和を求める。",
-      "一致すれば答えは正しい ✓。ちがえばまちがい。",
+      "一致すれば答えは正しい ◯。ちがえばまちがい ✕。",
     ],
     example: () => ({ q: "5963 + 3278 + 5649", ans: 14890 }),
     example2: () => ({ q: "7342 − 4786", ans: 2546 }),
@@ -815,7 +815,7 @@ export const TOPICS: Topic[] = [
           const ok = ds(shown) === chk;
           return [
             `DS of ${a} → ${da}, DS of ${b} → ${db}. ${verb}: ${step}. DS of ${shown} → ${ds(shown)}, so the answer is ${ok ? "correct ✓" : "not correct ✗"}`,
-            `${a} の数字和 → ${da}、${b} の数字和 → ${db}。${verbJa}：${step}。${shown} の数字和 → ${ds(shown)}。だから答えは${ok ? "正しい ✓" : "まちがい ✗"}`,
+            `${a} の数字和 → ${da}、${b} の数字和 → ${db}。${verbJa}：${step}。${shown} の数字和 → ${ds(shown)}。だから答えは${ok ? "正しい ◯" : "まちがい ✕"}`,
           ];
         };
         return {
@@ -846,7 +846,7 @@ export const TOPICS: Topic[] = [
         const ok = ds(raw) === ds(n);
         return [
           `DS: Divisor ${ds(d)} × Quotient ${ds(qq)} + Remainder ${ds(rr)} = ${raw} → ${ds(raw)}. DS of Dividend ${n} → ${ds(n)}, so the answer is ${ok ? "correct ✓" : "not correct ✗"}`,
-          `数字和：わる数 ${ds(d)} × 商 ${ds(qq)} + あまり ${ds(rr)} = ${raw} → ${ds(raw)}。わられる数 ${n} の数字和 → ${ds(n)}。だから答えは${ok ? "正しい ✓" : "まちがい ✗"}`,
+          `数字和：わる数 ${ds(d)} × 商 ${ds(qq)} + あまり ${ds(rr)} = ${raw} → ${ds(raw)}。わられる数 ${n} の数字和 → ${ds(n)}。だから答えは${ok ? "正しい ◯" : "まちがい ✕"}`,
         ];
       };
       return {

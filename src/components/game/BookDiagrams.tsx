@@ -1962,11 +1962,11 @@ function VerifyPill({ label }: { label: string }) {
     </g>
   );
 }
-function VerifyTick({ y }: { y: number }) {
+function VerifyTick({ y, ja = false }: { y: number; ja?: boolean }) {
   return (
     <g>
       <rect x="112" y={y} width="116" height="30" rx="6" fill="#EDE8FA" stroke={V_PURPLE} strokeWidth="1.4" />
-      <text x="170" y={y + 21} textAnchor="middle" style={{ ...VF, fontSize: 16, fontWeight: 700 }}>✓</text>
+      <text x="170" y={y + 21} textAnchor="middle" style={{ ...VF, fontSize: 16, fontWeight: 700 }}>{ja ? "◯" : "✓"}</text>
     </g>
   );
 }
@@ -2034,9 +2034,9 @@ function VerifyFig({ which, lang }: { which: keyof typeof VERIFY_SPECS; lang: La
       {/* the two sides that must agree */}
       <text x="20" y={yB} style={{ ...VF, fontSize: 13 }}>{ja ? v.left[1] : v.left[0]}</text>
       <text x={stack ? 20 : 188} y={yC} style={{ ...VF, fontSize: 13 }}>
-        {ja ? <><tspan fill={V_ORANGE}>{v.answer}</tspan> の数字和 → {ds} ✓</> : <>DS of <tspan fill={V_ORANGE}>{v.answer}</tspan> → {ds} ✓</>}
+        {ja ? <><tspan fill={V_ORANGE}>{v.answer}</tspan> の数字和 → {ds} ◯</> : <>DS of <tspan fill={V_ORANGE}>{v.answer}</tspan> → {ds} ✓</>}
       </text>
-      <VerifyTick y={yC + 14} />
+      <VerifyTick y={yC + 14} ja={ja} />
     </svg>
     </div>
   );
@@ -2069,8 +2069,8 @@ function VerifyDivFig({ lang }: { lang: Lang }) {
       </g>
 
       <text x="14" y="178" style={{ ...VF, fontSize: 13 }}>{ja ? "DS：わる数 0 × 商 1 + あまり 3 → 3" : "DS:  Divisor 0 × Quotient 1 + Remainder 3 → 3"}</text>
-      <text x="14" y="198" style={{ ...VF, fontSize: 13 }}>{ja ? "わられる数 123123 の数字和 → 3 ✓" : "DS of Dividend 123123 → 3 ✓"}</text>
-      <VerifyTick y={210} />
+      <text x="14" y="198" style={{ ...VF, fontSize: 13 }}>{ja ? "わられる数 123123 の数字和 → 3 ◯" : "DS of Dividend 123123 → 3 ✓"}</text>
+      <VerifyTick y={210} ja={ja} />
     </svg>
     </div>
   );
