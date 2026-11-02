@@ -53,6 +53,16 @@ export type Topic = {
 function ri(a: number, b: number) {
   return Math.floor(Math.random() * (b - a + 1)) + a;
 }
+function shuffle<T>(a: T[]) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = ri(0, i);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+/* The tables still to draw in the circle lesson, and the last one drawn. */
+const drawBag: number[] = [];
+let lastDrawT = 0;
 function pad2(n: number) {
   return (n < 10 ? "0" : "") + n;
 }
@@ -1499,12 +1509,16 @@ export const TOPICS: Topic[] = [
     tip: "Work out every Digit Sum in your head!",
     tipJa: "数字和は 頭の中で 出そう！",
     gen: (diff, stage) => {
-      /* In the lesson's stages the player draws the design (pp.205–206): stage 1
-         the stars 2 and 7, stage 2 the rings 1 and 8, stage 3 the sharper stars
-         4 and 5, stage 4 the triangles 3 and 6, stage 5 any of them. */
+      /* In the lesson's stages the player draws the design (pp.205–206). The
+         tables come out of a shuffled bag of 1–9, so no table repeats until
+         every one has been drawn. */
       if (stage) {
-        const pool = [[2, 7], [1, 8], [4, 5], [3, 6]][stage - 1] ?? [1, 2, 3, 4, 5, 6, 7, 8];
-        const t = pool[ri(0, pool.length - 1)];
+        if (!drawBag.length) {
+          drawBag.push(...shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]));
+          if (drawBag[0] === lastDrawT) drawBag.push(drawBag.shift()!);
+        }
+        const t = drawBag.shift()!;
+        lastDrawT = t;
         return { prompt: `DS(${t} × 1…10)`, answer: t, draw: { t } };
       }
       /* Elsewhere (Blitz, daily) it is one step of a table. Hard uses a two-digit
