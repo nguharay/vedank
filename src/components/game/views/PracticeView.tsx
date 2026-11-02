@@ -53,6 +53,7 @@ export function PracticeView({
   tileOptions,
   curSelection,
   tfShown,
+  tfText,
   checkEnabled,
   marks,
   shakeQuestion,
@@ -88,6 +89,7 @@ export function PracticeView({
   tileOptions: number[];
   curSelection: number | boolean | null;
   tfShown: number;
+  tfText?: string | null;
   checkEnabled: boolean;
   marks: (boolean | null)[];
   shakeQuestion: boolean;
@@ -190,7 +192,11 @@ export function PracticeView({
         {mode !== "truefalse" && (
           <div className={`question mono${shakeQuestion ? " shake" : ""}`}>{problem.prompt} = ?</div>
         )}
-        {mode === "truefalse" && <div className={`question mono${shakeQuestion ? " shake" : ""}`} />}
+        {mode === "truefalse" && (
+          <div className={`question mono${shakeQuestion ? " shake" : ""}${problem.verify ? " verify-ask" : ""}`}>
+            {problem.verify && (lang === "ja" ? "答えが正しいか、数字和でたしかめよう。" : "Verify if the answer is correct.")}
+          </div>
+        )}
         {problem.visual && <QuestionVisual v={problem.visual} />}
 
         {mode === "type" && (
@@ -335,7 +341,7 @@ export function PracticeView({
         )}
         {mode === "truefalse" && (
           <>
-            <div className="tf-equation mono">{problem.prompt} = {fmt(tfShown)}</div>
+            <div className="tf-equation mono">{problem.prompt} = {tfText ?? fmt(tfShown)}</div>
             <div className="tf-row">
               <button
                 className={`tf-btn${curSelection === true ? " picked true" : ""}${curSelection === true && shakeTile ? " shake-tile" : ""}`}
