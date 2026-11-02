@@ -1159,6 +1159,8 @@ export function GameApp({
   const [curSelection, setCurSelection] = useState<number | boolean | null>(null);
   const [tfShown, setTfShown] = useState(0);
   const [tfIsTrue, setTfIsTrue] = useState(true);
+  /* the answer shown in a verify question ("175", "22 R 3") instead of tfShown */
+  const [tfText, setTfText] = useState<string | null>(null);
   const [checkEnabled, setCheckEnabled] = useState(false);
   const [shakeQuestion, setShakeQuestion] = useState(false);
   const [wrongFlash, setWrongFlash] = useState(false);
@@ -1228,7 +1230,8 @@ export function GameApp({
     /* Dev only: localStorage "dev.forceMode" = "catch" etc. forces a question style for testing. */
     let forced: Mode | null = null;
     if (process.env.NODE_ENV !== "production") { try { forced = localStorage.getItem("dev.forceMode") as Mode | null; } catch {} }
-    const useMode: Mode = forced ?? mode;
+    /* A verify question is always "is this answer correct?". */
+    const useMode: Mode = problem.verify ? "truefalse" : forced ?? mode;
     setCurProblem(problem);
     setCurMode(useMode);
     setCurSelection(null);
@@ -1238,7 +1241,8 @@ export function GameApp({
     setRunReady(false);
     setEliminated([]);
     answeredRef.current = false;
-    setTimerMs((30 + 10 * (n - 1)) * 1000);
+    /* Verifying is three digit sums and a comparison, so it gets twice as long. */
+    setTimerMs((problem.verify ? 60 + 15 * (n - 1) : 30 + 10 * (n - 1)) * 1000);
     setTimerKey((k) => k + 1);
     questionStartRef.current = Date.now();
     if (useMode === "choice") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
@@ -1249,6 +1253,7 @@ export function GameApp({
       const isTrue = Math.random() < 0.5;
       setTfIsTrue(isTrue);
       setTfShown(isTrue ? problem.answer : makeDistractors(problem.answer, 1)[0]);
+      setTfText(problem.verify ? (isTrue ? problem.verify.right : problem.verify.wrong) : null);
     }
   }
 
@@ -1441,15 +1446,18 @@ export function GameApp({
         setTimeout(() => setSwingAnim(null), 700);
       }
     }
+    /* A verify question always explains the check, right or wrong. */
+    const vq = curProblem.verify;
+    const why = vq ? (tfIsTrue ? vq.whyRight : vq.whyWrong)[lang === "ja" ? 1 : 0] : "";
     setFeedback({
       show: true,
       ok,
-      t2: ok ? "" : `${timedOut ? "⏰ " : ""}${curProblem.prompt} = ${fmt(curProblem.answer)}`,
+      t2: vq ? `${timedOut ? "⏰ " : ""}${why}` : ok ? "" : `${timedOut ? "⏰ " : ""}${curProblem.prompt} = ${fmt(curProblem.answer)}`,
     });
     hasFeedbackRef.current = true;
     if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
     if (curMode !== "arcade") {
-      advanceTimeoutRef.current = setTimeout(() => onFeedbackContinue(), ok ? 1200 : 2000);
+      advanceTimeoutRef.current = setTimeout(() => onFeedbackContinue(), vq ? (ok ? 3500 : 5000) : ok ? 1200 : 2000);
     }
   }
 
@@ -4444,6 +4452,7 @@ export function GameApp({
             tileOptions={tileOptions}
             curSelection={curSelection}
             tfShown={tfShown}
+            tfText={tfText}
             checkEnabled={checkEnabled}
             marks={stageMarks}
             shakeQuestion={shakeQuestion}

@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import { STAGE_POS } from "../util";
 import { BOOK_DIAGRAMS, BOOK_DIAGRAM_EQ, BOOK_DIAGRAMS2, BOOK_DIAGRAM_EQ2, BOOK_MORE, BOOK_BARE_HEADERS, BOOK_INTRO, BOOK_EQ_JA, BOOK_FLOW } from "../BookDiagrams";
 import { Mascot } from "../Mascot";
@@ -156,7 +157,7 @@ export function BookMethodCard({
       </div>
       <div className="bookexample-flow-title">
         {flow ? (
-          <>{lang === "ja" ? flow[2] : flow[0]} <span>→</span> {lang === "ja" ? flow[3] : flow[1]}</>
+          (lang === "ja" ? flow.ja : flow.en).map((f, i) => <Fragment key={i}>{i > 0 && <> <span>→</span> </>}{f}</Fragment>)
         ) : lang === "ja" ? (
           <>まずパターンを見つける <span>→</span> それから左から右へ計算</>
         ) : (

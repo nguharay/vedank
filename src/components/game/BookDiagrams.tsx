@@ -1922,105 +1922,157 @@ function DsSquareColour({ lang }: { lang: Lang }) {
   );
 }
 
-/* pp.126–127 — verifying with the digit sum. The working on the left as the book
-   sets it (answer in orange), the digit sums worked the same way on the right,
-   then the two DS lines that must agree. */
+/* pp.126–127 — verifying with the digit sum, set out as the book prints it:
+   the operation pill, the working on the left with "Answer =" and the answer in
+   orange, the "Digit Sum of … =" column on the right worked the same way, the
+   two DS lines that must agree, and the ✓ box under them. */
 type VerifySpec = {
   kind: [string, string];
-  /* the column set-out: operands, then the operator for the last one */
   cols: string[]; op: string; answer: string;
-  /* right-hand column: [number, its DS] and the operator, then the total and how it reduces */
   dsRows: [string, number][]; dsOp: string; dsTotal: string; dsReduce?: string;
-  left: [string, string]; check: string;
-  divide?: { divisor: string; dividend: string; q: string; r: string };
+  left: [string, string];
 };
 const VERIFY_SPECS: Record<string, VerifySpec> = {
   add: {
     kind: ["Addition", "たし算"], cols: ["5963", "3278", "5649"], op: "+", answer: "14890",
     dsRows: [["5963", 5], ["3278", 2], ["5649", 6]], dsOp: "+", dsTotal: "13",
-    left: ["DS: 5 + 2 + 6 = 13 → 4", "DS：5 + 2 + 6 = 13 → 4"], check: "4",
+    left: ["DS:  5 + 2 + 6 = 13 → 4", "DS：5 + 2 + 6 = 13 → 4"],
   },
   sub: {
     kind: ["Subtraction", "ひき算"], cols: ["7342", "4786"], op: "−", answer: "2546",
     dsRows: [["7342", 7], ["4786", 8]], dsOp: "−", dsTotal: "−1", dsReduce: "→ −1 + 9 → 8",
-    left: ["DS: 7 − 8 = −1 → −1 + 9 → 8", "DS：7 − 8 = −1 → −1 + 9 → 8"], check: "8",
+    left: ["DS:  7 − 8 = −1 → −1 + 9 → 8", "DS：7 − 8 = −1 → −1 + 9 → 8"],
   },
   mul: {
     kind: ["Multiplication", "かけ算"], cols: ["342", "874"], op: "×", answer: "298908",
     dsRows: [["342", 9], ["874", 1]], dsOp: "×", dsTotal: "9",
-    left: ["DS: 9 × 1 → 9", "DS：9 × 1 → 9"], check: "9",
-  },
-  div: {
-    kind: ["Division", "わり算"], cols: [], op: "÷", answer: "",
-    dsRows: [], dsOp: "", dsTotal: "",
-    divide: { divisor: "99", dividend: "123123", q: "1243", r: "66" },
-    left: ["DS: Divisor 0 × Quotient 1 + Remainder 3 → 3", "DS：わる数 0 × 商 1 + あまり 3 → 3"], check: "3",
+    left: ["DS:  9 × 1 → 9", "DS：9 × 1 → 9"],
   },
 };
+
+const VF = { fontFamily: "Cambria, 'Cambria Math', Georgia, 'Times New Roman', serif", fill: "var(--ink)" } as const;
+const V_ORANGE = "#E07B39", V_PURPLE = "#3A2A7A";
+
+function VerifyPill({ label }: { label: string }) {
+  const w = Math.max(84, label.length * 9.2 + 26);
+  return (
+    <g>
+      <rect x="8" y="6" width={w} height="30" rx="6" fill="#EDE8FA" stroke={V_PURPLE} strokeWidth="1.4" />
+      <text x={8 + w / 2} y="26" textAnchor="middle" style={{ ...VF, fontSize: 15, fontWeight: 700, fill: V_PURPLE }}>{label}</text>
+    </g>
+  );
+}
+function VerifyTick({ y }: { y: number }) {
+  return (
+    <g>
+      <rect x="112" y={y} width="116" height="30" rx="6" fill="#EDE8FA" stroke={V_PURPLE} strokeWidth="1.4" />
+      <text x="170" y={y + 21} textAnchor="middle" style={{ ...VF, fontSize: 16, fontWeight: 700 }}>✓</text>
+    </g>
+  );
+}
+
+/* The three-step strategy at the top of each card; step 2 names the operation. */
+const VERIFY_STEP2: Record<string, [string, string]> = {
+  add: ["Add the Digit Sums and find the Digit Sum of the result.", "数字和どうしをたして、その結果の数字和を出す。"],
+  sub: ["Subtract the Digit Sums and find the Digit Sum of the result.", "数字和どうしをひいて、その結果の数字和を出す。（マイナスなら9をたす）"],
+  mul: ["Multiply the Digit Sums and find the Digit Sum of the result.", "数字和どうしをかけて、その結果の数字和を出す。"],
+  div: ["Multiply the Digit Sums of the divisor and quotient, add the remainder's Digit Sum, and find the Digit Sum of the result.", "わる数と商の数字和をかけ、あまりの数字和をたして、その結果の数字和を出す。"],
+};
+function VerifySteps({ which, lang }: { which: string; lang: Lang }) {
+  const ja = lang === "ja";
+  const steps = ja
+    ? ["それぞれの数の数字和を出す。", VERIFY_STEP2[which][1], which === "div" ? "わられる数の数字和を出して、くらべる。" : "答えの数字和を出して、くらべる。"]
+    : ["Find the Digit Sum of each number.", VERIFY_STEP2[which][0], which === "div" ? "Find the Digit Sum of the dividend and compare." : "Find the Digit Sum of the answer and compare."];
+  return (
+    <ol className="bd-vsteps">
+      {steps.map((st, i) => <li key={i} className={i === 1 ? "op" : ""}>{st}</li>)}
+    </ol>
+  );
+}
 
 function VerifyFig({ which, lang }: { which: keyof typeof VERIFY_SPECS; lang: Lang }) {
   const ja = lang === "ja";
   const v = VERIFY_SPECS[which];
-  const ORANGE = "#E07020";
-  const num = { fontFamily: "var(--font-num)", fontSize: 14, fontWeight: 700, fill: "var(--ink)" } as const;
-  const small = { fontFamily: "var(--font-num)", fontSize: 12, fontWeight: 700, fill: "var(--ink)" } as const;
-  const lab = { fontSize: 11.5, fontWeight: 800, fill: "#5B3FA0" } as const;
-  const dv = v.divide;
-  const answerShown = dv ? dv.dividend : v.answer;
-  const rows = dv ? 4 : Math.max(v.cols.length + 1, v.dsRows.length + (v.dsReduce ? 2 : 1));
-  const top = 50, lh = 20;
-  const yBottom = top + rows * lh + 22;
-  const H = yBottom + (dv ? 44 : 26);
+  const n = v.cols.length;
+  const y0 = 50, lh = 21;
+  const rightRows = v.dsRows.length + 1 + (v.dsReduce ? 1 : 0);
+  const rows = Math.max(n + 1, rightRows);
+  const yB = y0 + rows * lh + 18;
+  /* the book sets the two DS lines side by side; a long one goes underneath */
+  const stack = v.left[0].length > 24;
+  const yC = stack ? yB + 20 : yB;
+  const ds = Number(v.left[0].trim().split(" ").pop());
   return (
-    <svg viewBox={`0 0 340 ${H}`} className="bd-svg bd-svg-wide">
-      <rect x="8" y="8" width={ja ? 70 : 112} height="24" rx="7" fill="#5B3FA0" fillOpacity=".12" stroke="#5B3FA0" strokeWidth="1.3" />
-      <text x={ja ? 43 : 64} y="25" textAnchor="middle" style={lab}>{ja ? v.kind[1] : v.kind[0]}</text>
+    <div>
+    <VerifySteps which={which} lang={lang} />
+    <svg viewBox={`0 0 340 ${yC + 52}`} className="bd-svg bd-svg-wide">
+      <VerifyPill label={ja ? v.kind[1] : v.kind[0]} />
 
-      {dv ? (
-        <g>
-          <text x="104" y={top + 4} textAnchor="end" style={{ ...num, fill: ORANGE }}>{dv.q}</text>
-          <text x="38" y={top + 26} style={num}>{dv.divisor}</text>
-          <path d={`M60,${top + 10} q6,10 0,22 M60,${top + 10} H112`} fill="none" stroke="var(--ink)" strokeWidth="1.3" />
-          <text x="66" y={top + 26} style={num}>{dv.dividend}</text>
-          <line x1="66" y1={top + 46} x2="112" y2={top + 46} stroke="var(--ink)" strokeWidth="1.3" />
-          <text x="104" y={top + 64} textAnchor="end" style={{ ...num, fill: ORANGE }}>{dv.r}</text>
-          {[
-            [ja ? `わられる数 ${dv.dividend} の数字和` : `DS of Dividend ${dv.dividend}`, "3"],
-            [ja ? `わる数 ${dv.divisor} の数字和` : `DS of Divisor ${dv.divisor}`, ja ? "9 または 0" : "9 or 0"],
-            [ja ? `商 ${dv.q} の数字和` : `DS of Quotient ${dv.q}`, "1"],
-            [ja ? `あまり ${dv.r} の数字和` : `DS of Remainder ${dv.r}`, "3"],
-          ].map(([l, val], i) => (
-            <text key={i} x="134" y={top + 4 + i * 20} style={small}>{l} → {val}</text>
-          ))}
-        </g>
-      ) : (
-        <g>
-          {v.cols.map((c, i) => (
-            <text key={i} x="110" y={top + i * lh} textAnchor="end" style={num}>
-              {i === v.cols.length - 1 ? `${v.op} ` : ""}{c}
-            </text>
-          ))}
-          <line x1="44" y1={top + (v.cols.length - 1) * lh + 6} x2="114" y2={top + (v.cols.length - 1) * lh + 6} stroke="var(--ink)" strokeWidth="1.3" />
-          <text x="110" y={top + v.cols.length * lh + 4} textAnchor="end" style={{ ...num, fill: ORANGE }}>{v.answer}</text>
-          <text x="8" y={top + v.cols.length * lh + 4} style={{ ...small, fontSize: 11 }}>{ja ? "答え =" : "Answer ="}</text>
+      {/* the working */}
+      {v.cols.map((c, i) => (
+        <text key={i} x="142" y={y0 + i * lh} textAnchor="end" style={{ ...VF, fontSize: 15 }}>
+          {i === n - 1 ? `${v.op} ` : ""}{c}
+        </text>
+      ))}
+      <line x1="84" y1={y0 + (n - 1) * lh + 6} x2="148" y2={y0 + (n - 1) * lh + 6} stroke="var(--ink)" strokeWidth="1.2" />
+      <text x="80" y={y0 + n * lh + 2} textAnchor="end" style={{ ...VF, fontSize: 14, fontWeight: 700 }}>{ja ? "答え =" : "Answer ="}</text>
+      <text x="86" y={y0 + n * lh + 2} style={{ ...VF, fontSize: 15, fill: V_ORANGE }}>{v.answer}</text>
 
-          {v.dsRows.map(([n, d], i) => (
-            <g key={i}>
-              <text x="132" y={top + i * lh} style={small}>{ja ? `${n} の数字和 =` : `Digit Sum of ${n} =`}</text>
-              <text x="318" y={top + i * lh} textAnchor="end" style={num}>{i === v.dsRows.length - 1 ? `${v.dsOp} ` : ""}{d}</text>
-            </g>
-          ))}
-          <line x1="290" y1={top + (v.dsRows.length - 1) * lh + 6} x2="322" y2={top + (v.dsRows.length - 1) * lh + 6} stroke="var(--ink)" strokeWidth="1.3" />
-          <text x="318" y={top + v.dsRows.length * lh + 4} textAnchor="end" style={{ ...num, fontWeight: 900 }}>{v.dsTotal}</text>
-          {v.dsReduce && <text x="326" y={top + (v.dsRows.length + 1) * lh} textAnchor="end" style={{ ...small, fontSize: 11 }}>{v.dsReduce}</text>}
+      {/* the digit sums, worked the same way */}
+      {v.dsRows.map(([num, d], i) => (
+        <g key={i}>
+          <text x="158" y={y0 + i * lh} style={{ ...VF, fontSize: 13.5 }}>{ja ? `${num} の数字和 =` : `Digit Sum of ${num} =`}</text>
+          <text x="326" y={y0 + i * lh} textAnchor="end" style={{ ...VF, fontSize: 15 }}>{i === v.dsRows.length - 1 ? `${v.dsOp}` : ""}{d}</text>
         </g>
+      ))}
+      <line x1="300" y1={y0 + (v.dsRows.length - 1) * lh + 6} x2="330" y2={y0 + (v.dsRows.length - 1) * lh + 6} stroke="var(--ink)" strokeWidth="1.2" />
+      <text x="326" y={y0 + v.dsRows.length * lh + 2} textAnchor="end" style={{ ...VF, fontSize: 15, fontWeight: 700 }}>{v.dsTotal}</text>
+      {v.dsReduce && (
+        <text x="334" y={y0 + (v.dsRows.length + 1) * lh} textAnchor="end" style={{ ...VF, fontSize: 12, fontWeight: 700 }}>{v.dsReduce}</text>
       )}
 
-      <text x="8" y={yBottom} style={small}>{ja ? v.left[1] : v.left[0]}</text>
-      <text x={dv ? 8 : 216} y={dv ? yBottom + 20 : yBottom} style={small}>
-        {ja ? "" : "DS of "}<tspan fill={ORANGE}>{answerShown}</tspan>{ja ? " の数字和" : ""} → {v.check} <tspan fill="#3F8E5A" fontWeight="900">✓</tspan>
+      {/* the two sides that must agree */}
+      <text x="20" y={yB} style={{ ...VF, fontSize: 13 }}>{ja ? v.left[1] : v.left[0]}</text>
+      <text x={stack ? 20 : 188} y={yC} style={{ ...VF, fontSize: 13 }}>
+        {ja ? <><tspan fill={V_ORANGE}>{v.answer}</tspan> の数字和 → {ds} ✓</> : <>DS of <tspan fill={V_ORANGE}>{v.answer}</tspan> → {ds} ✓</>}
       </text>
+      <VerifyTick y={yC + 14} />
     </svg>
+    </div>
+  );
+}
+
+/* p.127 second card: 123123 ÷ 99, the long-division bracket with the quotient
+   and remainder in orange, the four digit sums on the right, then the
+   rebuilt dividend checked against the real one. */
+function VerifyDivFig({ lang }: { lang: Lang }) {
+  const ja = lang === "ja";
+  const o = { fill: V_ORANGE };
+  return (
+    <div>
+    <VerifySteps which="div" lang={lang} />
+    <svg viewBox="0 0 340 246" className="bd-svg bd-svg-wide">
+      <VerifyPill label={ja ? "わり算" : "Division"} />
+
+      <text x="148" y="54" textAnchor="end" style={{ ...VF, fontSize: 15, ...o }}>1243</text>
+      <path d="M90,62 H152 M90,62 q8,13 0,26" fill="none" stroke="var(--ink)" strokeWidth="1.3" />
+      <text x="84" y="82" textAnchor="end" style={{ ...VF, fontSize: 15 }}>99</text>
+      <text x="96" y="82" style={{ ...VF, fontSize: 15 }}>123123</text>
+      <line x1="108" y1="110" x2="152" y2="110" stroke="var(--ink)" strokeWidth="1.2" />
+      <text x="148" y="130" textAnchor="end" style={{ ...VF, fontSize: 15, ...o }}>66</text>
+
+      <g style={{ ...VF, fontSize: 13.5 }}>
+        <text x="166" y="58">{ja ? "わられる数 123123 の数字和 → 3" : "DS of Dividend 123123 → 3"}</text>
+        <text x="166" y="100">{ja ? "わる数 99 の数字和 → 9 または 0" : "DS of Divisor 99 → 9 or 0"}</text>
+        <text x="166" y="122">{ja ? <>商 <tspan {...o}>1243</tspan> の数字和 → 1</> : <>DS of Quotient <tspan {...o}>1243</tspan> → 1</>}</text>
+        <text x="166" y="144">{ja ? <>あまり <tspan {...o}>66</tspan> の数字和 → 3</> : <>DS of Remainder <tspan {...o}>66</tspan> → 3</>}</text>
+      </g>
+
+      <text x="14" y="178" style={{ ...VF, fontSize: 13 }}>{ja ? "DS：わる数 0 × 商 1 + あまり 3 → 3" : "DS:  Divisor 0 × Quotient 1 + Remainder 3 → 3"}</text>
+      <text x="14" y="198" style={{ ...VF, fontSize: 13 }}>{ja ? "わられる数 123123 の数字和 → 3 ✓" : "DS of Dividend 123123 → 3 ✓"}</text>
+      <VerifyTick y={210} />
+    </svg>
+    </div>
   );
 }
 
@@ -2167,7 +2219,7 @@ export const BOOK_MORE: Partial<Record<string, { eq: string; D: (p: { lang: Lang
   dsCircle: [{ eq: "Your turn — any table", D: DsCircleExplorer }],
   verifyDS: [
     { eq: "Verify: 342 × 874 = 298908", D: ({ lang }) => <VerifyFig which="mul" lang={lang} /> },
-    { eq: "Verify: 123123 ÷ 99 = Q 1243, R 66", D: ({ lang }) => <VerifyFig which="div" lang={lang} /> },
+    { eq: "Verify: 123123 ÷ 99 = Q 1243, R 66", D: VerifyDivFig },
   ],
   dsSquare: [{ eq: "Your turn — any digit", D: DsSquareExplorer }],
   digitsum: [
@@ -2194,10 +2246,13 @@ export const BOOK_EQ_JA: Partial<Record<string, string>> = {
 
 /* The line between the method and the examples, where "calculate from left
    to right" does not describe the page. */
-export const BOOK_FLOW: Partial<Record<string, [string, string, string, string]>> = {
-  verifyDS: ["Digit Sum of each number", "Same sum on the digit sums → match?", "それぞれの数字和", "数字和で同じ計算 → 一致する？"],
-  dsCircle: ["Find each Digit Sum", "Mark it, then join in order", "数字和を出す", "円に印して順につなぐ"],
-  dsSquare: ["Fill in the Digit Sums", "Colour or join one digit", "数字和をうめる", "1つの数字をぬる・つなぐ"],
+export const BOOK_FLOW: Partial<Record<string, { en: string[]; ja: string[] }>> = {
+  verifyDS: {
+    en: ["Find the Digit Sum of each number", "Apply the same operation (like +, −, ×) to their Digit Sums", "Find the Digit Sum of the answer"],
+    ja: ["それぞれの数の数字和を出す", "その数字和どうしで同じ計算（+、−、×）をする", "答えの数字和を出す"],
+  },
+  dsCircle: { en: ["Find each Digit Sum", "Mark it, then join in order"], ja: ["数字和を出す", "円に印して順につなぐ"] },
+  dsSquare: { en: ["Fill in the Digit Sums", "Colour or join one digit"], ja: ["数字和をうめる", "1つの数字をぬる・つなぐ"] },
 };
 
 export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {

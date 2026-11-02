@@ -6,7 +6,11 @@ export type Lang = "en" | "ja";
 export type QuestionVisual =
   | { kind: "circle"; t: number; k: number }
   | { kind: "square"; cell?: [number, number]; key?: boolean };
-export type Problem = { prompt: string; answer: number; visual?: QuestionVisual };
+/* "Is this answer correct?" questions (Verify with Digit Sum). The stage shows
+   `prompt = right` or `prompt = wrong` at random and the player judges it; the
+   why lines explain the digit-sum check afterwards, [en, ja]. */
+export type VerifyQ = { right: string; wrong: string; whyRight: [string, string]; whyWrong: [string, string] };
+export type Problem = { prompt: string; answer: number; visual?: QuestionVisual; verify?: VerifyQ };
 
 export type ExStep = [string, string];
 
@@ -746,15 +750,15 @@ export const TOPICS: Topic[] = [
   {
     id: "verifyDS",
     icon: "✓",
-    grad: ["#5B3FA0", "#FF4E9E"],
+    grad: ["#3A1F78", "#2B1A63"],
     illus: "loop",
     title: "Verify with Digit Sum",
     titleJa: "数字和でたしかめ算",
     sutraSa: "Verify · Digit Sum check",
     sutraEn: "Do the sum on the digit sums",
     sutraEnJa: "数字和どうしで計算する",
-    blurb: "Addition: DS(A) + DS(B) = DS(Answer).\nSubtraction: DS(A) − DS(B) = DS(Answer). If negative, add 9.\nMultiplication: DS(A) × DS(B) = DS(Answer).\nDivision: Dividend = Divisor × Quotient + Remainder (check via DS).\nIf the two sides do not match, the answer is wrong.",
-    blurbJa: "たし算：DS(A) + DS(B) = DS(答え)。\nひき算：DS(A) − DS(B) = DS(答え)。マイナスになったら9をたす。\nかけ算：DS(A) × DS(B) = DS(答え)。\nわり算：わられる数 = わる数 × 商 + あまり（DSでたしかめる）。\n両方が合わなければ、答えはまちがい。",
+    blurb: "Addition: DS(A) + DS(B) = DS(Answer).\nSubtraction: DS(A) − DS(B) = DS(Answer). If negative, add 9.\nMultiplication: DS(A) × DS(B) = DS(Answer).\nDivision: Dividend = Divisor × Quotient + Remainder (check via DS).",
+    blurbJa: "たし算：DS(A) + DS(B) = DS(答え)。\nひき算：DS(A) − DS(B) = DS(答え)。マイナスになったら9をたす。\nかけ算：DS(A) × DS(B) = DS(答え)。\nわり算：わられる数 = わる数 × 商 + あまり（DSでたしかめる）。",
     methodTitle: "Rules",
     methodTitleJa: "ルール",
     steps: [
@@ -779,33 +783,76 @@ export const TOPICS: Topic[] = [
         [lang === "ja" ? "答えの数字和" : "DS of the answer", `${ds}`],
       ];
     },
-    tip: "Check every answer with its Digit Sum!",
-    tipJa: "答えは 数字和で たしかめよう！",
     gen: (diff, stage) => {
-      /* The question is the check itself: work the sum on the digit sums. The
-         stage map gives each stage one operation (1 +, 2 −, 3 ×, 4 ÷, 5 mixed);
-         without a stage the operation is picked at random. */
-      const op = stage && stage <= 4 ? stage : ri(1, 4);
-      const big = diff === "hard";
-      const ds = (n: number) => (n === 0 ? 9 : 1 + ((n - 1) % 9));
-      if (op === 1) {
-        const n = diff === "easy" ? 2 : 3;
-        const xs = Array.from({ length: n }, () => ri(big ? 1000 : 100, big ? 9999 : 999));
-        return { prompt: `DS(${xs.join(" + ")})`, answer: ds(xs.reduce((a, b) => a + b, 0)) };
-      }
+      /* The stage shows a worked sum, right or wrong, and the player verifies it
+         with digit sums: 1 +, 2 −, 3 ×, 4 ÷, 5 mixed. Without a stage (Blitz,
+         daily) it is a plain +, − or × to work out. */
+      const op = stage ? (stage <= 4 ? stage : ri(1, 4)) : ri(1, 3);
+      const ds = (n: number) => 1 + ((n - 1) % 9);
+      const lo = diff === "easy" ? 11 : diff === "medium" ? 101 : 1001;
+      const hi = diff === "easy" ? 99 : diff === "medium" ? 999 : 9999;
+      /* A wrong answer the digit-sum check can catch: off by an amount that is
+         not a multiple of 9. */
+      const offBy = (x: number) => {
+        for (;;) {
+          const d = [1, 2, 3, 4, 10, 11, 20][ri(0, 6)] * (Math.random() < 0.5 ? -1 : 1);
+          if (x + d > 0 && d % 9 !== 0) return x + d;
+        }
+      };
+      const sym = ["", "+", "−", "×"][op] ?? "";
+      const verb = (["", "Add", "Subtract", "Multiply"][op] ?? "") as string;
+      const verbJa = (["", "たす", "ひく", "かける"][op] ?? "") as string;
+      const build = (a: number, b: number, ans: number) => {
+        const wrong = offBy(ans);
+        const da = ds(a), db = ds(b);
+        const raw = op === 1 ? da + db : op === 2 ? da - db : da * db;
+        const chk = raw <= 0 ? raw + 9 : ds(raw);
+        const neg = (x: number) => (x < 0 ? `−${-x}` : String(x));
+        const step = raw <= 0
+          ? `${da} ${sym} ${db} = ${neg(raw)} → ${neg(raw)} + 9 → ${chk}`
+          : `${da} ${sym} ${db} = ${raw}${raw !== chk ? ` → ${chk}` : ""}`;
+        const why = (shown: number): [string, string] => {
+          const ok = ds(shown) === chk;
+          return [
+            `DS of ${a} → ${da}, DS of ${b} → ${db}. ${verb}: ${step}. DS of ${shown} → ${ds(shown)}, so the answer is ${ok ? "correct ✓" : "not correct ✗"}`,
+            `${a} の数字和 → ${da}、${b} の数字和 → ${db}。${verbJa}：${step}。${shown} の数字和 → ${ds(shown)}。だから答えは${ok ? "正しい ✓" : "まちがい ✗"}`,
+          ];
+        };
+        return {
+          prompt: `${a} ${sym} ${b}`, answer: ans,
+          verify: { right: String(ans), wrong: String(wrong), whyRight: why(ans), whyWrong: why(wrong) },
+        };
+      };
+      if (op === 1) { const a = ri(lo, hi), b = ri(lo, hi); return build(a, b, a + b); }
       if (op === 2) {
-        let a = ri(big ? 2000 : 200, big ? 9999 : 999), b = ri(big ? 1000 : 100, big ? 9999 : 999);
+        let a = ri(lo, hi), b = ri(lo, hi);
         if (a < b) [a, b] = [b, a];
-        if (a === b) a += ri(1, 99);
-        return { prompt: `DS(${a} − ${b})`, answer: ds(a - b) };
+        if (a === b) a += ri(1, 9);
+        return build(a, b, a - b);
       }
       if (op === 3) {
-        const a = ri(big ? 100 : 12, big ? 999 : 99), b = ri(12, big ? 999 : 99);
-        return { prompt: `DS(${a} × ${b})`, answer: ds(a * b) };
+        const a = ri(lo, hi), b = diff === "easy" ? ri(2, 9) : ri(11, 99);
+        return build(a, b, a * b);
       }
-      /* Division is checked by rebuilding the dividend: divisor × quotient + remainder. */
-      const d = ri(big ? 11 : 3, big ? 99 : 9), q = ri(big ? 100 : 12, big ? 9999 : 999), r = ri(1, d - 1);
-      return { prompt: `DS(${d} × ${q} + ${r})`, answer: ds(d * q + r) };
+      /* Division: Dividend = Divisor × Quotient + Remainder, checked by digit sums. */
+      const d = diff === "hard" ? ri(11, 99) : ri(3, 9);
+      const q = ri(diff === "easy" ? 11 : 101, diff === "easy" ? 99 : 999), r = ri(1, d - 1);
+      const n = d * q + r;
+      let wq = q, wr = r;
+      do { if (Math.random() < 0.5) wq = offBy(q); else wr = Math.max(0, Math.min(d - 1, r + (Math.random() < 0.5 ? -1 : 1) * ri(1, 3))); }
+      while (ds(d * wq + wr) === ds(n));
+      const why = (qq: number, rr: number): [string, string] => {
+        const raw = ds(d) * ds(qq) + ds(rr);
+        const ok = ds(raw) === ds(n);
+        return [
+          `DS: Divisor ${ds(d)} × Quotient ${ds(qq)} + Remainder ${ds(rr)} = ${raw} → ${ds(raw)}. DS of Dividend ${n} → ${ds(n)}, so the answer is ${ok ? "correct ✓" : "not correct ✗"}`,
+          `数字和：わる数 ${ds(d)} × 商 ${ds(qq)} + あまり ${ds(rr)} = ${raw} → ${ds(raw)}。わられる数 ${n} の数字和 → ${ds(n)}。だから答えは${ok ? "正しい ✓" : "まちがい ✗"}`,
+        ];
+      };
+      return {
+        prompt: `${n} ÷ ${d}`, answer: q,
+        verify: { right: `${q} R ${r}`, wrong: `${wq} R ${wr}`, whyRight: why(q, r), whyWrong: why(wq, wr) },
+      };
     },
   },
   {
