@@ -228,6 +228,12 @@ export function GameApp({
     viewRef.current = next;
     transition(() => flushSync(() => setViewRaw(next)), back ? "back" : "forward");
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /* the boxes of one digit in the Digit-Sum Square, for the "here is the design" line */
+  const drawSquareCells = (t: number) => {
+    const out: string[] = [];
+    for (let r = 1; r <= 9; r++) for (let c = 1; c <= 9; c++) if (1 + ((r * c - 1) % 9) === t) out.push(`${r}×${c}`);
+    return out.join("  ");
+  };
   const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja", "party", "space", "river"];
   const [quickId, setQuickId] = useState<string>("tf");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1245,7 +1251,7 @@ export function GameApp({
     answeredRef.current = false;
     /* Verifying is three digit sums and a comparison, so it gets twice as long. */
     /* Drawing a design is ten digit sums and ten taps. */
-    setTimerMs((problem.draw ? 120 : problem.verify ? 60 + 15 * (n - 1) : 30 + 10 * (n - 1)) * 1000);
+    setTimerMs((problem.draw ? (problem.draw.shape === "square" ? 180 : 120) : problem.verify ? 60 + 15 * (n - 1) : 30 + 10 * (n - 1)) * 1000);
     setTimerKey((k) => k + 1);
     questionStartRef.current = Date.now();
     if (useMode === "choice") setTileOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
@@ -1456,7 +1462,7 @@ export function GameApp({
     setFeedback({
       show: true,
       ok,
-      t2: vq ? `${timedOut ? "⏰ " : ""}${why}` : curProblem.draw ? (ok ? "" : `${timedOut ? "⏰ " : ""}${Array.from({ length: 10 }, (_, i) => 1 + ((curProblem.draw!.t * (i + 1) - 1) % 9)).join(" → ")}`) : ok ? "" : `${timedOut ? "⏰ " : ""}${curProblem.prompt} = ${fmt(curProblem.answer)}`,
+      t2: vq ? `${timedOut ? "⏰ " : ""}${why}` : curProblem.draw ? (ok ? "" : `${timedOut ? "⏰ " : ""}${curProblem.draw.shape === "square" ? drawSquareCells(curProblem.draw.t) : Array.from({ length: 10 }, (_, i) => 1 + ((curProblem.draw!.t * (i + 1) - 1) % 9)).join(" → ")}`) : ok ? "" : `${timedOut ? "⏰ " : ""}${curProblem.prompt} = ${fmt(curProblem.answer)}`,
     });
     hasFeedbackRef.current = true;
     if (advanceTimeoutRef.current) clearTimeout(advanceTimeoutRef.current);
@@ -5678,8 +5684,11 @@ export function GameApp({
       )}
 
       {/* The companion. Fixed above the nav so it never covers an answer tile,
-          and tappable to hush it, a helper you can't silence is a nuisance. */}
-      {!buddy.hidden && (() => {
+          and tappable to hush it, a helper you can't silence is a nuisance.
+          Inside a game or a stage it stays out of the way altogether: a mascot
+          over the field, the Digit-Sum Square or the Back button is just
+          something in the way of playing. */}
+      {!buddy.hidden && !((GAME_VIEWS.includes(view) && view !== "town") || view === "practice") && (() => {
         /* A moved buddy on the right half of the screen opens its bubble to the
            LEFT (anchored by `right`), so a quote never runs off the edge. The
            position only exists on the client, so reading the width is safe. */

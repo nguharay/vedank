@@ -4619,7 +4619,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .header-title h1.brand{ text-transform:none; }
 
 /* 🎯 math bingo: a bright card on a game-show board */
-.party-bingo .party-stage{ height:auto; min-height:min(560px, calc(100dvh - 260px)); background:radial-gradient(circle at 50% 0%, #fff3c4 0, #ffd36b 30%, #ff8a5b 70%, #e0457b 100%); }
+.party-bingo .party-stage{ height:auto; background:radial-gradient(circle at 50% 0%, #fff3c4 0, #ffd36b 30%, #ff8a5b 70%, #e0457b 100%); }
 .bingo-stage{ position:relative; display:flex; flex-direction:column; align-items:center; gap:10px; padding:12px; }
 .bingo-call{ width:100%; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 12px 12px; border-radius:18px; background:#fff; border:3px solid #1d1b33; box-shadow:0 4px 0 #1d1b33; color:#1d1b33; }
 .bingo-call small{ font-size:12px; font-weight:900; color:#e0457b; letter-spacing:.06em; }
@@ -4959,3 +4959,12 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 @keyframes dcShake{ 25%{ transform:translateX(-3px); } 75%{ transform:translateX(3px); } }
 .dc-trail{ font-size:13px; font-weight:800; color:var(--ink-dim); text-align:center; min-height:1.4em; }
 .dc-miss{ color:#E5484D; }
+
+/* the Digit-Sum Square drawing exercise */
+.dsq-svg{ max-width:310px; }
+.dsq-cell{ cursor:pointer; }
+.dsq-cell.bad{ animation:dcShake .4s; }
+
+/* lesson and practice text is for reading, not copying: Ray asked that the
+   book's material cannot be selected and lifted from the app */
+.view:has(.topic-head), .buddy-bubble{ user-select:none; -webkit-user-select:none; }

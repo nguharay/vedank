@@ -2,6 +2,7 @@
 
 import { QuestionVisual } from "../QuestionVisual";
 import { DrawCircle } from "../DrawCircle";
+import { DrawSquare } from "../DrawSquare";
 import { fmt } from "../util";
 import type { Mode } from "../util";
 import type { UIDict } from "../i18n";
@@ -193,9 +194,13 @@ export function PracticeView({
         {mode === "draw" && problem.draw && (
           <>
             <div className="question verify-ask">
-              {lang === "ja" ? `${problem.draw.t}の段の数字和を、9点の円に順番につなごう。` : `Join the Digit Sums of the table of ${problem.draw.t} on the 9-Point Circle, in order.`}
+              {problem.draw.shape === "square"
+                ? (lang === "ja" ? `数字和が ${problem.draw.t} のマスを、ぜんぶタップしよう。` : `Tap every box whose Digit Sum is ${problem.draw.t}.`)
+                : (lang === "ja" ? `${problem.draw.t}の段の数字和を、9点の円に順番につなごう。` : `Join the Digit Sums of the table of ${problem.draw.t} on the 9-Point Circle, in order.`)}
             </div>
-            <DrawCircle key={qIndex} t={problem.draw.t} lang={lang} onDone={(ok) => onSelect(ok ? problem.answer : -1)} />
+            {problem.draw.shape === "square"
+              ? <DrawSquare key={qIndex} t={problem.draw.t} lang={lang} hint={problem.draw.hint ?? true} onDone={(ok) => onSelect(ok ? problem.answer : -1)} />
+              : <DrawCircle key={qIndex} t={problem.draw.t} lang={lang} hint={problem.draw.hint ?? true} onDone={(ok) => onSelect(ok ? problem.answer : -1)} />}
           </>
         )}
         {mode !== "truefalse" && mode !== "draw" && (

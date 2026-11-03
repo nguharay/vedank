@@ -1800,19 +1800,15 @@ function DigitPicker({ value, onPick, label }: { value: number; onPick: (d: numb
 /* p.207: the Digit-Sum square — row × column, each cell in its digit's colour.
    With `pick`, only that digit's boxes are coloured (pp.208–209), and `lines`
    joins them in turn around the centre, which is the shape they hide. */
-function DsSquareFig({ pick, lines = false }: { pick?: number; lines?: boolean }) {
-  const C = 30, x0 = 34, y0 = 26;
-  const num = { fontFamily: "var(--font-num)", fontWeight: 800 } as const;
-  const cells: { r: number; c: number; d: number }[] = [];
-  for (let r = 1; r <= 9; r++) for (let c = 1; c <= 9; c++) cells.push({ r, c, d: dsOf(r * c) });
-  const ctr = (r: number, c: number) => [x0 + (c - 0.5) * C, y0 + (r - 0.5) * C] as const;
-  const mine = pick ? cells.filter((q) => q.d === pick) : [];
-  /* 1, 2, 4, 5, 7 and 8 sit once in each row: join them in order of their angle
-     around the centre and the line traces a ring. 3, 6 and 9 share rows and
-     columns, so they are joined along those, which draws a lattice. */
-  const shared = pick !== undefined && pick % 3 === 0;
+/* The lines that join one digit's boxes (pp.208–209). 1, 2, 4, 5, 7 and 8 sit
+   once in each row: joined in order of their angle around the centre, the line
+   traces a ring. 3, 6 and 9 share rows and columns, so they are joined along
+   those, which draws a lattice. `ctr` gives a box's centre. */
+export function dsSquarePath(pick: number, ctr: (r: number, c: number) => readonly [number, number]) {
+  const mine: { r: number; c: number }[] = [];
+  for (let r = 1; r <= 9; r++) for (let c = 1; c <= 9; c++) if (dsOf(r * c) === pick) mine.push({ r, c });
   let d = "";
-  if (shared) {
+  if (pick % 3 === 0) {
     const runs = new Map<string, (readonly [number, number])[]>();
     for (const q of mine) {
       for (const key of [`r${q.r}`, `c${q.c}`]) runs.set(key, [...(runs.get(key) ?? []), ctr(q.r, q.c)]);
@@ -1829,6 +1825,16 @@ function DsSquareFig({ pick, lines = false }: { pick?: number; lines?: boolean }
       .map(({ q }, i) => `${i ? "L" : "M"}${ctr(q.r, q.c)[0].toFixed(1)},${ctr(q.r, q.c)[1].toFixed(1)}`)
       .join(" ") + " Z";
   }
+  return d;
+}
+
+function DsSquareFig({ pick, lines = false }: { pick?: number; lines?: boolean }) {
+  const C = 30, x0 = 34, y0 = 26;
+  const num = { fontFamily: "var(--font-num)", fontWeight: 800 } as const;
+  const cells: { r: number; c: number; d: number }[] = [];
+  for (let r = 1; r <= 9; r++) for (let c = 1; c <= 9; c++) cells.push({ r, c, d: dsOf(r * c) });
+  const ctr = (r: number, c: number) => [x0 + (c - 0.5) * C, y0 + (r - 0.5) * C] as const;
+  const d = pick !== undefined ? dsSquarePath(pick, ctr) : "";
   const W = x0 + 9 * C + 6, H = y0 + 9 * C + 6;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="bd-svg bd-svg-wide">
@@ -1865,22 +1871,6 @@ function DsSquareFig({ pick, lines = false }: { pick?: number; lines?: boolean }
         />
       )}
     </svg>
-  );
-}
-
-function DsSquareExplorer({ lang }: { lang: Lang }) {
-  const ja = lang === "ja";
-  const [d, setD] = useState(6);
-  const [lines, setLines] = useState(false);
-  return (
-    <div>
-      <DsSquareFig pick={d} lines={lines} />
-      <DigitPicker value={d} onPick={setD} label={ja ? "数字をえらぶ" : "Pick a digit"} />
-      <div className="bd-dsmode">
-        <button type="button" className={!lines ? "on" : ""} onClick={() => setLines(false)}>{ja ? "🖍️ ぬる" : "🖍️ Colour"}</button>
-        <button type="button" className={lines ? "on" : ""} onClick={() => setLines(true)}>{ja ? "📏 線でつなぐ" : "📏 Draw lines"}</button>
-      </div>
-    </div>
   );
 }
 
@@ -2208,7 +2198,6 @@ export const BOOK_MORE: Partial<Record<string, { eq: string; D: (p: { lang: Lang
     { eq: "Verify: 342 × 874 = 298908", D: ({ lang }) => <VerifyFig which="mul" lang={lang} /> },
     { eq: "Verify: 123123 ÷ 99 = Q 1243, R 66", D: VerifyDivFig },
   ],
-  dsSquare: [{ eq: "Your turn — any digit", D: DsSquareExplorer }],
   digitsum: [
     { eq: "DS of 6379", D: Ds6379 },
     { eq: "DS of 34278318", D: Ds34278318 },
@@ -2227,7 +2216,6 @@ export const BOOK_EQ_JA: Partial<Record<string, string>> = {
   "Verify: 123123 ÷ 99 = Q 1243, R 66": "たしかめ：123123 ÷ 99 = 商 1243、あまり 66",
   "DS of the tables 1 to 9": "1〜9の段の数字和",
   "Colour all 8s": "8をぜんぶぬる",
-  "Your turn — any digit": "やってみよう — 好きな数字で",
 };
 
 /* The line between the method and the examples, where "calculate from left
