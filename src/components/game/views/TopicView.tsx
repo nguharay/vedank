@@ -264,8 +264,14 @@ export function TopicView({
       {topic.tip && (
         <div className="lesson-tip">
           <div className="lesson-tip-bubble">
-            <span className="lesson-tip-ja">{topic.tipJa}</span>
-            <span className="lesson-tip-en">{topic.tip}</span>
+            {lang === "ja" && topic.tipJa ? (
+              <>
+                <span className="lesson-tip-ja">{topic.tipJa}</span>
+                <span className="lesson-tip-en">{topic.tip}</span>
+              </>
+            ) : (
+              <span className="lesson-tip-ja">{topic.tip}</span>
+            )}
           </div>
           <div className="lesson-tip-mascot">
             <Mascot mood="excited" />
