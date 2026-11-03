@@ -10,7 +10,7 @@ const dsOf = (n: number) => 1 + ((n - 1) % 9);
    work out its Digit Sum and tap that point on the 9-Point Circle, and the
    line draws from the last point. One slip is forgiven; a second ends the
    question and the full design is shown. */
-export function DrawCircle({ t, lang, onDone }: { t: number; lang: Lang; onDone: (ok: boolean) => void }) {
+export function DrawCircle({ t, lang, hint = true, onDone }: { t: number; lang: Lang; hint?: boolean; onDone: (ok: boolean) => void }) {
   const ja = lang === "ja";
   const seq = Array.from({ length: 10 }, (_, i) => dsOf(t * (i + 1)));
   const [done, setDone] = useState(0); /* points placed so far */
@@ -49,7 +49,9 @@ export function DrawCircle({ t, lang, onDone }: { t: number; lang: Lang; onDone:
           ? (ja ? "できた！" : "Done!")
           : over === "lost"
             ? (ja ? "正しいデザインはこれ" : "Here is the design")
-            : <>{t} × {k} = <b>{t * k}</b> → {ja ? "数字和は？" : "Digit Sum?"}</>}
+            : hint
+              ? <>{t} × {k} = <b>{t * k}</b> → {ja ? "数字和は？" : "Digit Sum?"}</>
+              : <>{t} × {k} → {ja ? "頭の中で数字和を！" : "Digit Sum in your head!"}</>}
       </div>
       <svg viewBox="0 0 260 240" className="dc-svg">
         <circle cx={cx} cy={cy} r={R} fill="none" stroke="var(--muted)" strokeOpacity=".5" strokeWidth="2" />

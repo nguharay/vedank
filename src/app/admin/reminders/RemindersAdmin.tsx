@@ -3,6 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Reminder, ReminderInput } from "@/lib/game/reminders";
+
+/* Send times in Japan and India time (the team is in both), not UTC. Fixed
+   zones, so the server and the browser print the same string. */
+const JST = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Tokyo", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+const IST = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false });
+function fmtWhen(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${JST.format(d)} JST · ${IST.format(d)} IST`;
+}
 import { saveReminderAction, deleteReminderAction, sendTestReminderAction, sendReminderNowAction } from "@/lib/actions/admin-actions";
 
 type Run = { slot: string; day: string; reminderId: number | null; sent: number; ranAt: string };
@@ -117,10 +127,10 @@ export function RemindersAdmin({ rows: initial, runs, reach, adminEmail, pushOn 
           <h2>📬 Recent sends</h2>
           {runs.length === 0 ? <p className="rem-empty">Nothing sent yet.</p> : (
             <table className="rem-runs">
-              <thead><tr><th>When (UTC)</th><th>Slot</th><th>Message</th><th>Sent</th></tr></thead>
+              <thead><tr><th>When (JST · IST)</th><th>Slot</th><th>Message</th><th>Sent</th></tr></thead>
               <tbody>
                 {runs.map((u, i) => (
-                  <tr key={i}><td className="mono">{u.ranAt.replace("T", " ").slice(0, 16)}</td><td>{u.slot.startsWith("manual") ? "manual" : u.slot}</td><td>{rows.find((r) => r.id === u.reminderId)?.titleJa ?? (u.reminderId ? `#${u.reminderId}` : "—")}</td><td className="mono">{u.sent}</td></tr>
+                  <tr key={i}><td className="mono">{fmtWhen(u.ranAt)}</td><td>{u.slot.startsWith("manual") ? "manual" : u.slot}</td><td>{rows.find((r) => r.id === u.reminderId)?.titleJa ?? (u.reminderId ? `#${u.reminderId}` : "—")}</td><td className="mono">{u.sent}</td></tr>
                 ))}
               </tbody>
             </table>

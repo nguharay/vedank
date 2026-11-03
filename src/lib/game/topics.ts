@@ -12,7 +12,10 @@ export type QuestionVisual =
 export type VerifyQ = { right: string; wrong: string; whyRight: [string, string]; whyWrong: [string, string] };
 /* "Draw the design" questions (Digit Sum in a Circle): tap the 9-Point Circle
    in the order of the table's digit sums. The answer is the table. */
-export type Problem = { prompt: string; answer: number; visual?: QuestionVisual; verify?: VerifyQ; draw?: { t: number } };
+/* draw: the player makes the design (pp.205–209) — the table's digit sums on
+   the 9-Point Circle, or the cells of one digit in the Digit-Sum Square. With
+   `hint` the products are shown; without it they are worked out in the head. */
+export type Problem = { prompt: string; answer: number; visual?: QuestionVisual; verify?: VerifyQ; draw?: { t: number; shape?: "circle" | "square"; hint?: boolean } };
 
 export type ExStep = [string, string];
 
@@ -60,9 +63,19 @@ function shuffle<T>(a: T[]) {
   }
   return a;
 }
-/* The tables still to draw in the circle lesson, and the last one drawn. */
-const drawBag: number[] = [];
-let lastDrawT = 0;
+/* The tables still to draw in the design lessons, and the last one drawn: a
+   shuffled bag, so nothing repeats until every table has come up. */
+function bagPick(bag: number[], all: number[], last: { t: number }) {
+  if (!bag.length) {
+    bag.push(...shuffle([...all]));
+    if (bag[0] === last.t) bag.push(bag.shift()!);
+  }
+  const t = bag.shift()!;
+  last.t = t;
+  return t;
+}
+const circleBag: number[] = [], circleLast = { t: 0 };
+const squareBag: number[] = [], squareLast = { t: 0 };
 function pad2(n: number) {
   return (n < 10 ? "0" : "") + n;
 }
@@ -801,6 +814,12 @@ export const TOPICS: Topic[] = [
          daily) it is a plain +, − or × to work out. */
       const op = stage ? (stage <= 4 ? stage : ri(1, 4)) : ri(1, 3);
       const ds = (n: number) => 1 + ((n - 1) % 9);
+      /* In a stage the sizes are mixed, so one stage goes from 2-digit sums up
+         to 4 + 4 or 5 + 3 digits; Blitz keeps one size per difficulty. */
+      const num = (dg: number) => ri(10 ** (dg - 1) + 1, 10 ** dg - 1);
+      const sizes = diff === "easy" ? [2, 3, 4] : diff === "medium" ? [3, 4, 5] : [4, 5, 6];
+      const big = () => (stage ? num(sizes[ri(0, 2)]) : num(diff === "easy" ? 2 : diff === "medium" ? 3 : 4));
+      const mate = (a: number) => (stage ? num(ri(2, String(a).length)) : num(String(a).length));
       const lo = diff === "easy" ? 11 : diff === "medium" ? 101 : 1001;
       const hi = diff === "easy" ? 99 : diff === "medium" ? 999 : 9999;
       /* A wrong answer the digit-sum check can catch: off by an amount that is
@@ -835,15 +854,15 @@ export const TOPICS: Topic[] = [
           verify: { right: String(ans), wrong: String(wrong), whyRight: why(ans), whyWrong: why(wrong) },
         };
       };
-      if (op === 1) { const a = ri(lo, hi), b = ri(lo, hi); return build(a, b, a + b); }
+      if (op === 1) { const a = big(), b = mate(a); return build(a, b, a + b); }
       if (op === 2) {
-        let a = ri(lo, hi), b = ri(lo, hi);
+        let a = big(), b = mate(a);
         if (a < b) [a, b] = [b, a];
         if (a === b) a += ri(1, 9);
         return build(a, b, a - b);
       }
       if (op === 3) {
-        const a = ri(lo, hi), b = diff === "easy" ? ri(2, 9) : ri(11, 99);
+        const a = stage ? num(Math.min(4, sizes[ri(0, 2)])) : ri(lo, hi), b = diff === "easy" ? ri(2, 9) : ri(11, 99);
         return build(a, b, a * b);
       }
       /* Division: Dividend = Divisor × Quotient + Remainder, checked by digit sums. */
@@ -1511,15 +1530,11 @@ export const TOPICS: Topic[] = [
     gen: (diff, stage) => {
       /* In the lesson's stages the player draws the design (pp.205–206). The
          tables come out of a shuffled bag of 1–9, so no table repeats until
-         every one has been drawn. */
+         every one has been drawn. Stages 1–3 show each product; in 4 and 5 the
+         table is worked out in the head. */
       if (stage) {
-        if (!drawBag.length) {
-          drawBag.push(...shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]));
-          if (drawBag[0] === lastDrawT) drawBag.push(drawBag.shift()!);
-        }
-        const t = drawBag.shift()!;
-        lastDrawT = t;
-        return { prompt: `DS(${t} × 1…10)`, answer: t, draw: { t } };
+        const t = bagPick(circleBag, [1, 2, 3, 4, 5, 6, 7, 8, 9], circleLast);
+        return { prompt: `DS(${t} × 1…10)`, answer: t, draw: { t, shape: "circle", hint: stage <= 3 } };
       }
       /* Elsewhere (Blitz, daily) it is one step of a table. Hard uses a two-digit
          table, whose digit sum draws the same shape as its one-digit twin. */
@@ -1565,7 +1580,15 @@ export const TOPICS: Topic[] = [
         [lang === "ja" ? "行×列" : "row × column", cells.join(", ")],
       ];
     },
-    gen: (diff) => {
+    gen: (diff, stage) => {
+      /* In the lesson's stages the player makes the design (pp.208–209): tap
+         every box of one digit in the square. 9 is left out — it fills 21
+         boxes. Stages 1–2 show the digit sums in the boxes; from stage 3 the
+         boxes show the products and the digit sums are done in the head. */
+      if (stage) {
+        const t = bagPick(squareBag, [1, 2, 3, 4, 5, 6, 7, 8], squareLast);
+        return { prompt: `DS = ${t}`, answer: t, draw: { t, shape: "square", hint: stage <= 2 } };
+      }
       /* Easy reads a box off the grid. Above that the grid is used as a key:
          reduce each number to its digit sum first, then look up the box. */
       if (diff === "easy") {
