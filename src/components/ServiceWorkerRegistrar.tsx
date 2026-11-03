@@ -14,6 +14,12 @@ function subscribe(cb: () => void) {
   };
 }
 
+/* The strip only renders in the browser (the server snapshot is "online"),
+   so reading the saved game language here is safe. */
+function appLangIsJa() {
+  try { return (localStorage.getItem("sutraSprint.lang") ?? "ja") === "ja"; } catch { return true; }
+}
+
 /* Registers the worker and shows a quiet strip while the network is down, so
    a player who suddenly cannot reach a race knows why. Nothing here blocks
    the app: a browser without service workers simply never registers one. */
@@ -48,7 +54,7 @@ export function ServiceWorkerRegistrar() {
   if (online) return null;
   return (
     <div className="offline-strip" role="status">
-      オフライン · offline：おためしモードなら遊べます
+      {appLangIsJa() ? "オフライン：おためしモードなら遊べます" : "Offline: you can still play in trial mode"}
     </div>
   );
 }

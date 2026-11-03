@@ -5484,7 +5484,7 @@ export function GameApp({
 
       {feedback?.show && (
         <div className={`feedback-banner show ${feedback.ok ? "good" : "bad"}`} style={{ bottom: footerH }}>
-          <div className="feedback-sfx-stamp">{feedback.ok ? "ピンポン♪" : "ブブー"}</div>
+          <div className="feedback-sfx-stamp">{lang === "ja" ? (feedback.ok ? "ピンポン♪" : "ブブー") : (feedback.ok ? "Ding! ♪" : "Buzz!")}</div>
           <div className="feedback-inner">
             <div className="feedback-icon">{feedback.ok ? "◯" : "✕"}</div>
             <div className="feedback-text">
@@ -5520,7 +5520,7 @@ export function GameApp({
               );
             })()}
             <div className={`hanko ${stageResult.passed ? "" : "fail"}`}>
-              <span className="jp">{stageResult.passed ? "勝利" : "再戦"}</span>
+              <span className="jp">{lang === "ja" ? (stageResult.passed ? "勝利" : "再戦") : (stageResult.passed ? "WIN" : "AGAIN")}</span>
               <span className="en">{stageResult.passed ? t.result.clear : t.result.retry}</span>
             </div>
             <div className="result-stars">
