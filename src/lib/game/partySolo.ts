@@ -3,6 +3,9 @@
    same PartyState an online room keeps, so party.ts decides wins and losses
    and the same screen draws it; only the other players are computer ones:
 
+     🏯 Sutra Tower  you against three CPU builders who stack at their own
+                     pace, slip now and then — and drop the wrecking ball
+                     they earn on the tallest tower (one of them always on you)
      🪢 Tug of War   you (red) against a CPU team that pulls at a steady pace
      🔔 Buzzer Quiz  you against three CPU contestants who buzz in after a
                      few seconds — and sometimes get it wrong
@@ -15,6 +18,7 @@
 import {
   PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS, BINGO_CALL_MS,
   myPartyQuestion, buzzQuestion, partyStatus, bingoCalls, bingoCard, bingoCalled, hasBingo, isRaceGame, RACE_GOAL,
+  towerKey, towerVal, towerGain, towerPlayer,
   type PartyGame, type PartyPlayer, type PartyState,
 } from "./party";
 
@@ -38,6 +42,11 @@ const BINGO_CPUS = [1, 2, 3];
 const BINGO_MISS = [3, 5, 9];
 /* ms per answer for a CPU racer (each a little different) */
 const RACE_PACE = [5200, 3900, 2900];
+/* tower: ms per block for a CPU builder, and how often (1 in N) an answer
+   is a slip that earns it a wrecking ball */
+const TOWER_PACE = [6400, 4700, 3400];
+const TOWER_SLIP = [4, 5, 6];
+const TOWER_THROW_MS = 1600;      /* a CPU drops its ball this long after earning it */
 const CPU_NAMES: [string, string][] = [["Ray", "レイ"], ["Mimi", "ミミ"], ["Taro", "タロウ"]];
 
 /* a small deterministic hash so a CPU's timing is fixed for a given question */
@@ -78,15 +87,74 @@ export function soloAnswer(st: PartyState, now: number, idx: number, answer: num
   }
   if (me.done !== idx) return st;
   if (myPartyQuestion(st.game, st.seed, me.slot, idx).answer !== answer) return "wrong";
+  if (st.game === "tower") return towerBuild(st, SOLO_ME, now);
   const players = { ...st.players, [SOLO_ME]: { ...me, done: idx + 1 } };
   const wins = isRaceGame(st.game) && idx + 1 >= RACE_GOAL[st.game] && !st.wins[0] ? [SOLO_ME] : st.wins;
   return { ...st, players, wins };
+}
+
+/* ---- tower ledger moves (shared by me and the CPUs) ---- */
+const bump = (st: PartyState, key: string, by = 1): PartyState => ({ ...st, waves: { ...st.waves, [key]: (st.waves[key] ?? 0) + by } });
+function towerBuild(st: PartyState, id: string, now: number): PartyState {
+  const gain = towerGain(st, id, now);
+  const p = st.players[id];
+  let next: PartyState = { ...st, players: { ...st.players, [id]: { ...p, done: p.done + 1 } } };
+  if (gain.gold) next = bump(next, towerKey("g", id));
+  if (gain.boss) next = bump(next, towerKey("x", id));
+  return next;
+}
+function towerSlip(st: PartyState, id: string): PartyState {
+  const next = bump(st, towerKey("w", id));
+  return { ...next, waves: { ...next.waves, [towerKey("s", id)]: st.players[id]?.done ?? 0 } };
+}
+function towerHit(st: PartyState, from: string, to: string): PartyState {
+  if (from === to || !(to in st.players) || towerPlayer(st, from).balls <= 0) return st;
+  return bump(bump(st, towerKey("b", from)), towerKey("h", to));
+}
+/* my wrong answer in the tower: it earns a wrecking ball */
+export function soloWrong(st: PartyState, now: number): PartyState {
+  return st.game === "tower" && partyStatus(st, now) === "playing" ? towerSlip(st, SOLO_ME) : st;
+}
+/* I drop a wrecking ball on a rival (targetId is the other player's id) */
+export function soloThrow(st: PartyState, now: number, targetId: string): PartyState {
+  return st.game === "tower" && partyStatus(st, now) === "playing" ? towerHit(st, SOLO_ME, targetId) : st;
 }
 
 /* the computer's turn: called a few times a second */
 export function soloTick(st: PartyState, now: number, level: SoloLevel): PartyState {
   if (partyStatus(st, now) !== "playing" || st.startAt === null) return st;
   const t = now - st.startAt;
+
+  if (st.game === "tower") {
+    /* Each CPU "answers" on a fixed schedule: answer k lands at k × pace
+       (a little uneven per player). Every TOWER_SLIP-th or so is a slip, which
+       earns a ball; the ball drops TOWER_THROW_MS later — Taro always on me,
+       the others on whoever is tallest (never themselves). The schedule is
+       replayed from the counters so a slow tick never skips a move. */
+    let next = st;
+    Object.entries(st.players).filter(([id]) => id.startsWith("cpu:")).forEach(([id, p], i) => {
+      const pace = TOWER_PACE[level] * [0.92, 1.0, 1.12][i % 3] * (0.95 + (hash(st.seed, p.slot, 5) % 10) / 100);
+      const answered = towerVal(next, "w", id) + next.players[id].done;          /* answers so far: right + wrong */
+      const due = Math.floor(t / pace);
+      for (let k = answered; k < due; k++) {
+        const slip = hash(st.seed, p.slot, k) % TOWER_SLIP[level] === 0 && k > 0;
+        next = slip ? towerSlip(next, id) : towerBuild(next, id, st.startAt! + (k + 1) * pace);
+      }
+      /* drop any ball once its moment has passed */
+      const tp = towerPlayer(next, id);
+      if (tp.balls > 0) {
+        const earnedAt = (() => {           /* the answer index of the latest unthrown slip */
+          let n = 0; for (let k = 0; k <= due; k++) { if (hash(st.seed, p.slot, k) % TOWER_SLIP[level] === 0 && k > 0) { n++; if (n === towerVal(next, "b", id) + 1) return (k + 1) * pace; } } return 0;
+        })();
+        if (t >= earnedAt + TOWER_THROW_MS) {
+          const others = Object.keys(next.players).filter((o) => o !== id);
+          const target = i === 2 ? SOLO_ME : others.sort((a, b) => towerPlayer(next, b).height - towerPlayer(next, a).height)[0];
+          next = towerHit(next, id, target);
+        }
+      }
+    });
+    return next;
+  }
 
   if (st.game === "tug") {
     /* each CPU pulls at its pace, a little uneven so it feels human */
