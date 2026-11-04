@@ -4952,6 +4952,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 /* Digit Sum in a Circle — draw-the-design question */
 .dc{ display:flex; flex-direction:column; align-items:center; gap:4px; }
 .dc-step{ font-size:clamp(17px,4.6vw,22px); font-weight:800; color:var(--ink); }
+.dc-step .dc-ok{ color:var(--green); }
 .dc-step b{ color:#D63A3A; }
 .dc-svg{ width:100%; max-width:300px; height:auto; touch-action:manipulation; user-select:none; }
 .dc-pt{ cursor:pointer; }
@@ -4968,3 +4969,72 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 /* lesson and practice text is for reading, not copying: Ray asked that the
    book's material cannot be selected and lifted from the app */
 .view:has(.topic-head), .buddy-bubble{ user-select:none; -webkit-user-select:none; }
+
+/* ---------- 🏯 Sutra Tower ---------- */
+.party-pick.tower{ background:linear-gradient(120deg,#ffe7c2,#fff); }
+.tower-field{ position:absolute; inset:0; overflow:hidden; background:linear-gradient(180deg,#8fd3ff 0%,#cdeeff 55%,#e9f7ff 100%); transition:background 1.2s; }
+.tower-field.boss{ background:linear-gradient(180deg,#5b2a8a 0%,#d4506a 50%,#ffb36b 100%); }
+.tower-sun{ position:absolute; right:22px; top:18px; width:54px; height:54px; border-radius:50%; background:radial-gradient(circle at 40% 40%,#fff6c9,#ffd84a 60%,#ffb800); box-shadow:0 0 30px 10px rgba(255,216,74,.45); transition:all 1.2s; }
+.tower-field.boss .tower-sun{ background:radial-gradient(circle at 40% 40%,#fff,#ff8c5a 60%,#ff4a3d); box-shadow:0 0 40px 14px rgba(255,90,60,.5); top:70px; }
+.tower-cloud{ position:absolute; width:70px; height:24px; border-radius:20px; background:rgba(255,255,255,.9); opacity:.9; animation:towerCloud 22s linear infinite; }
+.tower-cloud::before,.tower-cloud::after{ content:""; position:absolute; background:inherit; border-radius:50%; }
+.tower-cloud::before{ width:30px; height:30px; left:12px; top:-14px; } .tower-cloud::after{ width:22px; height:22px; left:36px; top:-10px; }
+.tower-cloud.c1{ top:34px; left:-80px; } .tower-cloud.c2{ top:78px; left:-80px; animation-delay:-9s; transform:scale(.7); } .tower-cloud.c3{ top:20px; left:-80px; animation-delay:-16s; transform:scale(.85); }
+@keyframes towerCloud{ from{ transform:translateX(0) } to{ transform:translateX(calc(100vw + 120px)) } }
+.tower-clock{ position:absolute; left:10px; right:10px; top:8px; height:6px; border-radius:3px; background:rgba(0,0,0,.15); }
+.tower-clock i{ display:block; height:100%; border-radius:3px; background:var(--ink); transition:width .3s linear; }
+.tower-field.boss .tower-clock i{ background:#fff; }
+.tower-banner{ position:absolute; left:50%; top:22px; transform:translateX(-50%); z-index:5; white-space:nowrap; font-weight:900; font-size:14px; padding:6px 14px; border-radius:999px; border:3px solid #1d1b33; box-shadow:0 4px 0 #1d1b33; animation:towerPop .35s cubic-bezier(.34,1.56,.64,1); }
+.tower-banner.ball{ background:#fff3c4; color:#1d1b33; animation:towerPop .35s cubic-bezier(.34,1.56,.64,1), towerPulse 1s .35s ease-in-out infinite; }
+.tower-banner.boss{ background:#ff4a3d; color:#fff; }
+.tower-banner.gold{ background:linear-gradient(90deg,#ffe07a,#ffb800); color:#5a3a00; }
+@keyframes towerPop{ from{ transform:translateX(-50%) scale(.6); opacity:0 } to{ transform:translateX(-50%) scale(1); opacity:1 } }
+@keyframes towerPulse{ 0%,100%{ transform:translateX(-50%) scale(1) } 50%{ transform:translateX(-50%) scale(1.06) } }
+.tower-row{ position:absolute; left:6px; right:6px; bottom:46px; display:flex; align-items:flex-end; justify-content:center; gap:6px; }
+.tower-lane{ display:flex; flex-direction:column; align-items:center; flex:1 1 0; min-width:0; max-width:74px; padding:0; border:0; background:none; font-family:inherit; color:inherit; position:relative; }
+.tower-lane.me{ max-width:92px; flex-grow:1.4; }
+.tower-lane.hit{ animation:towerShake .5s; }
+@keyframes towerShake{ 0%,100%{ transform:translateX(0) } 20%{ transform:translateX(-5px) rotate(-2deg) } 40%{ transform:translateX(5px) rotate(2deg) } 60%{ transform:translateX(-3px) } 80%{ transform:translateX(3px) } }
+.tower-col{ position:relative; width:100%; display:flex; flex-direction:column-reverse; align-items:stretch; }
+.tower-block{ display:block; width:100%; box-sizing:border-box; border:2px solid #1d1b33; border-radius:4px; background-image:radial-gradient(rgba(255,255,255,.55) 1.5px,transparent 2px); background-size:9px 9px; background-position:3px 3px; box-shadow:inset -4px 0 0 rgba(0,0,0,.12); }
+.tower-block.gold{ background:linear-gradient(135deg,#fff1a8,#ffc83d 50%,#ffe88a); box-shadow:inset -4px 0 0 rgba(0,0,0,.08), 0 0 10px 2px rgba(255,200,61,.65); animation:towerGlint 1.6s ease-in-out infinite; }
+@keyframes towerGlint{ 0%,100%{ filter:brightness(1) } 50%{ filter:brightness(1.25) } }
+.tower-block.drop{ animation:towerDrop .45s cubic-bezier(.34,1.56,.64,1); }
+@keyframes towerDrop{ 0%{ transform:translateY(-60px) scaleY(1.2); opacity:0 } 60%{ transform:translateY(0) scaleY(.85) } 100%{ transform:translateY(0) scaleY(1); opacity:1 } }
+.tower-roof{ position:absolute; left:50%; transform:translateX(-50%); width:0; height:0; border-left:16px solid transparent; border-right:16px solid transparent; border-bottom:12px solid; filter:drop-shadow(0 -1px 0 #1d1b33); transition:bottom .25s; }
+.tower-lane.me .tower-roof{ border-left-width:22px; border-right-width:22px; border-bottom-width:16px; }
+.tower-kid{ position:absolute; left:50%; transform:translateX(-50%); width:26px; height:26px; transition:bottom .25s; display:flex; align-items:flex-end; justify-content:center; }
+.tower-lane.me .tower-kid{ width:44px; height:44px; transform:translateX(-50%) translateY(-4px); }
+.tower-lane.me .tower-kid > *{ width:44px; height:44px; }
+.tower-ball{ position:absolute; right:-28px; top:-30px; font-size:34px; z-index:4; animation:towerSwing .8s cubic-bezier(.3,.8,.4,1) forwards; filter:drop-shadow(0 4px 2px rgba(0,0,0,.3)); }
+@keyframes towerSwing{ 0%{ transform:translate(90px,-80px) rotate(-40deg); opacity:0 } 55%{ transform:translate(0,0) rotate(0); opacity:1 } 75%{ transform:translate(8px,-6px) rotate(10deg) } 100%{ transform:translate(60px,30px) rotate(30deg); opacity:0 } }
+.tower-debris{ position:absolute; left:20%; width:60%; height:10px; border:2px solid #1d1b33; border-radius:4px; animation:towerFly .8s ease-in forwards; z-index:3; }
+@keyframes towerFly{ 0%{ transform:translate(0,0) rotate(0); opacity:1 } 100%{ transform:translate(-70px,120px) rotate(-160deg); opacity:0 } }
+.tower-lane.target .tower-col{ cursor:pointer; }
+.tower-aim{ position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px; border:3px dashed #ff4a3d; border-radius:50%; animation:towerAim 1s linear infinite; z-index:4; box-shadow:0 0 0 3px rgba(255,255,255,.7); }
+.tower-aim::before,.tower-aim::after{ content:""; position:absolute; background:#ff4a3d; } .tower-aim::before{ left:50%; top:-8px; width:3px; height:calc(100% + 16px); margin-left:-1.5px; } .tower-aim::after{ top:50%; left:-8px; height:3px; width:calc(100% + 16px); margin-top:-1.5px; }
+@keyframes towerAim{ from{ transform:rotate(0) scale(1) } 50%{ transform:rotate(180deg) scale(1.1) } to{ transform:rotate(360deg) scale(1) } }
+.tower-name{ margin-top:6px; font-size:11px; font-weight:800; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#1d1b33; }
+.tower-field.boss .tower-name,.tower-field.boss .tower-h{ color:#fff; }
+.tower-h{ font-size:13px; font-weight:900; color:#1d1b33; }
+.tower-lane.winner .tower-col{ animation:towerWin 1s ease-in-out infinite alternate; }
+@keyframes towerWin{ from{ filter:drop-shadow(0 0 0 rgba(255,216,74,0)) } to{ filter:drop-shadow(0 0 10px rgba(255,216,74,.9)) } }
+.tower-ground{ position:absolute; left:0; right:0; bottom:0; height:44px; background:linear-gradient(180deg,#7ed957 0,#5cbf5a 10px,#8b5a2b 10px,#6d4320 100%); border-top:3px solid #1d1b33; }
+.tower-streak{ position:absolute; left:10px; bottom:8px; display:flex; align-items:center; gap:4px; z-index:5; }
+.tower-streak i{ width:12px; height:12px; border-radius:50%; border:2px solid #1d1b33; background:#fff; }
+.tower-streak i.on{ background:#ffb800; box-shadow:0 0 6px rgba(255,184,0,.8); }
+.tower-streak small{ margin-left:4px; font-size:10px; font-weight:800; color:#fff; text-shadow:0 1px 0 #1d1b33; }
+.party-tower.shake{ animation:towerShake .5s; }
+
+.tower-hills{ position:absolute; left:0; right:0; bottom:44px; height:120px; pointer-events:none; overflow:hidden; }
+.tower-hills i{ position:absolute; bottom:-60px; border-radius:50%; background:#a9dbc1; }
+.tower-hills i:nth-child(1){ left:-20%; width:70%; height:150px; background:#b7e3cf; }
+.tower-hills i:nth-child(2){ left:35%; width:80%; height:170px; background:#9fd3b6; }
+.tower-hills i:nth-child(3){ left:5%; width:60%; height:110px; background:#c7ead8; }
+.tower-field.boss .tower-hills i{ filter:brightness(.55) saturate(.6); }
+.tower-birds{ position:absolute; left:34px; top:52px; font-size:12px; letter-spacing:2px; color:#2d4a5a; opacity:.7; animation:towerBirds 14s linear infinite; }
+@keyframes towerBirds{ from{ transform:translate(0,0) } 50%{ transform:translate(140px,-14px) } to{ transform:translate(300px,4px) } }
+.tower-roof::after{ content:""; position:absolute; left:-18px; top:12px; width:36px; height:5px; background:#1d1b33; border-radius:3px; }
+.tower-lane.me .tower-roof::after{ left:-24px; width:48px; top:16px; }
+.tower-ground{ background:linear-gradient(180deg,#7ed957 0,#5cbf5a 12px,#c9a06a 12px,#a97c4f 100%); }
+.tower-ground::before{ content:""; position:absolute; left:0; right:0; top:12px; height:3px; background:rgba(0,0,0,.18); }

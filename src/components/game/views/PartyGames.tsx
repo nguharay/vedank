@@ -11,14 +11,15 @@ import { Answers } from "./RunGames";
 import { PlanetArt, planetFor } from "./SpaceBlaster";
 import { track } from "@/lib/analytics";
 import {
-  partyCreateAction, partyJoinAction, partyRoomAction, partyStartAction, partyAnswerAction, partySwitchAction,
+  partyCreateAction, partyJoinAction, partyRoomAction, partyStartAction, partyAnswerAction, partySwitchAction, partyThrowAction,
 } from "@/lib/actions/game-actions";
 import {
   PARTY_NAMES, PARTY_GAMES, PARTY_ROOM_MAX, RACE_GOAL, isRaceGame, myPartyQuestion, TUG_WIN, BUZZ_QS, BUZZ_Q_MS, BINGO_CALLS, BINGO_CALL_MS, BINGO_LINES,
   bingoCalls, marksOf,
   buzzQuestion, buildPartyView, joinErrorText, roomLink, type PartyGame, type PartyState, type PartyView as PartyRoomView,
 } from "@/lib/game/party";
-import { soloStart, soloAnswer, soloTick, SOLO_LEVELS, SOLO_ME, type SoloLevel } from "@/lib/game/partySolo";
+import { soloStart, soloAnswer, soloTick, soloWrong, soloThrow, SOLO_LEVELS, SOLO_ME, type SoloLevel } from "@/lib/game/partySolo";
+import { TowerStage } from "./TowerStage";
 
 /* ---------- party games: Tug of War, Buzzer Quiz, Math Bingo, Space Blaster, River Hop ----------
    One screen for all five. The room part (make / join by code / share /
@@ -55,7 +56,7 @@ function saveRec(g: PartyGame, won: boolean, value: number): boolean {
 }
 function recChip(g: PartyGame, r: Record_, ja: boolean): string | null {
   if (!r.plays) return null;
-  if (g === "tug") return ja ? `🏆 ${r.wins}勝 / ${r.plays}回` : `🏆 ${r.wins} won of ${r.plays}`;
+  if (g === "tug" || g === "tower") return ja ? `🏆 ${r.wins}勝 / ${r.plays}回` : `🏆 ${r.wins} won of ${r.plays}`;
   if (g === "buzz") return ja ? `⭐ ベスト ${r.best}/${BUZZ_QS}` : `⭐ Best ${r.best}/${BUZZ_QS}`;
   if (isRaceGame(g)) return r.best ? (ja ? `🏁 ${r.wins}勝・最速 ${r.best}秒` : `🏁 ${r.wins} wins · fastest ${r.best}s`) : (ja ? `🏁 ${r.wins}勝 / ${r.plays}回` : `🏁 ${r.wins} won of ${r.plays}`);
   return r.best ? (ja ? `🎯 ${r.wins}勝・最速 ${r.best}問` : `🎯 ${r.wins} wins · fastest ${r.best} calls`) : (ja ? `🎯 ${r.plays}回挑戦` : `🎯 ${r.plays} tries`);
@@ -90,6 +91,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   const celebrated = useRef(-1);
   const lockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastHearts = useRef(0);
+  const lastHits = useRef(-1);
   /* solo: the game state lives here instead of on the server */
   const [solo, setSolo] = useState(false);
   const [level, setLevel] = useState<SoloLevel>(1);
@@ -115,6 +117,12 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       setMyDone(0); setPicked(null); setLock(false);
     }
     const mine = v.players.find((p) => p.me);
+    /* tower: a wrecking ball just landed on me — shake and say so */
+    if (mine && v.tower) {
+      const h = v.tower.by[mine.key]?.hits ?? 0;
+      if (h > lastHits.current && lastHits.current >= 0) { setFx({ k: clock(), kind: "fire" }); sound.wrong(); haptic(40); }
+      lastHits.current = h;
+    } else lastHits.current = -1;
     if (mine && v.game === "bingo") setMyDone((d) => d | mine.done);
     else if (mine && v.game !== "buzz") setMyDone((d) => Math.max(d, mine.done));
     /* host: a friend just joined — say so, so the host knows to press Start */
@@ -270,6 +278,11 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       /* a wrong tap: locked out for a moment (on the buzzer, for this question) */
       setLock(true); sound.wrong(); haptic(30);
       lockTimer.current = setTimeout(() => { setLock(false); setPicked(null); }, room.game === "buzz" ? 1800 : 800);
+      /* tower: a slip earns a wrecking ball, so it has to reach the ledger */
+      if (room.game === "tower") {
+        if (solo) { const st = soloRef.current; if (st) { soloRef.current = soloWrong(st, clock()); take(soloView(soloRef.current)); } }
+        else partyAnswerAction(room.code, myDone, v).then((r) => { if (!("error" in r)) take(r); }).catch(() => {});
+      }
       return;
     }
     const idx = room.game === "buzz" ? room.buzz!.q : myDone;
@@ -340,6 +353,25 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     } catch {}
   }
 
+  /* tower: drop one of my wrecking balls on a rival's tower */
+  async function throwBall(targetKey: string) {
+    if (!room?.tower || status !== "playing" || !me || targetKey === me.key) return;
+    if ((room.tower.by[me.key]?.balls ?? 0) <= 0) return;
+    sound.correct(); haptic(25);
+    setFx({ k: clock(), kind: "pull" });
+    if (solo) {
+      const st = soloRef.current;
+      if (!st) return;
+      const ids = Object.keys(st.players);
+      const target = ids[Number(targetKey.replace(/^p/, ""))];
+      if (!target) return;
+      soloRef.current = soloThrow(st, clock(), target);
+      take(soloView(soloRef.current));
+      return;
+    }
+    try { const res = await partyThrowAction(room.code, targetKey); if (!("error" in res)) take(res); } catch {}
+  }
+
   async function share() {
     if (!room) return;
     const url = `${SITE_URL}/?pr=${room.code}`;
@@ -404,6 +436,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
           {status === "playing" && game === "buzz" && room.buzz && `Q${Math.min(BUZZ_QS, room.buzz.q + 1)}/${BUZZ_QS}`}
           {status === "playing" && game === "bingo" && room.bingo && `🎯 ${room.bingo.called}/${BINGO_CALLS}`}
           {status === "playing" && room.race && `⏱ ${secsLeft(room.race.endsAt)}s`}
+          {status === "playing" && room.tower && (room.tower.bossOn ? `⚡ ${secsLeft(room.tower.endsAt)}s` : `⏱ ${secsLeft(room.tower.endsAt)}s`)}
           {status === "lobby" && `👥 ${n}`}
         </span>
       </div>
@@ -418,6 +451,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
         {game === "space" && <SpaceRaceStage room={room} ja={ja} ranked={ranked} pulse={fx?.kind === "pull" ? fx.k : 0} />}
         {game === "river" && <FrogRaceStage ja={ja} ranked={ranked} pulse={fx?.kind === "pull" ? fx.k : 0} />}
         {game === "bingo" && <BingoStage room={room} ja={ja} now={now} mask={myDone} lock={lock} wrongCell={lock ? picked : null} onMark={markCell} />}
+        {game === "tower" && <TowerStage room={room} ja={ja} now={now} pulse={fx?.kind === "pull" ? fx.k : 0} onThrow={throwBall} />}
 
         {status === "countdown" && room.startAt !== null && (
           <div key={secsLeft(room.startAt)} className="race-count mono">{Math.max(1, secsLeft(room.startAt))}</div>
@@ -468,6 +502,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
                   <span className="mono">{game === "buzz" ? `${p.score} ${ja ? "問" : "pts"}`
                     : game === "space" ? `${p.score}/${RACE_GOAL.space} ${ja ? "こ" : "blasts"}`
                     : game === "river" ? `${p.score}/${RACE_GOAL.river} ${ja ? "ジャンプ" : "hops"}`
+                    : game === "tower" ? `🧱 ${p.score}${room.tower?.by[p.key]?.gold ? ` · ✨${room.tower.by[p.key].gold}` : ""}`
                     : `${p.score} ${game === "bingo" ? (ja ? "マス" : "marks") : (ja ? "回" : "pulls")}`}</span>
                 </li>
               ))}
@@ -534,6 +569,7 @@ function GamePicker({ current, ja, canPick, busy, onPick, label }: {
 }
 
 function blurb(g: PartyGame, ja: boolean) {
+  if (g === "tower") return ja ? "正解でブロックを積もう。まちがえたら鉄球でライバルのタワーをくずせ！いちばん高い人の勝ち。" : "Stack a block per right answer. A slip gives you a wrecking ball to drop on a rival! Tallest tower wins.";
   if (g === "tug") return ja ? "2チームで対決。正解でつなを引こう！" : "Two teams. Every right answer pulls the rope!";
   if (g === "buzz") return ja ? "同じ問題を早いもの勝ち！" : "Same sum for all, fastest wins the point!";
   if (g === "space") return ja ? "答えのいん石をうちおとして、先に星に着いたら勝ち！" : "Blast the answer rocks. First rocket to the planet wins!";
@@ -543,12 +579,19 @@ function blurb(g: PartyGame, ja: boolean) {
 
 function resultIcon(room: PartyRoomView, myTeam: 0 | 1, myKey?: string) {
   if (room.game === "tug") return room.tug?.winner === "draw" ? "🤝" : room.tug?.winner === myTeam ? "🏆" : "💪";
+  if (room.game === "tower") return room.tower?.winnerKeys.includes(myKey ?? "") ? "🏯" : "🧱";
   if (room.game === "bingo" && room.bingo?.winnerKey) return room.bingo.winnerKey === myKey ? "🎯" : "🙌";
   if (room.race?.winnerKey) return room.race.winnerKey === myKey ? (room.game === "space" ? "🚀" : "🐸") : "🙌";
   const top = Math.max(...room.players.map((p) => p.score));
   return room.players.find((p) => p.key === myKey)?.score === top && top > 0 ? "🥇" : "🔔";
 }
 function resultTitle(room: PartyRoomView, ja: boolean, myTeam: 0 | 1, myKey?: string) {
+  if (room.game === "tower" && room.tower) {
+    const ws = room.tower.winnerKeys.map((k) => room.players.find((p) => p.key === k)).filter(Boolean) as PartyRoomView["players"];
+    if (!ws.length) return ja ? "だれも積めなかった…" : "Nobody built a tower…";
+    if (ws.some((p) => p.key === myKey)) return ws.length > 1 ? (ja ? "いちばん高いタワー！同点だ！" : "Tallest tower! It's a tie!") : (ja ? "いちばん高いタワー！きみの勝ち！" : "Tallest tower! You win!");
+    return ja ? `${ws.map((w) => w.name).join("・")} のタワーがいちばん高い！` : `${ws.map((w) => w.name).join(" & ")} built the tallest tower!`;
+  }
   if (room.game === "tug") {
     const w = room.tug?.winner;
     if (w === "draw") return ja ? "ひきわけ！" : "It's a draw!";

@@ -7,8 +7,16 @@ import {
   PARTY_GAMES, PARTY_ROOM_MAX, PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS,
   bingoCalls, bingoCard, bingoCalled, hasBingo,
   myPartyQuestion, buzzQuestion, partyStatus, buildPartyView, isRaceGame, RACE_GOAL,
+  towerKey, towerVal, towerGain, towerPlayer,
   type PartyGame, type PartyPlayer, type PartyState, type PartyView,
 } from "./party";
+
+/* tower ledger: add `by` to one counter in state.waves (missing counts as 0) */
+const bumpSql = (code: string, round: number, key: string, by: number) => raw`
+  update party_rooms
+     set state = jsonb_set(state, array['waves', ${key}::text], to_jsonb(coalesce((state->'waves'->>${key}::text)::int, 0) + ${by}::int)),
+         updated_at = now()
+   where code = ${code}::text and (state->>'round')::int = ${round}::int`;
 
 /* Party rooms (Tug of War, Buzzer Quiz, Math Bingo, Space Blaster, River Hop) — the rules are in
    party.ts; this file stores them. Same shape as the online race: the host
@@ -203,13 +211,29 @@ export async function answerPartyRoom(userId: string, code: string, idx: number,
          and (state->'players'->(${userId}::text)->>'done')::int = ${mask}::int`);
   } else {
     if (me.done !== idx) return view(row, userId);
-    if (myPartyQuestion(st.game, st.seed, me.slot, idx).answer !== answer) return { error: "wrong" };
-    await db.execute(raw`
+    if (myPartyQuestion(st.game, st.seed, me.slot, idx).answer !== answer) {
+      /* tower: a slip earns a wrecking ball and ends the streak */
+      if (st.game === "tower") {
+        await db.execute(bumpSql(row.code, st.round, towerKey("w", userId), 1));
+        await db.execute(raw`
+          update party_rooms
+             set state = jsonb_set(state, array['waves', ${towerKey("s", userId)}::text], to_jsonb(${me.done}::int)), updated_at = now()
+           where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int`);
+      }
+      return { error: "wrong" };
+    }
+    const gain = st.game === "tower" ? towerGain(st, userId, now) : null;
+    const landed = await db.execute(raw`
       update party_rooms
          set state = jsonb_set(state, array['players', ${userId}::text, 'done'], to_jsonb(${idx + 1}::int)),
              updated_at = now()
        where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int
-         and (state->'players'->(${userId}::text)->>'done')::int = ${idx}::int`);
+         and (state->'players'->(${userId}::text)->>'done')::int = ${idx}::int
+       returning code`);
+    if (gain && landed.rows?.length) {
+      if (gain.gold) await db.execute(bumpSql(row.code, st.round, towerKey("g", userId), 1));
+      if (gain.boss) await db.execute(bumpSql(row.code, st.round, towerKey("x", userId), 1));
+    }
     /* a race: the first to land the goal answer takes it */
     if (isRaceGame(st.game) && idx + 1 >= RACE_GOAL[st.game]) await db.execute(raw`
       update party_rooms
@@ -218,6 +242,31 @@ export async function answerPartyRoom(userId: string, code: string, idx: number,
          and (state->'wins'->0) is null
          and (state->'players'->(${userId}::text)->>'done')::int = ${idx + 1}::int`);
   }
+  const fresh = await load(row.code);
+  return fresh ? view(fresh, userId) : { error: "No such room." };
+}
+
+/* Sutra Tower: drop one of my wrecking balls on a rival. `targetKey` is the
+   view key (p0, p1…) of the player to hit. The throw lands only while I still
+   hold a ball, so two taps cannot spend one ball twice. */
+export async function throwPartyRoom(userId: string, code: string, targetKey: string): Promise<PartyRoomView | { error: string }> {
+  const row = await load(code);
+  if (!row) return { error: "No such room." };
+  const st = row.state as PartyState;
+  if (st.game !== "tower" || !(userId in st.players)) return { error: "Not in this game." };
+  if (partyStatus(st, Date.now()) !== "playing") return view(row, userId);
+  const ids = Object.entries(st.players).sort((a, b) => a[1].joinedAt - b[1].joinedAt).map(([id]) => id);
+  const target = ids[Number(String(targetKey).replace(/^p/, ""))];
+  if (!target || target === userId) return { error: "No such player." };
+  if (towerPlayer(st, userId).balls <= 0) return view(row, userId);
+  const thrown = towerVal(st, "b", userId);
+  const spent = await getDb().execute(raw`
+    update party_rooms
+       set state = jsonb_set(state, array['waves', ${towerKey("b", userId)}::text], to_jsonb(${thrown + 1}::int)), updated_at = now()
+     where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int
+       and coalesce((state->'waves'->>${towerKey("b", userId)}::text)::int, 0) = ${thrown}::int
+     returning code`);
+  if (spent.rows?.length) await getDb().execute(bumpSql(row.code, st.round, towerKey("h", target), 1));
   const fresh = await load(row.code);
   return fresh ? view(fresh, userId) : { error: "No such room." };
 }

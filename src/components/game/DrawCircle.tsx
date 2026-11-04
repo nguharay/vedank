@@ -17,6 +17,10 @@ export function DrawCircle({ t, lang, hint = true, onDone }: { t: number; lang: 
   const [misses, setMisses] = useState(0);
   const [flash, setFlash] = useState<number | null>(null);
   const [over, setOver] = useState<null | "won" | "lost">(null);
+  /* The step just completed, held for a beat before the next one shows, so a
+     correct tap reads as "8 × 1 → 8 ✓" rather than the prompt jumping straight
+     to 8 × 2 as if nothing had been checked. */
+  const [confirm, setConfirm] = useState<{ k: number; ds: number } | null>(null);
 
   const cx = 130, cy = 120, R = 92;
   const pt = (d: number) => {
@@ -31,6 +35,8 @@ export function DrawCircle({ t, lang, hint = true, onDone }: { t: number; lang: 
     if (d === seq[done]) {
       const next = done + 1;
       setDone(next);
+      setConfirm({ k: next, ds: d });
+      setTimeout(() => setConfirm((c) => (c && c.k === next ? null : c)), 750);
       if (next === seq.length) { setOver("won"); setTimeout(() => onDone(true), 600); }
       return;
     }
@@ -49,6 +55,8 @@ export function DrawCircle({ t, lang, hint = true, onDone }: { t: number; lang: 
           ? (ja ? "できた！" : "Done!")
           : over === "lost"
             ? (ja ? "正しいデザインはこれ" : "Here is the design")
+            : confirm
+              ? <span className="dc-ok">{t} × {confirm.k}{hint ? <> = {t * confirm.k}</> : null} → <b>{confirm.ds}</b> ✓</span>
             : hint
               ? <>{t} × {k} = <b>{t * k}</b> → {ja ? "数字和は？" : "Digit Sum?"}</>
               : <>{t} × {k} → {ja ? "頭の中で数字和を！" : "Digit Sum in your head!"}</>}

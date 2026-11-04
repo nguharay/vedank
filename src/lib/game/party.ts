@@ -23,8 +23,17 @@
    client draws it. */
 import { raceQuestion, type ChoiceRound } from "./minigames";
 
-export type PartyGame = "tug" | "buzz" | "bingo" | "space" | "river";
-export const PARTY_GAMES: PartyGame[] = ["tug", "buzz", "bingo", "space", "river"];
+export type PartyGame = "tug" | "buzz" | "bingo" | "space" | "river" | "tower";
+export const PARTY_GAMES: PartyGame[] = ["tower", "tug", "buzz", "bingo", "space", "river"];
+
+/* 🏯 Sutra Tower: everyone builds their own tower for TOWER_MS. A right
+   answer stacks a block; every TOWER_GOLD_EVERY-th right answer in a row is a
+   gold block that counts double; a wrong answer hands you a wrecking ball
+   to drop on any rival's tower (−1 block); in the last TOWER_BOSS_MS every
+   block counts double. Tallest tower when the gong sounds wins. */
+export const TOWER_MS = 90_000;
+export const TOWER_BOSS_MS = 15_000;
+export const TOWER_GOLD_EVERY = 4;
 export const PARTY_ROOM_MAX = 50;
 export const PARTY_COUNTDOWN_MS = 3500;
 
@@ -141,9 +150,50 @@ export function raceInfo(st: PartyState, now: number): RaceInfo {
   return { goal: RACE_GOAL[g], endsAt, winner, over: !!winner || (st.startAt !== null && now >= endsAt) };
 }
 
+/* ---------- Sutra Tower ----------
+   The tower ledger lives in `waves` (a free Record<string, number> the state
+   already carries), keyed per player id:
+     w:<id>  wrong answers (each one is a wrecking ball earned)
+     b:<id>  wrecking balls thrown
+     h:<id>  hits taken (each knocks one block off)
+     s:<id>  `done` at the last wrong answer, so streak = done − s
+     g:<id>  gold blocks earned (every TOWER_GOLD_EVERY-th answer of a streak)
+     x:<id>  extra blocks from answers in boss time (the last TOWER_BOSS_MS)
+   Height = done + g + x − h. Everything is derivable, so the server only
+   ever increments counters. */
+export const towerKey = (k: "w" | "b" | "h" | "s" | "g" | "x", id: string) => `${k}:${id}`;
+export const towerVal = (st: PartyState, k: "w" | "b" | "h" | "s" | "g" | "x", id: string) => st.waves[towerKey(k, id)] ?? 0;
+export type TowerPlayer = { height: number; blocks: number; gold: number; hits: number; balls: number; streak: number; boss: number };
+export function towerPlayer(st: PartyState, id: string): TowerPlayer {
+  const p = st.players[id];
+  const done = p?.done ?? 0;
+  const gold = towerVal(st, "g", id), hits = towerVal(st, "h", id), boss = towerVal(st, "x", id);
+  return {
+    height: Math.max(0, done + gold + boss - hits), blocks: done, gold, hits, boss,
+    balls: Math.max(0, towerVal(st, "w", id) - towerVal(st, "b", id)),
+    streak: done - towerVal(st, "s", id),
+  };
+}
+export const towerBossOn = (st: PartyState, now: number) => st.startAt !== null && now >= st.startAt + TOWER_MS - TOWER_BOSS_MS && now < st.startAt + TOWER_MS;
+/* a right answer: the ledger changes it brings (besides done + 1) */
+export function towerGain(st: PartyState, id: string, now: number): { gold: boolean; boss: boolean } {
+  const streak = (st.players[id]?.done ?? 0) + 1 - towerVal(st, "s", id);
+  return { gold: streak > 0 && streak % TOWER_GOLD_EVERY === 0, boss: towerBossOn(st, now) };
+}
+export type TowerInfo = { endsAt: number; bossAt: number; over: boolean; winners: string[]; top: number };
+export function towerInfo(st: PartyState, now: number): TowerInfo {
+  const endsAt = (st.startAt ?? now) + TOWER_MS;
+  const over = st.startAt !== null && now >= endsAt;
+  const ids = Object.keys(st.players);
+  const top = Math.max(0, ...ids.map((id) => towerPlayer(st, id).height));
+  const winners = over && top > 0 ? ids.filter((id) => towerPlayer(st, id).height === top) : [];
+  return { endsAt, bossAt: endsAt - TOWER_BOSS_MS, over, winners, top };
+}
+
 export function partyStatus(st: PartyState, now: number): PartyStatus {
   if (st.startAt === null) return "lobby";
   if (now < st.startAt) return "countdown";
+  if (st.game === "tower") return towerInfo(st, now).over ? "done" : "playing";
   if (st.game === "tug") return tugInfo(st, now).winner !== null ? "done" : "playing";
   if (st.game === "bingo") return bingoInfo(st, now).over ? "done" : "playing";
   if (isRaceGame(st.game)) return raceInfo(st, now).over ? "done" : "playing";
@@ -156,6 +206,7 @@ export const PARTY_NAMES: Record<PartyGame, [string, string, string]> = {
   bingo: ["🎯", "Math Bingo", "計算ビンゴ"],
   space: ["🚀", "Space Blaster", "スペースシューター"],
   river: ["🐸", "River Hop", "かえるジャンプ"],
+  tower: ["🏯", "Sutra Tower", "スートラタワー"],
 };
 
 /* ---------- what a phone draws ----------
@@ -178,6 +229,8 @@ export type PartyView = {
   bingo: (BingoInfo & { card: number[]; winnerKey: string | null }) | null;
   buzz: { q: number; qAt: number; wins: (string | null)[] } | null;   /* wins hold player keys */
   race: (RaceInfo & { winnerKey: string | null }) | null;
+  /* tower: every player's ledger by view key, and who is tallest at the gong */
+  tower: (TowerInfo & { winnerKeys: string[]; by: Record<string, TowerPlayer>; bossOn: boolean }) | null;
 };
 
 export function buildPartyView(st: PartyState, o: { code: string; hostId: string; viewerId: string; now: number }): PartyView {
@@ -189,8 +242,14 @@ export function buildPartyView(st: PartyState, o: { code: string; hostId: string
     now: o.now, startAt: st.startAt, seed: st.seed, round: st.round, mySlot: st.players[o.viewerId]?.slot ?? 0,
     players: entries.map(([id, p]) => ({
       key: keyOf.get(id)!, name: p.name, team: p.team, done: p.done, me: id === o.viewerId, host: id === o.hostId,
-      score: st.game === "buzz" ? buzzScore(id) : st.game === "bingo" ? marksOf(p.done) : p.done, cpu: id.startsWith("cpu:") || undefined,
+      score: st.game === "buzz" ? buzzScore(id) : st.game === "bingo" ? marksOf(p.done) : st.game === "tower" ? towerPlayer(st, id).height : p.done, cpu: id.startsWith("cpu:") || undefined,
     })),
+    tower: st.game === "tower" && st.startAt !== null ? (() => {
+      const info = towerInfo(st, o.now);
+      const by: Record<string, TowerPlayer> = {};
+      for (const [id] of entries) by[keyOf.get(id)!] = towerPlayer(st, id);
+      return { ...info, winnerKeys: info.winners.map((id) => keyOf.get(id)!).filter(Boolean), by, bossOn: towerBossOn(st, o.now) };
+    })() : null,
     tug: st.game === "tug" && st.startAt !== null ? tugInfo(st, o.now) : null,
     bingo: st.game === "bingo" ? (() => {
       const info = bingoInfo(st, o.now);
