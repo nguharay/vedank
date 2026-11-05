@@ -108,24 +108,20 @@ function emit(name: string, detail: unknown) {
 /* every game is open from the start (the tiers are kept at 0 in case a
    gated rollout is wanted again) */
 export const UNLOCK_AT: Record<string, number> = {
-  ninja: 0, runner: 0, pop: 0, tf: 0, match: 0, ttt: 0, town: 0,
-  sushi: 0, bigger: 0, missing: 0,
-  castle: 0, memory: 0, lastdigit: 0,
-  konbini: 0, odd: 0, digitsum: 0,
-  rhythm: 0, sortg: 0, div9: 0,
-  crossword: 0, sq5: 0, x11: 0, crossmath: 0,
-  race: 0, sprint: 0, estimate: 0,
-  space: 0, river: 0,
+  ninja: 0, runner: 0, pop: 0, match: 0, ttt: 0, town: 0,
+  sushi: 0, castle: 0, memory: 0, konbini: 0, digitsum: 0,
+  rhythm: 0, crossword: 0, sq5: 0, x11: 0, crossmath: 0,
+  race: 0, sprint: 0, space: 0, river: 0,
 };
 export const GAME_NAMES: Record<string, [string, string]> = {
   ninja: ["Ninja Slice", "忍者スライス"], runner: ["Math Runner", "計算ランナー"], pop: ["Number Pop", "かずの風船ポップ"],
-  tf: ["True or False", "○×スピード"], match: ["Number Match", "ナンバーマッチ"], sushi: ["Sushi Shop", "おすし屋さん"],
-  bigger: ["Which is Bigger?", "どっちが大きい？"], missing: ["Missing Number", "穴うめ"], castle: ["Castle Defense", "お城をまもれ"],
-  memory: ["Memory Pairs", "神経衰弱"], lastdigit: ["Last Digit", "一の位あて"], konbini: ["Konbini Cashier", "コンビニのレジ"],
-  odd: ["Odd One Out", "仲間はずれ"], digitsum: ["Digit Sum", "数字の和"], rhythm: ["Rhythm Tap", "リズムタップ"],
-  sortg: ["Smallest First", "小さい順"], div9: ["Divisible by 9?", "9でわれる？"], crossword: ["Number Crossword", "数字クロスワード"], crossmath: ["Cross Math", "クロス計算"],
+  match: ["Number Match", "ナンバーマッチ"], sushi: ["Sushi Shop", "おすし屋さん"],
+  castle: ["Castle Defense", "お城をまもれ"],
+  memory: ["Memory Pairs", "神経衰弱"], konbini: ["Konbini Cashier", "コンビニのレジ"],
+  digitsum: ["Digit Sum", "数字の和"], rhythm: ["Rhythm Tap", "リズムタップ"],
+  crossword: ["Number Crossword", "数字クロスワード"], crossmath: ["Cross Math", "クロス計算"],
   sq5: ["Squares ending in 5", "5で終わる数の2乗"], x11: ["× 11", "×11"], race: ["Math Race", "計算レース"],
-  sprint: ["Matchstick Sprint", "マッチ棒スプリント"], estimate: ["Estimate", "見積もり"], ttt: ["Tic-Tac-Toe", "三目ならべ"], town: ["Math Town", "マスタウン"],
+  sprint: ["Matchstick Sprint", "マッチ棒スプリント"], ttt: ["Tic-Tac-Toe", "三目ならべ"], town: ["Math Town", "マスタウン"],
   space: ["Space Blaster", "スペースシューター"], river: ["River Hop", "かえるジャンプ"],
 };
 

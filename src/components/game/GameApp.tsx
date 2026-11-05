@@ -79,11 +79,10 @@ import type { RoomView } from "@/lib/game/tttOnline";
 import { InterestForm, ClassesHero } from "@/components/InterestForm";
 import { monsterFor } from "./monsters";
 import { buildPopRound, popUpMs, popPoints, type PopRound } from "@/lib/game/minigames";
-import { buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
-  buildOddRound, digitSum, buildSortRound, sortedIds,
+import { buildMatchRound, isPair, matchScore,
   dailySeed, dailyGameId, dailyGameKey, QUICK_GAMES, quickGame,
   type QuickRound,
-  type MatchTile, type BiggerPair, type OddRound, type SortRound } from "@/lib/game/minigames";
+  type MatchTile } from "@/lib/game/minigames";
 import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
@@ -234,8 +233,8 @@ export function GameApp({
     for (let r = 1; r <= 9; r++) for (let c = 1; c <= 9; c++) if (1 + ((r * c - 1) % 9) === t) out.push(`${r}×${c}`);
     return out.join("  ");
   };
-  const GAME_VIEWS: View[] = ["match", "bigger", "memory", "odd", "sortg", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja", "party", "space", "river"];
-  const [quickId, setQuickId] = useState<string>("tf");
+  const GAME_VIEWS: View[] = ["match", "memory", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja", "party", "space", "river"];
+  const [quickId, setQuickId] = useState<string>("digitsum");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
   const [bonusGems, setBonusGems] = useState(initialBonusGems || 0);
@@ -1038,7 +1037,7 @@ export function GameApp({
   /* Guests get a taste — the first two topics, Blitz, Game of the Day and
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
-  const GUEST_GAMES = new Set(["match", "bigger", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja", "space", "river"]);
+  const GUEST_GAMES = new Set(["match", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja", "space", "river"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   /* a room code from a shared ?rr= link, handed to the race view once */
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
@@ -2069,55 +2068,6 @@ export function GameApp({
     }
   }
 
-  /* ---------- Which is Bigger ---------- */
-  const [bigPair, setBigPair] = useState<BiggerPair | null>(null);
-  const [bigStreak, setBigStreak] = useState(0);
-  const [bigBest, setBigBest] = useState(0);
-  const [bigPick, setBigPick] = useState<"left" | "right" | null>(null);
-  const [bigOver, setBigOver] = useState<{ streak: number; best: boolean } | null>(null);
-
-  function startBigger() {
-    try {
-      setBigBest(Number(localStorage.getItem("sutraSprint.biggerBest") || 0));
-    } catch {}
-    setBigStreak(0);
-    setBigPick(null);
-    setBigOver(null);
-    setBigPair(buildBiggerPair("easy"));
-    setView("bigger");
-  }
-
-  function onBiggerPick(side: "left" | "right") {
-    if (!bigPair || bigPick || bigOver) return;
-    setBigPick(side);
-    const chosen = side === "left" ? bigPair.left : bigPair.right;
-    const other = side === "left" ? bigPair.right : bigPair.left;
-    const right = chosen.answer > other.answer;
-    if (right) {
-      const streak = bigStreak + 1;
-      setBigStreak(streak);
-      sound.correct();
-      haptic(14);
-      /* Short beat so the green registers before the next pair. */
-      setTimeout(() => {
-        setBigPick(null);
-        setBigPair(buildBiggerPair(streak >= 12 ? "hard" : streak >= 6 ? "medium" : "easy"));
-      }, 420);
-    } else {
-      sound.wrong();
-      haptic(34);
-      const best = bigStreak > bigBest;
-      if (best) {
-        setBigBest(bigStreak);
-        try {
-          localStorage.setItem("sutraSprint.biggerBest", String(bigStreak));
-        } catch {}
-      }
-      setTimeout(() => setBigOver({ streak: bigStreak, best }), 700);
-      if (bigStreak > 0) fireQuest("correct_answer", bigStreak);
-    }
-  }
-
   /* The Games tab is a shelf, not one game: adding another is a row here
      plus its view. Bests are read when the tab opens so a fresh run shows up
      without a reload. */
@@ -2128,10 +2078,7 @@ export function GameApp({
     try {
       setGameBests({
         match: Number(localStorage.getItem("sutraSprint.matchBest") || 0),
-        bigger: Number(localStorage.getItem("sutraSprint.biggerBest") || 0),
         memory: Number(localStorage.getItem("sutraSprint.memBest") || 0),
-        odd: Number(localStorage.getItem("sutraSprint.oddBest") || 0),
-        sortg: Number(localStorage.getItem("sutraSprint.sortBest") || 0),
         sprint: Number(localStorage.getItem("sutraSprint.sprintBest") || 0),
         pop: Number(localStorage.getItem("sutraSprint.popBest") || 0),
         runner: Number(localStorage.getItem("sutraSprint.runnerBest") || 0),
@@ -2230,32 +2177,11 @@ export function GameApp({
       best: gameBests.crossword ?? 0, start: shelf(() => setView("crossword"), "crossword"),
     },
     {
-      id: "bigger", icon: "⚖️", tint: "var(--violet)",
-      name: "Which is Bigger?", nameJa: "どっちが大きい？",
-      blurb: "Tap the larger of two sums. One slip ends the run.",
-      blurbJa: "大きいほうをタップ。まちがえたら終わり。",
-      best: gameBests.bigger ?? 0, start: shelf(startBigger, "bigger"),
-    },
-    {
       id: "memory", icon: "🎴", tint: "var(--sun1)",
       name: "Memory Pairs", nameJa: "神経衰弱",
       blurb: "Same pairs, face down. Fewest turns wins.",
       blurbJa: "ふせたカードでペア探し。少ない回数でクリア。",
       best: gameBests.memory ?? 0, start: shelf(() => startMemory(), "memory"),
-    },
-    {
-      id: "odd", icon: "🔍", tint: "var(--green-dk)",
-      name: "Odd One Out", nameJa: "仲間はずれ",
-      blurb: "Three share a digit sum. Spot the one that doesn't.",
-      blurbJa: "3つは数字の合計が同じ。ちがう1つを見つけよう。",
-      best: gameBests.odd ?? 0, start: shelf(startOdd, "odd"),
-    },
-    {
-      id: "sortg", icon: "📊", tint: "var(--pink, #FF5A8A)",
-      name: "Smallest First", nameJa: "小さい順",
-      blurb: "Put four answers in order without working them all out.",
-      blurbJa: "4つの答えを小さい順に並べよう。",
-      best: gameBests.sortg ?? 0, start: shelf(startSort, "sortg"),
     },
     {
       /* the dojo used to be a stop on the learning map; it lives here now */
@@ -2352,78 +2278,6 @@ export function GameApp({
   }
   /* Leaving the view mid-round must not leave a balloon timer running. */
   useEffect(() => { if (view !== "pop") popClear(); }, [view]);
-
-  /* ---------- Odd One Out ---------- */
-  const [oddRound, setOddRound] = useState<OddRound | null>(null);
-  const [oddPick, setOddPick] = useState<string | null>(null);
-  const [oddStreak, setOddStreak] = useState(0);
-  const [oddBest, setOddBest] = useState(0);
-  const [oddOver, setOddOver] = useState<{ streak: number; best: boolean } | null>(null);
-
-  function startOdd() {
-    try { setOddBest(Number(localStorage.getItem("sutraSprint.oddBest") || 0)); } catch {}
-    setOddStreak(0); setOddPick(null); setOddOver(null);
-    setOddRound(buildOddRound());
-    setView("odd");
-  }
-
-  function onOddPick(id: string) {
-    if (!oddRound || oddPick || oddOver) return;
-    setOddPick(id);
-    if (id === oddRound.oddId) {
-      const streak = oddStreak + 1;
-      setOddStreak(streak); sound.correct(); haptic(14);
-      setTimeout(() => { setOddPick(null); setOddRound(buildOddRound()); }, 620);
-    } else {
-      sound.wrong(); haptic(34);
-      const best = oddStreak > oddBest;
-      if (best) {
-        setOddBest(oddStreak);
-        try { localStorage.setItem("sutraSprint.oddBest", String(oddStreak)); } catch {}
-      }
-      setTimeout(() => setOddOver({ streak: oddStreak, best }), 900);
-      if (oddStreak > 0) fireQuest("correct_answer", oddStreak);
-    }
-  }
-
-  /* ---------- Sort ---------- */
-  const [sortRound, setSortRound] = useState<SortRound | null>(null);
-  const [sortPicked, setSortPicked] = useState<string[]>([]);
-  const [sortBad, setSortBad] = useState<string | null>(null);
-  const [sortStreak, setSortStreak] = useState(0);
-  const [sortBest, setSortBest] = useState(0);
-  const [sortOver, setSortOver] = useState<{ streak: number; best: boolean } | null>(null);
-
-  function startSort() {
-    try { setSortBest(Number(localStorage.getItem("sutraSprint.sortBest") || 0)); } catch {}
-    setSortStreak(0); setSortPicked([]); setSortBad(null); setSortOver(null);
-    setSortRound(buildSortRound(4));
-    setView("sortg");
-  }
-
-  function onSortPick(id: string) {
-    if (!sortRound || sortBad || sortOver || sortPicked.includes(id)) return;
-    const want = sortedIds(sortRound)[sortPicked.length];
-    if (id === want) {
-      const next = [...sortPicked, id];
-      setSortPicked(next);
-      sound.click();
-      if (next.length === sortRound.cards.length) {
-        const streak = sortStreak + 1;
-        setSortStreak(streak); sound.correct(); confetti.burstCenter(70, 0.45);
-        setTimeout(() => { setSortPicked([]); setSortRound(buildSortRound(4)); }, 700);
-      }
-    } else {
-      setSortBad(id); sound.wrong(); haptic(34);
-      const best = sortStreak > sortBest;
-      if (best) {
-        setSortBest(sortStreak);
-        try { localStorage.setItem("sutraSprint.sortBest", String(sortStreak)); } catch {}
-      }
-      setTimeout(() => setSortOver({ streak: sortStreak, best }), 900);
-      if (sortStreak > 0) fireQuest("correct_answer", sortStreak);
-    }
-  }
 
   /* ---------- Memory ----------
      The same round as Number Match, face down. Pairing is identical; what
@@ -2700,9 +2554,6 @@ export function GameApp({
   /* activity: the end of each small game, once, when its result appears */
   useEffect(() => { if (matchResult) track("game_end", { game: "match", score: matchResult.score, secs: matchResult.secs, new_best: matchResult.best }); }, [matchResult]);
   useEffect(() => { if (popOver) track("game_end", { game: "pop", score: popOver.score, new_best: popOver.best }); }, [popOver]);
-  useEffect(() => { if (bigOver) track("game_end", { game: "bigger", score: bigOver.streak, new_best: bigOver.best }); }, [bigOver]);
-  useEffect(() => { if (oddOver) track("game_end", { game: "odd", score: oddOver.streak, new_best: oddOver.best }); }, [oddOver]);
-  useEffect(() => { if (sortOver) track("game_end", { game: "sortg", score: sortOver.streak, new_best: sortOver.best }); }, [sortOver]);
   useEffect(() => { if (memOver) track("game_end", { game: "memory", score: memOver.turns, new_best: memOver.best, unit: "turns" }); }, [memOver]);
   useEffect(() => { if (quickOver) track("game_end", { game: quickId ?? "quick", score: quickOver.streak, new_best: quickOver.best }); }, [quickOver]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (sprintOver) track("game_end", { game: "sprint", score: sprintOver.secs, new_best: sprintOver.best, unit: "secs" }); }, [sprintOver]);
@@ -4676,80 +4527,6 @@ export function GameApp({
           );
         })()}
 
-        {view === "odd" && oddRound && (
-          <section className="view active">
-            <div className="match-head">
-              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続正解" : "Streak"}</span><span className="match-stat-v mono">{oddStreak}</span></div>
-              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span><span className="match-stat-v mono">{oddBest}</span></div>
-            </div>
-            <p className="match-hint">
-              {lang === "ja" ? "3つは数字の合計が同じ。ちがう1つをタップ！" : "Three share a digit sum. Tap the one that doesn't."}
-            </p>
-            {!oddOver && (
-              <div className="odd-grid">
-                {oddRound.tiles.map((t) => {
-                  const picked = oddPick === t.id;
-                  const isOdd = t.id === oddRound.oddId;
-                  return (
-                    <button
-                      key={t.id}
-                      className={`odd-tile${picked ? (isOdd ? " right" : " wrong") : ""}${oddPick && isOdd ? " reveal" : ""}`}
-                      onClick={() => onOddPick(t.id)}
-                      disabled={!!oddPick}
-                    >
-                      <span className="odd-n mono">{fmt(t.n)}</span>
-                      {oddPick && <span className="odd-ds mono">→ {digitSum(t.n)}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {oddOver && (
-              <div className="match-done">
-                <div className="match-done-title">{oddOver.best && oddOver.streak > 0 ? (lang === "ja" ? "自己ベスト更新！" : "New best!") : (lang === "ja" ? "おしまい！" : "Run over")}</div>
-                <div className="match-done-line mono">{lang === "ja" ? "連続正解" : "streak"} <RollUp to={oddOver.streak} /></div>
-                <button className="btn btn-primary match-again" onClick={startOdd}>{lang === "ja" ? "もう一回" : "Play again"}</button>
-              </div>
-            )}
-          </section>
-        )}
-
-        {view === "sortg" && sortRound && (
-          <section className="view active">
-            <div className="match-head">
-              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "連続正解" : "Streak"}</span><span className="match-stat-v mono">{sortStreak}</span></div>
-              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span><span className="match-stat-v mono">{sortBest}</span></div>
-            </div>
-            <p className="match-hint">{lang === "ja" ? "答えが小さい順にタップ！" : "Tap them smallest answer first."}</p>
-            {!sortOver && (
-              <div className="sort-list">
-                {sortRound.cards.map((c) => {
-                  const at = sortPicked.indexOf(c.id);
-                  return (
-                    <button
-                      key={c.id}
-                      className={`sort-card${at >= 0 ? " taken" : ""}${sortBad === c.id ? " wrong" : ""}`}
-                      onClick={() => onSortPick(c.id)}
-                      disabled={at >= 0}
-                    >
-                      <span className="sort-order mono">{at >= 0 ? at + 1 : "·"}</span>
-                      <span className="sort-q mono">{c.prompt}</span>
-                      {(at >= 0 || sortBad) && <span className="sort-v mono">{fmt(c.value)}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {sortOver && (
-              <div className="match-done">
-                <div className="match-done-title">{sortOver.best && sortOver.streak > 0 ? (lang === "ja" ? "自己ベスト更新！" : "New best!") : (lang === "ja" ? "おしまい！" : "Run over")}</div>
-                <div className="match-done-line mono">{lang === "ja" ? "クリア回数" : "rounds"} <RollUp to={sortOver.streak} /></div>
-                <button className="btn btn-primary match-again" onClick={startSort}>{lang === "ja" ? "もう一回" : "Play again"}</button>
-              </div>
-            )}
-          </section>
-        )}
-
         {view === "memory" && (
           <section className="view active">
             <div className="match-head">
@@ -5076,64 +4853,6 @@ export function GameApp({
                   <RollUp to={popOver.score} /> {lang === "ja" ? "点" : "pts"} · {lang === "ja" ? "ベスト" : "best"} {popBest}
                 </div>
                 <button className="btn btn-primary match-again" onClick={startPop}>{lang === "ja" ? "もう一回" : "Play again"}</button>
-              </div>
-            )}
-          </section>
-        )}
-
-        {view === "bigger" && bigPair && (
-          <section className="view active">
-            <div className="match-head">
-              <div className="match-stat">
-                <span className="match-stat-k">{lang === "ja" ? "連続正解" : "Streak"}</span>
-                <span className="match-stat-v mono">{bigStreak}</span>
-              </div>
-              <div className="match-stat">
-                <span className="match-stat-k">{lang === "ja" ? "自己ベスト" : "Best"}</span>
-                <span className="match-stat-v mono">{bigBest}</span>
-              </div>
-            </div>
-            <p className="match-hint">
-              {lang === "ja" ? "大きいほうをタップ！" : "Tap the bigger one."}
-            </p>
-
-            {!bigOver && (
-              <div className="big-pair">
-                {(["left", "right"] as const).map((side) => {
-                  const p = bigPair[side];
-                  const other = side === "left" ? bigPair.right : bigPair.left;
-                  const chosen = bigPick === side;
-                  const won = chosen && p.answer > other.answer;
-                  return (
-                    <button
-                      key={side}
-                      className={`big-card${chosen ? (won ? " right" : " wrong") : ""}`}
-                      onClick={() => onBiggerPick(side)}
-                      disabled={!!bigPick}
-                    >
-                      <span className="big-card-q mono">{p.prompt}</span>
-                      {bigPick && <span className="big-card-a mono">{fmt(p.answer)}</span>}
-                    </button>
-                  );
-                })}
-                <span className="big-vs">VS</span>
-              </div>
-            )}
-
-            {bigOver && (
-              <div className="match-done">
-                <div className="match-done-title">
-                  {bigOver.best && bigOver.streak > 0
-                    ? (lang === "ja" ? "自己ベスト更新！" : "New best!")
-                    : (lang === "ja" ? "おしまい！" : "Run over")}
-                </div>
-                <div className="match-done-line mono">
-                  {lang === "ja" ? "連続正解" : "streak"} <RollUp to={bigOver.streak} /> ·{" "}
-                  {biggerScore(bigOver.streak)} {lang === "ja" ? "点" : "pts"}
-                </div>
-                <button className="btn btn-primary match-again" onClick={startBigger}>
-                  {lang === "ja" ? "もう一回" : "Play again"}
-                </button>
               </div>
             )}
           </section>

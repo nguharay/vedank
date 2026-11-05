@@ -170,46 +170,12 @@ const GAME: Record<string, React.ReactNode> = {
     </>
   ),
   /* a balance tipping to the heavier side */
-  bigger: (
-    <>
-      <path d="M24 11v27M15 40h18" fill="none" {...s} strokeWidth="2.6" />
-      <path d="M7 17l34-9" fill="none" {...s} strokeWidth="2.6" />
-      <path d="M7 17l-4.5 10M7 17l4.5 10M41 8l-4 9M41 8l4 9" stroke={O} strokeWidth="1.3" />
-      <path d="M1.5 27h11a5.5 4 0 0 1-11 0z" fill="#ffb02e" {...s} />
-      <path d="M36 17h10a5 3.5 0 0 1-10 0z" fill="#ffb02e" {...s} />
-      <rect x="3" y="20" width="8" height="7" rx="1.5" fill="#7a58c0" {...s} strokeWidth="1.4" />
-      <circle cx="24" cy="12.5" r="2.6" fill="#ff5a6e" {...s} strokeWidth="1.5" />
-    </>
-  ),
   memory: (
     <>
       <rect x="6" y="11" width="18" height="26" rx="4" fill="#ff7a59" {...s} transform="rotate(-10 15 24)" />
       <path d="M11 17l8 12M19 17l-8 12" stroke="#fff" strokeWidth="1.4" opacity=".55" transform="rotate(-10 15 24)" />
       <rect x="22" y="9" width="18" height="26" rx="4" fill="#fff" {...s} transform="rotate(8 31 22)" />
       {num(31, 27, "7", 15, "#ff5a6e")}
-    </>
-  ),
-  odd: (
-    <>
-      <circle cx="10" cy="12" r="5" fill="#4fd1a5" {...s} />
-      <circle cx="24" cy="10" r="5" fill="#4fd1a5" {...s} />
-      <circle cx="11" cy="27" r="5" fill="#4fd1a5" {...s} />
-      <circle cx="27" cy="26" r="9" fill="#e6f7ff" {...s} strokeWidth="2.4" />
-      <path d="M33.5 32.5l7.5 7.5" stroke={O} strokeWidth="4.5" strokeLinecap="round" />
-      <path d="M33.5 32.5l7.5 7.5" stroke="#b07a3c" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M23.5 23l2 2.5 2-4 2 4" fill="none" stroke="#ff5a6e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M22 21.5a6 6 0 0 1 4-2" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
-    </>
-  ),
-  sortg: (
-    <>
-      <path d="M6 40h36" {...s} strokeWidth="2.4" />
-      <rect x="8" y="30" width="7" height="10" rx="1.5" fill="#4fd1a5" {...s} />
-      <rect x="17" y="23" width="7" height="17" rx="1.5" fill="#5ab8ff" {...s} />
-      <rect x="26" y="16" width="7" height="24" rx="1.5" fill="#ffc83a" {...s} />
-      <rect x="35" y="8" width="7" height="32" rx="1.5" fill="#ff5a6e" {...s} />
-      <path d="M8 22l10-9" stroke={O} strokeWidth="2" strokeLinecap="round" />
-      <path d="M13.5 12.5l4.5.5-.5 4.5" fill="none" stroke={O} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
   sprint: (
@@ -222,33 +188,6 @@ const GAME: Record<string, React.ReactNode> = {
       <circle cx="40" cy="12.5" r="3.2" fill="#ff5a3d" {...s} strokeWidth="1.4" />
     </>
   ),
-  tf: (
-    <>
-      <circle cx="15" cy="24" r="10" fill="none" stroke={O} strokeWidth="7" />
-      <circle cx="15" cy="24" r="10" fill="none" stroke="#3cbf74" strokeWidth="4" />
-      <path d="M29 15l12 18M41 15L29 33" stroke={O} strokeWidth="7" strokeLinecap="round" />
-      <path d="M29 15l12 18M41 15L29 33" stroke="#ff5a6e" strokeWidth="4" strokeLinecap="round" />
-    </>
-  ),
-  missing: (
-    <>
-      <rect x="4" y="16" width="12" height="16" rx="3" fill="#fff" {...s} />
-      {num(10, 28.5, "6", 12)}
-      {num(20, 28, "+", 11)}
-      <rect x="24" y="15" width="14" height="18" rx="3" fill="#ffd34d" {...s} strokeDasharray="3 2.4" />
-      {num(31, 29, "?", 14, "#7a58c0")}
-      <path d="M40 6l1.4 3 3 1.4-3 1.4L40 15l-1.4-3.2-3-1.4 3-1.4z" fill="#fff" {...s} strokeWidth="1.3" />
-    </>
-  ),
-  lastdigit: (
-    <>
-      <rect x="4" y="15" width="40" height="18" rx="5" fill="#fff" {...s} />
-      {num(13, 29, "4", 13, "#b8b2c9")}{num(22, 29, "7", 13, "#b8b2c9")}
-      <rect x="28" y="12" width="14" height="24" rx="4" fill="#ffc83a" {...s} />
-      {num(35, 30, "2", 15)}
-      <path d="M35 4v5M31 6.5l4 3 4-3" fill="none" {...s} />
-    </>
-  ),
   digitsum: (
     <>
       <circle cx="24" cy="24" r="17" fill="#fff" {...s} />
@@ -257,14 +196,6 @@ const GAME: Record<string, React.ReactNode> = {
       <path d="M8 13a18 18 0 0 1 8-6" fill="none" stroke="#ff5a6e" strokeWidth="2.6" strokeLinecap="round" />
       <path d="M13.5 5.5l2.8 1.6-1.4 3" fill="none" stroke="#ff5a6e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M17 18a8 8 0 0 1 4-3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
-    </>
-  ),
-  div9: (
-    <>
-      <rect x="6" y="6" width="36" height="36" rx="10" fill="#fff" {...s} />
-      <circle cx="24" cy="14.5" r="3.3" fill="#ff5a6e" {...s} strokeWidth="1.5" />
-      <rect x="10" y="21.5" width="28" height="5" rx="2.5" fill="#7a58c0" {...s} strokeWidth="1.5" />
-      <circle cx="24" cy="33.5" r="3.3" fill="#ff5a6e" {...s} strokeWidth="1.5" />
     </>
   ),
   sq5: (
@@ -282,16 +213,6 @@ const GAME: Record<string, React.ReactNode> = {
       {num(14, 29, "1", 15, "#0a7e92")}{num(24, 27, "×", 11)}
       {num(34, 29, "1", 15, "#0a7e92")}
       <path d="M8 13.5c3-1.5 7-2 11-2" stroke="#4fd1a5" strokeWidth="2" strokeLinecap="round" />
-    </>
-  ),
-  estimate: (
-    <>
-      <circle cx="24" cy="24" r="17" fill="#fff" {...s} />
-      <circle cx="24" cy="24" r="11.5" fill="#ff5a6e" {...s} />
-      <circle cx="24" cy="24" r="6" fill="#fff" {...s} />
-      <circle cx="24" cy="24" r="2" fill="#ff5a6e" />
-      <path d="M26 22l15-15" stroke={O} strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M37 5.5l4 1.5 1.5 4M34.5 8l4 1.5 1.5 4" fill="none" stroke="#ffb02e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
   match: (
