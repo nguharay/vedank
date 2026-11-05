@@ -8,6 +8,8 @@ import {
   bingoCalls, bingoCard, bingoCalled, hasBingo,
   myPartyQuestion, buzzQuestion, partyStatus, buildPartyView, isRaceGame, RACE_GOAL,
   towerKey, towerVal, towerGain, towerPlayer,
+  isTurfGame, turfN, turfKey, turfPKey, turfVal, turfQuestion, turfIsMine, turfLocked, turfOwnerSlot, turfFinaleOn, turfGoldTiles, turfNeighbours, turfLinesThrough, turfLineHeld, turfLineKey,
+  TURF_SHIELD_MS, TURF_LOCK_MS,
   type PartyGame, type PartyPlayer, type PartyState, type PartyView,
 } from "./party";
 
@@ -17,6 +19,14 @@ const bumpSql = (code: string, round: number, key: string, by: number) => raw`
      set state = jsonb_set(state, array['waves', ${key}::text], to_jsonb(coalesce((state->'waves'->>${key}::text)::int, 0) + ${by}::int)),
          updated_at = now()
    where code = ${code}::text and (state->>'round')::int = ${round}::int`;
+
+/* turf board: set several waves keys at once (one nested jsonb_set per key) */
+const setWavesSql = (code: string, round: number, pairs: [string, number][], guard = raw``) => {
+  let expr = raw`state`;
+  for (const [key, val] of pairs) expr = raw`jsonb_set(${expr}, array['waves', ${key}::text], to_jsonb(${val}::bigint))`;
+  return raw`update party_rooms set state = ${expr}, updated_at = now()
+    where code = ${code}::text and (state->>'round')::int = ${round}::int ${guard} returning code`;
+};
 
 /* Party rooms (Tug of War, Buzzer Quiz, Math Bingo, Space Blaster, River Hop) — the rules are in
    party.ts; this file stores them. Same shape as the online race: the host
@@ -188,6 +198,62 @@ export async function answerPartyRoom(userId: string, code: string, idx: number,
                '{qAt}', to_jsonb(${now + BUZZ_GAP_MS}::bigint)),
              updated_at = now()
        where code = ${row.code}::text and (state->>'q')::int = ${idx}::int and (state->>'round')::int = ${st.round}::int`);
+  } else if (isTurfGame(st.game)) {
+    /* idx = the tile. Its sum depends on its version, so the capture lands
+       only if nobody repainted it first; then the follow-ups (steal / finale
+       tallies, a gold splash, any line just completed) each land on their
+       own guard, so two players finishing the same line cannot both score it. */
+    const n = turfN(st), i = Math.floor(idx);
+    if (i < 0 || i >= n * n || turfIsMine(st, i, userId) || turfLocked(st, i, now)) return view(row, userId);
+    const v = turfVal(st, turfKey("v", i));
+    if (turfQuestion(st, i, userId).answer !== answer) {
+      if (turfOwnerSlot(st, i) >= 0) await db.execute(raw`
+        update party_rooms
+           set state = jsonb_set(state, array['waves', ${turfKey("l", i)}::text], to_jsonb(greatest(coalesce((state->'waves'->>${turfKey("l", i)}::text)::bigint, 0), ${now + TURF_SHIELD_MS}::bigint))),
+               updated_at = now()
+         where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int`);
+      return { error: "wrong" };
+    }
+    const wasOwned = turfOwnerSlot(st, i) >= 0;
+    const landed = await db.execute(raw`
+      update party_rooms
+         set state = jsonb_set(jsonb_set(jsonb_set(state,
+               array['waves', ${turfKey("o", i)}::text], to_jsonb(${me.slot + 1}::int)),
+               array['waves', ${turfKey("v", i)}::text], to_jsonb(${v + 1}::int)),
+               array['players', ${userId}::text, 'done'], to_jsonb(${me.done + 1}::int)),
+             updated_at = now()
+       where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int
+         and coalesce((state->'waves'->>${turfKey("v", i)}::text)::int, 0) = ${v}::int
+       returning code`);
+    if (landed.rows?.length) {
+      if (wasOwned) await db.execute(bumpSql(row.code, st.round, turfPKey("k", userId), 1));
+      if (turfFinaleOn(st, now)) await db.execute(bumpSql(row.code, st.round, turfPKey("f", userId), 1));
+      const gold = turfGoldTiles(n).includes(i);
+      if (gold) for (const t of turfNeighbours(n, i)) {
+        if (turfIsMine(st, t, userId) || turfLocked(st, t, now)) continue;
+        const tv = turfVal(st, turfKey("v", t));
+        await db.execute(setWavesSql(row.code, st.round, [[turfKey("o", t), me.slot + 1], [turfKey("v", t), tv + 1]],
+          raw`and coalesce((state->'waves'->>${turfKey("v", t)}::text)::int, 0) = ${tv}::int`));
+      }
+      /* lines: judged on the board as it is now, against the board before my tap */
+      const after = await load(row.code);
+      if (after) {
+        const cur = after.state as PartyState;
+        const touched = gold ? [i, ...turfNeighbours(n, i)] : [i];
+        const seen = new Set<number>();
+        for (const t of touched) for (const line of turfLinesThrough(n, t)) {
+          if (seen.has(line.id)) continue;
+          seen.add(line.id);
+          if (!turfLineHeld(cur, line.tiles, userId) || turfLineHeld(st, line.tiles, userId)) continue;
+          const locks: [string, number][] = line.tiles.map((t2) => [turfKey("l", t2), now + TURF_LOCK_MS]);
+          const q = turfLineKey(cur, line.id, userId);
+          /* first completion by this holder: lock + score, guarded on the line's flag */
+          const scored = await db.execute(setWavesSql(row.code, st.round, [...locks, [q, 1]], raw`and (state->'waves'->>${q}::text) is null`));
+          if (scored.rows?.length) await db.execute(bumpSql(row.code, st.round, turfPKey("n", userId), 1));
+          else await db.execute(setWavesSql(row.code, st.round, locks));
+        }
+      }
+    }
   } else if (st.game === "bingo") {
     /* idx = the card cell (0–8). It counts if its number has been called. */
     const cell = Math.floor(idx);

@@ -3,6 +3,9 @@
    same PartyState an online room keeps, so party.ts decides wins and losses
    and the same screen draws it; only the other players are computer ones:
 
+     🎨 Turf War     you against three CPU painters, each with a habit: one
+                     raids your tiles, one builds lines, one hunts the gold
+                     tiles (team game: you and one CPU against two)
      🏯 Sutra Tower  you against three CPU builders who stack at their own
                      pace, slip now and then — and drop the wrecking ball
                      they earn on the tallest tower (one of them always on you)
@@ -19,6 +22,7 @@ import {
   PARTY_COUNTDOWN_MS, BUZZ_QS, BUZZ_Q_MS, BUZZ_GAP_MS, BINGO_CALL_MS,
   myPartyQuestion, buzzQuestion, partyStatus, bingoCalls, bingoCard, bingoCalled, hasBingo, isRaceGame, RACE_GOAL,
   towerKey, towerVal, towerGain, towerPlayer,
+  isTurfGame, turfN, turfCapture, turfQuestion, turfMiss, turfIsMine, turfLocked, turfGoldTiles, turfLinesThrough, turfOwnerId, turfVal,
   type PartyGame, type PartyPlayer, type PartyState,
 } from "./party";
 
@@ -47,6 +51,10 @@ const RACE_PACE = [5200, 3900, 2900];
 const TOWER_PACE = [6400, 4700, 3400];
 const TOWER_SLIP = [4, 5, 6];
 const TOWER_THROW_MS = 1600;      /* a CPU drops its ball this long after earning it */
+/* turf: ms per capture for a CPU painter, and how often (1 in N) it misses
+   (which shields the tile it was after) */
+const TURF_PACE = [5600, 4100, 3000];
+const TURF_SLIP = [4, 5, 7];
 const CPU_NAMES: [string, string][] = [["Ray", "レイ"], ["Mimi", "ミミ"], ["Taro", "タロウ"]];
 
 /* a small deterministic hash so a CPU's timing is fixed for a given question */
@@ -63,6 +71,8 @@ export function soloStart(game: PartyGame, ja: boolean, myName: string, round: n
   const players: Record<string, PartyPlayer> = { [SOLO_ME]: p(myName, 0, 0) };
   const cpus = game === "tug" ? 1 : game === "bingo" ? BINGO_CPUS[level] : 3;
   for (let i = 0; i < cpus; i++) players[`cpu:${i}`] = p(CPU_NAMES[i][ja ? 1 : 0], 1, i + 1);
+  /* the team turf game: me and the first CPU in red against the other two */
+  if (game === "turfteam") players["cpu:0"].team = 0;
   return { game, seed, startAt, round, players, q: 0, qAt: startAt, wins: [], waves: {} };
 }
 
@@ -84,6 +94,12 @@ export function soloAnswer(st: PartyState, now: number, idx: number, answer: num
     const players = { ...st.players, [SOLO_ME]: { ...me, done: mask } };
     const wins = hasBingo(mask) && !st.wins[0] ? [SOLO_ME] : st.wins;
     return { ...st, players, wins };
+  }
+  if (isTurfGame(st.game)) {
+    /* idx = the tile I tapped */
+    if (turfIsMine(st, idx, SOLO_ME) || turfLocked(st, idx, now)) return st;
+    if (turfQuestion(st, idx, SOLO_ME).answer !== answer) return "wrong";
+    return turfCapture(st, SOLO_ME, idx, now);
   }
   if (me.done !== idx) return st;
   if (myPartyQuestion(st.game, st.seed, me.slot, idx).answer !== answer) return "wrong";
@@ -111,13 +127,46 @@ function towerHit(st: PartyState, from: string, to: string): PartyState {
   if (from === to || !(to in st.players) || towerPlayer(st, from).balls <= 0) return st;
   return bump(bump(st, towerKey("b", from)), towerKey("h", to));
 }
-/* my wrong answer in the tower: it earns a wrecking ball */
-export function soloWrong(st: PartyState, now: number): PartyState {
-  return st.game === "tower" && partyStatus(st, now) === "playing" ? towerSlip(st, SOLO_ME) : st;
+/* my wrong answer: in the tower it earns a wrecking ball; on the turf it
+   shields the tile I was after (`tile`) for its holder */
+export function soloWrong(st: PartyState, now: number, tile = -1): PartyState {
+  if (partyStatus(st, now) !== "playing") return st;
+  if (st.game === "tower") return towerSlip(st, SOLO_ME);
+  if (isTurfGame(st.game) && tile >= 0) return turfMiss(st, tile, now);
+  return st;
 }
 /* I drop a wrecking ball on a rival (targetId is the other player's id) */
 export function soloThrow(st: PartyState, now: number, targetId: string): PartyState {
   return st.game === "tower" && partyStatus(st, now) === "playing" ? towerHit(st, SOLO_ME, targetId) : st;
+}
+
+/* which tile a CPU painter goes for next (−1: nothing worth taking) */
+function turfPick(st: PartyState, id: string, habit: number, k: number, n: number, now: number): number {
+  const open = (i: number) => !turfIsMine(st, i, id) && !turfLocked(st, i, now);
+  const all = Array.from({ length: n * n }, (_, i) => i).filter(open);
+  if (!all.length) return -1;
+  const pickFrom = (xs: number[]) => xs[hash(st.seed, k, habit + 3) % xs.length];
+  const r = hash(st.seed, k, habit) % 10;
+  if (habit === 2 && r < 7) {                                     /* Ken: gold first */
+    const gold = turfGoldTiles(n).filter(open);
+    if (gold.length) return pickFrom(gold);
+  }
+  if (habit === 0 && r < 6) {                                     /* Mimi: raid my tiles */
+    const mine = all.filter((i) => turfOwnerId(st, i) === SOLO_ME);
+    if (mine.length) return pickFrom(mine);
+  }
+  if (habit === 1 && r < 8) {                                     /* Taro: finish the line he holds most of */
+    let best: number[] = [], bestHeld = -1;
+    for (let i = 0; i < n * n; i++) for (const { tiles: line } of turfLinesThrough(n, i)) {
+      const held = line.filter((t) => turfIsMine(st, t, id)).length;
+      const left = line.filter(open);
+      if (left.length && held > bestHeld) { bestHeld = held; best = left; }
+    }
+    if (best.length && bestHeld > 0) return pickFrom(best);
+  }
+  /* otherwise an unpainted tile if any, else anyone's */
+  const blank = all.filter((i) => turfOwnerId(st, i) === null);
+  return pickFrom(blank.length ? blank : all);
 }
 
 /* the computer's turn: called a few times a second */
@@ -151,6 +200,31 @@ export function soloTick(st: PartyState, now: number, level: SoloLevel): PartySt
           const target = i === 2 ? SOLO_ME : others.sort((a, b) => towerPlayer(next, b).height - towerPlayer(next, a).height)[0];
           next = towerHit(next, id, target);
         }
+      }
+    });
+    return next;
+  }
+
+  if (isTurfGame(st.game)) {
+    /* Each CPU paints on its own schedule: move k lands at k × pace. The
+       moves are replayed from its counter (captures + misses, kept in
+       waves["a:<id>"]) so a slow tick never skips one. Each has a habit —
+       Mimi raids my tiles, Taro builds lines, Ken hunts gold — and every
+       TURF_SLIP-th or so move is a miss that shields the tile it wanted. */
+    const n = turfN(st);
+    let next = st;
+    Object.entries(st.players).filter(([id]) => id.startsWith("cpu:")).forEach(([id, p], i) => {
+      const pace = TURF_PACE[level] * [1.0, 1.08, 0.94][i % 3] * (0.95 + (hash(st.seed, p.slot, 9) % 10) / 100);
+      const aKey = `a:${id}`;
+      const moved = turfVal(next, aKey);
+      const due = Math.floor(t / pace);
+      for (let k = moved; k < due; k++) {
+        const at = st.startAt! + (k + 1) * pace;
+        const target = turfPick(next, id, i, k, n, at);
+        next = { ...next, waves: { ...next.waves, [aKey]: k + 1 } };
+        if (target < 0) continue;
+        const slip = hash(st.seed, p.slot, k) % TURF_SLIP[level] === 0 && k > 0;
+        next = slip ? turfMiss(next, target, at) : turfCapture(next, id, target, at);
       }
     });
     return next;
