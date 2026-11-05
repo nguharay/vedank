@@ -42,7 +42,6 @@ export function markDemoSeen(id: string) {
 
 /* layout helpers */
 const row3 = (labels: ReactNode[], y = 196): Tile[] => labels.map((label, i) => ({ x: 14 + i * 94, y, w: 84, h: 48, label }));
-const row2 = (labels: ReactNode[], y = 170, h = 56): Tile[] => labels.map((label, i) => ({ x: 28 + i * 128, y, w: 116, h, label }));
 const grid2 = (labels: ReactNode[], y0 = 66, back = false): Tile[] =>
   labels.map((label, i) => ({ x: 24 + (i % 2) * 132, y: y0 + Math.floor(i / 2) * 82, w: 120, h: 70, label, cls: "dm-card", back }));
 
@@ -59,14 +58,9 @@ function Digit({ d, x, y, skip = "" }: { d: string; x: number; y: number; skip?:
 }
 
 const QUICK_EXAMPLES: Record<string, { prompt: string; tiles: Tile[]; tap: number; note: string }> = {
-  tf: { prompt: "7 × 8 = 54", tiles: row2(["○", "×"]).map((t) => ({ ...t, cls: "dm-ans big" })), tap: 1, note: "7 × 8 = 56" },
-  missing: { prompt: "□ + 15 = 40", tiles: row3(["35", "25", "15"]), tap: 1, note: "40 − 15 = 25" },
-  lastdigit: { prompt: "37 × 23 → ?", tiles: row3(["1", "3", "9"]), tap: 0, note: "7 × 3 = 21 → 1" },
   digitsum: { prompt: "487 → ?", tiles: row3(["1", "10", "19"]), tap: 0, note: "4+8+7 = 19 → 1+9 = 10 → 1" },
-  div9: { prompt: "4,383 ÷ 9 ?", tiles: row2(["○", "×"]).map((t) => ({ ...t, cls: "dm-ans big" })), tap: 0, note: "4+3+8+3 = 18 ◯" },
   sq5: { prompt: "35²", tiles: row3(["1,225", "925", "1,525"]), tap: 0, note: "3 × 4 = 12 → 1225" },
   x11: { prompt: "43 × 11", tiles: row3(["443", "473", "4,733"]), tap: 1, note: "4 (4+3) 3 → 473" },
-  estimate: { prompt: "49 × 21 ≈ ?", tiles: row3(["500", "1,000", "2,000"]), tap: 1, note: "≈ 50 × 20 = 1,000" },
 };
 
 const DEMOS: Record<string, Demo> = {
@@ -189,29 +183,11 @@ const DEMOS: Record<string, Demo> = {
     caps: [WATCH, ["👆 Tap a sum, then its answer", "👆 式 → その答えをタップ"], ["🃏 Pair them all!", "🃏 ぜんぶペアにしよう！"]],
     turn: ["Pair every sum with its answer.", "式と答えをペアにしよう。"],
   },
-  bigger: {
-    title: ["⚖️ Which is Bigger?", "⚖️ どっちが大きい？"], scene: "dm-table", prompt: ["Which is bigger?", "どっちが大きい？"],
-    tiles: row2(["9 × 9", "80 + 2"], 92, 80).map((t) => ({ ...t, cls: "dm-card" })), taps: [1], note: "81 < 82",
-    caps: [WATCH, ["👆 Tap the bigger one", "👆 大きいほうをタップ"], ["⚠️ One slip ends the run!", "⚠️ 1回まちがえたら終わり！"]],
-    turn: ["Tap the larger of the two. Don't slip!", "大きいほうをタップ。まちがえないで！"],
-  },
   memory: {
     title: ["🎴 Memory Pairs", "🎴 神経衰弱"], scene: "dm-table",
     tiles: grid2(["6 × 2", "9", "12", "3 × 3"], 66, true), taps: [0, 2, 3, 1],
     caps: [WATCH, ["👆 Flip two cards: a sum and its answer", "👆 2まいめくって、式と答えを見つけよう"], ["🧠 Fewer turns = better score", "🧠 少ない回数ほどいいスコア"]],
     turn: ["Remember where each card is and find the pairs.", "カードの場所をおぼえて、ペアを見つけよう。"],
-  },
-  odd: {
-    title: ["🔍 Odd One Out", "🔍 仲間はずれ"], scene: "dm-table",
-    tiles: grid2(["23", "41", "50", "33"]), taps: [3], note: "2+3 · 4+1 · 5+0 = 5   3+3 = 6",
-    caps: [WATCH, ["👆 Three have the same digit sum, tap the odd one", "👆 3つは数字の合計が同じ。ちがう1つをタップ"], ["🔍 No need to work out everything", "🔍 ぜんぶ計算しなくてOK"]],
-    turn: ["Spot the number whose digits add up differently.", "数字の合計がちがう1つを見つけよう。"],
-  },
-  sortg: {
-    title: ["📊 Smallest First", "📊 小さい順"], scene: "dm-table", badges: true,
-    tiles: grid2(["2 × 3", "9 + 1", "4 × 4", "5 + 3"]), taps: [0, 3, 1, 2], note: "6 → 8 → 10 → 16",
-    caps: [WATCH, ["👆 Tap from smallest to largest", "👆 小さい順にタップ"], ["📊 Estimate, you don't need every exact answer", "📊 見積もりでOK"]],
-    turn: ["Tap the four answers in order, smallest first.", "4つの答えを小さい順にタップしよう。"],
   },
   sprint: {
     title: ["🔥 Matchstick Sprint", "🔥 マッチ棒スプリント"], scene: "dm-sticks", note: "9 + 1 = 10",

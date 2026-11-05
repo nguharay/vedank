@@ -1,5 +1,4 @@
-import { buildPopRound, popUpMs, popPoints, buildMatchRound, isPair, matchScore, buildBiggerPair, biggerScore,
-  buildOddRound, digitSum, buildSortRound, sortedIds,
+import { buildPopRound, popUpMs, popPoints, buildMatchRound, isPair, matchScore, digitSum,
   dailySeed, dailyGameId, QUICK_GAMES } from "../src/lib/game/minigames";
 import { seededRandom, withSeededRandom } from "../src/lib/game/daily";
 
@@ -41,54 +40,10 @@ ok("a clean fast round beats a sloppy one", matchScore(6, 20, 0) > matchScore(6,
 ok("faster wins a tie", matchScore(6, 10, 1) > matchScore(6, 40, 1));
 ok("score never goes negative", matchScore(1, 9999, 9999) === 0);
 
-/* ---------- Which is Bigger ---------- */
-for (let r = 0; r < 400; r++) {
-  const { left, right } = buildBiggerPair();
-  ok("the two sides never tie", left.answer !== right.answer);
-  ok("both sides are real numbers", Number.isFinite(left.answer) && Number.isFinite(right.answer));
-  ok("both prompts fit a card", left.prompt.length <= 20 && right.prompt.length <= 20);
-  /* A round you win by glancing at the digit count is not arithmetic. */
-  const hi = Math.max(Math.abs(left.answer), Math.abs(right.answer));
-  const lo = Math.min(Math.abs(left.answer), Math.abs(right.answer));
-  ok("the sides stay comparable", hi <= lo * 12 + 10);
-  ok("both prompts stand on their own",
-    !/[|\u0304\u0305]/.test(left.prompt) && !/[|\u0304\u0305]/.test(right.prompt));
-}
-ok("a longer streak scores more", biggerScore(7) > biggerScore(3));
-ok("no streak scores nothing", biggerScore(0) === 0);
-
-/* ---------- Odd One Out ---------- */
-for (let r = 0; r < 400; r++) {
-  const { tiles, oddId, sum } = buildOddRound();
-  ok("four tiles", tiles.length === 4);
-  ok("no number appears twice", new Set(tiles.map((t) => t.n)).size === 4);
-  const odd = tiles.find((t) => t.id === oddId)!;
-  const rest = tiles.filter((t) => t.id !== oddId);
-  ok("exactly one tile is the odd one", !!odd && rest.length === 3);
-  ok("the other three agree", rest.every((t) => digitSum(t.n) === sum));
-  ok("and the odd one does not", digitSum(odd.n) !== sum);
-  /* Only one answer can be right, or the player is guessing. */
-  const counts = new Map<number, number>();
-  tiles.forEach((t) => counts.set(digitSum(t.n), (counts.get(digitSum(t.n)) ?? 0) + 1));
-  ok("the round has a single solution", counts.get(sum) === 3 && counts.size === 2);
-}
-
-/* digitSum is the rule the round is built on, so pin it directly. */
+/* digitSum drives the Digit Sum quick game, so pin it directly. */
 ok("digit sum folds to one figure", digitSum(1192) === 4);
 ok("multiples of nine fold to nine", digitSum(99) === 9 && digitSum(81) === 9);
 ok("single figures are themselves", digitSum(7) === 7);
-
-/* ---------- Sort ---------- */
-for (let r = 0; r < 300; r++) {
-  const round = buildSortRound(4);
-  ok("four cards", round.cards.length === 4);
-  ok("values are distinct", new Set(round.cards.map((c) => c.value)).size === 4);
-  const order = sortedIds(round);
-  ok("the solution names every card once", new Set(order).size === 4);
-  const vals = order.map((id) => round.cards.find((c) => c.id === id)!.value);
-  ok("the solution really ascends", vals.every((v, i) => i === 0 || vals[i - 1] < v));
-  ok("prompts stand on their own", round.cards.every((c) => !/[|\u0304\u0305]/.test(c.prompt)));
-}
 
 /* ---------- Game of the Day ---------- */
 {
@@ -108,11 +63,6 @@ for (let r = 0; r < 300; r++) {
 }
 
 /* ---------- Quick games: every round must be answerable, once ---------- */
-const evalP = (t: string) => {
-  const e = t.replace(/×/g, "*").replace(/÷/g, "/").replace(/[−–—]/g, "-").replace(/,/g, "")
-    .replace(/(\d+)²/g, "($1**2)");
-  try { const v = Function("return(" + e + ")")(); return typeof v === "number" && !Number.isNaN(v) ? v : null; } catch { return null; }
-};
 for (const g of QUICK_GAMES) {
   for (let r = 0; r < 200; r++) {
     const q = g.next(r % 12, r % 2 ? "ja" : "en");
@@ -126,22 +76,9 @@ for (const g of QUICK_GAMES) {
     if (g.id === "x11") { const n = Number(q.prompt.split(" ")[0]); ok("x11 correct", Number(chosen.replace(/,/g, "")) === n * 11); }
     if (g.id === "sq5") { const n = Number(q.prompt.replace("²", "")); ok("sq5 correct", Number(chosen.replace(/,/g, "")) === n * n); }
     if (g.id === "digitsum") { const n = Number(q.prompt.replace(/,/g, "")); ok("digitsum correct", Number(chosen) === digitSum(n)); }
-    if (g.id === "lastdigit") { const m = q.prompt.match(/(\d+) × (\d+)/)!; ok("lastdigit correct", Number(chosen) === (Number(m[1]) * Number(m[2])) % 10); }
-    if (g.id === "tf") { const [lhs, rhs] = q.prompt.split(" = "); const v = evalP(lhs); if (v !== null) ok("tf correct", (q.answer === 0) === (v === Number(rhs.replace(/,/g, "")))); }
-    if (g.id === "missing") {
-      const m = q.prompt.replace(/,/g, "").match(/^(□|\d+) ([+×]) (□|\d+) = (\d+)$/)!;
-      const val = Number(chosen.replace(/,/g, ""));
-      const a = m[1] === "□" ? val : Number(m[1]), b = m[3] === "□" ? val : Number(m[3]);
-      ok("missing correct", (m[2] === "+" ? a + b : a * b) === Number(m[4]));
-    }
-    if (g.id === "estimate") {
-      const m = q.prompt.match(/(\d+) × (\d+)/)!; const exact = Number(m[1]) * Number(m[2]);
-      const dists = q.options.map((o) => Math.abs(Number(o.replace(/,/g, "")) - exact));
-      ok("estimate: marked option is the nearest", dists[q.answer] === Math.min(...dists));
-    }
   }
 }
-ok("eight quick games", QUICK_GAMES.length === 8);
+ok("three quick games", QUICK_GAMES.length === 3);
 ok("quick game ids unique", new Set(QUICK_GAMES.map((g) => g.id)).size === QUICK_GAMES.length);
 
 
@@ -160,4 +97,4 @@ if (fails.length) {
   console.error("mini-games FAILED:\n  " + [...new Set(fails)].join("\n  "));
   process.exit(1);
 }
-console.log("mini-games hold up (match, bigger, odd, sort, daily, and 8 quick games x200 rounds)");
+console.log("mini-games hold up (match, daily, pop, and 3 quick games x200 rounds)");

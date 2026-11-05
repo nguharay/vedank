@@ -79,127 +79,16 @@ export function matchScore(pairs: number, seconds: number, mistakes: number): nu
 }
 
 
-/* ---------- Which is Bigger — tap the larger of two sums ----------
-   The two answers must differ, or the question has no right answer. They
-   must also not differ so wildly that it stops being arithmetic: a round of
-   "7 vs 90,000" is a reading test. */
-export type BiggerPair = {
-  left: { prompt: string; answer: number };
-  right: { prompt: string; answer: number };
-};
-
-export function buildBiggerPair(want: Difficulty = "easy"): BiggerPair {
-  let a = drawProblem(want);
-  let b = drawProblem(want);
-  for (let tries = 0; tries < 60 && !usableBiggerPair(a, b); tries++) {
-    b = drawProblem(want);
-    if (!usableBiggerPair(a, b)) a = drawProblem(want);
-  }
-  /* Last resort: nudge one side so the round is always answerable. */
-  if (a.answer === b.answer) b = { ...b, answer: b.answer + 1, prompt: `${b.prompt} + 1` };
-  return { left: a, right: b };
-}
-
-function usableBiggerPair(a: { answer: number }, b: { answer: number }) {
-  if (a.answer === b.answer) return false;
-  const hi = Math.max(Math.abs(a.answer), Math.abs(b.answer));
-  const lo = Math.min(Math.abs(a.answer), Math.abs(b.answer));
-  return hi <= lo * 12 + 10;          /* close enough that you have to work it out */
-}
-
-function drawProblem(want: Difficulty): { prompt: string; answer: number } {
-  for (let i = 0; i < 80; i++) {
-    const pool = miniTopics();
-    const topic = pool[Math.floor(Math.random() * pool.length)];
-    const p = topic.gen(blitzDiff(topic.id, want));
-    if (!Number.isFinite(p.answer)) continue;
-    if (Math.abs(p.answer) > 999999) continue;
-    if (p.prompt.length > MAX_TILE_CHARS) continue;
-    return { prompt: p.prompt, answer: p.answer };
-  }
-  return { prompt: "2 + 2", answer: 4 };
-}
-
-/* A run ends on the first miss, so the streak is the score. */
-export function biggerScore(streak: number): number {
-  return streak * 10;
-}
-
-/* ---------- Odd One Out — three share a digit sum, one does not ----------
-   Built on digit sums rather than on generated problems: finding three
-   different expressions that happen to share an answer needs rejection
-   sampling that may not terminate, whereas numbers with a given digit sum
-   can simply be constructed. It also puts the book's own digit-sum idea in
-   front of the player. */
-export type OddRound = { tiles: { id: string; n: number }[]; oddId: string; sum: number };
-
+/* Digit sum, repeated until one digit: 4,383 → 18 → 9. */
 export function digitSum(n: number): number {
   let x = Math.abs(n);
   while (x > 9) x = String(x).split("").reduce((a, c) => a + Number(c), 0);
   return x;
 }
 
-function numberWithDigitSum(target: number, rng = Math.random): number {
-  /* Digit sum is invariant mod 9, so any n ≡ target (mod 9) works.
-     target 9 maps to multiples of 9, which is the identity the book uses. */
-  for (let i = 0; i < 200; i++) {
-    const n = 12 + Math.floor(rng() * 300);
-    if (digitSum(n) === target) return n;
-  }
-  return target;
-}
-
-export function buildOddRound(): OddRound {
-  const sum = 1 + Math.floor(Math.random() * 9);
-  let other = 1 + Math.floor(Math.random() * 9);
-  while (other === sum) other = 1 + Math.floor(Math.random() * 9);
-
-  const used = new Set<number>();
-  const pick = (s: number) => {
-    for (let i = 0; i < 200; i++) {
-      const n = numberWithDigitSum(s);
-      if (!used.has(n)) {
-        used.add(n);
-        return n;
-      }
-    }
-    return numberWithDigitSum(s);
-  };
-
-  const same = [pick(sum), pick(sum), pick(sum)];
-  const odd = pick(other);
-  const tiles = shuffle([...same.map((n) => ({ n })), { n: odd }]).map((t, i) => ({
-    id: `o${i}`,
-    n: t.n,
-  }));
-  return { tiles, oddId: tiles.find((t) => t.n === odd)!.id, sum };
-}
-
-/* ---------- Sort — put four results in order ----------
-   Distinct values, or "smallest first" has more than one right answer. */
-export type SortRound = { cards: { id: string; prompt: string; value: number }[] };
-
-export function buildSortRound(count = 4, want: Difficulty = "easy"): SortRound {
-  const seen = new Set<number>();
-  const picked: { prompt: string; value: number }[] = [];
-  for (let i = 0; i < 300 && picked.length < count; i++) {
-    const p = drawProblem(want);
-    if (seen.has(p.answer)) continue;
-    seen.add(p.answer);
-    picked.push({ prompt: p.prompt, value: p.answer });
-  }
-  return { cards: shuffle(picked).map((c, i) => ({ id: `s${i}`, ...c })) };
-}
-
-export function sortedIds(round: SortRound): string[] {
-  return [...round.cards].sort((a, b) => a.value - b.value).map((c) => c.id);
-}
-
 /* ---------- Game of the Day ----------
    One board, the same for everyone, changing at midnight — which is what
-   makes a score worth telling a friend. Only the fixed-board games qualify:
-   Which is Bigger, Odd One Out and Smallest First are endless streaks, so
-   there is no shared thing to compare.
+   makes a score worth telling a friend. Only the fixed-board games qualify.
 
    Distinct from the existing Daily Challenge, which is eight questions. */
 export type DailyGameId = "match" | "memory";
@@ -257,60 +146,6 @@ function numericOptions(answer: number, count: number, spread: (a: number) => nu
 
 export const QUICK_GAMES: QuickGame[] = [
   {
-    id: "tf", icon: "⭕", tint: "var(--green-dk)",
-    name: "True or False", nameJa: "○×スピード",
-    blurb: "Is the sum right? Decide fast.", blurbJa: "この式、正しい？ すばやく判定。",
-    hintJa: "正しければ○、まちがいなら×", hintEn: "○ if it's right, × if it's wrong",
-    next: (streak) => {
-      /* A prompt that is itself a statement ("49 = 50 − ?") cannot be judged
-         true or false once an "= answer" is appended to it. */
-      let p = drawProblem(streak >= 8 ? "medium" : "easy");
-      for (let i = 0; i < 40 && /[=?]/.test(p.prompt); i++) p = drawProblem(streak >= 8 ? "medium" : "easy");
-      if (/[=?]/.test(p.prompt)) p = { prompt: "7 × 8", answer: 56 };
-      const lie = Math.random() < 0.5;
-      const shown = lie ? p.answer + pick([1, -1, 10, -10, 2, 9, -9]) : p.answer;
-      return {
-        prompt: `${p.prompt} = ${fmtN(shown)}`,
-        options: ["○", "×"], answer: lie ? 1 : 0,
-        noteJa: `正解は ${fmtN(p.answer)}`, noteEn: `The answer is ${fmtN(p.answer)}`,
-      };
-    },
-  },
-  {
-    id: "missing", icon: "❓", tint: "var(--sky2)",
-    name: "Missing Number", nameJa: "穴うめ",
-    blurb: "Fill the blank in the sum.", blurbJa: "□ に入る数は？",
-    hintJa: "□ に入る数をえらぼう", hintEn: "Pick what goes in the blank",
-    next: (streak) => {
-      const a = ri(10, streak >= 8 ? 99 : 60), b = ri(2, streak >= 8 ? 99 : 40);
-      const hideA = Math.random() < 0.5;
-      const add = Math.random() < 0.6;
-      const total = add ? a + b : a * b;
-      const missing = hideA ? a : b;
-      const prompt = add
-        ? (hideA ? `□ + ${b} = ${total}` : `${a} + □ = ${total}`)
-        : (hideA ? `□ × ${b} = ${fmtN(total)}` : `${a} × □ = ${fmtN(total)}`);
-      const o = numericOptions(missing, 4, (x) => [x + 1, x - 1, x + 10, x - 10, x + 2, x - 2, x + 5]);
-      return { prompt, ...o,
-        noteJa: add ? `${fmtN(total)} − ${hideA ? b : a} = ${missing}` : `${fmtN(total)} ÷ ${hideA ? b : a} = ${missing}`,
-        noteEn: add ? `${fmtN(total)} − ${hideA ? b : a} = ${missing}` : `${fmtN(total)} ÷ ${hideA ? b : a} = ${missing}` };
-    },
-  },
-  {
-    id: "lastdigit", icon: "🔚", tint: "var(--violet)",
-    name: "Last Digit", nameJa: "一の位だけ",
-    blurb: "Only the last digit of the product matters.", blurbJa: "かけ算の一の位だけ当てよう。",
-    hintJa: "一の位どうしをかければ、答えの一の位がわかる", hintEn: "Multiply just the last digits",
-    next: (_streak, lang) => {
-      const a = ri(12, 99), b = ri(12, 99);
-      const last = (a * b) % 10;
-      const o = numericOptions(last, 4, (x) => [0,1,2,3,4,5,6,7,8,9].filter((d) => d !== x));
-      return { prompt: lang === "ja" ? `${a} × ${b} の一の位は？` : `Last digit of ${a} × ${b}?`, ...o,
-        noteJa: `${a % 10} × ${b % 10} = ${(a % 10) * (b % 10)} → 一の位は ${last}`,
-        noteEn: `${a % 10} × ${b % 10} = ${(a % 10) * (b % 10)} → last digit ${last}` };
-    },
-  },
-  {
     id: "digitsum", icon: "9️⃣", tint: "var(--sun1)",
     name: "Digit Sum", nameJa: "数字の合計",
     blurb: "Fold the digits down to one.", blurbJa: "各位の数字をたして、一けたにしよう。",
@@ -323,21 +158,6 @@ export const QUICK_GAMES: QuickGame[] = [
       return { prompt: `${fmtN(n)}`, ...o,
         noteJa: `${String(n).split("").join("+")} = ${firstPass}${firstPass > 9 ? ` → ${ds}` : ""}`,
         noteEn: `${String(n).split("").join("+")} = ${firstPass}${firstPass > 9 ? ` → ${ds}` : ""}` };
-    },
-  },
-  {
-    id: "div9", icon: "➗", tint: "var(--pink, #FF5A8A)",
-    name: "Divisible by 9?", nameJa: "9で割れる？",
-    blurb: "Yes or no, without dividing.", blurbJa: "割らずに判定できるかな？",
-    hintJa: "数字の合計が9なら、9で割れる", hintEn: "Digit sum 9 means divisible by 9",
-    next: (_streak, lang) => {
-      const yes = Math.random() < 0.5;
-      let n = ri(100, 9999);
-      if (yes) n = n - (n % 9) || 9; else if (n % 9 === 0) n += ri(1, 8);
-      return { prompt: `${fmtN(n)}`,
-        options: lang === "ja" ? ["○ 割れる", "× 割れない"] : ["○ Yes", "× No"], answer: yes ? 0 : 1,
-        noteJa: `数字の合計 → ${digitSum(n)} → ${yes ? "9で割れる" : "割れない"}`,
-        noteEn: `digit sum → ${digitSum(n)} → ${yes ? "divisible" : "not divisible"}` };
     },
   },
   {
@@ -363,20 +183,6 @@ export const QUICK_GAMES: QuickGame[] = [
       const d1 = Math.floor(n / 10), d2 = n % 10;
       return { prompt: `${n} × 11`, ...o,
         noteJa: `${d1} | ${d1}+${d2}=${d1 + d2} | ${d2} → ${fmtN(ans)}`, noteEn: `${d1} | ${d1}+${d2}=${d1 + d2} | ${d2} → ${fmtN(ans)}` };
-    },
-  },
-  {
-    id: "estimate", icon: "🎯", tint: "var(--gold-dk)",
-    name: "Closest Guess", nameJa: "だいたいいくつ？",
-    blurb: "Which is nearest? No exact working needed.", blurbJa: "いちばん近いのはどれ？ 計算しきらなくてOK。",
-    hintJa: "だいたいで考えて、いちばん近い答えをえらぼう", hintEn: "Round, then pick the nearest",
-    next: () => {
-      const a = ri(21, 99), b = ri(21, 99), exact = a * b;
-      const near = Math.round(exact / 100) * 100;
-      const opts = shuffle([near, near + 500, near - 500, near + 1000].filter((x) => x > 0));
-      const target = opts.indexOf(near);
-      return { prompt: `${a} × ${b} ≈ ?`, options: opts.map(fmtN), answer: target,
-        noteJa: `${a} × ${b} = ${fmtN(exact)}`, noteEn: `${a} × ${b} = ${fmtN(exact)}` };
     },
   },
 ];
