@@ -2265,13 +2265,8 @@ export function GameApp({
       blurbJa: "マッチ棒を1本動かして式を直そう。",
       best: solvedCount, start: shelf(() => { if (guestLocked("arena")) return; refreshShop(); loadPuzzle(puzIdx); setView("arena"); }),
     },
-    {
-      id: "sprint", icon: "🔥", tint: "var(--sun1)",
-      name: "Matchstick Sprint", nameJa: "マッチ棒スプリント",
-      blurb: `${SPRINT_LEN} dojo puzzles against the clock.`,
-      blurbJa: `道場のパズル${SPRINT_LEN}問をタイムアタック。`,
-      best: gameBests.sprint ?? 0, start: shelf(startSprint, "sprint"),
-    },
+    /* (Matchstick Sprint left the shelf: two matchstick games was one too
+       many. The mode itself still exists for old links.) */
     ...QUICK_GAMES.map((g) => ({
       id: g.id, icon: g.icon, tint: g.tint,
       name: g.name, nameJa: g.nameJa, blurb: g.blurb, blurbJa: g.blurbJa,
@@ -4895,14 +4890,15 @@ export function GameApp({
                   <span className="game-card-body">
                     <span className="game-card-name">{lang === "ja" ? g.nameJa : g.name}{g.id === "konbini" && <ArcadeMarks id="konbini" lang={lang} />}</span>
                     <span className="game-card-blurb">{lang === "ja" ? g.blurbJa : g.blurb}</span>
+                    {/* the record sits under the text, so the row never runs out of room on a phone */}
+                    {g.best > 0 && !gameLocked(g.id) && (
+                      <span className="game-card-best mono">
+                        {g.id === "dojo" ? `◯ ${g.best}/${PUZZLES.length}` : `${lang === "ja" ? "ベスト" : "best"} ${g.best}`}
+                      </span>
+                    )}
                   </span>
                   {gameLocked(g.id) && <span className="game-card-lock" aria-label="locked"><UiIcon name="lock" size="20px" /></span>}
                   {!gameLocked(g.id) && !isUnlocked(g.id) && <span className="prog-lock-chip">🔒 {lang === "ja" ? `あと${gamesToUnlock(g.id)}回` : `${gamesToUnlock(g.id)} to go`}</span>}
-                  {g.best > 0 && !gameLocked(g.id) && (
-                    <span className="game-card-best mono">
-                      {g.id === "dojo" ? `◯ ${g.best}/${PUZZLES.length}` : `${lang === "ja" ? "ベスト" : "best"} ${g.best}`}
-                    </span>
-                  )}
                   <span className="game-card-go">›</span>
                 </button>
               ))}

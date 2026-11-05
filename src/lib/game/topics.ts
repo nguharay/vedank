@@ -814,63 +814,79 @@ export const TOPICS: Topic[] = [
          daily) it is a plain +, − or × to work out. */
       const op = stage ? (stage <= 4 ? stage : ri(1, 4)) : ri(1, 3);
       const ds = (n: number) => 1 + ((n - 1) % 9);
-      /* In a stage the sizes are mixed, so one stage goes from 2-digit sums up
-         to 4 + 4 or 5 + 3 digits; Blitz keeps one size per difficulty. */
+      /* Big numbers, as in the book: additions of two or three 3–5 digit
+         numbers (#### + ### + ####), subtractions of 4–5 digit numbers,
+         4-digit × 2-digit products. Blitz keeps one size per difficulty. */
       const num = (dg: number) => ri(10 ** (dg - 1) + 1, 10 ** dg - 1);
-      const sizes = diff === "easy" ? [2, 3, 4] : diff === "medium" ? [3, 4, 5] : [4, 5, 6];
+      const sizes = diff === "easy" ? [3, 4, 4] : diff === "medium" ? [3, 4, 5] : [4, 5, 5];
       const big = () => (stage ? num(sizes[ri(0, 2)]) : num(diff === "easy" ? 2 : diff === "medium" ? 3 : 4));
-      const mate = (a: number) => (stage ? num(ri(2, String(a).length)) : num(String(a).length));
+      const mate = (a: number) => (stage ? num(ri(3, String(a).length)) : num(String(a).length));
       const lo = diff === "easy" ? 11 : diff === "medium" ? 101 : 1001;
       const hi = diff === "easy" ? 99 : diff === "medium" ? 999 : 9999;
-      /* A wrong answer the digit-sum check can catch: off by an amount that is
-         not a multiple of 9. */
-      const offBy = (x: number) => {
+      /* A wrong answer that is 99% right: the unit digit is kept (so checking
+         the last digit cannot tell), and exactly one other digit is changed —
+         by 1 to 8, never 9, so the digit-sum check always catches it. */
+      const nearWrong = (x: number) => {
+        const d = String(x).split("").map(Number);
+        if (d.length < 2) return x + 1;
         for (;;) {
-          const d = [1, 2, 3, 4, 10, 11, 20][ri(0, 6)] * (Math.random() < 0.5 ? -1 : 1);
-          if (x + d > 0 && d % 9 !== 0) return x + d;
+          const i = d.length >= 3 ? ri(1, d.length - 2) : 0;   /* a middle digit when there is one: never the last, rarely the first */
+          const delta = ri(1, 8) * (Math.random() < 0.5 ? -1 : 1);
+          const v = d[i] + delta;
+          if (v < 0 || v > 9 || (i === 0 && v === 0)) continue;
+          const out = [...d]; out[i] = v;
+          return Number(out.join(""));
         }
       };
       const sym = ["", "+", "−", "×"][op] ?? "";
       const verb = (["", "Add", "Subtract", "Multiply"][op] ?? "") as string;
       const verbJa = (["", "たす", "ひく", "かける"][op] ?? "") as string;
-      const build = (a: number, b: number, ans: number) => {
-        const wrong = offBy(ans);
-        const da = ds(a), db = ds(b);
-        const raw = op === 1 ? da + db : op === 2 ? da - db : da * db;
+      const build = (terms: number[], ans: number) => {
+        const wrong = nearWrong(ans);
+        const dsT = terms.map(ds);
+        const raw = op === 1 ? dsT.reduce((x, y) => x + y, 0) : op === 2 ? dsT[0] - dsT[1] : dsT[0] * dsT[1];
         const chk = raw <= 0 ? raw + 9 : ds(raw);
         const neg = (x: number) => (x < 0 ? `−${-x}` : String(x));
+        const expr = dsT.join(` ${sym} `);
         const step = raw <= 0
-          ? `${da} ${sym} ${db} = ${neg(raw)} → ${neg(raw)} + 9 → ${chk}`
-          : `${da} ${sym} ${db} = ${raw}${raw !== chk ? ` → ${chk}` : ""}`;
+          ? `${expr} = ${neg(raw)} → ${neg(raw)} + 9 → ${chk}`
+          : `${expr} = ${raw}${raw !== chk ? ` → ${chk}` : ""}`;
+        const dsList = (en: boolean) => terms.map((t, i) => (en ? `DS of ${t} → ${dsT[i]}` : `${t} の数字和 → ${dsT[i]}`)).join(en ? ", " : "、");
         const why = (shown: number): [string, string] => {
           const ok = ds(shown) === chk;
           return [
-            `DS of ${a} → ${da}, DS of ${b} → ${db}. ${verb}: ${step}. DS of ${shown} → ${ds(shown)}, so the answer is ${ok ? "correct ◯" : "not correct ✕"}`,
-            `${a} の数字和 → ${da}、${b} の数字和 → ${db}。${verbJa}：${step}。${shown} の数字和 → ${ds(shown)}。だから答えは${ok ? "正しい ◯" : "まちがい ✕"}`,
+            `${dsList(true)}. ${verb}: ${step}. DS of ${shown} → ${ds(shown)}, so the answer is ${ok ? "correct ◯" : "not correct ✕"}`,
+            `${dsList(false)}。${verbJa}：${step}。${shown} の数字和 → ${ds(shown)}。だから答えは${ok ? "正しい ◯" : "まちがい ✕"}`,
           ];
         };
         return {
-          prompt: `${a} ${sym} ${b}`, answer: ans,
+          prompt: terms.join(` ${sym} `), answer: ans,
           verify: { right: String(ans), wrong: String(wrong), whyRight: why(ans), whyWrong: why(wrong) },
         };
       };
-      if (op === 1) { const a = big(), b = mate(a); return build(a, b, a + b); }
+      if (op === 1) {
+        /* two or three numbers, three more often in a stage */
+        const terms = [big(), big()];
+        if (stage && Math.random() < 0.6) terms.push(big());
+        return build(terms, terms.reduce((x, y) => x + y, 0));
+      }
       if (op === 2) {
         let a = big(), b = mate(a);
         if (a < b) [a, b] = [b, a];
         if (a === b) a += ri(1, 9);
-        return build(a, b, a - b);
+        return build([a, b], a - b);
       }
       if (op === 3) {
         const a = stage ? num(Math.min(4, sizes[ri(0, 2)])) : ri(lo, hi), b = diff === "easy" ? ri(2, 9) : ri(11, 99);
-        return build(a, b, a * b);
+        return build([a, b], a * b);
       }
       /* Division: Dividend = Divisor × Quotient + Remainder, checked by digit sums. */
       const d = diff === "hard" ? ri(11, 99) : ri(3, 9);
       const q = ri(diff === "easy" ? 11 : 101, diff === "easy" ? 99 : 999), r = ri(1, d - 1);
       const n = d * q + r;
+      /* the wrong quotient keeps its unit digit too */
       let wq = q, wr = r;
-      do { if (Math.random() < 0.5) wq = offBy(q); else wr = Math.max(0, Math.min(d - 1, r + (Math.random() < 0.5 ? -1 : 1) * ri(1, 3))); }
+      do { if (Math.random() < 0.6) wq = nearWrong(q); else wr = Math.max(0, Math.min(d - 1, r + (Math.random() < 0.5 ? -1 : 1) * ri(1, 3))); }
       while (ds(d * wq + wr) === ds(n));
       const why = (qq: number, rr: number): [string, string] => {
         const raw = ds(d) * ds(qq) + ds(rr);
