@@ -4925,6 +4925,48 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 
 /* ---------- 🏯 Sutra Tower ---------- */
 .party-pick.tower{ background:linear-gradient(120deg,#ffe7c2,#fff); }
+.party-pick.turf{ background:linear-gradient(120deg,#ffd6e7 0%,#d6f0ff 50%,#fff 100%); }
+.party-pick.turfteam{ background:linear-gradient(120deg,#ffd0d0 0%,#f4f1ea 60%,#fff 100%); }
+
+/* 🎨 turf war: the board */
+.party-turf .party-stage, .party-turfteam .party-stage{ height:auto; min-height:300px; background:#e9f2ff; }
+.turf-field{ position:relative; padding:10px 10px 6px; background:linear-gradient(180deg,#eaf3ff,#f7fbff); transition:background .8s; }
+.turf-field.finale{ background:linear-gradient(180deg,#4b1d7a,#8a3fbf); animation:turf-pulse 1s infinite alternate; }
+@keyframes turf-pulse{ from{ filter:brightness(1); } to{ filter:brightness(1.12); } }
+.turf-clock{ height:7px; border-radius:4px; background:rgba(29,27,51,.15); overflow:hidden; margin-bottom:8px; }
+.turf-clock i{ display:block; height:100%; background:linear-gradient(90deg,#ff5a5f,#ffb800); border-radius:4px; transition:width .25s linear; }
+.turf-field.finale .turf-clock i{ background:linear-gradient(90deg,#ffd84a,#ff4a9a); }
+.turf-banner{ text-align:center; font:900 13px/1.2 "Baloo 2",system-ui,sans-serif; color:#fff; background:#ff2d7a; border:3px solid #1d1b33; border-radius:999px; padding:5px 10px; margin:0 auto 8px; width:max-content; max-width:100%; box-shadow:0 3px 0 #1d1b33; animation:ans-pop .45s cubic-bezier(.2,1.6,.4,1); }
+.turf-banner.line{ background:#3ddc84; color:#143; }
+.turf-grid{ display:grid; gap:4px; }
+.turf-tile{ position:relative; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; padding:0; border:2.5px solid #1d1b33; border-radius:9px; background:#fff; font-family:inherit; cursor:pointer; box-shadow:0 3px 0 #1d1b33; transition:transform .12s, background .25s, box-shadow .12s; overflow:hidden; color:#1d1b33; }
+.turf-tile:not(:disabled):active{ transform:translateY(3px); box-shadow:0 0 0 #1d1b33; }
+.turf-tile.off{ cursor:default; }
+.turf-tile.mine{ box-shadow:0 3px 0 #1d1b33, inset 0 0 0 2px rgba(255,255,255,.75); }
+.turf-tile.gold{ border-color:#b57a00; box-shadow:0 3px 0 #b57a00, 0 0 0 2px #ffd84a inset; }
+.turf-tile.sel{ outline:4px solid #ff2d7a; outline-offset:-1px; transform:scale(1.06); z-index:2; }
+.turf-tile.locked{ opacity:.85; }
+.turf-tile.pop{ animation:turf-pop .45s cubic-bezier(.2,1.6,.4,1); }
+.turf-tile.lost{ animation:turf-lost .9s ease-out; }
+@keyframes turf-pop{ 0%{ transform:scale(.6) rotate(-6deg); } 100%{ transform:scale(1) rotate(0); } }
+@keyframes turf-lost{ 0%,20%{ box-shadow:0 0 0 4px #ff2d2d, 0 3px 0 #1d1b33; transform:translateX(-2px); } 10%,30%{ transform:translateX(2px); } 100%{ box-shadow:0 3px 0 #1d1b33; } }
+.turf-sum{ font-size:clamp(9px, 2.6vw, 13px); font-weight:900; letter-spacing:-.3px; white-space:nowrap; text-shadow:0 1px 0 rgba(255,255,255,.6); }
+.turf-star{ position:absolute; right:2px; top:0; font-size:10px; color:#b57a00; line-height:1; }
+.turf-lock{ position:absolute; left:3px; right:3px; bottom:3px; height:4px; border-radius:2px; background:rgba(29,27,51,.25); }
+.turf-lock i{ display:block; height:100%; background:#1d1b33; border-radius:2px; }
+.turf-tile.locked::after{ content:"🔒"; position:absolute; left:2px; top:1px; font-size:9px; }
+.turf-board{ display:flex; flex-wrap:wrap; gap:6px 10px; justify-content:center; margin-top:9px; }
+.turf-who{ display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:800; color:#1d1b33; background:#fff; border:2px solid #1d1b33; border-radius:999px; padding:3px 9px 3px 5px; }
+.turf-who.me{ background:#fff5c2; }
+.turf-who i{ width:12px; height:12px; border-radius:50%; border:2px solid #1d1b33; }
+.turf-who b{ font-size:13px; } .turf-who small{ font-size:10px; opacity:.8; }
+.turf-field.finale .turf-who{ background:#fff; }
+.turf-team{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13px; font-weight:900; color:#1d1b33; border:3px solid #1d1b33; border-radius:999px; padding:4px 10px; background:#fff; }
+.turf-team.t0{ background:#ffdede; } .turf-team.t1{ background:#f4f1ea; }
+.turf-team.me{ box-shadow:0 0 0 3px #ffd84a; }
+.turf-team b{ font-size:16px; }
+.turf-tip{ margin:7px 0 0; text-align:center; font-size:12px; font-weight:800; color:#5a5675; min-height:14px; }
+.turf-field.finale .turf-tip{ color:#fff; }
 .tower-field{ position:absolute; inset:0; overflow:hidden; background:linear-gradient(180deg,#8fd3ff 0%,#cdeeff 55%,#e9f7ff 100%); transition:background 1.2s; }
 .tower-field.boss{ background:linear-gradient(180deg,#5b2a8a 0%,#d4506a 50%,#ffb36b 100%); }
 .tower-sun{ position:absolute; right:22px; top:18px; width:54px; height:54px; border-radius:50%; background:radial-gradient(circle at 40% 40%,#fff6c9,#ffd84a 60%,#ffb800); box-shadow:0 0 30px 10px rgba(255,216,74,.45); transition:all 1.2s; }

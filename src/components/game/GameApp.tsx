@@ -4581,7 +4581,7 @@ export function GameApp({
               <span className="feature-art party" aria-hidden="true"><b>🪢</b><b>🔔</b><b>🐉</b></span>
               <span className="ttt-card-body">
                 <span className="ttt-card-name">{lang === "ja" ? "🎉 みんなであそぶ" : "🎉 Party games"}<span className="feature-new">NEW</span></span>
-                <span className="ttt-card-sub">{lang === "ja" ? "スートラタワー・つなひき・早押しクイズ・計算ビンゴ・スペースシューター・かえるジャンプ。ひとりでも、友だちやクラス（最大50人）でも！" : "Sutra Tower, Tug of War, Buzzer Quiz, Math Bingo, Space Blaster and River Hop. Play solo, or with friends and classes (up to 50)!"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "計算ナワバリ・スートラタワー・つなひき・早押しクイズ・計算ビンゴ・スペースシューター・かえるジャンプ。ひとりでも、友だちやクラス（最大50人）でも！" : "Turf War, Sutra Tower, Tug of War, Buzzer Quiz, Math Bingo, Space Blaster and River Hop. Play solo, or with friends and classes (up to 50)!"}</span>
               </span>
               <span className="game-card-go">›</span>
             </button>

@@ -23,8 +23,29 @@
    client draws it. */
 import { raceQuestion, type ChoiceRound } from "./minigames";
 
-export type PartyGame = "tug" | "buzz" | "bingo" | "space" | "river" | "tower";
-export const PARTY_GAMES: PartyGame[] = ["tower", "tug", "buzz", "bingo", "space", "river"];
+export type PartyGame = "tug" | "buzz" | "bingo" | "space" | "river" | "tower" | "turf" | "turfteam";
+export const PARTY_GAMES: PartyGame[] = ["turf", "turfteam", "tower", "tug", "buzz", "bingo", "space", "river"];
+
+/* 🎨 Turf War: one grid for the whole room, every tile carrying a sum. Answer
+   a tile's sum to paint it your colour; a tile someone else holds asks a
+   harder sum to steal. A full row or column in one colour locks for
+   TURF_LOCK_MS and earns TURF_LINE_BONUS points. Four gold tiles ask the
+   hardest sums and splash paint onto their four neighbours. A wrong answer
+   shields that tile for its owner for TURF_SHIELD_MS. In the last
+   TURF_FINALE_MS every lock dissolves and every capture earns a bonus point.
+   Most points (tiles held + line bonuses + finale captures) when the clock
+   stops wins. "turfteam" is the same game as red vs white: a teammate's tile
+   is already yours, and the team's tiles and lines are scored together. */
+export const TURF_MS = 90_000;
+export const TURF_FINALE_MS = 15_000;
+export const TURF_LOCK_MS = 10_000;
+export const TURF_SHIELD_MS = 5_000;
+export const TURF_LINE_BONUS = 3;
+export const isTurfGame = (g: PartyGame): g is "turf" | "turfteam" => g === "turf" || g === "turfteam";
+/* the grid grows with the room: 5×5 for a few players, 9×9 for a class */
+export const turfSize = (players: number) => (players <= 4 ? 5 : players <= 9 ? 6 : players <= 16 ? 7 : players <= 30 ? 8 : 9);
+/* the four gold tiles sit one in from each corner */
+export const turfGoldTiles = (n: number) => [n + 1, 2 * n - 2, (n - 2) * n + 1, (n - 1) * n - 2];
 
 /* 🏯 Sutra Tower: everyone builds their own tower for TOWER_MS. A right
    answer stacks a block; every TOWER_GOLD_EVERY-th right answer in a row is a
@@ -190,10 +211,141 @@ export function towerInfo(st: PartyState, now: number): TowerInfo {
   return { endsAt, bossAt: endsAt - TOWER_BOSS_MS, over, winners, top };
 }
 
+/* ---------- Turf War ----------
+   The board lives in `waves`, per tile index i (row-major, n×n):
+     o:<i>  owner: the holder's slot + 1 (0 / missing = unpainted)
+     v:<i>  version: how many times the tile has changed hands (its sum is
+            drawn from the version, so a captured tile shows a fresh sum)
+     l:<i>  locked until (ms): a line lock or a shield
+   and per player id:
+     n:<id> lines scored · f:<id> finale captures · k:<id> steals
+   and per line: q:<line>:<holder> = 1 once that holder (a slot, or a team
+   in the team game) has scored it, so a line broken and retaken locks again
+   but does not pay again
+   `done` counts the player's captures. Everything is derivable, so the
+   server only ever writes counters, guarded on the tile's version. */
+export const turfKey = (k: "o" | "v" | "l", i: number) => `${k}:${i}`;
+export const turfPKey = (k: "n" | "f" | "k", id: string) => `${k}:${id}`;
+export const turfVal = (st: PartyState, key: string) => st.waves[key] ?? 0;
+export const turfN = (st: PartyState) => turfSize(Object.keys(st.players).length);
+export const turfOwnerSlot = (st: PartyState, i: number) => turfVal(st, turfKey("o", i)) - 1;   /* −1 = nobody */
+export function turfOwnerId(st: PartyState, i: number): string | null {
+  const slot = turfOwnerSlot(st, i);
+  if (slot < 0) return null;
+  return Object.entries(st.players).find(([, p]) => p.slot === slot)?.[0] ?? null;
+}
+export const turfLocked = (st: PartyState, i: number, now: number) => !turfFinaleOn(st, now) && turfVal(st, turfKey("l", i)) > now;
+export const turfFinaleOn = (st: PartyState, now: number) => st.startAt !== null && now >= st.startAt + TURF_MS - TURF_FINALE_MS && now < st.startAt + TURF_MS;
+/* in the team game a teammate's tile is as good as mine */
+export function turfIsMine(st: PartyState, i: number, id: string): boolean {
+  const owner = turfOwnerId(st, i);
+  if (!owner) return false;
+  if (owner === id) return true;
+  return st.game === "turfteam" && st.players[owner]?.team === st.players[id]?.team;
+}
+/* The sum on tile i at its current version. Unpainted tiles ask the easy
+   band; stealing asks the middle band; gold tiles ask the hard one
+   (raceQuestion's bands are by index: 0–5, 6–13, 14+). */
+export function turfQuestion(st: PartyState, i: number, forId: string): ChoiceRound {
+  const v = turfVal(st, turfKey("v", i));
+  return turfQuestionFor(st.seed, i, v, turfGoldTiles(turfN(st)).includes(i), turfOwnerSlot(st, i) >= 0 && !turfIsMine(st, i, forId));
+}
+/* the same, from what a phone's view knows about a tile */
+export function turfQuestionFor(seed: number, i: number, v: number, gold: boolean, steal: boolean): ChoiceRound {
+  const idx = gold ? 14 + (v % 10) : steal ? 6 + (v % 8) : v % 6;
+  return raceQuestion((seed ^ Math.imul(i + 1, 0x9e3779b1)) >>> 0, idx);
+}
+export const turfNeighbours = (n: number, i: number) => {
+  const r = Math.floor(i / n), c = i % n, out: number[] = [];
+  if (r > 0) out.push(i - n); if (r < n - 1) out.push(i + n); if (c > 0) out.push(i - 1); if (c < n - 1) out.push(i + 1);
+  return out;
+};
+/* the rows and columns through tile i: rows are lines 0..n−1, columns n..2n−1 */
+export type TurfLine = { id: number; tiles: number[] };
+export const turfLinesThrough = (n: number, i: number): TurfLine[] => {
+  const r = Math.floor(i / n), c = i % n;
+  return [{ id: r, tiles: Array.from({ length: n }, (_, k) => r * n + k) }, { id: n + c, tiles: Array.from({ length: n }, (_, k) => k * n + c) }];
+};
+/* the key that remembers a holder has already scored a line */
+export const turfLineKey = (st: PartyState, lineId: number, id: string) =>
+  `q:${lineId}:${st.game === "turfteam" ? `t${st.players[id]?.team ?? 0}` : `s${st.players[id]?.slot ?? 0}`}`;
+/* does one player (or, in the team game, one team) hold every tile of a line? */
+export function turfLineHeld(st: PartyState, line: number[], id: string): boolean {
+  return line.every((t) => turfIsMine(st, t, id));
+}
+export type TurfPlayer = { tiles: number; lines: number; finale: number; steals: number; score: number };
+export function turfPlayer(st: PartyState, id: string): TurfPlayer {
+  const n = turfN(st);
+  let tiles = 0;
+  for (let i = 0; i < n * n; i++) if (turfOwnerId(st, i) === id) tiles++;
+  const lines = turfVal(st, turfPKey("n", id)), finale = turfVal(st, turfPKey("f", id)), steals = turfVal(st, turfPKey("k", id));
+  return { tiles, lines, finale, steals, score: tiles + lines * TURF_LINE_BONUS + finale };
+}
+export type TurfInfo = { n: number; endsAt: number; finaleAt: number; over: boolean; winners: string[]; top: number; teamScore: [number, number] };
+export function turfInfo(st: PartyState, now: number): TurfInfo {
+  const n = turfN(st);
+  const endsAt = (st.startAt ?? now) + TURF_MS;
+  const over = st.startAt !== null && now >= endsAt;
+  const ids = Object.keys(st.players);
+  const by = new Map(ids.map((id) => [id, turfPlayer(st, id)]));
+  const teamScore: [number, number] = [0, 0];
+  for (const id of ids) teamScore[st.players[id].team] += by.get(id)!.score;
+  let winners: string[] = [], top = 0;
+  if (st.game === "turfteam") {
+    top = Math.max(teamScore[0], teamScore[1]);
+    winners = over && top > 0 ? ids.filter((id) => teamScore[st.players[id].team] === top) : [];
+  } else {
+    top = Math.max(0, ...ids.map((id) => by.get(id)!.score));
+    winners = over && top > 0 ? ids.filter((id) => by.get(id)!.score === top) : [];
+  }
+  return { n, endsAt, finaleAt: endsAt - TURF_FINALE_MS, over, winners, top, teamScore };
+}
+/* A capture on the phone or the bots' side: paint tile i for `id`, bump its
+   version, then settle lines, gold splash and the finale bonus. The server
+   does the same in SQL, one guarded write per tile. */
+export function turfCapture(st: PartyState, id: string, i: number, now: number): PartyState {
+  const n = turfN(st);
+  const p = st.players[id];
+  if (!p || i < 0 || i >= n * n || turfIsMine(st, i, id) || turfLocked(st, i, now)) return st;
+  const wasOwned = turfOwnerSlot(st, i) >= 0;
+  const waves = { ...st.waves, [turfKey("o", i)]: p.slot + 1, [turfKey("v", i)]: turfVal(st, turfKey("v", i)) + 1 };
+  if (wasOwned) waves[turfPKey("k", id)] = turfVal(st, turfPKey("k", id)) + 1;
+  if (turfFinaleOn(st, now)) waves[turfPKey("f", id)] = turfVal(st, turfPKey("f", id)) + 1;
+  let next: PartyState = { ...st, waves, players: { ...st.players, [id]: { ...p, done: p.done + 1 } } };
+  /* gold: splash onto the four neighbours that are not locked */
+  if (turfGoldTiles(n).includes(i)) {
+    for (const t of turfNeighbours(n, i)) {
+      if (turfIsMine(next, t, id) || turfLocked(next, t, now)) continue;
+      next = { ...next, waves: { ...next.waves, [turfKey("o", t)]: p.slot + 1, [turfKey("v", t)]: turfVal(next, turfKey("v", t)) + 1 } };
+    }
+  }
+  /* a line just completed (through the tile, or a splashed neighbour) locks,
+     and scores the first time this holder completes it */
+  const touched = turfGoldTiles(n).includes(i) ? [i, ...turfNeighbours(n, i)] : [i];
+  const seen = new Set<number>();
+  for (const t of touched) for (const line of turfLinesThrough(n, t)) {
+    if (seen.has(line.id)) continue;
+    seen.add(line.id);
+    if (!turfLineHeld(next, line.tiles, id) || turfLineHeld(st, line.tiles, id)) continue;
+    const w = { ...next.waves };
+    for (const t2 of line.tiles) w[turfKey("l", t2)] = now + TURF_LOCK_MS;
+    const q = turfLineKey(next, line.id, id);
+    if (!w[q]) { w[q] = 1; w[turfPKey("n", id)] = turfVal(next, turfPKey("n", id)) + 1; }
+    next = { ...next, waves: w };
+  }
+  return next;
+}
+/* a wrong answer on tile i: it is shielded for its holder for a moment */
+export function turfMiss(st: PartyState, i: number, now: number): PartyState {
+  if (turfOwnerSlot(st, i) < 0) return st;
+  return { ...st, waves: { ...st.waves, [turfKey("l", i)]: Math.max(turfVal(st, turfKey("l", i)), now + TURF_SHIELD_MS) } };
+}
+
 export function partyStatus(st: PartyState, now: number): PartyStatus {
   if (st.startAt === null) return "lobby";
   if (now < st.startAt) return "countdown";
   if (st.game === "tower") return towerInfo(st, now).over ? "done" : "playing";
+  if (isTurfGame(st.game)) return turfInfo(st, now).over ? "done" : "playing";
   if (st.game === "tug") return tugInfo(st, now).winner !== null ? "done" : "playing";
   if (st.game === "bingo") return bingoInfo(st, now).over ? "done" : "playing";
   if (isRaceGame(st.game)) return raceInfo(st, now).over ? "done" : "playing";
@@ -207,6 +359,8 @@ export const PARTY_NAMES: Record<PartyGame, [string, string, string]> = {
   space: ["🚀", "Space Blaster", "スペースシューター"],
   river: ["🐸", "River Hop", "かえるジャンプ"],
   tower: ["🏯", "Sutra Tower", "スートラタワー"],
+  turf: ["🎨", "Turf War", "計算ナワバリ"],
+  turfteam: ["🟥", "Turf War: Teams", "ナワバリ チーム戦"],
 };
 
 /* ---------- what a phone draws ----------
@@ -231,6 +385,9 @@ export type PartyView = {
   race: (RaceInfo & { winnerKey: string | null }) | null;
   /* tower: every player's ledger by view key, and who is tallest at the gong */
   tower: (TowerInfo & { winnerKeys: string[]; by: Record<string, TowerPlayer>; bossOn: boolean }) | null;
+  /* turf: the board (owner by view key, lock, version, gold), every player's
+     tally, and who holds the most when the clock stops */
+  turf: (TurfInfo & { tiles: { owner: string | null; team: 0 | 1 | null; lock: number; v: number; gold: boolean }[]; winnerKeys: string[]; by: Record<string, TurfPlayer>; finaleOn: boolean }) | null;
 };
 
 export function buildPartyView(st: PartyState, o: { code: string; hostId: string; viewerId: string; now: number }): PartyView {
@@ -242,13 +399,24 @@ export function buildPartyView(st: PartyState, o: { code: string; hostId: string
     now: o.now, startAt: st.startAt, seed: st.seed, round: st.round, mySlot: st.players[o.viewerId]?.slot ?? 0,
     players: entries.map(([id, p]) => ({
       key: keyOf.get(id)!, name: p.name, team: p.team, done: p.done, me: id === o.viewerId, host: id === o.hostId,
-      score: st.game === "buzz" ? buzzScore(id) : st.game === "bingo" ? marksOf(p.done) : st.game === "tower" ? towerPlayer(st, id).height : p.done, cpu: id.startsWith("cpu:") || undefined,
+      score: st.game === "buzz" ? buzzScore(id) : st.game === "bingo" ? marksOf(p.done) : st.game === "tower" ? towerPlayer(st, id).height : isTurfGame(st.game) ? turfPlayer(st, id).score : p.done, cpu: id.startsWith("cpu:") || undefined,
     })),
     tower: st.game === "tower" && st.startAt !== null ? (() => {
       const info = towerInfo(st, o.now);
       const by: Record<string, TowerPlayer> = {};
       for (const [id] of entries) by[keyOf.get(id)!] = towerPlayer(st, id);
       return { ...info, winnerKeys: info.winners.map((id) => keyOf.get(id)!).filter(Boolean), by, bossOn: towerBossOn(st, o.now) };
+    })() : null,
+    turf: isTurfGame(st.game) && st.startAt !== null ? (() => {
+      const info = turfInfo(st, o.now);
+      const by: Record<string, TurfPlayer> = {};
+      for (const [id] of entries) by[keyOf.get(id)!] = turfPlayer(st, id);
+      const gold = new Set(turfGoldTiles(info.n));
+      const tiles = Array.from({ length: info.n * info.n }, (_, i) => {
+        const owner = turfOwnerId(st, i);
+        return { owner: owner ? keyOf.get(owner) ?? null : null, team: owner ? st.players[owner].team : null, lock: turfVal(st, turfKey("l", i)), v: turfVal(st, turfKey("v", i)), gold: gold.has(i) };
+      });
+      return { ...info, tiles, winnerKeys: info.winners.map((id) => keyOf.get(id)!).filter(Boolean), by, finaleOn: turfFinaleOn(st, o.now) };
     })() : null,
     tug: st.game === "tug" && st.startAt !== null ? tugInfo(st, o.now) : null,
     bingo: st.game === "bingo" ? (() => {
