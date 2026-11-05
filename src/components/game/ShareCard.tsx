@@ -188,7 +188,7 @@ export function ShareSheet({
   const networks: { id: string; label: string; icon: string; href: string }[] = [
     { id: "instagram", label: "Instagram", icon: "📸", href: "https://www.instagram.com/" },
     { id: "line", label: "LINE", icon: "💬", href: `https://social-plugins.line.me/lineit/share?url=${encUrl}&text=${enc}` },
-    { id: "whatsapp", label: "WhatsApp", icon: "🟢", href: `https://wa.me/?text=${enc}%20${encUrl}` },
+    { id: "x", label: "X", icon: "𝕏", href: `https://twitter.com/intent/tweet?text=${enc}&url=${encUrl}` },
     { id: "facebook", label: "Facebook", icon: "🔵", href: `https://www.facebook.com/sharer/sharer.php?u=${encUrl}&quote=${enc}` },
   ];
 
