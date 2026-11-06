@@ -4070,6 +4070,15 @@ export function GameApp({
                 ))}
               </div>
             ) : (<>
+            {/* what counts here, always on screen: players kept thinking
+                lessons and games fed the league */}
+            <div className="lb-rule league-rule">
+              <b>⚡ {ja ? "リーグのポイントは「デイリーチャレンジ」だけ" : "League points come only from the Daily Challenge"}</b>
+              <span>{ja ? "1日1回・8問。1週間の合計で順位がきまるよ。レッスンやゲームはリーグには入らないけど、「ランク」が上がるよ。" : "8 questions, once a day, added up over the week. Lessons and games don't count here; they raise your Rank instead."}</span>
+              {dailyStatus?.played
+                ? <em className="league-rule-done">⭕ {ja ? "今日のぶんはクリア！また明日。" : "Today's done! Come back tomorrow."}</em>
+                : <button className="btn btn-primary league-rule-go" onClick={() => { setLeagueOpen(false); startDaily(); }}>🗓️ {ja ? "今日のデイリーチャレンジをやる" : "Play today's Daily Challenge"}</button>}
+            </div>
             {leagueInfo && (<div className="league-info">
             {/* the ladder: which league you're in, and where it can take you */}
             <div className="league-ladder" aria-label={ja ? "リーグの段階" : "League levels"}>
@@ -4082,7 +4091,7 @@ export function GameApp({
 
             {/* how it works, in three steps */}
             <ol className="league-how">
-              <li><b>📅</b><span>{ja ? <>毎日<strong>「今日のチャレンジ」</strong>（8問）を1回やる</> : <>Play the <strong>Daily Challenge</strong> (8 questions) once a day</>}</span></li>
+              <li><b>📅</b><span>{ja ? <>毎日<strong>「デイリーチャレンジ」</strong>（8問）を1回やる</> : <>Play the <strong>Daily Challenge</strong> (8 questions) once a day</>}</span></li>
               <li><b>⚡</b><span>{ja ? <>正解1問 <strong>100pt</strong>＋はやさボーナス＋全問正解 <strong>150pt</strong>。1週間ぶん合計</> : <><strong>100 pts</strong> per right answer + speed bonus + <strong>150</strong> for all 8. Added up over the week</>}</span></li>
               <li><b>🏁</b><span>{ja ? <>毎週月曜の朝9時にしめきり。<strong>上位20%は上のリーグへ⬆️</strong>、下位20%は下へ⬇️（5人以上のとき）</> : <>Ends every Monday 09:00 (Japan). <strong>Top 20% move up a league ⬆️</strong>, bottom 20% move down ⬇️ (with 5+ players)</>}</span></li>
             </ol>
@@ -4096,7 +4105,7 @@ export function GameApp({
               const r = league.myRank;
               let tone = "mid", line: string;
               if (!r) {
-                line = ja ? "「今日のチャレンジ」をやると、今週のリーグに参加できるよ！" : "Play today's Daily Challenge to join this week's league!";
+                line = ja ? "「デイリーチャレンジ」をやると、今週のリーグに参加できるよ！" : "Play today's Daily Challenge to join this week's league!";
               } else if (!league.promote && !league.relegate) {
                 line = L.tier === TOP_LEAGUE
                   ? (ja ? "いちばん上のリーグ！ この調子でがんばろう。" : "You're in the top league! Keep it up.")
@@ -4121,7 +4130,7 @@ export function GameApp({
               {leagueLoading && <div className="leaderboard-loading">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>}
               {!leagueLoading && league?.rows.length === 0 && (
                 <div className="leaderboard-loading">
-                  {lang === "ja" ? "今週はまだ誰もいません。今日のチャレンジをやって、1位になろう！" : "Nobody here yet this week, play the Daily Challenge and take first place!"}
+                  {lang === "ja" ? "今週はまだ誰もいません。デイリーチャレンジをやって、1位になろう！" : "Nobody here yet this week, play the Daily Challenge and take first place!"}
                 </div>
               )}
               {!leagueLoading &&
@@ -4167,8 +4176,8 @@ export function GameApp({
                 {me?.position && <span className="sheet-panel-count">{ja ? `${me.position}位 / ${lb!.total}人` : `#${me.position} of ${lb!.total}`}</span>}
               </div>
               <div className="lb-rule">
-                <b>📘 {ja ? "クリアしたレッスンの数で順位がきまるよ" : "Ranked by lessons cleared"}</b>
-                <span>{ja ? "同じ数なら ⭐ が多い人が上。ゲームのスコアは関係ないよ。" : "Same number? More ⭐ goes higher. Game scores don't count."}</span>
+                <b>📘 {ja ? "ランクは、クリアしたインド式数学のレッスンの数できまるよ" : "Rank comes from the Vedic Maths lessons you clear"}</b>
+                <span>{ja ? "同じ数なら ⭐ が多い人が上。ゲームのスコアやデイリーチャレンジは入らないよ（デイリーチャレンジは「リーグ」のポイントになるよ）。" : "Same number? More ⭐ goes higher. Game scores and the Daily Challenge don't count here; the Daily Challenge scores in the League."}</span>
               </div>
               {lb && me && (
                 <div className="lb-me">

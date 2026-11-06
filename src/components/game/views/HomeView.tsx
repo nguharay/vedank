@@ -434,8 +434,8 @@ export function HomeView({
                 ? "今日はクリア済み。また明日！"
                 : "Done for today, come back tomorrow!"
               : lang === "ja"
-              ? "世界中が同じ8問に挑戦中"
-              : "The same 8 questions for everyone, today only"}
+              ? "みんな同じ8問・⚡リーグのポイントになるよ"
+              : "Same 8 questions for everyone · ⚡ earns League points"}
           </div>
         </div>
         <span className="blitz-cta-arrow">›</span>
