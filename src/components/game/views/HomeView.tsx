@@ -623,7 +623,7 @@ function InviteCard({ lang }: { lang: "en" | "ja" }) {
       <span className="invite-card-ico" aria-hidden="true">🎁</span>
       <span className="invite-card-body">
         <b>{ja ? "友だちを招待しよう" : "Invite your friends"}</b>
-        <span>{ja ? "LINE・メッセージ・QRコードでかんたんにシェア" : "Share in a tap: LINE, WhatsApp, X, messages or a QR code"}</span>
+        <span>{ja ? "LINE・メッセージ・QRコードでかんたんにシェア" : "Share in a tap: WhatsApp, Instagram, messages or a QR code"}</span>
       </span>
       <span className="invite-card-go">{ja ? "招待 ▶" : "Invite ▶"}</span>
     </button>
