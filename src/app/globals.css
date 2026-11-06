@@ -4908,6 +4908,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 /* Digit Sum in a Circle — draw-the-design question */
 .dc{ display:flex; flex-direction:column; align-items:center; gap:4px; }
 .dc-step{ font-size:clamp(17px,4.6vw,22px); font-weight:800; color:var(--ink); }
+.dc-step .dc-of{ font-size:.75em; opacity:.6; margin-left:4px; }
 .dc-step .dc-ok{ color:var(--green); }
 .dc-step b{ color:#D63A3A; }
 .dc-svg{ width:100%; max-width:300px; height:auto; touch-action:manipulation; user-select:none; }

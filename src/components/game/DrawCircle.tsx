@@ -6,10 +6,12 @@ import type { Lang } from "@/lib/game/topics";
 const dsOf = (n: number) => 1 + ((n - 1) % 9);
 
 /* Book pp.205–206, "Your Turn — Connect the Number Points": the player draws
-   the design themselves. The next step of the table is shown (7 × 3 = ?), they
-   work out its Digit Sum and tap that point on the 9-Point Circle, and the
-   line draws from the last point. One slip is forgiven; a second ends the
-   question and the full design is shown. */
+   the design themselves. With `hint` (the first stages) the next step of the
+   table is shown with its product (7 × 3 = 21 → ?); without it nothing of the
+   table is given — the player writes the table and finds each Digit Sum
+   themselves, and only "point 3 of 10" says where they are. They tap that
+   Digit Sum on the 9-Point Circle and the line draws from the last point.
+   One slip is forgiven; a second ends the question and the design is shown. */
 export function DrawCircle({ t, lang, hint = true, onDone }: { t: number; lang: Lang; hint?: boolean; onDone: (ok: boolean) => void }) {
   const ja = lang === "ja";
   const seq = Array.from({ length: 10 }, (_, i) => dsOf(t * (i + 1)));
@@ -56,10 +58,12 @@ export function DrawCircle({ t, lang, hint = true, onDone }: { t: number; lang: 
           : over === "lost"
             ? (ja ? "正しいデザインはこれ" : "Here is the design")
             : confirm
-              ? <span className="dc-ok">{t} × {confirm.k}{hint ? <> = {t * confirm.k}</> : null} → <b>{confirm.ds}</b> ✓</span>
+              ? (hint
+                ? <span className="dc-ok">{t} × {confirm.k} = {t * confirm.k} → <b>{confirm.ds}</b> ✓</span>
+                : <span className="dc-ok"><b>{confirm.ds}</b> ✓</span>)
             : hint
               ? <>{t} × {k} = <b>{t * k}</b> → {ja ? "数字和は？" : "Digit Sum?"}</>
-              : <>{t} × {k} → {ja ? "頭の中で数字和を！" : "Digit Sum in your head!"}</>}
+              : <>{ja ? `${t}の段：${k}番目の数字和は？` : `Table of ${t}: Digit Sum no. ${k}?`} <small className="dc-of">{k}/10</small></>}
       </div>
       <svg viewBox="0 0 260 240" className="dc-svg">
         <circle cx={cx} cy={cy} r={R} fill="none" stroke="var(--muted)" strokeOpacity=".5" strokeWidth="2" />

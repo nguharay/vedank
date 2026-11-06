@@ -1546,11 +1546,13 @@ export const TOPICS: Topic[] = [
     gen: (diff, stage) => {
       /* In the lesson's stages the player draws the design (pp.205–206). The
          tables come out of a shuffled bag of 1–9, so no table repeats until
-         every one has been drawn. Stages 1–3 show each product; in 4 and 5 the
-         table is worked out in the head. */
+         every one has been drawn. Stages 1–2 show each step of the table with
+         its product; from stage 3 no step is shown — the player writes the
+         table and finds every Digit Sum themselves (the first two steps of
+         the lesson's method). */
       if (stage) {
         const t = bagPick(circleBag, [1, 2, 3, 4, 5, 6, 7, 8, 9], circleLast);
-        return { prompt: `DS(${t} × 1…10)`, answer: t, draw: { t, shape: "circle", hint: stage <= 3 } };
+        return { prompt: `DS(${t} × 1…10)`, answer: t, draw: { t, shape: "circle", hint: stage <= 2 } };
       }
       /* Elsewhere (Blitz, daily) it is one step of a table. Hard uses a two-digit
          table, whose digit sum draws the same shape as its one-digit twin. */
