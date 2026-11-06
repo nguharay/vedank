@@ -7,7 +7,8 @@ import { SITE_URL } from "@/lib/site";
 
 /* ---------- invite a friend ----------
    The app's link, sent any way the player likes: the phone's own share menu
-   first, then LINE / WhatsApp (TikTok in Japanese) / Instagram / Facebook / X / SMS / email, a copy
+   first, then (English) WhatsApp / Instagram / Facebook / SMS / email or
+   (Japanese) LINE / TikTok / Instagram / Facebook / X / SMS / email, a copy
    button, and a QR code for a friend standing right there. Every link is
    tagged ?utm_source=invite&utm_medium=<channel>, so the activity sheet shows
    which channel brought each new player in ("came from: invite/line"). */
@@ -15,14 +16,15 @@ import { SITE_URL } from "@/lib/site";
 type Channel = { id: string; label: string; icon: string; color: string; href: (text: string, url: string) => string; copyFirst?: boolean; only?: "en" | "ja" };
 
 const CHANNELS: Channel[] = [
-  { id: "line", label: "LINE", icon: "💬", color: "#06C755", href: (t, u) => `https://line.me/R/msg/text/?${encodeURIComponent(`${t}\n${u}`)}` },
+  /* LINE and X are for the Japanese edition; English players get WhatsApp and Instagram */
+  { id: "line", label: "LINE", icon: "💬", color: "#06C755", href: (t, u) => `https://line.me/R/msg/text/?${encodeURIComponent(`${t}\n${u}`)}`, only: "ja" },
   /* TikTok and Instagram have no "share this text" link: the message is
      copied first, then the app opens to paste it into a DM, story or bio */
   { id: "tiktok", label: "TikTok", icon: "🎵", color: "#111111", href: () => "https://www.tiktok.com/", copyFirst: true, only: "ja" },
   { id: "whatsapp", label: "WhatsApp", icon: "📱", color: "#25D366", href: (t, u) => `https://wa.me/?text=${encodeURIComponent(`${t} ${u}`)}`, only: "en" },
   { id: "instagram", label: "Instagram", icon: "📸", color: "#E1306C", href: () => "https://www.instagram.com/", copyFirst: true },
   { id: "facebook", label: "Facebook", icon: "f", color: "#1877F2", href: (_t, u) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(u)}` },
-  { id: "x", label: "X", icon: "𝕏", color: "#000000", href: (t, u) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(t)}&url=${encodeURIComponent(u)}` },
+  { id: "x", label: "X", icon: "𝕏", color: "#000000", href: (t, u) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(t)}&url=${encodeURIComponent(u)}`, only: "ja" },
   { id: "sms", label: "SMS", icon: "✉️", color: "#34C759", href: (t, u) => `sms:?&body=${encodeURIComponent(`${t} ${u}`)}` },
   { id: "email", label: "Email", icon: "📧", color: "#EA4335", href: (t, u) => `mailto:?subject=${encodeURIComponent(t.split(/[!！]/)[0] || t)}&body=${encodeURIComponent(`${t}\n\n${u}`)}` },
 ];
