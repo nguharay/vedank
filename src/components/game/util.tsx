@@ -82,7 +82,7 @@ export function haptic(pattern: number | number[]) {
 
 /* 1st / 2nd / 3rd / 4th — spelled out because "#4" reads as a quantity. */
 export function rankLabel(n: number): string {
-  if (n <= 0) return "—";
+  if (n <= 0) return "-";
   const s = ["th", "st", "nd", "rd"][n % 100 > 10 && n % 100 < 14 ? 0 : Math.min(n % 10, 4) % 4] ?? "th";
   return `${n}${s}`;
 }

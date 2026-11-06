@@ -1882,7 +1882,7 @@ function DsCircleNote({ lang }: { lang: Lang }) {
       <p className="bd-dsnote">
         {lang === "ja"
           ? "2の段も7の段と同じ星。ただし向きが逆（鏡うつし）。2 + 7 = 9 だね！"
-          : "The table of 2 draws the same star as 7, only mirrored — and 2 + 7 = 9!"}
+          : "The table of 2 draws the same star as 7, only mirrored. And 2 + 7 = 9!"}
       </p>
     </div>
   );
@@ -2208,7 +2208,7 @@ export const BOOK_BARE_HEADERS = new Set(["digitsum", "dsCircle", "dsSquare", "v
 
 /* Japanese for the headers above that are words rather than a sum. */
 export const BOOK_EQ_JA: Partial<Record<string, string>> = {
-  "Worked example — DS of the 7 times table": "例 — 7の段の数字和",
+  "Worked example: DS of the 7 times table": "例：7の段の数字和",
   "Table of 2": "2の段",
   "Verify: 5963 + 3278 + 5649 = 14890": "たしかめ：5963 + 3278 + 5649 = 14890",
   "Verify: 7342 − 4786 = 2546": "たしかめ：7342 − 4786 = 2546",
@@ -2233,7 +2233,7 @@ export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {
   baseBelow20to90: "19 × 16  (base 20)",
   baseAbove20to90: "23 × 24  (base 20)",
   duplexSquare: "56²",
-  dsCircle: "Worked example — DS of the 7 times table",
+  dsCircle: "Worked example: DS of the 7 times table",
   verifyDS: "Verify: 5963 + 3278 + 5649 = 14890",
   dsSquare: "DS of the tables 1 to 9",
   add9: "36 + 9",

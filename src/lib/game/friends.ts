@@ -256,7 +256,7 @@ export async function listChallenges(userId: string): Promise<ChallengeRow[]> {
   return rows.map((r) => {
     const incoming = r.toUserId === userId;
     const opponentId = incoming ? r.fromUserId : r.toUserId;
-    const opponentName = incoming ? r.fromName : nameById.get(r.toUserId) ?? "—";
+    const opponentName = incoming ? r.fromName : nameById.get(r.toUserId) ?? "-";
     let won: boolean | null = null;
     if (r.status === "done" && r.toScore !== null) {
       const mine = incoming ? r.toScore : r.fromScore;

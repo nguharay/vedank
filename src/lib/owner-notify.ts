@@ -12,7 +12,7 @@ export function ownerSheetEnabled(): boolean {
 export async function addOwnerRow(tab: "Enquiries" | "Registrations", row: Record<string, string>): Promise<boolean> {
   const url = process.env.SHEET_WEBHOOK_URL;
   if (!url) {
-    console.error("[sheet] SHEET_WEBHOOK_URL not set — row not saved:", tab, row.Email ?? "");
+    console.error("[sheet] SHEET_WEBHOOK_URL not set, row not saved:", tab, row.Email ?? "");
     return false;
   }
   try {

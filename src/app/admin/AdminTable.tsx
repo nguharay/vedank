@@ -29,7 +29,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
    server-rendered first, and a locale- or timezone-dependent string would
    hydrate to something different in the browser. */
 function fmtDate(iso: string | null) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   const day = String(d.getUTCDate()).padStart(2, "0");
@@ -178,9 +178,9 @@ export function AdminTable({ rows, summary, adminEmail }: { rows: SignupRow[]; s
                     {r.locked && <span className="admin-pill admin-pill-locked" title="Locked by failed logins">locked</span>}
                   </td>
                   <td className="admin-email">{r.email}</td>
-                  <td>{r.username || "—"}</td>
-                  <td>{r.countryFlag ? `${r.countryFlag} ${r.countryName}` : r.countryName || "—"}</td>
-                  <td className="mono">{r.phone || "—"}</td>
+                  <td>{r.username || "-"}</td>
+                  <td>{r.countryFlag ? `${r.countryFlag} ${r.countryName}` : r.countryName || "-"}</td>
+                  <td className="mono">{r.phone || "-"}</td>
                   <td><span className="admin-pill">{r.preferredLang === "ja" ? "日本語" : "EN"}</span></td>
                   <td className="mono">{fmtDate(r.createdAt)}</td>
                   <td className="mono">{fmtDate(r.lastActiveDate)}</td>

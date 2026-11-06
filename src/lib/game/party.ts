@@ -438,7 +438,7 @@ const JOIN_ERR_JA: Record<string, string> = {
   "That room is full.": "その部屋はもういっぱいだよ。",
   "That game has already started.": "その部屋はもうゲームが始まっているよ。終わるまで待ってね。",
   "That race has already started.": "そのレースはもう始まっているよ。終わるまで待ってね。",
-  "Could not join — the race may have started.": "参加できなかったよ。レースが始まったのかも。",
+  "Could not join. The race may have started.": "参加できなかったよ。レースが始まったのかも。",
 };
 export const joinErrorText = (err: string, ja: boolean) => (ja ? JOIN_ERR_JA[err] ?? "参加できませんでした。もう一度ためしてね。" : err);
 /* a code for another game: open the app on that game's join link */

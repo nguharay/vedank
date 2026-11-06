@@ -58,7 +58,7 @@ function view(row: Row, userId: string): RaceRoomView {
 
 async function nameOf(id: string) {
   const r = await getDb().select({ name: users.name }).from(users).where(eq(users.id, id)).limit(1);
-  return (r[0]?.name || "—").slice(0, 24);
+  return (r[0]?.name || "-").slice(0, 24);
 }
 
 const newSeed = () => Math.floor(Math.random() * 2 ** 31);
@@ -109,7 +109,7 @@ export async function joinRaceRoom(userId: string, rawCode: string): Promise<Rac
        and state->'startAt' = 'null'::jsonb
        and (select count(*) from jsonb_object_keys(state->'players')) < ${RACE_ROOM_MAX}::int
      returning code`);
-  if (!res.rows?.length) return { error: "Could not join — the race may have started." };
+  if (!res.rows?.length) return { error: "Could not join. The race may have started." };
   const fresh = await load(code);
   return fresh ? view(fresh, userId) : { error: "No room with that code." };
 }

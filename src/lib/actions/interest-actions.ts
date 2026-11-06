@@ -33,7 +33,7 @@ export async function submitInterestAction(input: InterestInput): Promise<{ ok: 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: ja ? "メールアドレスを確認してください。" : "Please check your email address." };
 
   if (!ownerSheetEnabled()) {
-    console.error("[interest] sheet not configured — enquiry not saved:", name, email);
+    console.error("[interest] sheet not configured, enquiry not saved:", name, email);
     return { ok: false, error: ja ? "ただいま送信できません。しばらくしてからお試しください。" : "Sorry, this can't be sent right now. Please try again later." };
   }
 

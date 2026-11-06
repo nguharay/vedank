@@ -15,7 +15,7 @@ import { TOPICS } from "@/lib/game/topics";
 import { SITE_URL } from "@/lib/site";
 
 function fmtDate(d: string | null) {
-  if (!d) return "—";
+  if (!d) return "-";
   const dt = new Date(d);
   if (Number.isNaN(dt.getTime())) return d;
   const today = new Date();
@@ -592,7 +592,7 @@ export function ClassroomBoard({
                     onChange={(e) => saveAssignment(e.target.value || null)}
                     aria-label="Assigned topic"
                   >
-                    <option value="">— none —</option>
+                    <option value="">(none)</option>
                     {TOPICS.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.icon} {t.title}
@@ -712,7 +712,7 @@ export function ClassroomBoard({
                       return (
                         <tr key={s.id}>
                           <td className="admin-name">{s.name}</td>
-                          {groups.length > 0 && <td>{g ? `${g.emoji} ${firstName(g.name)}` : "—"}</td>}
+                          {groups.length > 0 && <td>{g ? `${g.emoji} ${firstName(g.name)}` : "-"}</td>}
                           <td className="num mono">{s.level}</td>
                           <td className="num mono">{s.gems}</td>
                           <td className="num mono">{s.dailyStreak}</td>
@@ -721,7 +721,7 @@ export function ClassroomBoard({
                           <td className="num mono">{s.puzzlesSolved}</td>
                           {assignedTopic && <td className="num mono">{s.assignedCleared ?? 0}/5</td>}
                           <td className="num mono">
-                            {s.dueReviews > 0 ? <span className="cls-due">{s.dueReviews}</span> : "—"}
+                            {s.dueReviews > 0 ? <span className="cls-due">{s.dueReviews}</span> : "-"}
                           </td>
                           <td className="cls-weak">
                             {s.weakest.length
@@ -731,7 +731,7 @@ export function ClassroomBoard({
                                     {w.misses > 1 ? ` ×${w.misses}` : ""}
                                   </span>
                                 ))
-                              : "—"}
+                              : "-"}
                           </td>
                           <td>
                             <button className="friend-remove" onClick={() => drop(s.id)} aria-label={`Remove ${s.name}`}>✕</button>

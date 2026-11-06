@@ -35,7 +35,7 @@ export type RoomView = {
 async function nameOf(id: string | null) {
   if (!id) return null;
   const r = await getDb().select({ name: users.name }).from(users).where(eq(users.id, id)).limit(1);
-  return r[0]?.name ?? "—";
+  return r[0]?.name ?? "-";
 }
 
 function view(row: typeof tttRooms.$inferSelect, userId: string, hostName: string, guestName: string | null): RoomView {
@@ -92,7 +92,7 @@ export async function moveRoom(userId: string, code: string, i: number, chosen: 
   const state = row.state as TTTState;
   if (!you) return { error: "Not your room." };
   if (!row.guestId) return { error: "Waiting for an opponent." };
-  if (state.turn !== you) return { error: row !== found ? "Time's up — the turn passed." : "Not your turn." };
+  if (state.turn !== you) return { error: row !== found ? "Time's up. The turn passed." : "Not your turn." };
   const next = play(state, Number(i), Number(chosen));
   if (next === state) return { error: "That square is taken." };
   /* Only lands on the board this move was made against: if the turn timed
@@ -102,7 +102,7 @@ export async function moveRoom(userId: string, code: string, i: number, chosen: 
   const ok = await db.update(tttRooms).set({ state: next, updatedAt: at })
     .where(and(eq(tttRooms.code, row.code), eq(tttRooms.updatedAt, row.updatedAt), or(eq(tttRooms.hostId, userId), eq(tttRooms.guestId, userId))))
     .returning({ code: tttRooms.code });
-  if (!ok.length) return { error: "Time's up — the turn passed." };
+  if (!ok.length) return { error: "Time's up. The turn passed." };
   return view({ ...row, state: next, updatedAt: at }, userId, (await nameOf(row.hostId)) ?? "", await nameOf(row.guestId));
 }
 
