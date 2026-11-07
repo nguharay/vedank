@@ -60,7 +60,7 @@ export async function signupAction(
     if (!finalName) finalName = `player${Date.now().toString(36).slice(-6)}`;
   } else {
     const takenName = await db.select().from(users).where(eq(users.username, finalName)).limit(1);
-    if (takenName[0]) return { error: "That username is taken — try another." };
+    if (takenName[0]) return { error: "That username is taken. Try another." };
   }
 
   const passwordHash = await bcrypt.hash(password, 12);

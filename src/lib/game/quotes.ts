@@ -104,7 +104,7 @@ export const QUOTES: Quote[] = [
   },
   {
     kind: "hope",
-    text: "Challenge yourself in something — it doesn't matter what.",
+    text: "Challenge yourself in something. It doesn't matter what.",
     textJa: "何かに挑戦しよう。なんでもいい。",
   },
   {
@@ -131,12 +131,12 @@ export const QUOTES: Quote[] = [
   /* ---- India & the history of the sutras ---- */
   {
     kind: "india",
-    text: "The Sulba Sutra of Baudhayana (800–740 BCE) states the Pythagorean theorem — a thousand years before Pythagoras.",
+    text: "The Sulba Sutra of Baudhayana (800–740 BCE) states the Pythagorean theorem, a thousand years before Pythagoras.",
     textJa: "バウダーヤナの『シュルバ・スートラ』（前800〜740年）はピタゴラスの定理を記している。ピタゴラスより千年も前のこと。",
   },
   {
     kind: "india",
-    text: "Brahmagupta formalised zero and negative numbers in 598 CE — centuries before Europe.",
+    text: "Brahmagupta formalised zero and negative numbers in 598 CE, centuries before Europe.",
     textJa: "ブラフマグプタは598年にゼロと負の数を定式化した。ヨーロッパより何世紀も前。",
   },
   {
@@ -146,17 +146,17 @@ export const QUOTES: Quote[] = [
   },
   {
     kind: "india",
-    text: "Indus Valley bricks were made in a 4:2:1 ratio for stability, with standard weights based on a unit of about 28 grams — close to a modern ounce.",
+    text: "Indus Valley bricks were made in a 4:2:1 ratio for stability, with standard weights based on a unit of about 28 grams, close to a modern ounce.",
     textJa: "インダス文明のレンガは安定のため4:2:1の比。基準の重さは約28グラム、現代のオンスにほぼ等しい。",
   },
   {
     kind: "india",
-    text: "Maths was lived, not just written — passed down orally in Gurukuls with deep reasoning and mental agility.",
+    text: "Maths was lived, not just written. It was passed down orally in Gurukuls with deep reasoning and mental agility.",
     textJa: "数学は書かれるだけでなく生きられた。グルクルで口伝され、深い理由づけと暗算力とともに受けつがれた。",
   },
   {
     kind: "india",
-    text: "Ramanujan (1887–1920) opened up number theory, infinite series and continued fractions — largely self-taught.",
+    text: "Ramanujan (1887–1920) opened up number theory, infinite series and continued fractions, largely self-taught.",
     textJa: "ラマヌジャン（1887〜1920）は数論・無限級数・連分数を切り開いた。ほとんど独学で。",
   },
   {
@@ -166,13 +166,13 @@ export const QUOTES: Quote[] = [
   },
   {
     kind: "india",
-    text: "A sutra is a short, elegant formula — a line you can hold in your head that simplifies even a hard problem.",
+    text: "A sutra is a short, elegant formula: a line you can hold in your head that simplifies even a hard problem.",
     textJa: "スートラは短く美しい公式。頭の中に置いておけて、むずかしい問題もかんたんにする一行。",
   },
   {
     kind: "india",
     text: "Aryabhata, Brahmagupta, Bhaskara II and Madhava each broke new ground in algebra, trigonometry and infinity.",
-    textJa: "アーリヤバタ、ブラフマグプタ、バースカラ2世、マーダヴァ——代数・三角法・無限のそれぞれを切り開いた。",
+    textJa: "アーリヤバタ、ブラフマグプタ、バースカラ2世、マーダヴァ。代数・三角法・無限のそれぞれを切り開いた。",
   },
 ];
 

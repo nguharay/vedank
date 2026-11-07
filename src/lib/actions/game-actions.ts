@@ -400,7 +400,7 @@ export async function createFriendCompetitionAction(
         ids.slice(0, 50).map((id) =>
           sendTo(id, {
             title: `${host || "友だち"} さんがレースを開催！`,
-            body: `${n.name} · ${n.levelName} — ${n.minutes}分`,
+            body: `${n.name} · ${n.levelName} · ${n.minutes}分`,
             url: `/r/${res.id}`,
             tag: "race",
           })

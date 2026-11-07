@@ -169,7 +169,7 @@ export async function sendTestReminderAction(id: number) {
   const [me] = await getDb().select({ id: users.id, lang: users.preferredLang }).from(users).where(eq(users.email, admin.email)).limit(1);
   if (!me) return { ok: false as const, error: "Your admin account has no player row." };
   const ok = await sendTest(Number(id), me.id, me.lang);
-  return ok ? { ok: true as const } : { ok: false as const, error: "Nothing was sent — is 🔔 Notifications on for your account?" };
+  return ok ? { ok: true as const } : { ok: false as const, error: "Nothing was sent. Is 🔔 Notifications on for your account?" };
 }
 export async function sendReminderNowAction(id: number) {
   const admin = await getAdminSession();

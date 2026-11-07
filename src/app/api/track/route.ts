@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         "Signed in": user?.id ? "yes" : "no", "Visit #": vno, Minutes: Math.round((secs / 60) * 10) / 10,
         Sections: list.length,
         "Games finished": list.filter((x) => x.n.startsWith("Game") && x.r).reduce((t, x) => t + x.r.split(", ").length, 0),
-        "Visit details": list.map((x, i) => `${i + 1}. ${x.n} — ${human(x.s)}${x.r ? ` (${x.r})` : ""}`).join("  |  ").slice(0, 4000),
+        "Visit details": list.map((x, i) => `${i + 1}. ${x.n}: ${human(x.s)}${x.r ? ` (${x.r})` : ""}`).join("  |  ").slice(0, 4000),
         Device: clip(body.info?.kind, 10), OS: clip(body.info?.os, 12), Browser: clip(body.info?.browser, 12),
         Installed: body.info?.installed === true ? "yes" : "no", Lang: clip(body.info?.lang, 4),
       });

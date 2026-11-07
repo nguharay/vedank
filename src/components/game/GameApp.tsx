@@ -4182,7 +4182,7 @@ export function GameApp({
               {lb && me && (
                 <div className="lb-me">
                   <div className="lb-me-top">
-                    <span className="lb-me-pos">{me.position ? (ja ? `${me.position}位` : `#${me.position}`) : "—"}</span>
+                    <span className="lb-me-pos">{me.position ? (ja ? `${me.position}位` : `#${me.position}`) : "-"}</span>
                     <span className="lb-me-stats">
                       <span>📘 <b className="mono">{me.lessons}</b><small> / {lb.lessonsTotal}</small></span>
                       <span><i className="lb-ico" aria-hidden="true">⭐</i><b className="mono">{me.stars}</b></span>
@@ -4540,7 +4540,7 @@ export function GameApp({
           <section className="view active">
             <div className="match-head">
               <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "めくった回数" : "Turns"}</span><span className="match-stat-v mono">{memTurns}</span></div>
-              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "最少回数" : "Fewest"}</span><span className="match-stat-v mono">{memBest || "—"}</span></div>
+              <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "最少回数" : "Fewest"}</span><span className="match-stat-v mono">{memBest || "-"}</span></div>
             </div>
             <p className="match-hint">{lang === "ja" ? "式と答えのペアを覚えて当てよう！" : "Remember where the pairs are."}</p>
             <div className="match-grid">
@@ -5430,7 +5430,7 @@ export function GameApp({
               <button className="buddy-close" aria-label={ja ? "閉じる" : "Close"} onClick={() => { buddy.quiet(); setQuoteBy(null); }}>✕</button>
               <button className="buddy-bubble-text" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
                 {buddy.say.text}
-                {quoteBy && <span className="buddy-cite">— {quoteBy}</span>}
+                {quoteBy && <span className="buddy-cite">{quoteBy}</span>}
               </button>
               <button className="buddy-hide" onClick={() => {
                 buddy.quiet(); setQuoteBy(null); buddy.toggleHidden();

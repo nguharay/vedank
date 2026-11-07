@@ -37,7 +37,7 @@ export async function friendTowns(userId: string): Promise<FriendTown[]> {
   const rows = await db.select({ userId: towns.userId, state: towns.state, visits: towns.visits, updatedAt: towns.updatedAt, name: users.name })
     .from(towns).innerJoin(users, eq(users.id, towns.userId)).where(inArray(towns.userId, ids));
   return rows.map((r) => ({
-    id: r.userId, name: (r.name || "—").slice(0, 24), plots: (r.state as TownSnapshot).plots ?? [], visits: r.visits, updatedAt: r.updatedAt.toISOString(),
+    id: r.userId, name: (r.name || "-").slice(0, 24), plots: (r.state as TownSnapshot).plots ?? [], visits: r.visits, updatedAt: r.updatedAt.toISOString(),
   }));
 }
 
@@ -50,7 +50,7 @@ export async function visitTown(userId: string, ownerId: string): Promise<{ town
     .from(towns).innerJoin(users, eq(users.id, towns.userId)).where(eq(towns.userId, ownerId)).limit(1);
   if (!r) return { error: "This friend hasn't built a town yet." };
   return {
-    town: { id: ownerId, name: (r.name || "—").slice(0, 24), plots: (r.state as TownSnapshot).plots ?? [], visits: r.visits, updatedAt: r.updatedAt.toISOString() },
+    town: { id: ownerId, name: (r.name || "-").slice(0, 24), plots: (r.state as TownSnapshot).plots ?? [], visits: r.visits, updatedAt: r.updatedAt.toISOString() },
     stickers: (r.stickers as Sticker[]) ?? [],
   };
 }
@@ -78,7 +78,7 @@ export async function leaveSticker(userId: string, ownerId: string, emoji: strin
   const allowed = ["👍", "⭐", "❤️", "🎉", "🍣", "🏯", "😍", "🔥"];
   if (!allowed.includes(emoji)) return { error: "Bad sticker." };
   const [me] = await getDb().select({ name: users.name }).from(users).where(eq(users.id, userId)).limit(1);
-  const sticker: Sticker = { from: (me?.name || "—").slice(0, 24), emoji, at: Date.now() };
+  const sticker: Sticker = { from: (me?.name || "-").slice(0, 24), emoji, at: Date.now() };
   /* newest first, capped */
   await getDb().execute(raw`
     update towns

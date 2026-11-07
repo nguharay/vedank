@@ -130,7 +130,7 @@ export function RemindersAdmin({ rows: initial, runs, reach, adminEmail, pushOn 
               <thead><tr><th>When (JST · IST)</th><th>Slot</th><th>Message</th><th>Sent</th></tr></thead>
               <tbody>
                 {runs.map((u, i) => (
-                  <tr key={i}><td className="mono">{fmtWhen(u.ranAt)}</td><td>{u.slot.startsWith("manual") ? "manual" : u.slot}</td><td>{rows.find((r) => r.id === u.reminderId)?.titleJa ?? (u.reminderId ? `#${u.reminderId}` : "—")}</td><td className="mono">{u.sent}</td></tr>
+                  <tr key={i}><td className="mono">{fmtWhen(u.ranAt)}</td><td>{u.slot.startsWith("manual") ? "manual" : u.slot}</td><td>{rows.find((r) => r.id === u.reminderId)?.titleJa ?? (u.reminderId ? `#${u.reminderId}` : "-")}</td><td className="mono">{u.sent}</td></tr>
                 ))}
               </tbody>
             </table>

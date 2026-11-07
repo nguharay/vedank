@@ -205,7 +205,7 @@ export default function SignupPage() {
                   that country's code already selected, one less thing to pick,
                   and it makes clear the code does not belong in the field beside it. */}
               <select name="phoneCode" key={dial} aria-label="Country code" defaultValue={dial}>
-                <option value="">+—</option>
+                <option value="">+</option>
                 {COUNTRIES.map((x) => (
                   <option key={x.code} value={x.dial}>
                     {x.flag} {x.dial}

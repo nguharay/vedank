@@ -209,7 +209,7 @@ export async function createFriendCompetition(
     .from(friendships)
     .where(eq(friendships.userId, hostId));
   if (!(friendCount[0]?.n ?? 0)) {
-    return { ok: false, error: "Add a friend first — a competition needs someone to race." };
+    return { ok: false, error: "Add a friend first. A competition needs someone to race." };
   }
 
   /* One live competition per host at a time, so the friends list is not

@@ -44,7 +44,7 @@ function view(row: Row, userId: string): PartyRoomView {
 
 async function nameOf(id: string) {
   const r = await getDb().select({ name: users.name, username: users.username }).from(users).where(eq(users.id, id)).limit(1);
-  return (r[0]?.username || r[0]?.name || "—").slice(0, 24);
+  return (r[0]?.username || r[0]?.name || "-").slice(0, 24);
 }
 const newSeed = () => Math.floor(Math.random() * 2 ** 31);
 const newSlot = () => Math.floor(Math.random() * 1_000_000);
