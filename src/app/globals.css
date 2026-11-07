@@ -4848,6 +4848,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 /* ---------- digit-sum design lessons (book pp.204–209) ---------- */
 .bd-dsline{ stroke-dasharray:1; stroke-dashoffset:1; animation:bdDsDraw 2.4s ease-in-out .2s forwards; }
 @keyframes bdDsDraw{ to{ stroke-dashoffset:0; } }
+.dsq-line{ animation-duration:1.1s; animation-delay:.15s; }
 @media (prefers-reduced-motion: reduce){ .bd-dsline{ animation:none; stroke-dashoffset:0; } }
 .bd-dspick{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:5px; padding:0 10px 8px; }
 .bd-dspick span{ width:100%; text-align:center; font-size:12px; font-weight:800; color:var(--muted); }

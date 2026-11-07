@@ -1602,7 +1602,8 @@ export const TOPICS: Topic[] = [
       /* In the lesson's stages the player makes the design (pp.208–209): tap
          every box of one digit in the square. 9 is left out — it fills 21
          boxes. Stages 1–2 show the digit sums in the boxes; from stage 3 the
-         boxes show the products and the digit sums are done in the head. */
+         boxes are blank, as in the circle lesson: the player works out
+         row × column and its digit sum for every box themselves. */
       if (stage) {
         const t = bagPick(squareBag, [1, 2, 3, 4, 5, 6, 7, 8], squareLast);
         return { prompt: `DS = ${t}`, answer: t, draw: { t, shape: "square", hint: stage <= 2 } };
