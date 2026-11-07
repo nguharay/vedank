@@ -16,6 +16,10 @@ import {
   BLITZ_LEVELS,
   blitzDiff,
   blitzLevel,
+  blitzHardOn,
+  BLITZ_HARD_MIN_TIER,
+  harderDiff,
+  closeDistractors,
   QUESTIONS_PER_STAGE,
   makeDistractors,
   RANKS_JA,
@@ -1903,13 +1907,23 @@ export function GameApp({
 
   function newBlitzQuestion(score: number) {
     const L = blitzLevel(blitzLevelRef.current);
+    const hard = blitzHardRef.current;
     /* Only the mental topics, and each capped to the difficulty it stays
-       mental at — see BLITZ_MAX_DIFF. */
-    const topic = BLITZ_TOPICS[ri(0, BLITZ_TOPICS.length - 1)];
+       mental at (see BLITZ_MAX_DIFF). In the hard week every question is a
+       step up, and a few redraws keep the answer at 3 to 5 digits: big enough
+       for the close options to share the last two digits, small enough to
+       stay mental (6-digit products are skipped). */
     const rung = L.step > 0 ? Math.min(L.ladder.length - 1, Math.floor(score / L.step)) : 0;
-    const problem = topic.gen(blitzDiff(topic.id, L.ladder[rung]));
+    const draw = () => {
+      const topic = BLITZ_TOPICS[ri(0, BLITZ_TOPICS.length - 1)];
+      const want = hard ? harderDiff(L.ladder[rung]) : L.ladder[rung];
+      return topic.gen(blitzDiff(topic.id, want));
+    };
+    let problem = draw();
+    const fits = (a: number) => Math.abs(a) >= 100 && Math.abs(a) < 100_000;
+    for (let i = 0; hard && i < 10 && !fits(problem.answer); i++) problem = draw();
     setBlitzProblem(problem);
-    setBlitzOptions(shuffle([problem.answer, ...makeDistractors(problem.answer, 3)]));
+    setBlitzOptions(shuffle([problem.answer, ...(hard ? closeDistractors(problem.answer, 3) : makeDistractors(problem.answer, 3))]));
     const boost = blitzBoostRef.current ? BLITZ_BOOST_MS : 0;
     setBlitzTimerMs(Math.max(L.minMs + boost, L.startMs + boost - score * L.decayMs));
     setBlitzTimerKey((k) => k + 1);
@@ -1920,10 +1934,18 @@ export function GameApp({
      already fixes the level both players fight at. */
   function openBlitzPicker() {
     setBlitzPicker(true);
+    /* the hard week depends on the league, which is otherwise only loaded
+       when the League sheet opens */
+    if (!guest && !league) leagueAction().then(setLeague).catch(() => {});
   }
+  const blitzHard = !guest && blitzHardOn(league?.league.tier);
+  const blitzHardRef = useRef(false);
+  const [blitzHardRun, setBlitzHardRun] = useState(false);
 
   function startBlitz(levelId: number = blitzLevelRef.current) {
     blitzLevelRef.current = levelId;
+    blitzHardRef.current = blitzHard;
+    setBlitzHardRun(blitzHard);
     setBlitzLevelId(levelId);
     setBlitzPicker(false);
     fireQuest("blitz_played");
@@ -3380,6 +3402,12 @@ export function GameApp({
               <span>⚡ {ja ? "スピードクイズのレベル" : "Choose your Speed Quiz"}</span>
               <button className="share-close" onClick={() => setBlitzPicker(false)} aria-label={t.share.close}>✕</button>
             </div>
+            {blitzHard && (
+              <div className="lvl-hard">
+                <b>🔥 {ja ? `${leagueOf(BLITZ_HARD_MIN_TIER).icon} ${leagueOf(BLITZ_HARD_MIN_TIER).nameJa}リーグ以上・木〜日はハードモード` : `${leagueOf(BLITZ_HARD_MIN_TIER).icon} ${leagueOf(BLITZ_HARD_MIN_TIER).name} league and up: hard mode Thu to Sun`}</b>
+                <span>{ja ? "問題が1段むずかしく、選択肢は下2けたが同じ。ちゃんと計算しよう！" : "Questions one step harder, and every option ends in the same two digits. Work it out!"}</span>
+              </div>
+            )}
             <div className="lvl-list">
               {BLITZ_LEVELS.map((L) => (
                 <button key={L.id} className="lvl-row" onClick={() => startBlitz(L.id)}>
@@ -5074,7 +5102,7 @@ export function GameApp({
             options={blitzOptions}
             score={blitzScore}
             best={blitzBests[blitzLevelId] ?? 0}
-            levelName={ja ? blitzLevel(blitzLevelId).nameJa : blitzLevel(blitzLevelId).name}
+            levelName={`${ja ? blitzLevel(blitzLevelId).nameJa : blitzLevel(blitzLevelId).name}${blitzHardRun ? (ja ? " · 🔥ハード" : " · 🔥Hard") : ""}`}
             levelIcon={blitzLevel(blitzLevelId).icon}
             hearts={blitzHearts}
             timerKey={blitzTimerKey}

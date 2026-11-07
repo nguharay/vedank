@@ -1840,6 +1840,41 @@ export const BLITZ_LEVELS: BlitzLevel[] = [
   },
 ];
 
+/* ---------- Speed Quiz, hard week ----------
+   From Silver league up, the second half of the league week (Thursday from
+   00:00 UTC, which is 09:00 in Japan, until the Monday reset) the Speed Quiz
+   gets harder: every question is one difficulty up (still capped by
+   BLITZ_MAX_DIFF, so it stays mental), and the wrong options share the right
+   answer's last two digits, so a glance at the units digit no longer picks
+   the answer. */
+export const BLITZ_HARD_MIN_TIER = 2;            /* Silver */
+export function blitzHardOn(tier: number | null | undefined, now = new Date()): boolean {
+  if (tier === null || tier === undefined || tier < BLITZ_HARD_MIN_TIER) return false;
+  return (now.getUTCDay() + 6) % 7 >= 3;          /* Monday = 0 … Thursday = 3 */
+}
+export function harderDiff(d: Difficulty): Difficulty {
+  return d === "easy" ? "medium" : "hard";
+}
+/* Wrong options that agree with the answer in the units AND tens digit:
+   3-digit-and-up answers move by hundreds (or a thousand); 2-digit answers
+   can only keep the units digit, so they move by tens; a single digit (a
+   digit sum) keeps the usual 1–9 decoys. Every decoy keeps the answer's
+   number of digits, so length doesn't give it away either. */
+export function closeDistractors(correct: number, howMany: number): number[] {
+  const a = Math.abs(correct), len = String(a).length, sign = correct < 0 ? -1 : 1;
+  if (a < 10) return makeDistractors(correct, howMany);
+  const steps = a >= 1000 ? [100, 200, 300, 1000, 400, 500] : a >= 100 ? [100, 200, 300, 400, 500, 600] : [10, 20, 30, 40, 50, 60];
+  const cands: number[] = [];
+  for (const st of steps) for (const sg of [1, -1]) {
+    const d = a + sg * st;
+    if (d > 0 && String(d).length === len && d !== a) cands.push(d * sign);
+  }
+  for (let i = cands.length - 1; i > 0; i--) { const j = ri(0, i); [cands[i], cands[j]] = [cands[j], cands[i]]; }
+  const out = [...new Set(cands)].slice(0, howMany);
+  /* (never short in practice; topped up the usual way just in case) */
+  return out.length >= howMany ? out : [...out, ...makeDistractors(correct, howMany - out.length).filter((x) => !out.includes(x))].slice(0, howMany);
+}
+
 export function blitzLevel(id: number): BlitzLevel {
   return BLITZ_LEVELS.find((l) => l.id === id) ?? BLITZ_LEVELS[1];
 }
