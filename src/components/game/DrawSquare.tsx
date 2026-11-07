@@ -9,7 +9,9 @@ const dsOf = (n: number) => 1 + ((n - 1) % 9);
 /* Book pp.208–209, "Colour all the 8s": the player makes the design in the
    Digit-Sum Square. Every box is row × column; the player taps each box whose
    digit sum is `t`. With `hint` the boxes show the digit sums (find them);
-   without it they show the products (work them out). Two slips are forgiven;
+   without it the boxes are blank and only the row and column numbers show,
+   so the player works out row × column and its digit sum for each box
+   (as in the circle lesson from battle 3). Two slips are forgiven;
    a third ends the question and the design is shown with its lines. */
 export function DrawSquare({ t, lang, hint = true, onDone }: { t: number; lang: Lang; hint?: boolean; onDone: (ok: boolean) => void }) {
   const ja = lang === "ja";
@@ -32,7 +34,9 @@ export function DrawSquare({ t, lang, hint = true, onDone }: { t: number; lang: 
 
   function finish(how: "won" | "lost") {
     overRef.current = how; setOver(how);
-    setTimeout(() => onDone(how === "won"), how === "won" ? 700 : 1100);
+    /* hold the finished design until its line has drawn (.dsq-line: 1.1 s
+       after a 0.15 s pause) and the player has had a moment to look at it */
+    setTimeout(() => onDone(how === "won"), how === "won" ? 2000 : 2400);
   }
   function tap(q: { r: number; c: number; d: number }) {
     if (overRef.current) return;
@@ -81,18 +85,20 @@ export function DrawSquare({ t, lang, hint = true, onDone }: { t: number; lang: 
                 fill={bad ? "#E5484D" : on ? DS_COL[t] : "var(--surface)"} fillOpacity={on || bad ? 0.9 : 1}
                 stroke="#5B3FA0" strokeOpacity=".7" strokeWidth=".8"
               />
-              <text x={x} y={y + 4.5} textAnchor="middle" style={{ ...num, fontSize: hint ? 13 : 11, fill: on || bad ? "#fff" : "var(--ink)" }}>
-                {hint ? q.d : q.r * q.c}
-              </text>
+              {(hint || on) && (
+                <text x={x} y={y + 4.5} textAnchor="middle" style={{ ...num, fontSize: 13, fill: on || bad ? "#fff" : "var(--ink)" }}>
+                  {q.d}
+                </text>
+              )}
             </g>
           );
         })}
-        {over && <path d={dsSquarePath(t, ctr)} pathLength={1} className="bd-dsline" fill="none" stroke="var(--ink)" strokeWidth="2.4" strokeLinejoin="round" />}
+        {over && <path d={dsSquarePath(t, ctr)} pathLength={1} className="bd-dsline dsq-line" fill="none" stroke="var(--ink)" strokeWidth="2.4" strokeLinejoin="round" />}
       </svg>
       <div className="dc-trail mono">
         {over ? "" : hint
           ? (ja ? `数字和が ${t} のマスをさがそう` : `Find every ${t}`)
-          : (ja ? `たて × よこ の数字和が ${t} になるマスは？` : `Row × column: which boxes make ${t}?`)}
+          : (ja ? `たて × よこ の数字和が ${t} になるマスをタップ` : `Tap every box where row × column has Digit Sum ${t}`)}
         {misses > 0 && !over && <span className="dc-miss">{ja ? `  ✕ あと${left}回まで` : `  ✕ ${left} slip${left === 1 ? "" : "s"} left`}</span>}
       </div>
     </div>

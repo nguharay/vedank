@@ -1800,32 +1800,22 @@ function DigitPicker({ value, onPick, label }: { value: number; onPick: (d: numb
 /* p.207: the Digit-Sum square — row × column, each cell in its digit's colour.
    With `pick`, only that digit's boxes are coloured (pp.208–209), and `lines`
    joins them in turn around the centre, which is the shape they hide. */
-/* The lines that join one digit's boxes (pp.208–209). 1, 2, 4, 5, 7 and 8 sit
-   once in each row: joined in order of their angle around the centre, the line
-   traces a ring. 3, 6 and 9 share rows and columns, so they are joined along
-   those, which draws a lattice. `ctr` gives a box's centre. */
+/* The lines that join one digit's boxes (pp.208–209): taken in order of their
+   angle around the middle of those boxes and closed, so every digit draws one
+   boundary. (3 and 6 used to be joined along whole rows and columns instead,
+   which ran the line over boxes holding other digits; their boxes centre on
+   4.5, not 5, so they are ordered around their own middle to stay symmetric.)
+   `ctr` gives a box's centre. */
 export function dsSquarePath(pick: number, ctr: (r: number, c: number) => readonly [number, number]) {
   const mine: { r: number; c: number }[] = [];
   for (let r = 1; r <= 9; r++) for (let c = 1; c <= 9; c++) if (dsOf(r * c) === pick) mine.push({ r, c });
-  let d = "";
-  if (pick % 3 === 0) {
-    const runs = new Map<string, (readonly [number, number])[]>();
-    for (const q of mine) {
-      for (const key of [`r${q.r}`, `c${q.c}`]) runs.set(key, [...(runs.get(key) ?? []), ctr(q.r, q.c)]);
-    }
-    for (const run of runs.values()) {
-      if (run.length < 2) continue;
-      const [a, b] = [run[0], run[run.length - 1]];
-      d += `M${a[0].toFixed(1)},${a[1].toFixed(1)} L${b[0].toFixed(1)},${b[1].toFixed(1)} `;
-    }
-  } else if (mine.length > 1) {
-    d = mine
-      .map((q) => ({ q, a: Math.atan2(q.r - 5, q.c - 5) }))
-      .sort((m, n) => m.a - n.a)
-      .map(({ q }, i) => `${i ? "L" : "M"}${ctr(q.r, q.c)[0].toFixed(1)},${ctr(q.r, q.c)[1].toFixed(1)}`)
-      .join(" ") + " Z";
-  }
-  return d;
+  if (mine.length < 2) return "";
+  const mr = mine.reduce((a, q) => a + q.r, 0) / mine.length, mc = mine.reduce((a, q) => a + q.c, 0) / mine.length;
+  return mine
+    .map((q) => ({ q, a: Math.atan2(q.r - mr, q.c - mc), d: Math.hypot(q.r - mr, q.c - mc) }))
+    .sort((m, n) => m.a - n.a || m.d - n.d)
+    .map(({ q }, i) => `${i ? "L" : "M"}${ctr(q.r, q.c)[0].toFixed(1)},${ctr(q.r, q.c)[1].toFixed(1)}`)
+    .join(" ") + " Z";
 }
 
 function DsSquareFig({ pick, lines = false }: { pick?: number; lines?: boolean }) {
