@@ -21,6 +21,15 @@ function readBest(key: string) {
 function writeBest(key: string, v: number) {
   try { localStorage.setItem(key, String(v)); } catch {}
 }
+/* The level to open a puzzle game on: where the player was last time (kept
+   in `atKey`), or, for players from before that was kept, the one after
+   their best. */
+function resumeLevel(atKey: string, bestKey: string) {
+  const at = readBest(atKey);
+  if (at > 0) return at;
+  const best = readBest(bestKey);
+  return best > 0 ? best + 1 : 1;
+}
 const yen = (n: number) => `¥${n.toLocaleString("en-US")}`;
 /* Only ever called from handlers and timers, never during render. */
 const clock = () => performance.now();
@@ -230,6 +239,7 @@ export function KonbiniCashier({ lang, sound, celebrate, onCorrect, autoStart }:
    is the next level; a wrong check marks the wrong cells so you can fix
    them. */
 const CROSS_KEY = "sutraSprint.crossBest";
+const CROSS_AT = "sutraSprint.crossAt";        /* the level to resume on */
 
 export function NumberCrossword({ lang, sound, celebrate, onCorrect }: Props) {
   const ja = lang === "ja";
@@ -246,16 +256,16 @@ export function NumberCrossword({ lang, sound, celebrate, onCorrect }: Props) {
     const g = buildCrossword(lv);
     setLevel(lv); setGrid(g); setVals({}); setWrong([]); setSolved(false); setTries(0);
     setSel(g.blanks[0] ?? null);
+    writeBest(CROSS_AT, lv);
   }
-  /* first grid on mount */
+  /* first grid on mount: back on the level the player was on last time */
   const started = useRef(false);
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    const g = buildCrossword(1);
     /* the puzzle is random, so it is built after mount, not during render */
-    setGrid(g); setSel(g.blanks[0] ?? null);
-  }, []);
+    load(resumeLevel(CROSS_AT, CROSS_KEY));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const maxDigits = grid && Math.max(...grid.cells) >= 10 ? 2 : 1;
 
@@ -270,6 +280,7 @@ export function NumberCrossword({ lang, sound, celebrate, onCorrect }: Props) {
     if (rowsOk && colsOk) {
       setSolved(true); setWrong([]); sound.stageClear(); haptic([15, 30, 15]); onCorrect?.(grid.blanks.length);
       if (level > best) { writeBest(CROSS_KEY, level); setBest(level); }
+      writeBest(CROSS_AT, level + 1);
       if (level % 3 === 0) celebrate();
       return;
     }
@@ -338,6 +349,7 @@ export function NumberCrossword({ lang, sound, celebrate, onCorrect }: Props) {
           <button className="cross-key check" onClick={() => check(vals)} disabled={grid.blanks.some((i) => !(vals[i] ?? "").length)}>{ja ? "チェック" : "Check"}</button>
         </div>
       )}
+      {level > 1 && <button className="cm-reset" onClick={() => load(1)}>⏮ {ja ? "レベル1からやりなおす" : "Start again from level 1"}</button>}
     </div>
   );
 }
@@ -353,6 +365,7 @@ function FragmentRow({ children }: { children: React.ReactNode }) {
    it doesn't, so a wrong line can be fixed at once. Solve all for the next
    level. */
 const CROSSMATH_KEY = "sutraSprint.crossMathBest";
+const CROSSMATH_AT = "sutraSprint.crossMathAt";  /* the level to resume on */
 const CM_INTRO: Record<number, [string, string]> = {
   3: ["Level 3: × joins in!", "レベル3：✖ が登場！"],
   4: ["Level 4: two frames, linked at the corner", "レベル4：2つのわくが角でつながる"],
@@ -373,6 +386,7 @@ export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
 
   function setup(g: CrossMath, lv: number) {
     setLevel(lv); setP(g);
+    writeBest(CROSSMATH_AT, lv);
     setFilled(g.cells.map((c) => (c && c.t === "num" && !c.blank ? c.v : null)));
     const t = g.blanks.map((i) => (g.cells[i] as { v: number }).v);
     for (let i = t.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [t[i], t[j]] = [t[j], t[i]]; }
@@ -385,7 +399,9 @@ export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
     /* random, so built after mount rather than during render (?cmshape=田 forces a shape for review) */
     let force: string | undefined;
     try { force = new URLSearchParams(window.location.search).get("cmshape") || undefined; } catch {}
-    setup(buildCrossMath(force ? 7 : 1, force), force ? 7 : 1);
+    /* back on the level the player was on last time */
+    const lv = force ? 7 : resumeLevel(CROSSMATH_AT, CROSSMATH_KEY);
+    setup(buildCrossMath(lv, force), lv);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!p) return <div className="rg" />;
@@ -411,6 +427,7 @@ export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
     if (cmSolved(p, next)) {
       setSolved(true); setSel(null); sound.stageClear(); haptic([15, 30, 15]); onCorrect?.(p.blanks.length);
       if (level > best) { writeBest(CROSSMATH_KEY, level); setBest(level); }
+      writeBest(CROSSMATH_AT, level + 1);
       if (level % 3 === 0) celebrate();
     } else { setTries((n) => n + 1); sound.wrong(); haptic(30); setSel(null); }
   }
@@ -471,6 +488,7 @@ export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
           <button className="cm-reset" onClick={resetAll}>↺ {ja ? "はじめから" : "Reset"}</button>
         </>
       )}
+      {level > 1 && <button className="cm-reset" onClick={() => setup(buildCrossMath(1), 1)}>⏮ {ja ? "レベル1からやりなおす" : "Start again from level 1"}</button>}
     </div>
   );
 }

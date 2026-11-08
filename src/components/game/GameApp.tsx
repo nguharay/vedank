@@ -1112,7 +1112,7 @@ export function GameApp({
       if (savedView === "topic" && savedTopic) setView("topic");
       else if (savedView === "stagemap" && savedTopic) setView("stagemap");
       else if (savedView === "arena") {
-        loadPuzzle(0);
+        loadPuzzle(dojoResumeIdx());
         setView("arena");
       }
       /* A game round cannot survive a refresh, but the shelf it came from
@@ -1667,11 +1667,23 @@ export function GameApp({
   const [puzzleElapsed, setPuzzleElapsed] = useState(0);
   const puzzleStartRef = useRef<number>(0);
 
+  /* the Dojo puzzle to open: the one the player was on last time, else the
+     first one not yet solved */
+  function dojoResumeIdx() {
+    try {
+      const at = localStorage.getItem("sutraSprint.dojoAt");
+      if (at !== null && Number.isFinite(+at)) return +at;
+    } catch {}
+    const first = PUZZLES.findIndex((pz) => !progress.arena.solved[pz.id]);
+    return first < 0 ? 0 : first;
+  }
   function loadPuzzle(i: number) {
     const idx = ((i % PUZZLES.length) + PUZZLES.length) % PUZZLES.length;
     const p = PUZZLES[idx];
     const start = p.start();
     setPuzIdx(idx);
+    /* remember where the player is (not during Matchstick Sprint, which deals its own order) */
+    if (!sprintRef.current) { try { localStorage.setItem("sutraSprint.dojoAt", String(idx)); } catch {} }
     setStartGlyphs(start);
     setGlyphs(cloneGlyphs(start));
     setTray(new Array(TRAY_SIZE).fill(false));
@@ -2212,7 +2224,7 @@ export function GameApp({
       name: "Matchstick Dojo", nameJa: "マッチ棒道場",
       blurb: "Move one matchstick to fix the sum.",
       blurbJa: "マッチ棒を1本動かして式を直そう。",
-      best: solvedCount, start: shelf(() => { if (guestLocked("arena")) return; refreshShop(); loadPuzzle(puzIdx); setView("arena"); }),
+      best: solvedCount, start: shelf(() => { if (guestLocked("arena")) return; refreshShop(); loadPuzzle(dojoResumeIdx()); setView("arena"); }),
     },
     /* (Matchstick Sprint left the shelf: two matchstick games was one too
        many. The mode itself still exists for old links.) */
