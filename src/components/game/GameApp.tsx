@@ -1,4 +1,5 @@
 "use client";
+import { FestiveBanner } from "./FestiveBanner";
 
 import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
@@ -4260,6 +4261,7 @@ export function GameApp({
       ))}
 
       <main>
+        {view === "home" && <FestiveBanner lang={lang} />}
         {/* Says what a guest is and what they stand to lose, without a modal in
             front of the thing they came to try. */}
         {guest && view === "home" && (
