@@ -118,10 +118,12 @@ export async function submitDaily(userId: string, correct: number, elapsedMs: nu
 }
 
 /** This week's table for the player's own tier. */
-export async function getLeagueStanding(userId: string, limit = 25): Promise<LeagueStanding> {
+/* The player's own league this week: everyone in this tier who has played
+   this week. Built from the same tables as the admin "All leagues" view
+   (minus its waiting players, who have not played yet), so the two agree. */
+export async function getLeagueStanding(userId: string): Promise<LeagueStanding> {
   const db = getDb();
   const week = weekStartKey();
-
   const mine = (
     await db
       .select()
@@ -131,41 +133,19 @@ export async function getLeagueStanding(userId: string, limit = 25): Promise<Lea
   )[0];
   /* not on this week's table yet: show the league they will join */
   const tier = mine?.tier ?? (await tierForWeek(userId, week));
-  const [{ n: size }] = await db.select({ n: sql<number>`count(*)::int` }).from(leaguePoints)
-    .where(and(eq(leaguePoints.weekStart, week), eq(leaguePoints.tier, tier)));
-  const moving = size >= 5 ? Math.max(1, Math.floor(size * 0.2)) : 0;
-
-  const rows = await db
-    .select({
-      userId: leaguePoints.userId,
-      points: leaguePoints.points,
-      name: users.name,
-      username: users.username,
-    })
-    .from(leaguePoints)
-    .innerJoin(users, eq(users.id, leaguePoints.userId))
-    .where(and(eq(leaguePoints.weekStart, week), eq(leaguePoints.tier, tier)))
-    .orderBy(desc(leaguePoints.points))
-    .limit(limit);
-
-  const table: LeagueRow[] = rows.map((r, i) => ({
-    userId: r.userId,
-    name: r.username || r.name,
-    points: r.points,
-    rank: i + 1,
-    isMe: r.userId === userId,
-  }));
-
-  const me = table.find((r) => r.isMe);
+  const all = await getAllLeagues(userId, week);
+  const table = all.tables.find((t) => t.league.tier === tier);
+  const rows = (table?.rows ?? []).filter((r) => !r.waiting);
+  const me = rows.find((r) => r.isMe && !r.waiting);
   return {
     league: leagueOf(tier),
     weekStart: week,
-    rows: table,
+    rows,
     myRank: me?.rank ?? 0,
     myPoints: mine?.points ?? 0,
-    size,
-    promote: tier < TOP_LEAGUE ? moving : 0,
-    relegate: tier > 0 ? moving : 0,
+    size: table?.size ?? 0,
+    promote: table?.promote ?? 0,
+    relegate: table?.relegate ?? 0,
   };
 }
 
@@ -196,8 +176,10 @@ export async function getAllLeagues(viewerId: string, week = weekStartKey()): Pr
   for (const r of prev) prevByTier.set(r.tier, [...(prevByTier.get(r.tier) ?? []), r]);
   const waiting: { userId: string; name: string; tier: number }[] = [];
   for (const [tier, list] of prevByTier) {
-    list.forEach((r, i) => {
-      if (!played.has(r.userId)) waiting.push({ userId: r.userId, name: r.username || r.name, tier: nextTier(tier, i + 1, list.length) });
+    list.forEach((r) => {
+      /* the same settlement as tierForWeek: a tie shares the better rank */
+      const rank = 1 + list.filter((o) => o.points > r.points).length;
+      if (!played.has(r.userId)) waiting.push({ userId: r.userId, name: r.username || r.name, tier: nextTier(tier, rank, list.length) });
     });
   }
 

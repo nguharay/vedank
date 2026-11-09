@@ -4,7 +4,11 @@ import { useState } from "react";
 
 /* A greeting at the very top of Home for a festival, shown only inside its
    window (Japan time) and gone by itself afterwards. */
-type Festival = { id: string; from: string; until: string; title: { en: string; ja: string }; body: { en: string; ja: string } };
+type Festival = {
+  id: string; from: string; until: string; title: { en: string; ja: string }; body: { en: string; ja: string };
+  /* an optional button: a short label, never the bare URL */
+  link?: { href: string; label: { en: string; ja: string } };
+};
 
 const FESTIVALS: Festival[] = [
   {
@@ -20,6 +24,7 @@ const FESTIVALS: Festival[] = [
       en: "Diwali is the Indian festival that celebrates light over darkness, good over evil, and knowledge over ignorance. ✨",
       ja: "ディワリは、光が闇に、善が悪に、そして知恵が無知に勝つことを祝うインドのお祭りです。✨",
     },
+    link: { href: "https://www.instagram.com/vedankac/", label: { en: "📸 @vedankac on Instagram", ja: "📸 Instagramで見る @vedankac" } },
   },
 ];
 
@@ -35,6 +40,7 @@ export function FestiveBanner({ lang }: { lang: "en" | "ja" }) {
       <div className="festive-body">
         <strong>{f.title[lang]}</strong>
         <span>{f.body[lang]}</span>
+        {f.link && <a className="festive-link" href={f.link.href} target="_blank" rel="noopener noreferrer">{f.link.label[lang]}</a>}
       </div>
     </div>
   );
