@@ -3,7 +3,7 @@ import { FestiveBanner } from "./FestiveBanner";
 
 import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
-import { transition } from "./util";
+import { fitStyle, transition } from "./util";
 import { UiIcon, GameArt } from "./Art";
 import { PartyGames } from "./views/PartyGames";
 import { StreakIcon } from "./StreakIcon";
@@ -4499,8 +4499,8 @@ export function GameApp({
                   {ttt.cells.map((c, i) => {
                     const win = ttt.line?.includes(i);
                     return (
-                      <button key={i} className={`ttt-cell${c.owner ? " " + c.owner.toLowerCase() : ""}${win ? " win" : ""}${tttSel === i ? " sel" : ""}`} onClick={() => tttTap(i)} disabled={!!c.owner || !tttMyTurn}>
-                        {c.owner ? <span className="ttt-mark">{c.owner === "X" ? "✕" : "○"}</span> : <span className="ttt-sum mono">{c.prompt}</span>}
+                      <button key={i} className={`ttt-cell fit-tile${c.owner ? " " + c.owner.toLowerCase() : ""}${win ? " win" : ""}${tttSel === i ? " sel" : ""}`} onClick={() => tttTap(i)} disabled={!!c.owner || !tttMyTurn}>
+                        {c.owner ? <span className="ttt-mark">{c.owner === "X" ? "✕" : "○"}</span> : <span className="ttt-sum fit-text mono" style={fitStyle(c.prompt)}>{c.prompt}</span>}
                       </button>
                     );
                   })}
@@ -4592,12 +4592,12 @@ export function GameApp({
                 return (
                   <button
                     key={t.id}
-                    className={`match-tile mem-tile${up || done ? " up" : ""}${t.kind === "ans" && (up || done) ? " ans" : ""}${done ? " cleared" : ""}`}
+                    className={`match-tile mem-tile fit-tile${up || done ? " up" : ""}${t.kind === "ans" && (up || done) ? " ans" : ""}${done ? " cleared" : ""}`}
                     onClick={() => onMemTap(t)}
                     disabled={done}
                     aria-label={up || done ? t.text : lang === "ja" ? "ふせてあるカード" : "face-down card"}
                   >
-                    <span className="mono">{up || done ? t.text : "?"}</span>
+                    <span className="mono fit-text" style={fitStyle(up || done ? t.text : "?")}>{up || done ? t.text : "?"}</span>
                   </button>
                 );
               })}
@@ -4933,12 +4933,12 @@ export function GameApp({
                 return (
                   <button
                     key={t.id}
-                    className={`match-tile${t.kind === "ans" ? " ans" : ""}${cleared ? " cleared" : ""}${picked ? " picked" : ""}${wrong ? " wrong" : ""}`}
+                    className={`match-tile fit-tile${t.kind === "ans" ? " ans" : ""}${cleared ? " cleared" : ""}${picked ? " picked" : ""}${wrong ? " wrong" : ""}`}
                     onClick={() => onMatchTap(t)}
                     disabled={cleared}
                     aria-label={t.text}
                   >
-                    <span className="mono">{t.text}</span>
+                    <span className="mono fit-text" style={fitStyle(t.text)}>{t.text}</span>
                   </button>
                 );
               })}
