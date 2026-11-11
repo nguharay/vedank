@@ -2221,7 +2221,13 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .ttt-mark{ font-size:clamp(34px, 46cqi, 84px); font-weight:900; line-height:1; animation:tttPop .28s cubic-bezier(.2,1.6,.4,1) both; }
 .ttt-cell.x .ttt-mark{ color:var(--sun1); } .ttt-cell.o .ttt-mark{ color:var(--sky2); }
 @keyframes tttPop{ from{ transform:scale(.3) rotate(-12deg); opacity:0 } to{ transform:scale(1) rotate(0); opacity:1 } }
-.ttt-sum{ font-size:clamp(13px, 14cqi, 26px); font-weight:800; color:var(--ink); overflow-wrap:anywhere; text-align:center; }
+.ttt-sum{ font-weight:800; color:var(--ink); text-align:center; }
+/* tiles whose sums size themselves to the tile (util.tsx fitStyle) */
+.fit-tile{ container-type:inline-size; }
+.fit-text{ display:block; white-space:nowrap; line-height:1.1; letter-spacing:-.3px;
+  font-size:min(var(--fit-max, 30px), calc((100cqw - 10px) / (var(--units, 4) * .58))); }
+.ttt-cell .fit-text{ --fit-max:34px; }
+.match-tile .fit-text{ --fit-max:30px; }
 .ttt-status{ text-align:center; margin-top:14px; min-height:22px; font-size:16px; font-weight:900; color:var(--ink); }
 .ttt-actions{ display:flex; gap:8px; justify-content:center; margin-top:12px; }
 .ttt-actions .btn{ padding:11px 18px; font-size:13.5px; }

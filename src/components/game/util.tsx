@@ -142,3 +142,13 @@ export function transition(update: () => void, dir: NavDir = "forward") {
     setTimeout(once, 800);
   } catch { once(); }
 }
+
+/* Big, readable sums on game tiles (older players too): a tile's text is sized
+   from the tile's own width (the tile sets container-type) and the text's
+   length in "units" (a figure or sign is one, a space a third), so short sums
+   are large and long ones shrink only as far as they must. Use as
+   style={fitStyle(text)} on the text inside a tile with class "fit-tile". */
+export function fitStyle(text: string): Record<string, string> {
+  const units = [...text].reduce((a, ch) => a + (/\s/.test(ch) ? 0.34 : 1), 0);
+  return { ["--units" as string]: String(Math.max(2.4, units)) };
+}

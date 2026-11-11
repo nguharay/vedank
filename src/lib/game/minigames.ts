@@ -151,7 +151,11 @@ export const QUICK_GAMES: QuickGame[] = [
     blurb: "Fold the digits down to one.", blurbJa: "各位の数字をたして、一けたにしよう。",
     hintJa: "数字をぜんぶたして、一けたになるまでくり返す", hintEn: "Add the digits until one remains",
     next: (streak) => {
-      const n = ri(streak >= 6 ? 1000 : 100, streak >= 6 ? 99999 : 9999);
+      /* longer numbers as the streak grows: 3–4 digits, 4–5 from streak 6,
+         then 6 from 20, 7 from 35, 8 from 50 and 9 from 65 on */
+      const digits = streak >= 65 ? 9 : streak >= 50 ? 8 : streak >= 35 ? 7 : streak >= 20 ? 6 : 0;
+      const n = digits ? ri(10 ** (digits - 1), 10 ** digits - 1)
+        : ri(streak >= 6 ? 1000 : 100, streak >= 6 ? 99999 : 9999);
       const ds = digitSum(n);
       const o = numericOptions(ds, 4, (x) => [1,2,3,4,5,6,7,8,9].filter((d) => d !== x));
       const firstPass = String(n).split("").reduce((s, c) => s + Number(c), 0);
