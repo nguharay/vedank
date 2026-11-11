@@ -285,21 +285,6 @@ export function GameApp({
   /* the League's "how it works" (the ⓘ button) */
   const [leagueInfo, setLeagueInfo] = useState(false);
   /* time until the league week ends (Monday 00:00 UTC, when the server starts a new week) */
-  /* The labelled lines in a league table: under the last player who moves up,
-     and above the first who moves down, so the ⬆️/⬇️ zones explain themselves. */
-  function leagueDivider(kind: "up" | "down", tier: number, jaText: boolean) {
-    const to = leagueOf(kind === "up" ? tier + 1 : tier - 1);
-    const name = jaText ? `${to.nameJa}リーグ` : to.name;
-    return (
-      <div className={`league-divider ${kind}`} role="separator">
-        <span>
-          {kind === "up"
-            ? (jaText ? `⬆️ ここまでの人は 月曜に ${to.icon} ${name} へ上がる` : `⬆️ Above this line: up to ${to.icon} ${name} on Monday`)
-            : (jaText ? `⬇️ ここから下の人は 月曜に ${to.icon} ${name} へ下がる` : `⬇️ Below this line: down to ${to.icon} ${name} on Monday`)}
-        </span>
-      </div>
-    );
-  }
 
   function leagueTimeLeft(jaText: boolean): string {
     const now = new Date();
@@ -4092,19 +4077,17 @@ export function GameApp({
                   <div key={tb.league.tier} className="league-all-group">
                     <div className="league-all-head" style={{ ["--lc" as string]: tb.league.color }}>
                       <span>{tb.league.icon} {ja ? tb.league.nameJa : tb.league.name}</span>
-                      <small>{ja ? `${tb.size}人` : `${tb.size} players`}{tb.rows.some((r) => r.waiting) ? (ja ? `（まだ ${tb.rows.filter((r) => r.waiting).length}人）` : ` (+${tb.rows.filter((r) => r.waiting).length} yet to play)`) : ""}{tb.promote ? (ja ? ` · 上へ${tb.promote}人` : ` · ${tb.promote} go up`) : ""}{tb.relegate ? (ja ? ` · 下へ${tb.relegate}人` : ` · ${tb.relegate} go down`) : ""}</small>
+                      <small>{ja ? `${tb.size}人` : `${tb.size} players`}{tb.rows.some((r) => r.waiting) ? (ja ? `（まだ ${tb.rows.filter((r) => r.waiting).length}人）` : ` (+${tb.rows.filter((r) => r.waiting).length} yet to play)`) : ""}{tb.target ? (ja ? ` · 目標 ${tb.target.toLocaleString()}pt` : ` · target ${tb.target.toLocaleString()} pts`) : ""}</small>
                     </div>
                     {tb.rows.filter((r) => !leagueHideIdle || !r.waiting).map((r) => (
                       <Fragment key={r.userId}>
-                      {tb.relegate > 0 && r.rank === tb.size - tb.relegate + 1 && leagueDivider("down", tb.league.tier, ja)}
-                      <div className={`leaderboard-row${r.isMe ? " me" : ""}${r.waiting ? " waiting" : ""}${tb.promote > 0 && r.rank > 0 && r.rank <= tb.promote ? " zone-up" : ""}${tb.relegate > 0 && r.rank > tb.size - tb.relegate ? " zone-down" : ""}`}>
+                      <div className={`leaderboard-row${r.isMe ? " me" : ""}${r.waiting ? " waiting" : ""}${!r.waiting && tb.target !== null && r.points >= tb.target ? " zone-up" : ""}`}>
                         <span className="leaderboard-rank">{r.waiting ? "–" : r.rank}</span>
                         <span className="leaderboard-name">{r.name}</span>
                         {r.waiting
                           ? <span className="leaderboard-gems waiting-tag">{ja ? "今週まだ" : "not played yet"}</span>
                           : <span className="leaderboard-gems"><i className="lb-ico" aria-hidden="true">⚡</i>{r.points}</span>}
                       </div>
-                      {tb.promote > 0 && r.rank === tb.promote && r.rank < tb.size && leagueDivider("up", tb.league.tier, ja)}
                       </Fragment>
                     ))}
                   </div>
@@ -4130,41 +4113,51 @@ export function GameApp({
               ))}
             </div>
 
-            {/* how it works, in three steps */}
+            {/* how it works, in four steps */}
             <ol className="league-how">
               <li><b>📅</b><span>{ja ? <>毎日<strong>「デイリーチャレンジ」</strong>（8問）を1回やる</> : <>Play the <strong>Daily Challenge</strong> (8 questions) once a day</>}</span></li>
               <li><b>⚡</b><span>{ja ? <>正解1問 <strong>100pt</strong>＋はやさボーナス＋全問正解 <strong>150pt</strong>。1週間ぶん合計</> : <><strong>100 pts</strong> per right answer + speed bonus + <strong>150</strong> for all 8. Added up over the week</>}</span></li>
-              <li><b>🏁</b><span>{ja ? <>毎週月曜の朝9時にしめきり。<strong>上位20%は上のリーグへ⬆️</strong>、下位20%は下へ⬇️（5人以上のとき）</> : <>Ends every Monday 09:00 (Japan). <strong>Top 20% move up a league ⬆️</strong>, bottom 20% move down ⬇️ (with 5+ players)</>}</span></li>
+              <li><b>⬆️</b><span>{ja ? <>1週間で<strong>リーグの目標ポイント</strong>に届いたら、月曜の朝9時に<strong>1つ上のリーグへ</strong></> : <>Reach your <strong>{"league's weekly target"}</strong> and you <strong>move up a league</strong> on Monday 09:00 (Japan)</>}</span></li>
+              <li><b>⬇️</b><span>{ja ? <>休んだ日の夜にお知らせが届くよ。<strong>2日続けて休むと、1つ下のリーグへ</strong></> : <>Miss a day and you get a reminder that evening. <strong>Miss 2 days in a row and you drop a league</strong></>}</span></li>
             </ol>
             </div>)}
             <div className="league-ends">⏳ {ja ? `今週のしめきりまで ${leagueTimeLeft(true)}` : `Week ends in ${leagueTimeLeft(false)}`}</div>
             {league && !leagueLoading && (() => {
-              /* One plain sentence: where you are, and what Monday will do. */
+              /* Where you are against this week's target, and a warning when a
+                 missed day puts the league at risk. */
               const L = league.league, up = leagueOf(L.tier + 1), down = leagueOf(L.tier - 1);
               const upName = ja ? `${up.icon} ${up.nameJa}リーグ` : `${up.icon} ${up.name}`;
               const downName = ja ? `${down.icon} ${down.nameJa}リーグ` : `${down.icon} ${down.name}`;
-              const r = league.myRank;
+              const curName = ja ? `${L.icon} ${L.nameJa}リーグ` : `${L.icon} ${L.name}`;
+              const tgt = league.target, pts = league.myPoints;
               let tone = "mid", line: string;
-              if (!r) {
-                line = ja ? "「デイリーチャレンジ」をやると、今週のリーグに参加できるよ！" : "Play today's Daily Challenge to join this week's league!";
-              } else if (!league.promote && !league.relegate) {
-                line = L.tier === TOP_LEAGUE
-                  ? (ja ? "いちばん上のリーグ！ この調子でがんばろう。" : "You're in the top league! Keep it up.")
-                  : (ja ? `${league.size}人しかいないので、今週はだれも上がり下がりしないよ（5人以上で動く）。` : `Only ${league.size} players, so nobody moves this week (it takes 5 or more).`);
-              } else if (league.promote && r <= league.promote) {
+              if (tgt === null) {
+                line = ja ? "いちばん上のリーグ！ 毎日つづけて、ここにのころう。" : "You're in the top league! Play every day to stay here.";
+              } else if (pts >= tgt) {
                 tone = "up";
-                line = ja ? `${r}位！ このまま上位${league.promote}人に入っていれば、月曜に ${upName} へ上がるよ⬆️` : `#${r}! Stay in the top ${league.promote} and you move up to ${upName} on Monday ⬆️`;
-              } else if (league.relegate && r > league.size - league.relegate) {
-                tone = "down";
-                line = ja ? `${r}位。このままだと月曜に ${downName} へ下がっちゃう。チャレンジでポイントをかせごう！` : `#${r}. If it stays like this you drop to ${downName} on Monday. Play the Daily Challenge to climb!`;
+                line = ja ? `🎉 目標達成！ 月曜に ${upName} へ上がるよ⬆️` : `🎉 Target reached! You move up to ${upName} on Monday ⬆️`;
+              } else if (!league.myRank) {
+                line = ja ? `今週の目標は ${tgt.toLocaleString()}pt。デイリーチャレンジで ${upName} をめざそう！` : `This week's target is ${tgt.toLocaleString()} pts. Play the Daily Challenge to aim for ${upName}!`;
               } else {
-                const cut = league.promote ? league.rows[league.promote - 1] : undefined;
-                const need = cut ? cut.points - league.myPoints + 1 : 0;
-                line = league.promote && cut
-                  ? (ja ? `${r}位。あと ${need}pt で上位${league.promote}人に入って ${upName} へ上がれるよ！` : `#${r}. ${need} more pts to reach the top ${league.promote} and move up to ${upName}!`)
-                  : (ja ? `${r}位。このまま今のリーグにのこれるよ。` : `#${r}. You'll stay in this league.`);
+                line = ja ? `あと ${(tgt - pts).toLocaleString()}pt で、月曜に ${upName} へ上がれるよ！` : `${(tgt - pts).toLocaleString()} more pts this week and you move up to ${upName} on Monday!`;
               }
-              return <div className={`league-status ${tone}`}>{line}</div>;
+              const warn = league.lapsed
+                ? (ja ? `2日続けて休んだので、${curName} に下がったよ。今日からまたがんばろう！` : `You missed 2 days in a row, so you dropped to ${curName}. Play today to climb back!`)
+                : L.tier > 0 && league.missed === 1 && !league.playedToday
+                  ? (ja ? `⚠️ きのうはお休みだったね。今日もやらないと ${downName} に下がっちゃう！` : `⚠️ You missed yesterday. Skip today too and you drop to ${downName}!`)
+                  : null;
+              return (
+                <>
+                  {warn && <div className="league-status down">{warn}</div>}
+                  <div className={`league-status ${tone}`}>{line}</div>
+                  {tgt !== null && (
+                    <div className="league-target" aria-label={ja ? "今週の目標" : "This week's target"}>
+                      <i style={{ width: `${Math.min(100, (pts / tgt) * 100)}%` }} />
+                      <span className="mono">{pts.toLocaleString()} / {tgt.toLocaleString()} pt</span>
+                    </div>
+                  )}
+                </>
+              );
             })()}
 
             <div className="leaderboard-panel">
@@ -4177,17 +4170,14 @@ export function GameApp({
               {!leagueLoading &&
                 league?.rows.map((r) => (
                   <Fragment key={r.userId}>
-                  {league.relegate > 0 && r.rank === league.size - league.relegate + 1 && leagueDivider("down", league.league.tier, ja)}
-                  <div className={`leaderboard-row${r.isMe ? " me" : ""}${league.promote > 0 && r.rank <= league.promote ? " zone-up" : ""}${league.relegate > 0 && r.rank > league.size - league.relegate ? " zone-down" : ""}`}>
+                  <div className={`leaderboard-row${r.isMe ? " me" : ""}${league.target !== null && r.points >= league.target ? " zone-up" : ""}`}>
                     <span className={`leaderboard-rank${r.rank <= 3 ? ` top${r.rank}` : ""}`}>
                       {r.rank <= 3 ? ["🥇", "🥈", "🥉"][r.rank - 1] : r.rank}
                     </span>
                     <span className="leaderboard-name">{r.name}</span>
-                    {league.promote > 0 && r.rank <= league.promote && <span className="zone-tag up">⬆️</span>}
-                    {league.relegate > 0 && r.rank > league.size - league.relegate && <span className="zone-tag down">⬇️</span>}
+                    {league.target !== null && r.points >= league.target && <span className="zone-tag up">⬆️</span>}
                     <span className="leaderboard-gems"><i className="lb-ico" aria-hidden="true">⚡</i>{r.points}</span>
                   </div>
-                  {league.promote > 0 && r.rank === league.promote && r.rank < league.size && leagueDivider("up", league.league.tier, ja)}
                   </Fragment>
                 ))}
             </div>

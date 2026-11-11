@@ -127,9 +127,37 @@ export function scoreDaily(correct: number, elapsedMs: number): number {
   return base + speed + perfect;
 }
 
-/** Promote the top of a league, relegate the bottom. */
-export function nextTier(tier: number, rank: number, size: number): number {
-  if (size >= 5 && rank <= Math.max(1, Math.floor(size * 0.2))) return Math.min(TOP_LEAGUE, tier + 1);
-  if (size >= 5 && rank > size - Math.max(1, Math.floor(size * 0.2))) return Math.max(0, tier - 1);
-  return tier;
+/* ---------- the league rules ----------
+   Moving UP is by points: reach your league's weekly target (Daily Challenge
+   points, Monday to Monday) and you move up one league at the reset, however
+   many others played. A perfect day is worth about 1,000 points, so a
+   target is roughly 3 to 5 good days.
+   Moving DOWN is by missed days: a player who misses the Daily Challenge two
+   days in a row drops one league (personal reminders go out on each of those
+   two evenings). One lapse costs one league, however long it lasts. */
+export const LEAGUE_TARGETS = [2500, 3000, 3500, 4000, 4500, 5000];      /* by tier; Diamond has none */
+export const LAPSE_DAYS = 2;
+export function weeklyTarget(tier: number): number | null {
+  return tier < TOP_LEAGUE ? LEAGUE_TARGETS[Math.min(tier, LEAGUE_TARGETS.length - 1)] : null;
+}
+/* whole days from day a to day b (YYYY-MM-DD) */
+export function daysBetween(a: string, b: string): number {
+  return Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400_000);
+}
+/* full days missed in a row before `today`, counting back from yesterday */
+export function missedDaysBefore(lastPlay: string | null, today: string): number {
+  return lastPlay ? Math.max(0, daysBetween(lastPlay, today) - 1) : 0;
+}
+/* A player's league right now.
+     cur      this week's row, if they have played this week
+     prev     their latest earlier row (settled: +1 if it met its target)
+     lastPlay their last Daily Challenge day before today
+     playedToday  a lapse is applied (once) by today's play, so after it
+              nothing is pending
+   A lapse of LAPSE_DAYS+ missed days not yet applied takes one league off. */
+export function settleTier(o: { curTier: number | null; prev: { tier: number; points: number } | null; lastPlay: string | null; playedToday: boolean; today: string }): { tier: number; lapsed: boolean } {
+  let tier = o.curTier ?? (o.prev ? (o.prev.points >= (weeklyTarget(o.prev.tier) ?? Infinity) ? o.prev.tier + 1 : o.prev.tier) : 0);
+  tier = Math.max(0, Math.min(TOP_LEAGUE, tier));
+  const lapsed = !o.playedToday && missedDaysBefore(o.lastPlay, o.today) >= LAPSE_DAYS && tier > 0;
+  return { tier: lapsed ? tier - 1 : tier, lapsed };
 }
