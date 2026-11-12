@@ -1,7 +1,8 @@
 "use client";
 import { FestiveBanner } from "./FestiveBanner";
+import { HomeBanner } from "./HomeBanner";
 
-import { useSyncExternalStore, Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { boardFitStyle, transition } from "./util";
 import { UiIcon, GameArt } from "./Art";
@@ -121,7 +122,7 @@ import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
 import { useBuddy, line } from "./useBuddy";
-import { makeQuoteCycle, quoteText } from "@/lib/game/quotes";
+import { makeQuoteCycle, quoteText, type Quote } from "@/lib/game/quotes";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI } from "./i18n";
 import { LEAGUES, leagueOf, TOP_LEAGUE } from "@/lib/game/daily";
@@ -426,33 +427,29 @@ export function GameApp({
 
   /* The buddy: floats over the app, speaks only when something just happened. */
   const buddy = useBuddy();
-  /* Tapping the buddy shows a quote from the books — maths, encouragement, or a
-     line about India and the sutras — a different one each time. Event lines
-     (combos, cleared stages) still interrupt on their own. */
+  /* Quotes live in the Home banner (a card with the buddy's picture), not in
+     the buddy's bubble: a new one each visit and on each tap. The buddy
+     itself peeks in from the right edge and only speaks event lines
+     (quest finished, level up, a combo), a few words for a few seconds. */
   const nextQuote = useRef(makeQuoteCycle());
-  const [quoteBy, setQuoteBy] = useState<string | null>(null);
-  /* The buddy lives in the top bar (it used to float over the page and cover
-     cards). Tap it for a quote; what it says drops down as a slim strip under
-     the header. */
-
+  const [quote, setQuote] = useState<Quote | null>(null);
+  useEffect(() => {
+    const id = setTimeout(() => setQuote(nextQuote.current()), 0);
+    return () => clearTimeout(id);
+  }, []);
+  const newQuote = () => setQuote(nextQuote.current());
+  /* a tap on the peeking buddy: hush it if it is talking, else a fresh quote
+     in the banner (and bring that card into view) */
   function tapBuddy() {
-    if (buddy.say) {
-      buddy.quiet();
-      setQuoteBy(null);
-      return;
-    }
-    const q = nextQuote.current();
-    setQuoteBy(q.by ?? null);
-    buddy.speak({
-      text: quoteText(q, lang === "ja"),
-      mood: q.kind === "hope" ? "excited" : "happy",
-      hold: 8000,
-    });
+    if (buddy.say) { buddy.quiet(); return; }
+    newQuote();
+    const slide = document.querySelector<HTMLElement>('.home-banner-slide[data-slide="quote"]');
+    slide?.parentElement?.scrollTo({ left: slide.offsetLeft, behavior: "smooth" });
+    slide?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
   const ja = lang === "ja";
   const sayLine = useCallback(
     (key: Parameters<typeof line>[0]) => {
-      setQuoteBy(null);
       buddy.speak(line(key, ja));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -512,7 +509,7 @@ export function GameApp({
      whatever the buddy was saying — no Japanese bubble on an English screen. */
   const langRef = useRef(lang);
   useEffect(() => {
-    if (langRef.current !== lang) { buddy.quiet(); setQuoteBy(null); }
+    if (langRef.current !== lang) buddy.quiet();
     langRef.current = lang;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
@@ -3098,16 +3095,8 @@ export function GameApp({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, curMode, curProblem, tileOptions, eliminated, checkEnabled, blitzProblem, blitzOptions]);
 
-  /* PROTOTYPE ONLY: ?buddy=play | peek | emote picks a buddy variation to try */
-  const buddyVariant = useSyncExternalStore(() => () => {}, () => new URLSearchParams(window.location.search).get("buddy") ?? "", () => "");
-  useEffect(() => {
-    if (buddyVariant !== "emote") return;
-    const id = setTimeout(() => sayLine("levelUp"), 1200);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buddyVariant]);
-  /* the header buddy: not inside a game or a battle (nothing to say there), and
-     a dot when something is waiting to be claimed or fixed */
+  /* the peeking buddy: not inside a game or a battle (nothing to say there),
+     with a dot when something is waiting to be claimed or fixed */
   const buddyShown = !buddy.hidden && !((GAME_VIEWS.includes(view) && view !== "town") || view === "practice");
   const buddyDot = claimableQuests > 0 || reviewCount > 0;
   return (
@@ -3157,14 +3146,6 @@ export function GameApp({
         </button>
         <div className="header-title"><h1 className={/VedAnk/.test(headerTitle ?? "") ? "brand" : undefined}>{headerTitle}</h1></div>
         <div className="stats-row">
-          {buddyShown && buddyVariant !== "play" && !buddyVariant.startsWith("peek") && (
-            <button className={`buddy-face${buddyVariant === "emote" ? ` emote${buddy.say && !quoteBy ? ` react-${buddy.mood}` : ""}` : ""}${buddy.say && (buddyVariant !== "emote" || quoteBy) ? " away" : ""}`} onClick={tapBuddy}
-              aria-label={ja ? "バディ（タップで名言）" : "Buddy, tap for a quote"} aria-expanded={!!buddy.say}>
-              <Buddy skinId={skin.skinId} mood={buddy.mood} animated={false} />
-              {buddyDot && !buddy.say && <span className="buddy-dot" aria-hidden="true" />}
-              {buddyVariant === "emote" && buddy.say && !quoteBy && <span className="buddy-emote" aria-hidden="true">{buddy.mood === "sad" ? "💧" : "🎉"}</span>}
-            </button>
-          )}
           <button className={`stat stat-flame${dailyStreak > 0 ? " lit" : ""}`} onClick={() => openShare("streak")} aria-label={`${t.share.statStreak} ${dailyStreak}, ${t.share.shareBtn}`}>
             <span aria-hidden="true"><StreakIcon lit={dailyStreak > 0} /></span> {dailyStreak}
           </button>
@@ -3175,19 +3156,6 @@ export function GameApp({
             <span aria-hidden="true"><UiIcon name="heart" size="1.15em" /></span> {hearts}
           </button>
         </div>
-        {/* what the buddy says: one slim strip hanging under the header, gone by
-            itself after a few seconds or on a tap. It overlays nothing but the
-            top edge of the page. */}
-        {buddyShown && buddy.say && buddyVariant !== "play" && !buddyVariant.startsWith("peek") && (buddyVariant !== "emote" || quoteBy) && (
-          <button key={buddy.say.text} className={`buddy-strip${quoteBy ? " quoting" : ""} mood-${buddy.mood}`} role="status" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
-            {/* the buddy itself, jumped down from the bar to say it */}
-            <span className="buddy-strip-who" aria-hidden="true"><Buddy skinId={skin.skinId} mood={buddy.mood} /></span>
-            <span className="buddy-strip-bubble">
-              <span className="buddy-strip-text">{buddy.say.text}{quoteBy && <em>{quoteBy}</em>}</span>
-              <span className="buddy-strip-x" aria-hidden="true">✕</span>
-            </span>
-          </button>
-        )}
       </header>
 
       {menuOpen && (
@@ -4273,36 +4241,45 @@ export function GameApp({
 
       <main>
         {view === "home" && <FestiveBanner lang={lang} />}
-        {/* Says what a guest is and what they stand to lose, without a modal in
-            front of the thing they came to try. */}
-        {guest && view === "home" && (
-          <div className="guest-banner">
-            <span className="guest-banner-dot" aria-hidden="true">●</span>
-            <div className="guest-banner-body">
-              <strong>{lang === "ja" ? "おためしプレイ中" : "Playing as a guest"}</strong>
-              <span>
-                {lang === "ja"
-                  ? "このブラウザにだけ記録されます。アカウントを作ると、どの端末でも続きから遊べます。"
-                  : "Saved in this browser only. Make an account to keep it on any device."}
-              </span>
-            </div>
-            <a className="guest-banner-cta" href="/signup?from=%2F">
-              {lang === "ja" ? "保存" : "Save"}
-            </a>
-          </div>
-        )}
-        {view === "home" && installBanner && (
-          <div className="install-banner" role="region" aria-label={lang === "ja" ? "アプリをインストール" : "Install the app"}>
-            <span className="install-banner-ico" aria-hidden="true">📲</span>
-            <div className="install-banner-body">
-              <strong>{lang === "ja" ? "アプリにすると、もっと楽しい！" : "It\u2019s even better as an app!"}</strong>
-              <span>{lang === "ja" ? "ホーム画面から1タップ。ドラゴンのお知らせもとどくよ。" : "One tap from your Home Screen, and your dragon can reach you."}</span>
-            </div>
-            <button className="install-banner-cta" onClick={() => { if (canInstall) void onInstall(); else setPushAsk("ios"); }}>
-              {lang === "ja" ? "入れる" : "Install"}
-            </button>
-            <button className="install-banner-x" aria-label={lang === "ja" ? "閉じる" : "Dismiss"} onClick={hideInstallBanner}>✕</button>
-          </div>
+        {/* One swipeable strip: sign up (guests), install the app (when it can
+            be), and the quote card. Signed in and installed, it is the quote
+            alone. */}
+        {view === "home" && (
+          <HomeBanner
+            label={ja ? "お知らせ" : "Highlights"}
+            slides={[
+              ...(guest ? [{ key: "guest", node: (
+                <div className="guest-banner">
+                  <span className="guest-banner-dot" aria-hidden="true">●</span>
+                  <div className="guest-banner-body">
+                    <strong>{ja ? "おためしプレイ中" : "Playing as a guest"}</strong>
+                    <span>{ja ? "このブラウザにだけ記録されます。アカウントを作ると、どの端末でも続きから遊べます。" : "Saved in this browser only. Make an account to keep it on any device."}</span>
+                  </div>
+                  <a className="guest-banner-cta" href="/signup?from=%2F">{ja ? "保存" : "Save"}</a>
+                </div>
+              ) }] : []),
+              ...(installBanner ? [{ key: "install", node: (
+                <div className="install-banner">
+                  <span className="install-banner-ico" aria-hidden="true">📲</span>
+                  <div className="install-banner-body">
+                    <strong>{ja ? "アプリにすると、もっと楽しい！" : "It\u2019s even better as an app!"}</strong>
+                    <span>{ja ? "ホーム画面から1タップ。ドラゴンのお知らせもとどくよ。" : "One tap from your Home Screen, and your dragon can reach you."}</span>
+                  </div>
+                  <button className="install-banner-cta" onClick={() => { if (canInstall) void onInstall(); else setPushAsk("ios"); }}>{ja ? "入れる" : "Install"}</button>
+                  <button className="install-banner-x" aria-label={ja ? "閉じる" : "Dismiss"} onClick={hideInstallBanner}>✕</button>
+                </div>
+              ) }] : []),
+              ...(quote ? [{ key: "quote", node: (
+                <button className="quote-banner" onClick={newQuote} aria-label={ja ? "名言（タップで次へ）" : "Quote, tap for another"}>
+                  <span className="quote-banner-who" aria-hidden="true"><Buddy skinId={skin.skinId} mood="happy" animated={false} /></span>
+                  <span className="quote-banner-body">
+                    <span className="quote-banner-text">{quoteText(quote, ja)}</span>
+                    {quote.by && <em>{quote.by}</em>}
+                  </span>
+                </button>
+              ) }] : []),
+            ]}
+          />
         )}
         {view === "home" && (
           <HomeView
@@ -5448,22 +5425,16 @@ export function GameApp({
         </div>
       )}
 
-      {buddyShown && buddyVariant === "play" && view === "home" && (
-        <div className={`buddy-ride${buddy.say ? " talking" : ""}`}>
-          {buddy.say && (
-            <button className="buddy-ride-bubble" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
-              {buddy.say.text}{quoteBy && <em>{quoteBy}</em>}
-            </button>
-          )}
-          <button className="buddy-ride-who" onClick={tapBuddy} aria-label="Buddy"><Buddy skinId={skin.skinId} mood={buddy.mood} /></button>
-        </div>
-      )}
-      {buddyShown && buddyVariant.startsWith("peek") && view === "home" && (
-        <div className={`buddy-peek ${buddyVariant === "peekleft" ? "left" : "right"}${buddy.say ? " talking" : ""}`}>
-          <button className="buddy-peek-clip" onClick={() => { if (buddy.say) buddy.quiet(); else { setQuoteBy(null); buddy.speak({ text: ja ? "今日のチャレンジが待ってるよ！" : "Today's challenge is waiting!", mood: "excited", hold: 6000 }); } }} aria-label="Buddy">
+      {/* The buddy leans in from the right edge, low on the page. Half of it
+          shows at rest; when it has something to say it leans further in and a
+          short bubble opens beside it. Tap: hush, or a new quote in the banner. */}
+      {buddyShown && (
+        <div className={`buddy-peek right${buddy.say ? " talking" : ""}`}>
+          <button className="buddy-peek-clip" onClick={tapBuddy} aria-label={ja ? "バディ（タップで新しい名言）" : "Buddy, tap for a new quote"}>
             <Buddy skinId={skin.skinId} mood={buddy.mood} />
+            {buddyDot && !buddy.say && <span className="buddy-dot" aria-hidden="true" />}
           </button>
-          {buddy.say && <span className="buddy-peek-bubble">{buddy.say.text}</span>}
+          {buddy.say && <button className={`buddy-peek-bubble mood-${buddy.mood}`} role="status" onClick={() => buddy.quiet()}>{buddy.say.text}</button>}
         </div>
       )}
 
