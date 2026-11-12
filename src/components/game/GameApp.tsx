@@ -204,10 +204,13 @@ export function GameApp({
   overrides?: OverrideMap;
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
-  const [view, setViewRaw] = useState<View>("home");
+  /* the app opens on the games menu: playing is the main thing. (A first-time
+     visitor is sent to Home instead, where the guided tour runs: see the
+     story effect below.) */
+  const [view, setViewRaw] = useState<View>("games");
   /* every screen change slides: deeper screens come in from the right,
      going back slides from the left (see util.transition) */
-  const viewRef = useRef<View>("home");
+  const viewRef = useRef<View>("games");
   const DEPTH: Partial<Record<View, number>> = { home: 0, games: 1, topic: 1, stagemap: 2, practice: 3 };
   const setView = useCallback((next: View) => {
     const from = viewRef.current;
@@ -2848,7 +2851,20 @@ export function GameApp({
     let seen = false;
     try { seen = !!localStorage.getItem("sutraSprint.storySeen"); } catch {}
     if (!seen) setStoryOpen(true);
-  }, []);
+    /* the opening screen: Home for someone who has not had the tour yet,
+       otherwise the games menu with its saved bests loaded. A deep link
+       (a room, a class, a duel) that has already moved on is left alone. */
+    let toured = false;
+    try { toured = !!localStorage.getItem(TOUR_KEY); } catch {}
+    if (viewRef.current === "games") {
+      if (toured) openGames();
+      else {
+        viewRef.current = "home"; setViewRaw("home");
+        /* the mount-time save of the opening screen must not bring the games menu back */
+        try { localStorage.setItem("sutraSprint.navView", "home"); } catch {}
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   /* eslint-enable react-hooks/set-state-in-effect */
   function closeStory() {
     setStoryOpen(false);
@@ -5063,8 +5079,8 @@ export function GameApp({
           </div>
         ) : (
           <>
-            <button className="btn btn-ghost back-footer-btn" aria-label="Back" onClick={handleBack}>
-              ←<span className="back-word"> {lang === "ja" ? "戻る" : "Back"}</span>
+            <button className="btn btn-ghost back-footer-btn" aria-label={view === "games" ? "Home" : "Back"} onClick={handleBack}>
+              ←<span className="back-word"> {view === "games" ? (lang === "ja" ? "ホーム" : "Home") : (lang === "ja" ? "戻る" : "Back")}</span>
             </button>
             {/* the games menu: a friend's room code goes in the bar beside
                 Back, always in view and over nothing */}
