@@ -5194,8 +5194,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
   cursor:pointer; box-shadow:0 3px 0 var(--ink-line); }
 .join-bar-go:disabled{ background:#d8d4e6; color:#8a86a8; box-shadow:none; cursor:default; }
 .join-bar-go:not(:disabled):active{ transform:translateY(3px); box-shadow:none; }
-/* the multiplayer lobby's own join box stays in view too */
-.party-join{ position:sticky; bottom:-84px; z-index:5; border:3px solid var(--ink-line); box-shadow:0 4px 0 var(--ink-line); }
 .join-bar-label{ text-transform:capitalize; }
 @media (max-width:479px){ .join-bar-long{ display:none; } }
 
@@ -5205,3 +5203,14 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .dock-play.on .dock-play-label{ color:#c2185b; }
 /* the room-code row at the top of Play: in the page, full width */
 .games-view > .join-bar{ grid-column:1 / -1; margin:0; max-width:none; }
+/* "New room": makes a room straight away (the game can be switched inside) */
+.join-bar-new{ flex:none; padding:8px 11px; border-radius:999px; border:2.5px solid var(--ink-line); background:#ff7a3d; color:#fff; font:900 12.5px/1 inherit;
+  font-family:inherit; white-space:nowrap; cursor:pointer; box-shadow:0 3px 0 var(--ink-line); }
+.join-bar-new:active{ transform:translateY(3px); box-shadow:none; }
+.join-bar-input{ margin-left:auto; }
+/* a phone's footer has Back beside the bar: the short "＋ New" fits */
+footer .join-bar .join-bar-long{ display:none; }
+@media (min-width:480px){ footer .join-bar .join-bar-long{ display:inline; } }
+/* Fix Your Misses rides in the Home rail too: same height as its neighbours */
+.home-rail > .review-cta, .home-rail > .review-rest{ margin:0; height:auto; }
+@media (min-width:1024px){ .home-view.active > .home-rail > .review-cta, .home-view.active > .home-rail > .review-rest{ grid-column:2; } }
