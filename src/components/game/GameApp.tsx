@@ -989,19 +989,10 @@ export function GameApp({
      and only the browser knows where the player was. One-shot, not a cascade. */
   useEffect(() => {
     try {
-      const savedView = localStorage.getItem("sutraSprint.navView");
       const savedTopic = localStorage.getItem("sutraSprint.navTopic");
+      /* the app always opens on Play (the games menu); only the last lesson
+         is remembered, so Home's "next lesson" and the map pick up from it */
       if (savedTopic) setCurrentTopicId(savedTopic);
-      if (savedView === "topic" && savedTopic) setView("topic");
-      else if (savedView === "stagemap" && savedTopic) setView("stagemap");
-      else if (savedView === "arena") {
-        loadPuzzle(dojoResumeIdx());
-        setView("arena");
-      }
-      /* A game round cannot survive a refresh, but the shelf it came from
-         can — landing there beats landing on home. */
-      else if (savedView === "games" || GAME_VIEWS.includes(savedView as View)) setView("games");
-      else if (savedView === "tricks") setView("tricks");
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1009,8 +1000,6 @@ export function GameApp({
 
   useEffect(() => {
     try {
-      const persistView = view === "practice" ? "stagemap" : view === "blitz" ? "home" : view;
-      localStorage.setItem("sutraSprint.navView", persistView);
       if (currentTopicId) localStorage.setItem("sutraSprint.navTopic", currentTopicId);
     } catch {}
   }, [view, currentTopicId]);
@@ -1092,7 +1081,7 @@ export function GameApp({
   const dailyStartRef = useRef(0);
   const [leagueOpen, setLeagueOpen] = useState(false);
   /* which bottom-bar item is open, so it can be lit */
-  const navAt = leagueOpen ? "league" : leaderboardOpen ? "rank" : dailyTab ? "daily" : "home";
+  const navAt = leagueOpen ? "league" : leaderboardOpen ? "rank" : dailyTab ? "daily" : view === "games" ? "play" : "home";
   const [league, setLeague] = useState<LeagueStanding | null>(null);
   const [leagueLoading, setLeagueLoading] = useState(false);
   /* admin only: "all leagues" tab in the league sheet */
@@ -2848,19 +2837,11 @@ export function GameApp({
     let seen = false;
     try { seen = !!localStorage.getItem("sutraSprint.storySeen"); } catch {}
     if (!seen) setStoryOpen(true);
-    /* the opening screen: Home for someone who has not had the tour yet,
-       otherwise the games menu with its saved bests loaded. A deep link
-       (a room, a class, a duel) that has already moved on is left alone. */
-    let toured = false;
-    try { toured = !!localStorage.getItem(TOUR_KEY); } catch {}
-    if (viewRef.current === "games") {
-      if (toured) openGames();
-      else {
-        viewRef.current = "home"; setViewRaw("home");
-        /* the mount-time save of the opening screen must not bring the games menu back */
-        try { localStorage.setItem("sutraSprint.navView", "home"); } catch {}
-      }
-    }
+    /* the opening screen is always Play, the games menu, with its saved
+       bests loaded. (The guided tour runs the first time Home is opened.) A
+       deep link (a room, a class, a duel) that has already moved on is left
+       alone. */
+    if (viewRef.current === "games") openGames();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   /* eslint-enable react-hooks/set-state-in-effect */
   function closeStory() {
@@ -4495,10 +4476,21 @@ export function GameApp({
 
         {view === "games" && (
           <section className="view active games-view">
+            {/* a friend's room code: the first thing on Play, in the page (not
+                floating over the games) */}
+          <div className="join-bar">
+            <span className="join-bar-label">👥 <span className="join-bar-long">{ja ? "友だちの" : "Friend's "}</span>{ja ? "部屋" : "room"}</span>
+            <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
+              autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
+              onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+              onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
+            <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
+          </div>
+        
             <p className="games-lede">
               {lang === "ja"
-                ? "計算を使ったミニゲーム。アカウントがなくても、オフラインでも遊べます。"
-                : "Quick games built on the same maths. No account needed, and they work offline."}
+                ? "計算を使ったミニゲーム。オフラインでも遊べます。"
+                : "Quick games built on the same maths. They work offline too."}
             </p>
             <button className="ttt-card crossmath-feature" onClick={shelf(() => setView("crossmath"), "crossmath")}>
               <span className="feature-art crossmath" aria-hidden="true"><i>7</i><i>+</i><i>5</i><i>×</i><i></i><i>=</i><i>=</i><i></i><i>12</i></span>
@@ -5028,17 +5020,17 @@ export function GameApp({
         </div>
       )}
 
-      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" || dailyTab ? " home-dock" : ""}`} style={{ display: "flex" }}>
-        {view === "home" && guest ? (
+      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" || view === "games" || dailyTab ? " home-dock" : ""}`} style={{ display: "flex" }}>
+        {(view === "home" || view === "games") && guest ? (
           /* The home dock: a floating rounded bar with the games as a big raised
              PLAY button in the middle — the game is the point, everything else
              sits around it. For a guest, Save is a small chip, not a rival. */
           <div className="dock-bar">
-            <button className="bottomnav-item active" onClick={goHome}>
+            <button className={`bottomnav-item${view === "home" ? " active" : ""}`} onClick={goHome}>
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
-            <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
+            <button className={`dock-play${view === "games" ? " on" : ""}`} onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"} aria-current={view === "games" ? "page" : undefined}>
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
               <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
             </button>
@@ -5047,7 +5039,7 @@ export function GameApp({
               <span>{lang === "ja" ? "保存" : "Save"}</span>
             </a>
           </div>
-        ) : view === "home" || dailyTab ? (
+        ) : view === "home" || view === "games" || dailyTab ? (
           <div className="dock-bar">
             <button className={`bottomnav-item${navAt === "home" ? " active" : ""}`} onClick={goHome} aria-current={navAt === "home" ? "page" : undefined}>
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
@@ -5060,7 +5052,7 @@ export function GameApp({
               </span>
               <span>{lang === "ja" ? "デイリー" : "Daily"}</span>
             </button>
-            <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
+            <button className={`dock-play${view === "games" ? " on" : ""}`} onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"} aria-current={view === "games" ? "page" : undefined}>
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
               <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
             </button>
@@ -5075,21 +5067,9 @@ export function GameApp({
           </div>
         ) : (
           <>
-            <button className="btn btn-ghost back-footer-btn" aria-label={view === "games" ? "Home" : "Back"} onClick={handleBack}>
-              ←<span className="back-word"> {view === "games" ? (lang === "ja" ? "ホーム" : "Home") : (lang === "ja" ? "戻る" : "Back")}</span>
+            <button className="btn btn-ghost back-footer-btn" aria-label="Back" onClick={handleBack}>
+              ←<span className="back-word"> {lang === "ja" ? "戻る" : "Back"}</span>
             </button>
-            {/* the games menu: a friend's room code goes in the bar beside
-                Back, always in view and over nothing */}
-            {view === "games" && (
-              <div className="join-bar">
-                <span className="join-bar-label">👥 <span className="join-bar-long">{ja ? "友だちの" : "Friend's "}</span>{ja ? "部屋" : "room"}</span>
-                <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
-                  autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
-                  onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
-                  onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
-                <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
-              </div>
-            )}
             {view === "topic" && (
               <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
                 {t.stageMap.seeStageMap}
