@@ -1091,6 +1091,8 @@ export function GameApp({
   const dailyTab = view === "daily" && (dailyQs.length === 0 || !!dailyDone || !!dailyStatus?.played);
   const dailyStartRef = useRef(0);
   const [leagueOpen, setLeagueOpen] = useState(false);
+  /* which bottom-bar item is open, so it can be lit */
+  const navAt = leagueOpen ? "league" : leaderboardOpen ? "rank" : dailyTab ? "daily" : "home";
   const [league, setLeague] = useState<LeagueStanding | null>(null);
   const [leagueLoading, setLeagueLoading] = useState(false);
   /* admin only: "all leagues" tab in the league sheet */
@@ -4492,7 +4494,7 @@ export function GameApp({
         )}
 
         {view === "games" && (
-          <section className="view active">
+          <section className="view active games-view">
             <p className="games-lede">
               {lang === "ja"
                 ? "計算を使ったミニゲーム。アカウントがなくても、オフラインでも遊べます。"
@@ -5047,11 +5049,11 @@ export function GameApp({
           </div>
         ) : view === "home" || dailyTab ? (
           <div className="dock-bar">
-            <button className={`bottomnav-item${dailyTab ? "" : " active"}`} onClick={goHome}>
+            <button className={`bottomnav-item${navAt === "home" ? " active" : ""}`} onClick={goHome} aria-current={navAt === "home" ? "page" : undefined}>
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
-            <button className={`bottomnav-item${dailyTab ? " active" : ""}${dailyStatus?.played ? " done" : ""}`} onClick={openDailyTab}>
+            <button className={`bottomnav-item${navAt === "daily" ? " active" : ""}${dailyStatus?.played ? " done" : ""}`} onClick={openDailyTab} aria-current={navAt === "daily" ? "page" : undefined}>
               <span className="bottomnav-icon">
                 <UiIcon name="today" />
                 {!dailyStatus?.played && <span className="nav-dot" aria-hidden="true" />}
@@ -5062,11 +5064,11 @@ export function GameApp({
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
               <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
             </button>
-            <button className="bottomnav-item" onClick={toggleLeague}>
+            <button className={`bottomnav-item${navAt === "league" ? " active" : ""}`} onClick={toggleLeague}>
               <span className="bottomnav-icon"><UiIcon name="league" /></span>
               <span>{lang === "ja" ? "リーグ" : "League"}</span>
             </button>
-            <button className="bottomnav-item" onClick={toggleLeaderboard}>
+            <button className={`bottomnav-item${navAt === "rank" ? " active" : ""}`} onClick={toggleLeaderboard}>
               <span className="bottomnav-icon"><UiIcon name="rank" /></span>
               <span>{lang === "ja" ? "ランク" : "Rank"}</span>
             </button>
