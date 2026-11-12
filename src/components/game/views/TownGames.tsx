@@ -453,8 +453,8 @@ export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
         <div className="cm-grid" style={{ gridTemplateColumns: `repeat(${p.w}, 1fr)` }}>
           {p.cells.map((c, i) => {
             if (!c) return <span key={i} className="cm-empty" />;
-            if (c.t === "op") return <span key={i} className="cm-op" data-op={c.o}>{c.o}</span>;
-            if (c.t === "eq") return <span key={i} className="cm-eq">=</span>;
+            if (c.t === "op") return <span key={i} className="cm-op" data-op={c.o}><span>{c.o}</span></span>;
+            if (c.t === "eq") return <span key={i} className="cm-eq"><span>=</span></span>;
             if (!c.blank) return <span key={i} className="cm-num mono">{c.v}</span>;
             const st = stateOf(i);
             return (

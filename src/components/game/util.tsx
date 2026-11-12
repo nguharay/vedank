@@ -143,12 +143,22 @@ export function transition(update: () => void, dir: NavDir = "forward") {
   } catch { once(); }
 }
 
-/* Big, readable sums on game tiles (older players too): a tile's text is sized
-   from the tile's own width (the tile sets container-type) and the text's
-   length in "units" (a figure or sign is one, a space a third), so short sums
-   are large and long ones shrink only as far as they must. Use as
-   style={fitStyle(text)} on the text inside a tile with class "fit-tile". */
-export function fitStyle(text: string): Record<string, string> {
-  const units = [...text].reduce((a, ch) => a + (/\s/.test(ch) ? 0.34 : 1), 0);
-  return { ["--units" as string]: String(Math.max(2.4, units)) };
+/* Big, readable sums on game tiles (older players too). Every tile on a
+   board uses ONE size, set by the board's widest text, so the board reads
+   evenly (Ray: "not same fonts"). The size comes from the tile's own width
+   (the tile sets container-type) and the text's length in "units": a figure
+   or sign is one, a space a third. A worded label ("Digit sum of 21") may
+   wrap to two lines, so it counts as half its length (or its longest word).
+   Put boardFitStyle(allTexts) on the board; give each text the class
+   "fit-text" inside a tile with class "fit-tile". */
+function fitUnits(text: string): number {
+  const u = (t: string) => [...t].reduce((a, ch) => a + (/\s/.test(ch) ? 0.34 : 1), 0);
+  const full = u(text);
+  if (!/[A-Za-z\u3040-\u30ff\u4e00-\u9fff]{2,}/.test(text)) return full;          /* a sum: one line */
+  const longestWord = Math.max(...text.split(/\s+/).map(u));
+  return Math.max(longestWord, Math.ceil(full / 2));
+}
+export function boardFitStyle(texts: string[]): Record<string, string> {
+  const units = Math.max(2.4, ...texts.map(fitUnits));
+  return { ["--units" as string]: String(units) };
 }

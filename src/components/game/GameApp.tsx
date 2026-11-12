@@ -3,7 +3,7 @@ import { FestiveBanner } from "./FestiveBanner";
 
 import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
-import { fitStyle, transition } from "./util";
+import { boardFitStyle, transition } from "./util";
 import { UiIcon, GameArt } from "./Art";
 import { PartyGames } from "./views/PartyGames";
 import { StreakIcon } from "./StreakIcon";
@@ -4485,12 +4485,12 @@ export function GameApp({
                   </div>
                 )}
 
-                <div className={`ttt-board${tttMyTurn ? "" : " wait"}`}>
+                <div className={`ttt-board${tttMyTurn ? "" : " wait"}`} style={boardFitStyle(ttt.cells.map((c) => c.prompt))}>
                   {ttt.cells.map((c, i) => {
                     const win = ttt.line?.includes(i);
                     return (
                       <button key={i} className={`ttt-cell fit-tile${c.owner ? " " + c.owner.toLowerCase() : ""}${win ? " win" : ""}${tttSel === i ? " sel" : ""}`} onClick={() => tttTap(i)} disabled={!!c.owner || !tttMyTurn}>
-                        {c.owner ? <span className="ttt-mark">{c.owner === "X" ? "✕" : "○"}</span> : <span className="ttt-sum fit-text mono" style={fitStyle(c.prompt)}>{c.prompt}</span>}
+                        {c.owner ? <span className="ttt-mark">{c.owner === "X" ? "✕" : "○"}</span> : <span className="ttt-sum fit-text mono">{c.prompt}</span>}
                       </button>
                     );
                   })}
@@ -4575,7 +4575,7 @@ export function GameApp({
               <div className="match-stat"><span className="match-stat-k">{lang === "ja" ? "最少回数" : "Fewest"}</span><span className="match-stat-v mono">{memBest || "-"}</span></div>
             </div>
             <p className="match-hint">{lang === "ja" ? "式と答えのペアを覚えて当てよう！" : "Remember where the pairs are."}</p>
-            <div className="match-grid">
+            <div className="match-grid" style={boardFitStyle(memTiles.map((t) => t.text))}>
               {memTiles.map((t) => {
                 const done = memDone.includes(t.id);
                 const up = memUp.includes(t.id);
@@ -4587,7 +4587,7 @@ export function GameApp({
                     disabled={done}
                     aria-label={up || done ? t.text : lang === "ja" ? "ふせてあるカード" : "face-down card"}
                   >
-                    <span className="mono fit-text" style={fitStyle(up || done ? t.text : "?")}>{up || done ? t.text : "?"}</span>
+                    <span className="mono fit-text">{up || done ? t.text : "?"}</span>
                   </button>
                 );
               })}
@@ -4915,7 +4915,7 @@ export function GameApp({
               {lang === "ja" ? "式と答えをペアにしよう！" : "Pair each sum with its answer."}
             </p>
 
-            <div className="match-grid">
+            <div className="match-grid" style={boardFitStyle(matchTiles.map((t) => t.text))}>
               {matchTiles.map((t) => {
                 const cleared = matchDone.includes(t.id);
                 const picked = matchPicked.some((p) => p.id === t.id);
@@ -4928,7 +4928,7 @@ export function GameApp({
                     disabled={cleared}
                     aria-label={t.text}
                   >
-                    <span className="mono fit-text" style={fitStyle(t.text)}>{t.text}</span>
+                    <span className="mono fit-text">{t.text}</span>
                   </button>
                 );
               })}
