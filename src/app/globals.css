@@ -5156,3 +5156,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .dw-more{ display:block; margin:8px auto 0; border:0; background:none; color:#3a2500; font:inherit; font-weight:900; font-size:12.5px; text-decoration:underline; cursor:pointer; }
 .daily-done .dw-card{ margin:16px 0; width:100%; }
 @media (min-width:1024px){ .home-view.active > .dw-card{ grid-column:2; } }
+/* the map heading now carries two lines of text: keep the first node's
+   "BATTLE!" bubble clear of it */
+.home-sec + .path-wrap{ margin-top:44px; }

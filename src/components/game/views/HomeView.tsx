@@ -146,7 +146,6 @@ export function HomeView({
     };
   }, [progress, lang]);
 
-  const totalCleared = TOPICS.reduce((acc, tp) => acc + topicProgressOf(progress, tp.id).cleared, 0);
 
   return (
     <section className="view active home-view">
@@ -204,18 +203,6 @@ export function HomeView({
         <span className="blitz-cta-arrow">›</span>
       </div>
       </div>
-
-      {/* A brand-new player gets a plain-words intro: what this is, in three steps. */}
-        {totalCleared === 0 && (
-          <div className="howto">
-            <div className="howto-title">{lang === "ja" ? "このゲームって？" : "What is this game?"}</div>
-            <p className="howto-text">
-              {lang === "ja"
-                ? "インド式数学の「ひらめき」を、モンスターとのバトルで楽しく身につけよう。"
-                : "Learn the clever shortcuts of Indian maths by battling monsters and playing games with friends."}
-            </p>
-          </div>
-        )}
 
       {assignment && assignedTopic && (
         <button className="assign-card" onClick={() => onOpenTopic(assignedTopic.id)}>
@@ -278,7 +265,9 @@ export function HomeView({
       ) : null}
 
       <ThreeStarList progress={progress} lang={lang} onOpenTopic={onOpenTopic} locked={(id, i) => !topicUnlocked(progress, id) || i >= guestTopicLimit} />
-      <SectionHead icon="🗺️" title={lang === "ja" ? "インド式数学の学びのマップ" : "Learning map for Vedic Math"} sub={lang === "ja" ? "トピックを順番にクリアして、先へ進もう" : "Clear topics in order to move ahead"} />
+      <SectionHead icon="🗺️" title={lang === "ja" ? "インド式数学の学びのマップ" : "Learning map for Vedic Math"} sub={lang === "ja"
+        ? "インド式数学の「ひらめき」を、モンスターとのバトルで身につけよう。トピックを順番にクリアして、先へ進もう。"
+        : "Learn the clever shortcuts of Indian maths by battling monsters. Clear topics in order to move ahead."} />
 
       <div className="path-wrap" ref={pathWrapRef}>
         {mapGeo.d && (
