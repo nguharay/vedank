@@ -120,7 +120,7 @@ import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
 import { useBuddy, line } from "./useBuddy";
-import { makeQuoteCycle, quoteText, type Quote } from "@/lib/game/quotes";
+import { quoteOfTheDay, quoteText, type Quote } from "@/lib/game/quotes";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI } from "./i18n";
 import { LEAGUES, leagueOf } from "@/lib/game/daily";
@@ -426,17 +426,14 @@ export function GameApp({
 
   /* The buddy: floats over the app, speaks only when something just happened. */
   const buddy = useBuddy();
-  /* Quotes live in the Home banner (a card with the buddy's picture), not in
-     the buddy's bubble: a new one each visit and on each tap. The buddy
-     itself peeks in from the right edge and only speaks event lines
-     (quest finished, level up, a combo), a few words for a few seconds. */
-  const nextQuote = useRef(makeQuoteCycle());
+  /* The quote in the Home banner is the quote of the day: it changes once a
+     day, not on each visit, tap or turn of the banner. Read after mount, as
+     the day depends on the player's clock. */
   const [quote, setQuote] = useState<Quote | null>(null);
   useEffect(() => {
-    const id = setTimeout(() => setQuote(nextQuote.current()), 0);
+    const id = setTimeout(() => setQuote(quoteOfTheDay()), 0);
     return () => clearTimeout(id);
   }, []);
-  const newQuote = () => setQuote(nextQuote.current());
   const ja = lang === "ja";
   const sayLine = useCallback(
     (key: Parameters<typeof line>[0]) => {
@@ -3988,7 +3985,7 @@ export function GameApp({
                 lessons and games fed the league */}
             <div className="lb-rule league-rule">
               <b>⚡ {ja ? "リーグのポイントは「デイリーチャレンジ」だけ" : "League points come only from the Daily Challenge"}</b>
-              <span>{ja ? "1日1回・8問。1週間の合計で順位がきまるよ。レッスンやゲームはリーグには入らないけど、「ランク」が上がるよ。" : "8 questions, once a day, added up over the week. Lessons and games don't count here; they raise your Rank instead."}</span>
+              <span>{ja ? "1日1回・10問。1週間の合計で順位がきまるよ。レッスンやゲームはリーグには入らないけど、「ランク」が上がるよ。" : "10 questions, once a day, added up over the week. Lessons and games don't count here; they raise your Rank instead."}</span>
               {dailyStatus?.played
                 ? <em className="league-rule-done">⭕ {ja ? "今日のぶんはクリア！また明日。" : "Today's done! Come back tomorrow."}</em>
                 : <button className="btn btn-primary league-rule-go" onClick={() => { setLeagueOpen(false); startDaily(); }}>🗓️ {ja ? "今日のデイリーチャレンジをやる" : "Play today's Daily Challenge"}</button>}
@@ -4005,7 +4002,7 @@ export function GameApp({
 
             {/* how it works, in four steps */}
             <ol className="league-how">
-              <li><b>📅</b><span>{ja ? <>毎日<strong>「デイリーチャレンジ」</strong>（8問）を1回やる</> : <>Play the <strong>Daily Challenge</strong> (8 questions) once a day</>}</span></li>
+              <li><b>📅</b><span>{ja ? <>毎日<strong>「デイリーチャレンジ」</strong>（10問）を1回やる</> : <>Play the <strong>Daily Challenge</strong> (10 questions) once a day</>}</span></li>
               <li><b>⚡</b><span>{ja ? <>正解1問 <strong>100pt</strong>＋はやさボーナス＋全問正解 <strong>150pt</strong>。1週間ぶん合計</> : <><strong>100 pts</strong> per right answer + speed bonus + <strong>150</strong> for all 8. Added up over the week</>}</span></li>
               <li><b>⬆️</b><span>{ja ? <>1週間で<strong>リーグの目標ポイント</strong>に届いたら、月曜の朝9時に<strong>1つ上のリーグへ</strong></> : <>Reach your <strong>{"league's weekly target"}</strong> and you <strong>move up a league</strong> on Monday 09:00 (Japan)</>}</span></li>
               <li><b>⬇️</b><span>{ja ? <>休んだ日の夜にお知らせが届くよ。<strong>2日続けて休むと、1つ下のリーグへ</strong></> : <>Miss a day and you get a reminder that evening. <strong>Miss 2 days in a row and you drop a league</strong></>}</span></li>
@@ -4160,7 +4157,6 @@ export function GameApp({
         {view === "home" && (
           <HomeBanner
             label={ja ? "お知らせ" : "Highlights"}
-            onLoop={newQuote}
             slides={[
               ...(guest ? [{ key: "guest", node: (
                 <div className="guest-banner">
@@ -4184,13 +4180,13 @@ export function GameApp({
                 </div>
               ) }] : []),
               ...(quote ? [{ key: "quote", node: (
-                <button className="quote-banner" onClick={newQuote} aria-label={ja ? "名言（タップで次へ）" : "Quote, tap for another"}>
+                <div className="quote-banner" aria-label={ja ? "今日の名言" : "Quote of the day"}>
                   <span className="quote-banner-who" aria-hidden="true"><Buddy skinId={skin.skinId} mood="happy" animated={false} /></span>
                   <span key={quote.text} className="quote-banner-body">
                     <span className="quote-banner-text">{quoteText(quote, ja)}</span>
                     {quote.by && <em>{quote.by}</em>}
                   </span>
-                </button>
+                </div>
               ) }] : []),
             ]}
           />

@@ -160,12 +160,12 @@ export function HomeView({
               ? (lang === "ja" ? "今日のデイリー勝者を見る" : "See today's Daily winners")
               : (lang === "ja" ? "今日の勝者はまだいないよ" : "No Daily winner yet today")}</b>
             <small>{!dailyWinners
-              ? (lang === "ja" ? "8問ぜんぶ正解した人たち" : "Everyone who got all 8 right")
+              ? (lang === "ja" ? "10問ぜんぶ正解した人たち" : "Everyone who got all 10 right")
               : dailyWinners.isToday && dailyWinners.winners.length > 0
               ? (lang === "ja"
                 ? `${dailyWinners.winners[0].name}さん${dailyWinners.winners.length > 1 ? `、ほか${dailyWinners.winners.length - 1}人` : ""}が全問正解`
-                : `${dailyWinners.winners[0].name}${dailyWinners.winners.length > 1 ? ` and ${dailyWinners.winners.length - 1} more` : ""} got all 8 right`)
-              : (lang === "ja" ? "8問ぜんぶ正解で1番のりしよう" : "Get all 8 right and be the first")}</small>
+                : `${dailyWinners.winners[0].name}${dailyWinners.winners.length > 1 ? ` and ${dailyWinners.winners.length - 1} more` : ""} got all 10 right`)
+              : (lang === "ja" ? "10問ぜんぶ正解で1番のりしよう" : "Get all 10 right and be the first")}</small>
           </span>
           <span className="dw-cta-go" aria-hidden="true">›</span>
         </button>

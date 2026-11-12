@@ -180,6 +180,14 @@ export function quoteText(q: Quote, ja: boolean): string {
   return ja && q.textJa ? q.textJa : q.text;
 }
 
+/* The quote of the day: one quote for the whole day, the same for everyone,
+   stepping through the list in order so none repeats until all have shown.
+   The day is the player's own calendar day. */
+export function quoteOfTheDay(d = new Date()): Quote {
+  const day = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000);
+  return QUOTES[((day % QUOTES.length) + QUOTES.length) % QUOTES.length];
+}
+
 /* Walks the list in a shuffled order and only reshuffles once it is exhausted,
    so tapping repeatedly never repeats until every quote has been seen. */
 export function makeQuoteCycle(seed = QUOTES.length) {

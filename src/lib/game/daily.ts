@@ -1,6 +1,6 @@
 import { TOPICS, type Problem, type Difficulty } from "./topics";
 
-export const DAILY_QUESTIONS = 8;
+export const DAILY_QUESTIONS = 10;
 
 export type League = { tier: number; name: string; nameJa: string; icon: string; color: string };
 
@@ -104,7 +104,7 @@ export function dailyQuestions(dayKey: string): DailyQuestion[] {
     }
     used.add(topic.id);
 
-    const diff: Difficulty = i < 3 ? "easy" : i < 6 ? "medium" : "hard";
+    const diff: Difficulty = i < 3 ? "easy" : i < 7 ? "medium" : "hard";
     const problem = withSeededRandom(rand, () => topic.gen(diff));
     const opts = [problem.answer, ...distractors(rand, problem.answer, 3)];
     // deterministic shuffle
