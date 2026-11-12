@@ -1450,6 +1450,8 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .quote-banner-who{ flex:none; width:52px; height:52px; }
 .quote-banner-who svg{ width:100%; height:100%; display:block; }
 .quote-banner-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.quote-banner-body{ animation:quoteIn .5s ease both; }
+@keyframes quoteIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
 .quote-banner-text{ font-size:13.5px; font-weight:800; line-height:1.4; }
 .quote-banner-body em{ font-style:normal; font-size:11px; font-weight:800; color:var(--muted); }
 /* the buddy leans in from the screen edge, low on the page above the dock;

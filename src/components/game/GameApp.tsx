@@ -4247,6 +4247,7 @@ export function GameApp({
         {view === "home" && (
           <HomeBanner
             label={ja ? "お知らせ" : "Highlights"}
+            onLoop={newQuote}
             slides={[
               ...(guest ? [{ key: "guest", node: (
                 <div className="guest-banner">
@@ -4272,7 +4273,7 @@ export function GameApp({
               ...(quote ? [{ key: "quote", node: (
                 <button className="quote-banner" onClick={newQuote} aria-label={ja ? "名言（タップで次へ）" : "Quote, tap for another"}>
                   <span className="quote-banner-who" aria-hidden="true"><Buddy skinId={skin.skinId} mood="happy" animated={false} /></span>
-                  <span className="quote-banner-body">
+                  <span key={quote.text} className="quote-banner-body">
                     <span className="quote-banner-text">{quoteText(quote, ja)}</span>
                     {quote.by && <em>{quote.by}</em>}
                   </span>
