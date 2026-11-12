@@ -152,6 +152,8 @@ export function HomeView({
           then the extras (cards, streak, shop, friends, invite). The Daily
           Challenge, the games, the League and the Rank are in the bottom bar. */}
       {/* a slim level strip in place of the old banner: tap it to share */}
+      {/* the level and the Daily winners link share one swipeable row */}
+      <div className="home-rail home-rail-top">
       <button className="level-strip" onClick={() => onShare("level")} aria-label={`${t.share.statLevel} ${li.level}, ${t.share.shareBtn}`}>
         <span className="level-strip-lv"><small>{t.home.level}</small><b className="mono">{li.level}</b></span>
         <span className="level-strip-main">
@@ -183,6 +185,7 @@ export function HomeView({
           <span className="dw-cta-go" aria-hidden="true">›</span>
         </button>
       )}
+      </div>
 
         <>
       {/* one swipeable row instead of three stacked cards: the next lesson,
