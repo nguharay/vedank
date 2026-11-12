@@ -3020,8 +3020,6 @@ export function GameApp({
 
   /* the peeking buddy: not inside a game or a battle (nothing to say there),
      with a dot when something is waiting to be claimed or fixed */
-  const buddyShown = !buddy.hidden && !((GAME_VIEWS.includes(view) && view !== "town") || view === "practice");
-  const buddyDot = reviewCount > 0;
   return (
     <div id="app" data-skin={skin.skinId}>
       <div className="sparkle-field">
@@ -3106,11 +3104,6 @@ export function GameApp({
                 </span>
               </button>
             )}
-            {/* the buddy on screen: a plain switch at the top, not buried in Settings */}
-            <button className="menu-row" onClick={buddy.toggleHidden} role="switch" aria-checked={!buddy.hidden}>
-              <span>🧚 {ja ? "バディを画面に出す" : "Show buddy on screen"}</span>
-              <span className={`menu-switch${buddy.hidden ? "" : " on"}`} aria-hidden="true"><i /></span>
-            </button>
             {/* grouped rows: tap a heading to open it */}
             <button className={`menu-row menu-group${menuGroup === "settings" ? " open" : ""}`} onClick={() => setMenuGroup((g) => (g === "settings" ? null : "settings"))} aria-expanded={menuGroup === "settings"}>
               <span>⚙️ {ja ? "設定" : "Settings"}</span>
@@ -3136,10 +3129,6 @@ export function GameApp({
               </button>
               {skinsOpen && (
                 <div className="skins-panel">
-                  <button className="menu-row skins-buddy-switch" onClick={buddy.toggleHidden} role="switch" aria-checked={!buddy.hidden}>
-                    <span>🧚 {ja ? "バディを画面に出す" : "Show buddy on screen"}</span>
-                    <span className={`menu-switch${buddy.hidden ? "" : " on"}`} aria-hidden="true"><i /></span>
-                  </button>
                   {SKINS.map((s) => {
                     const ja = lang === "ja";
                     const unlocked = s.unlocked({ level: li.level, bossClears, solvedCount });
@@ -5329,19 +5318,6 @@ export function GameApp({
               <button className="btn btn-ghost" onClick={() => { setBlitzOver(false); goHome(); }}>{t.blitz.backHome}</button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* The buddy leans in from the right edge, low on the page. Half of it
-          shows at rest; when it has something to say it leans further in and a
-          short bubble opens beside it. Tap: hush, or a new quote in the banner. */}
-      {buddyShown && (
-        <div className={`buddy-peek right${buddy.say ? " talking" : ""}`}>
-          <button className="buddy-peek-clip" onClick={tapBuddy} aria-label={ja ? "バディ（タップで新しい名言）" : "Buddy, tap for a new quote"}>
-            <Buddy skinId={skin.skinId} mood={buddy.mood} />
-            {buddyDot && !buddy.say && <span className="buddy-dot" aria-hidden="true" />}
-          </button>
-          {buddy.say && <button className={`buddy-peek-bubble mood-${buddy.mood}`} role="status" onClick={() => buddy.quiet()}>{buddy.say.text}</button>}
         </div>
       )}
 
