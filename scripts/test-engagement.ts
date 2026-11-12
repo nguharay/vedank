@@ -3,10 +3,10 @@ import { getDb } from "../src/db";
 import { users } from "../src/db/schema";
 import { eq } from "drizzle-orm";
 import {
-  getQuests, reportQuestEvent, claimQuest, getWallet, getInventory,
+  getWallet, getInventory,
   buyItem, consumeItem, recordMistake, getMistakes, countMistakes, fixMistake,
 } from "../src/lib/game/engagement";
-import { questsForDay, SHOP_ITEMS } from "../src/lib/game/quests";
+import { SHOP_ITEMS } from "../src/lib/game/quests";
 
 const fails: string[] = [];
 function ok(label: string, cond: boolean, extra = "") {
@@ -24,56 +24,6 @@ function ok(label: string, cond: boolean, extra = "") {
   console.log("probe user:", email, "\n");
 
   try {
-    // ---- quests are deterministic and distinct ----
-    const d1 = questsForDay("2026-09-22").map(q => q.id);
-    const d1again = questsForDay("2026-09-22").map(q => q.id);
-    const d2 = questsForDay("2026-09-23").map(q => q.id);
-    ok("same day -> same 3 quests", JSON.stringify(d1) === JSON.stringify(d1again), d1.join(","));
-    ok("3 quests per day", d1.length === 3);
-    ok("no duplicate quest ids", new Set(d1).size === 3);
-    ok("different day -> different set", JSON.stringify(d1) !== JSON.stringify(d2), d2.join(","));
-    const evs = questsForDay("2026-09-22").map(q => q.event);
-    ok("quests use distinct events", new Set(evs).size === evs.length, evs.join(","));
-
-    // ---- progress reporting ----
-    const live = questsForDay();
-    const q0 = live[0];
-    let st = await getQuests(uid);
-    ok("starts at zero", st.quests.every(q => q.count === 0 && !q.claimed));
-    await reportQuestEvent(uid, q0.event, q0.event === "blitz_score" ? q0.target : 1);
-    st = await getQuests(uid);
-    const row0 = st.quests.find(q => q.id === q0.id)!;
-    ok("event increments the right quest", row0.count > 0, `${row0.count}/${row0.target}`);
-    const others = st.quests.filter(q => q.id !== q0.id && q.count > 0);
-    ok("unrelated quests untouched", others.length === 0);
-
-    // ---- claim once, and only when done ----
-    const early = await claimQuest(uid, q0.id);
-    const needMore = row0.count < q0.target;
-    ok("cannot claim before target", needMore ? !early.ok : early.ok, early.error || `reward=${early.reward}`);
-
-    // drive it to completion
-    for (let i = 0; i < q0.target + 2; i++) {
-      await reportQuestEvent(uid, q0.event, q0.event === "blitz_score" ? q0.target : 1);
-    }
-    st = await getQuests(uid);
-    ok("reaches done", st.quests.find(q => q.id === q0.id)!.done);
-
-    const before = (await db.select({ b: users.bonusGems }).from(users).where(eq(users.id, uid)))[0].b;
-    const c1 = await claimQuest(uid, q0.id);
-    const c2 = await claimQuest(uid, q0.id);
-    const after = (await db.select({ b: users.bonusGems }).from(users).where(eq(users.id, uid)))[0].b;
-    ok("claim pays out once", c1.ok && !c2.ok, `paid=${after - before} expected=${q0.reward}`);
-    ok("payout is the quest reward", after - before === q0.reward);
-
-    // claimed quests stop accumulating
-    const atClaim = (await getQuests(uid)).quests.find(q => q.id === q0.id)!.count;
-    await reportQuestEvent(uid, q0.event, 1);
-    const afterClaim = (await getQuests(uid)).quests.find(q => q.id === q0.id)!.count;
-    ok("claimed quest stops counting", atClaim === afterClaim, `${atClaim} -> ${afterClaim}`);
-
-    ok("unknown quest id rejected", !(await claimQuest(uid, "not_a_quest")).ok);
-
     // ---- wallet + shop ----
     let w = await getWallet(uid);
     ok("wallet starts from earned", w.balance === w.earned && w.spent === 0, `earned=${w.earned}`);

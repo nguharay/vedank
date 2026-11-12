@@ -1,7 +1,6 @@
 "use client";
 
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
-import type { HomeGameId } from "../homeGames";
 import { Mascot } from "../Mascot";
 import type { DailyWinners } from "@/lib/game/league";
 import { monsterFor } from "../monsters";
@@ -44,7 +43,6 @@ export function HomeView({
   onOpenFriends,
   onAcceptDuel,
   onOpenClasses,
-  onPlayGame,
   focusTopic,
   lang,
   t,
@@ -77,7 +75,6 @@ export function HomeView({
   onOpenFriends: () => void;
   onAcceptDuel: (d: ChallengeRow) => void;
   /* opens one of the action games (today's card, map bonus stops) */
-  onPlayGame: (id: HomeGameId) => void;
   /* coming back from a lesson: open on the map, scrolled to that lesson */
   focusTopic?: string | null;
 

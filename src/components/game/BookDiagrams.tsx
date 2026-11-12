@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { Lang } from "@/lib/game/topics";
 
 // Diagrams redrawn from the printed book's "how it works" pages, one per topic.
@@ -1785,17 +1784,6 @@ function DsCircleFig({ t, lang }: { t: number; lang: Lang }) {
   );
 }
 
-/* The 1-to-9 picker under the "your turn" cards (pp.205–206, 208–209). */
-function DigitPicker({ value, onPick, label }: { value: number; onPick: (d: number) => void; label: string }) {
-  return (
-    <div className="bd-dspick" role="group" aria-label={label}>
-      <span>{label}</span>
-      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-        <button key={d} type="button" className={d === value ? "on" : ""} style={{ ["--c" as string]: DS_COL[d] }} onClick={() => onPick(d)} aria-pressed={d === value}>{d}</button>
-      ))}
-    </div>
-  );
-}
 
 /* p.207: the Digit-Sum square — row × column, each cell in its digit's colour.
    With `pick`, only that digit's boxes are coloured (pp.208–209), and `lines`

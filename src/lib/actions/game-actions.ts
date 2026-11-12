@@ -4,10 +4,9 @@ import { auth } from "@/auth";
 import { submitStageResult, importGuestProgress, submitPuzzleSolved, getLeaderboard } from "@/lib/game/progress";
 import { getDailyStatus, submitDaily, getLeagueStanding, getAllLeagues, getDailyWinners } from "@/lib/game/league";
 import {
-  getQuests, reportQuestEvent, claimQuest, getInventory, getWallet,
+  getInventory, getWallet,
   buyItem, consumeItem, recordMistake, getMistakes, countMistakes, fixMistake, reviewStats,
 } from "@/lib/game/engagement";
-import type { QuestEvent } from "@/lib/game/quests";
 import {
   ensureFriendCode, addFriendByCode, removeFriend, listFriends,
   createChallenge, listChallenges, answerChallenge, pendingChallengeCount,
@@ -91,21 +90,6 @@ export async function leaderboardAction() {
 }
 
 /* ---------- engagement loop ---------- */
-
-export async function questsAction() {
-  const userId = await requireUserId();
-  return getQuests(userId);
-}
-
-export async function reportQuestAction(event: QuestEvent, amount = 1) {
-  const userId = await requireUserId();
-  return reportQuestEvent(userId, event, amount);
-}
-
-export async function claimQuestAction(questId: string) {
-  const userId = await requireUserId();
-  return claimQuest(userId, questId);
-}
 
 export async function shopStateAction() {
   const userId = await requireUserId();

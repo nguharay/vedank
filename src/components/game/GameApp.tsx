@@ -76,7 +76,6 @@ import type { LeaderboardData } from "@/lib/game/progress";
 import type { LeagueTable } from "@/lib/game/league";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { Mascot } from "./Mascot";
-import { BOOK_DIAGRAM_EQ } from "./BookDiagrams";
 import { TRICK_BY_ID } from "@/lib/game/tricks";
 import { dailyQuestions, todayKey, seededRandom, withSeededRandom, type DailyQuestion } from "@/lib/game/daily";
 import { applyOverride, type OverrideMap, type TopicOverride } from "@/lib/game/overrides";
@@ -124,7 +123,7 @@ import { useBuddy, line } from "./useBuddy";
 import { makeQuoteCycle, quoteText, type Quote } from "@/lib/game/quotes";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI } from "./i18n";
-import { LEAGUES, leagueOf, TOP_LEAGUE } from "@/lib/game/daily";
+import { LEAGUES, leagueOf } from "@/lib/game/daily";
 import { ri, shuffle, weightedPick, urlBase64ToUint8Array, RollUp, fmt, sameLoc, haptic, rankLabel, SPRINT_LEN, BLITZ_DEFAULT_LEVEL, BLITZ_BOOST_MS } from "./util";
 import type { View, Mode, Loc } from "./util";
 import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, TricksView, BlitzView } from "./views";
@@ -205,10 +204,13 @@ export function GameApp({
   overrides?: OverrideMap;
 }) {
   const [progress, setProgress] = useState<ProgressState>(initialProgress);
-  const [view, setViewRaw] = useState<View>("home");
+  /* the app opens on the games menu: playing is the main thing. (A first-time
+     visitor is sent to Home instead, where the guided tour runs: see the
+     story effect below.) */
+  const [view, setViewRaw] = useState<View>("games");
   /* every screen change slides: deeper screens come in from the right,
      going back slides from the left (see util.transition) */
-  const viewRef = useRef<View>("home");
+  const viewRef = useRef<View>("games");
   const DEPTH: Partial<Record<View, number>> = { home: 0, games: 1, topic: 1, stagemap: 2, practice: 3 };
   const setView = useCallback((next: View) => {
     const from = viewRef.current;
@@ -435,15 +437,6 @@ export function GameApp({
     return () => clearTimeout(id);
   }, []);
   const newQuote = () => setQuote(nextQuote.current());
-  /* a tap on the peeking buddy: hush it if it is talking, else a fresh quote
-     in the banner (and bring that card into view) */
-  function tapBuddy() {
-    if (buddy.say) { buddy.quiet(); return; }
-    newQuote();
-    const slide = document.querySelector<HTMLElement>('.home-banner-slide[data-slide="quote"]');
-    slide?.parentElement?.scrollTo({ left: slide.offsetLeft, behavior: "smooth" });
-    slide?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }
   const ja = lang === "ja";
   const sayLine = useCallback(
     (key: Parameters<typeof line>[0]) => {
@@ -931,6 +924,16 @@ export function GameApp({
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
   /* the same for a party room (?pr=CODE): tug of war, buzzer quiz, boss battle */
   const [partyJoinCode, setPartyJoinCode] = useState<string | null>(null);
+  /* the pinned "join a friend's room" bar on the games menu */
+  const [joinBarCode, setJoinBarCode] = useState("");
+  function joinFromBar() {
+    if (joinBarCode.length !== 4) return;
+    if (guest) { setLockOpen("race-online"); return; }
+    setPartyJoinCode(joinBarCode);
+    setJoinBarCode("");
+    gameFromHomeRef.current = false;
+    setView("party");
+  }
   /* the party game to show first — the arcade games open their own race */
   const [partyFirst, setPartyFirst] = useState<"tug" | "space" | "river">("tug");
   function guestLocked(kind: string): boolean {
@@ -2848,7 +2851,20 @@ export function GameApp({
     let seen = false;
     try { seen = !!localStorage.getItem("sutraSprint.storySeen"); } catch {}
     if (!seen) setStoryOpen(true);
-  }, []);
+    /* the opening screen: Home for someone who has not had the tour yet,
+       otherwise the games menu with its saved bests loaded. A deep link
+       (a room, a class, a duel) that has already moved on is left alone. */
+    let toured = false;
+    try { toured = !!localStorage.getItem(TOUR_KEY); } catch {}
+    if (viewRef.current === "games") {
+      if (toured) openGames();
+      else {
+        viewRef.current = "home"; setViewRaw("home");
+        /* the mount-time save of the opening screen must not bring the games menu back */
+        try { localStorage.setItem("sutraSprint.navView", "home"); } catch {}
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   /* eslint-enable react-hooks/set-state-in-effect */
   function closeStory() {
     setStoryOpen(false);
@@ -4208,7 +4224,6 @@ export function GameApp({
             onOpenFriends={openFriends}
             onAcceptDuel={acceptDuel}
             onOpenClasses={classesEnabled && lang === "ja" ? () => setClassesFrom("home") : undefined}
-            onPlayGame={playGame}
             lang={lang}
             t={t}
           />
@@ -5064,9 +5079,21 @@ export function GameApp({
           </div>
         ) : (
           <>
-            <button className="btn btn-ghost back-footer-btn" aria-label="Back" onClick={handleBack}>
-              ←<span className="back-word"> {lang === "ja" ? "戻る" : "Back"}</span>
+            <button className="btn btn-ghost back-footer-btn" aria-label={view === "games" ? "Home" : "Back"} onClick={handleBack}>
+              ←<span className="back-word"> {view === "games" ? (lang === "ja" ? "ホーム" : "Home") : (lang === "ja" ? "戻る" : "Back")}</span>
             </button>
+            {/* the games menu: a friend's room code goes in the bar beside
+                Back, always in view and over nothing */}
+            {view === "games" && (
+              <div className="join-bar">
+                <span className="join-bar-label">👥 <span className="join-bar-long">{ja ? "友だちの" : "Friend's "}</span>{ja ? "部屋" : "room"}</span>
+                <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
+                  autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
+                  onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
+                <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
+              </div>
+            )}
             {view === "topic" && (
               <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
                 {t.stageMap.seeStageMap}
