@@ -94,7 +94,7 @@ export type UIDict = {
 export const UI: Record<LangCode, UIDict> = {
   en: {
     appName: "VedAnk Sprint",
-    headerTitles: { home: "VedAnk Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Dojo", blitz: "Speed Quiz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "Games", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense", konbini: "Konbini Cashier", crossword: "Number Crossword", crossmath: "Cross Math", rhythm: "Rhythm Tap", town: "Math Town", ninja: "Ninja Slice", party: "Multiplayer Games", space: "Space Blaster", river: "River Hop" },
+    headerTitles: { home: "VedAnk Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Dojo", blitz: "Speed Quiz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "VedAnk Games", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense", konbini: "Konbini Cashier", crossword: "Number Crossword", crossmath: "Cross Math", rhythm: "Rhythm Tap", town: "Math Town", ninja: "Ninja Slice", party: "Multiplayer Games", space: "Space Blaster", river: "River Hop" },
     menu: {
       accountLabel: "Account menu",
       player: "Player",
@@ -227,7 +227,7 @@ export const UI: Record<LangCode, UIDict> = {
   },
   ja: {
     appName: "インド式数学",
-    headerTitles: { home: "インド式数学", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒道場", blitz: "スピードクイズ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "ゲーム", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！", konbini: "コンビニのレジ", crossword: "数字クロスワード", crossmath: "クロス計算", rhythm: "リズムタップ", town: "計算タウン", ninja: "忍者スライス", party: "みんなであそぶ", space: "スペースシューター", river: "かえるジャンプ" },
+    headerTitles: { home: "インド式数学", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒道場", blitz: "スピードクイズ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "VedAnkゲーム", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！", konbini: "コンビニのレジ", crossword: "数字クロスワード", crossmath: "クロス計算", rhythm: "リズムタップ", town: "計算タウン", ninja: "忍者スライス", party: "みんなであそぶ", space: "スペースシューター", river: "かえるジャンプ" },
     menu: {
       accountLabel: "アカウントメニュー",
       player: "プレイヤー",

@@ -4489,8 +4489,8 @@ export function GameApp({
         
             <p className="games-lede">
               {lang === "ja"
-                ? "計算を使ったミニゲーム。オフラインでも遊べます。"
-                : "Quick games built on the same maths. They work offline too."}
+                ? "スピード、ひらめき、友だちとの真剣勝負。計算パワーで勝ちぬこう！"
+                : "Speed, smarts and showdowns with friends. Win with your maths power!"}
             </p>
             <button className="ttt-card crossmath-feature" onClick={shelf(() => setView("crossmath"), "crossmath")}>
               <span className="feature-art crossmath" aria-hidden="true"><i>7</i><i>+</i><i>5</i><i>×</i><i></i><i>=</i><i>=</i><i></i><i>12</i></span>
