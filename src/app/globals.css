@@ -1433,6 +1433,43 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 }
 
 /* the dock: above the bottom nav, clear of the answer tiles */
+.buddy-dot{ position:absolute; left:2px; top:6px; width:10px; height:10px; border-radius:50%; background:#ff3b5c; border:2px solid var(--surface); }
+@keyframes buddyStripIn{ from{ opacity:0; transform:scale(.6); } to{ opacity:1; transform:none; } }
+/* the swipeable strip at the top of Home (HomeBanner.tsx) */
+.home-banner{ margin:0 0 14px; }
+.home-banner-track{ display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; gap:10px; -webkit-overflow-scrolling:touch; }
+.home-banner-track::-webkit-scrollbar{ display:none; }
+.home-banner-slide{ flex:0 0 100%; min-width:0; scroll-snap-align:center; display:flex; }
+.home-banner-slide > *{ flex:1; min-width:0; margin:0 !important; }
+.home-banner-dots{ display:flex; justify-content:center; gap:6px; margin-top:7px; }
+.home-banner-dots button{ width:8px; height:8px; padding:0; border:none; border-radius:50%; background:var(--line); cursor:pointer; transition:width .2s, background .2s; }
+.home-banner-dots button.on{ width:20px; border-radius:4px; background:var(--violet, #7b3fa0); }
+.quote-banner{ display:flex; align-items:center; gap:10px; text-align:left; font-family:inherit; cursor:pointer; padding:10px 14px 10px 10px; border-radius:16px; border:3px solid var(--ink-line); color:var(--ink);
+  background:linear-gradient(120deg, color-mix(in srgb, var(--gold, #ffb800) 20%, var(--surface)), var(--surface) 70%); box-shadow:0 4px 0 color-mix(in srgb, var(--ink-line) 22%, transparent); }
+.quote-banner:active{ transform:translateY(2px); }
+.quote-banner-who{ flex:none; width:52px; height:52px; }
+.quote-banner-who svg{ width:100%; height:100%; display:block; }
+.quote-banner-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.quote-banner-body{ animation:quoteIn .5s ease both; }
+@keyframes quoteIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+.quote-banner-text{ font-size:13.5px; font-weight:800; line-height:1.4; }
+.quote-banner-body em{ font-style:normal; font-size:11px; font-weight:800; color:var(--muted); }
+/* the buddy leans in from the screen edge, low on the page above the dock;
+   its bubble opens inward when tapped or when it has news */
+.buddy-peek{ position:fixed; z-index:41; bottom:calc(150px + env(safe-area-inset-bottom,0px)); display:flex; align-items:center; gap:6px; pointer-events:none; }
+.buddy-peek.right{ right:0; flex-direction:row-reverse; }
+.buddy-peek.left{ left:0; }
+.buddy-peek-clip{ position:relative; pointer-events:auto; flex:none; display:block; width:34px; height:60px; overflow:hidden; padding:0; border:none; background:none; cursor:pointer; }
+.buddy-peek-clip svg{ width:58px; height:58px; display:block; filter:drop-shadow(0 3px 4px rgba(20,20,50,.3)); }
+.buddy-peek.right .buddy-peek-clip svg{ animation:buddyPeekR 3.2s ease-in-out infinite; }
+.buddy-peek.left .buddy-peek-clip svg{ margin-left:-24px; animation:buddyPeekL 3.2s ease-in-out infinite; }
+@keyframes buddyPeekR{ 0%,100%{ transform:translateX(14px) rotate(-14deg); } 40%,75%{ transform:translateX(0) rotate(-20deg); } }
+@keyframes buddyPeekL{ 0%,100%{ transform:translateX(-14px) rotate(14deg); } 40%,75%{ transform:translateX(0) rotate(20deg); } }
+.buddy-peek.talking .buddy-peek-clip{ width:46px; }
+.buddy-peek.talking.left .buddy-peek-clip svg{ margin-left:-12px; }
+.buddy-peek-bubble{ pointer-events:auto; cursor:pointer; font-family:inherit; text-align:left; max-width:min(250px, 62vw); font-size:12.5px; font-weight:800; line-height:1.4; color:var(--ink); background:color-mix(in srgb, var(--gold, #ffb800) 25%, var(--surface)); border:2.5px solid var(--ink-line); border-radius:14px; padding:7px 11px; box-shadow:0 3px 0 color-mix(in srgb, var(--ink-line) 22%, transparent); animation:buddyStripIn .3s cubic-bezier(.2,1.4,.4,1) both; }
+.buddy-peek.right .buddy-peek-bubble{ transform-origin:100% 50%; border-radius:14px 14px 4px 14px; }
+.buddy-peek.left .buddy-peek-bubble{ transform-origin:0 50%; border-radius:14px 14px 14px 4px; }
 .buddy-dock{ position:fixed; z-index:40; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px));
   width:100%; max-width:480px; transform:translateX(-50%); padding:0 12px;
   display:flex; align-items:flex-end; gap:8px; pointer-events:none; }
