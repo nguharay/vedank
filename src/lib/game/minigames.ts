@@ -125,7 +125,6 @@ export type QuickGame = {
 };
 
 const ri = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1));
-const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
 const fmtN = (n: number) => n.toLocaleString("en-IN");
 
 /* Options around a numeric answer, all distinct, shuffled; returns the index
@@ -162,31 +161,6 @@ export const QUICK_GAMES: QuickGame[] = [
       return { prompt: `${fmtN(n)}`, ...o,
         noteJa: `${String(n).split("").join("+")} = ${firstPass}${firstPass > 9 ? ` → ${ds}` : ""}`,
         noteEn: `${String(n).split("").join("+")} = ${firstPass}${firstPass > 9 ? ` → ${ds}` : ""}` };
-    },
-  },
-  {
-    id: "sq5", icon: "🟪", tint: "var(--indigo, #3A1D7A)",
-    name: "Squares Ending in 5", nameJa: "5で終わる数の2乗",
-    blurb: "25², 35², 85² in one step.", blurbJa: "25², 35², 85² を一発で。",
-    hintJa: "十の位 × (十の位+1) のあとに 25", hintEn: "tens × (tens+1), then write 25",
-    next: () => {
-      const t = ri(1, 12), n = t * 10 + 5, sq = n * n;
-      const o = numericOptions(sq, 4, (x) => [x + 100, x - 100, x + 1000, x - 1000, x + 10, x + 200]);
-      return { prompt: `${n}²`, ...o,
-        noteJa: `${t} × ${t + 1} = ${t * (t + 1)} → ${fmtN(sq)}`, noteEn: `${t} × ${t + 1} = ${t * (t + 1)} → ${fmtN(sq)}` };
-    },
-  },
-  {
-    id: "x11", icon: "1️⃣", tint: "var(--teal, #0A7E92)",
-    name: "Times Eleven", nameJa: "11をかける",
-    blurb: "Any two-digit number × 11.", blurbJa: "2けたの数 × 11 をすばやく。",
-    hintJa: "両はしはそのまま、まん中はたし算", hintEn: "Keep the ends, add for the middle",
-    next: (streak) => {
-      const n = ri(12, streak >= 6 ? 98 : 89), ans = n * 11;
-      const o = numericOptions(ans, 4, (x) => [x + 11, x - 11, x + 10, x - 10, x + 100, x - 100]);
-      const d1 = Math.floor(n / 10), d2 = n % 10;
-      return { prompt: `${n} × 11`, ...o,
-        noteJa: `${d1} | ${d1}+${d2}=${d1 + d2} | ${d2} → ${fmtN(ans)}`, noteEn: `${d1} | ${d1}+${d2}=${d1 + d2} | ${d2} → ${fmtN(ans)}` };
     },
   },
 ];

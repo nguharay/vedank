@@ -76,7 +76,6 @@ import type { LeaderboardData } from "@/lib/game/progress";
 import type { LeagueTable } from "@/lib/game/league";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { Mascot } from "./Mascot";
-import { BOOK_DIAGRAM_EQ } from "./BookDiagrams";
 import { TRICK_BY_ID } from "@/lib/game/tricks";
 import { dailyQuestions, todayKey, seededRandom, withSeededRandom, type DailyQuestion } from "@/lib/game/daily";
 import { applyOverride, type OverrideMap, type TopicOverride } from "@/lib/game/overrides";
@@ -124,7 +123,7 @@ import { useBuddy, line } from "./useBuddy";
 import { makeQuoteCycle, quoteText, type Quote } from "@/lib/game/quotes";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI } from "./i18n";
-import { LEAGUES, leagueOf, TOP_LEAGUE } from "@/lib/game/daily";
+import { LEAGUES, leagueOf } from "@/lib/game/daily";
 import { ri, shuffle, weightedPick, urlBase64ToUint8Array, RollUp, fmt, sameLoc, haptic, rankLabel, SPRINT_LEN, BLITZ_DEFAULT_LEVEL, BLITZ_BOOST_MS } from "./util";
 import type { View, Mode, Loc } from "./util";
 import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, TricksView, BlitzView } from "./views";
@@ -435,15 +434,6 @@ export function GameApp({
     return () => clearTimeout(id);
   }, []);
   const newQuote = () => setQuote(nextQuote.current());
-  /* a tap on the peeking buddy: hush it if it is talking, else a fresh quote
-     in the banner (and bring that card into view) */
-  function tapBuddy() {
-    if (buddy.say) { buddy.quiet(); return; }
-    newQuote();
-    const slide = document.querySelector<HTMLElement>('.home-banner-slide[data-slide="quote"]');
-    slide?.parentElement?.scrollTo({ left: slide.offsetLeft, behavior: "smooth" });
-    slide?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }
   const ja = lang === "ja";
   const sayLine = useCallback(
     (key: Parameters<typeof line>[0]) => {
@@ -4218,7 +4208,6 @@ export function GameApp({
             onOpenFriends={openFriends}
             onAcceptDuel={acceptDuel}
             onOpenClasses={classesEnabled && lang === "ja" ? () => setClassesFrom("home") : undefined}
-            onPlayGame={playGame}
             lang={lang}
             t={t}
           />

@@ -198,23 +198,6 @@ const GAME: Record<string, React.ReactNode> = {
       <path d="M17 18a8 8 0 0 1 4-3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
     </>
   ),
-  sq5: (
-    <>
-      <rect x="6" y="10" width="28" height="28" rx="4" fill="#c8b6ff" {...s} />
-      <path d="M15.3 10v28M24.6 10v28M6 19.3h28M6 28.6h28" stroke={O} strokeWidth="1.2" opacity=".55" />
-      {num(20, 29.5, "5²", 14)}
-      <rect x="31" y="5" width="13" height="10" rx="3" fill="#ffc83a" {...s} strokeWidth="1.6" />
-      {num(37.5, 13, "25", 7.5)}
-    </>
-  ),
-  x11: (
-    <>
-      <rect x="4" y="10" width="40" height="28" rx="8" fill="#fff" {...s} />
-      {num(14, 29, "1", 15, "#0a7e92")}{num(24, 27, "×", 11)}
-      {num(34, 29, "1", 15, "#0a7e92")}
-      <path d="M8 13.5c3-1.5 7-2 11-2" stroke="#4fd1a5" strokeWidth="2" strokeLinecap="round" />
-    </>
-  ),
   match: (
     <>
       <rect x="4" y="12" width="20" height="24" rx="4" fill="#5ab8ff" {...s} />

@@ -1,8 +1,7 @@
 import { and, eq, sql as raw } from "drizzle-orm";
 import { getDb } from "@/db";
-import { inventory, mistakes, questProgress, users } from "@/db/schema";
-import { todayKey } from "./daily";
-import { questById, questsForDay, shopItem, type QuestEvent, type ShopItemId } from "./quests";
+import { inventory, mistakes, users } from "@/db/schema";
+import { shopItem, type ShopItemId } from "./quests";
 import { loadProgress } from "./progress";
 import { totalGems } from "./state";
 
@@ -12,18 +11,6 @@ export type InventoryState = {
   fiftyTokens: number;
   timeBoosts: number;
   streakFreezes: number;
-};
-
-export type QuestState = {
-  id: string;
-  icon: string;
-  title: string;
-  titleJa: string;
-  target: number;
-  reward: number;
-  count: number;
-  claimed: boolean;
-  done: boolean;
 };
 
 const EMPTY_INV: InventoryState = {
@@ -67,110 +54,6 @@ export async function getWallet(userId: string): Promise<{ earned: number; spent
   const earned = totalGems(progress) + (userRows[0]?.bonusGems ?? 0);
   const balance = Math.max(0, earned - inv.spentGems);
   return { earned, spent: inv.spentGems, balance };
-}
-
-/* ---------- quests ---------- */
-
-export async function getQuests(userId: string): Promise<{ quests: QuestState[]; day: string }> {
-  const db = getDb();
-  const day = todayKey();
-  const defs = questsForDay(day);
-  const rows = await db
-    .select()
-    .from(questProgress)
-    .where(and(eq(questProgress.userId, userId), eq(questProgress.day, day)));
-  const byId = new Map(rows.map((r) => [r.questId, r]));
-
-  return {
-    day,
-    quests: defs.map((q) => {
-      const row = byId.get(q.id);
-      const count = row?.count ?? 0;
-      return {
-        id: q.id,
-        icon: q.icon,
-        title: q.title,
-        titleJa: q.titleJa,
-        target: q.target,
-        reward: q.reward,
-        count,
-        claimed: row?.claimed ?? false,
-        done: count >= q.target,
-      };
-    }),
-  };
-}
-
-/* Gameplay calls this with what just happened. Only quests live today and
-   listening for that event move, so a stray event is a no-op rather than an
-   error — gameplay should never have to know which quests are active. */
-export async function reportQuestEvent(
-  userId: string,
-  event: QuestEvent,
-  amount = 1
-): Promise<{ quests: QuestState[]; day: string }> {
-  const db = getDb();
-  const day = todayKey();
-  const live = questsForDay(day).filter((q) => q.event === event);
-
-  for (const q of live) {
-    /* blitz_score is a high-water mark, not a tally: three runs of 8 is not a
-       20. Everything else accumulates. */
-    const value = raw`case when ${questProgress.claimed} then ${questProgress.count} else ${
-      event === "blitz_score"
-        ? raw`greatest(${questProgress.count}, ${amount})`
-        : raw`${questProgress.count} + ${amount}`
-    } end`;
-    await db
-      .insert(questProgress)
-      .values({ userId, day, questId: q.id, count: amount })
-      .onConflictDoUpdate({
-        target: [questProgress.userId, questProgress.day, questProgress.questId],
-        set: { count: value, updatedAt: new Date() },
-      });
-  }
-
-  return getQuests(userId);
-}
-
-/* Claiming credits the reward as bonus gems, which is the same pot the daily
-   chest pays into. Guarded by the claimed flag so a double tap pays once. */
-export async function claimQuest(
-  userId: string,
-  questId: string
-): Promise<{ ok: boolean; reward: number; error?: string }> {
-  const db = getDb();
-  const day = todayKey();
-  const def = questById(questId);
-  if (!def) return { ok: false, reward: 0, error: "Unknown quest." };
-  if (!questsForDay(day).some((q) => q.id === questId)) {
-    return { ok: false, reward: 0, error: "That quest isn't today's." };
-  }
-
-  /* Single conditional UPDATE decides the race: only the caller that flips
-     claimed from false sees a returned row, and only it pays out. */
-  const won = await db
-    .update(questProgress)
-    .set({ claimed: true, updatedAt: new Date() })
-    .where(
-      and(
-        eq(questProgress.userId, userId),
-        eq(questProgress.day, day),
-        eq(questProgress.questId, questId),
-        eq(questProgress.claimed, false),
-        raw`${questProgress.count} >= ${def.target}`
-      )
-    )
-    .returning({ questId: questProgress.questId });
-
-  if (!won.length) return { ok: false, reward: 0, error: "Not ready, or already claimed." };
-
-  await db
-    .update(users)
-    .set({ bonusGems: raw`${users.bonusGems} + ${def.reward}` })
-    .where(eq(users.id, userId));
-
-  return { ok: true, reward: def.reward };
 }
 
 /* ---------- shop ---------- */

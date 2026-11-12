@@ -110,7 +110,7 @@ function emit(name: string, detail: unknown) {
 export const UNLOCK_AT: Record<string, number> = {
   ninja: 0, runner: 0, pop: 0, match: 0, ttt: 0, town: 0,
   sushi: 0, castle: 0, memory: 0, konbini: 0, digitsum: 0,
-  rhythm: 0, crossword: 0, sq5: 0, x11: 0, crossmath: 0,
+  rhythm: 0, crossword: 0, crossmath: 0,
   race: 0, sprint: 0, space: 0, river: 0,
 };
 export const GAME_NAMES: Record<string, [string, string]> = {
@@ -120,7 +120,7 @@ export const GAME_NAMES: Record<string, [string, string]> = {
   memory: ["Memory Pairs", "神経衰弱"], konbini: ["Konbini Cashier", "コンビニのレジ"],
   digitsum: ["Digit Sum", "数字の和"], rhythm: ["Rhythm Tap", "リズムタップ"],
   crossword: ["Number Crossword", "数字クロスワード"], crossmath: ["Cross Math", "クロス計算"],
-  sq5: ["Squares ending in 5", "5で終わる数の2乗"], x11: ["× 11", "×11"], race: ["Math Race", "計算レース"],
+  race: ["Math Race", "計算レース"],
   sprint: ["Matchstick Sprint", "マッチ棒スプリント"], ttt: ["Tic-Tac-Toe", "三目ならべ"], town: ["Math Town", "マスタウン"],
   space: ["Space Blaster", "スペースシューター"], river: ["River Hop", "かえるジャンプ"],
 };

@@ -59,8 +59,6 @@ function Digit({ d, x, y, skip = "" }: { d: string; x: number; y: number; skip?:
 
 const QUICK_EXAMPLES: Record<string, { prompt: string; tiles: Tile[]; tap: number; note: string }> = {
   digitsum: { prompt: "487 → ?", tiles: row3(["1", "10", "19"]), tap: 0, note: "4+8+7 = 19 → 1+9 = 10 → 1" },
-  sq5: { prompt: "35²", tiles: row3(["1,225", "925", "1,525"]), tap: 0, note: "3 × 4 = 12 → 1225" },
-  x11: { prompt: "43 × 11", tiles: row3(["443", "473", "4,733"]), tap: 1, note: "4 (4+3) 3 → 473" },
 };
 
 const DEMOS: Record<string, Demo> = {
