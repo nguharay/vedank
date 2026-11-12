@@ -5010,19 +5010,6 @@ export function GameApp({
             t={t}
           />
         )}
-        {/* always in view on the games menu: type a friend's room code and
-            go, without hunting for it at the bottom of a lobby. Not on Home,
-            where it sat over the lesson map. */}
-        {view === "games" && (
-          <div className="join-bar">
-            <span className="join-bar-label">👥 {ja ? "友だちの部屋" : "Friend's room"}</span>
-            <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
-              autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
-              onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
-              onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
-            <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
-          </div>
-        )}
       </main>
 
       {stageIntro !== null && (
@@ -5090,6 +5077,18 @@ export function GameApp({
             <button className="btn btn-ghost back-footer-btn" aria-label="Back" onClick={handleBack}>
               ←<span className="back-word"> {lang === "ja" ? "戻る" : "Back"}</span>
             </button>
+            {/* the games menu: a friend's room code goes in the bar beside
+                Back, always in view and over nothing */}
+            {view === "games" && (
+              <div className="join-bar">
+                <span className="join-bar-label">👥 <span className="join-bar-long">{ja ? "友だちの" : "Friend's "}</span>{ja ? "部屋" : "room"}</span>
+                <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
+                  autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
+                  onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
+                <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
+              </div>
+            )}
             {view === "topic" && (
               <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
                 {t.stageMap.seeStageMap}

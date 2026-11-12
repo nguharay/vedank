@@ -5261,14 +5261,13 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 @media (min-width:1024px){ .games-view.active{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
 
 /* ---- Pinned "join a friend's room" bar (games menu) ----
-   A slim strip that stays just above the bottom bar while the page scrolls.
-   The offsets are negative because the scroll area keeps 96px of bottom
-   padding (room for the bar) and sticky offsets are measured inside it. */
-.join-bar{ position:sticky; bottom:-84px; z-index:5; display:flex; align-items:center; gap:8px;
-  max-width:520px; margin:14px auto 0; padding:7px 8px 7px 12px; border-radius:16px; border:3px solid var(--ink-line);
-  background:#f1ecff; box-shadow:0 4px 0 var(--ink-line); }
+   It lives in the footer bar beside Back. (The lobby's own box below is
+   sticky inside the scroll area, whose 96px bottom padding is why its offset
+   is negative.) */
+.join-bar{ flex:1; min-width:0; display:flex; align-items:center; gap:6px; margin-left:auto; padding:5px 6px 5px 10px; border-radius:14px;
+  border:2.5px solid var(--ink-line); background:#f1ecff; }
 .join-bar-label{ flex:1; min-width:0; font-size:12.5px; font-weight:900; color:#3b2a6e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.join-bar-input{ flex:0 0 92px; width:92px; text-align:center; font-size:17px; font-weight:800; letter-spacing:.16em; padding:6px 4px; border-radius:10px;
+.join-bar-input{ flex:0 1 84px; width:84px; min-width:60px; text-align:center; font-size:17px; font-weight:800; letter-spacing:.16em; padding:6px 4px; border-radius:10px;
   background:#fff; color:#1d1b33; border:2.5px dashed #8a86a8; }
 .join-bar-input::placeholder{ color:#c3bfd6; letter-spacing:.1em; font-weight:700; font-size:14px; }
 .join-bar-input:focus{ outline:none; border-style:solid; border-color:#7a58c0; }
@@ -5278,3 +5277,5 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .join-bar-go:not(:disabled):active{ transform:translateY(3px); box-shadow:none; }
 /* the multiplayer lobby's own join box stays in view too */
 .party-join{ position:sticky; bottom:-84px; z-index:5; border:3px solid var(--ink-line); box-shadow:0 4px 0 var(--ink-line); }
+.join-bar-label{ text-transform:capitalize; }
+@media (max-width:479px){ .join-bar-long{ display:none; } }
