@@ -989,19 +989,10 @@ export function GameApp({
      and only the browser knows where the player was. One-shot, not a cascade. */
   useEffect(() => {
     try {
-      const savedView = localStorage.getItem("sutraSprint.navView");
       const savedTopic = localStorage.getItem("sutraSprint.navTopic");
+      /* the app always opens on Play (the games menu); only the last lesson
+         is remembered, so Home's "next lesson" and the map pick up from it */
       if (savedTopic) setCurrentTopicId(savedTopic);
-      if (savedView === "topic" && savedTopic) setView("topic");
-      else if (savedView === "stagemap" && savedTopic) setView("stagemap");
-      else if (savedView === "arena") {
-        loadPuzzle(dojoResumeIdx());
-        setView("arena");
-      }
-      /* A game round cannot survive a refresh, but the shelf it came from
-         can — landing there beats landing on home. */
-      else if (savedView === "games" || GAME_VIEWS.includes(savedView as View)) setView("games");
-      else if (savedView === "tricks") setView("tricks");
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1009,8 +1000,6 @@ export function GameApp({
 
   useEffect(() => {
     try {
-      const persistView = view === "practice" ? "stagemap" : view === "blitz" ? "home" : view;
-      localStorage.setItem("sutraSprint.navView", persistView);
       if (currentTopicId) localStorage.setItem("sutraSprint.navTopic", currentTopicId);
     } catch {}
   }, [view, currentTopicId]);
@@ -2848,19 +2837,11 @@ export function GameApp({
     let seen = false;
     try { seen = !!localStorage.getItem("sutraSprint.storySeen"); } catch {}
     if (!seen) setStoryOpen(true);
-    /* the opening screen: Home for someone who has not had the tour yet,
-       otherwise the games menu with its saved bests loaded. A deep link
-       (a room, a class, a duel) that has already moved on is left alone. */
-    let toured = false;
-    try { toured = !!localStorage.getItem(TOUR_KEY); } catch {}
-    if (viewRef.current === "games") {
-      if (toured) openGames();
-      else {
-        viewRef.current = "home"; setViewRaw("home");
-        /* the mount-time save of the opening screen must not bring the games menu back */
-        try { localStorage.setItem("sutraSprint.navView", "home"); } catch {}
-      }
-    }
+    /* the opening screen is always Play, the games menu, with its saved
+       bests loaded. (The guided tour runs the first time Home is opened.) A
+       deep link (a room, a class, a duel) that has already moved on is left
+       alone. */
+    if (viewRef.current === "games") openGames();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   /* eslint-enable react-hooks/set-state-in-effect */
   function closeStory() {
