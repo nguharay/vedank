@@ -1081,7 +1081,7 @@ export function GameApp({
   const dailyStartRef = useRef(0);
   const [leagueOpen, setLeagueOpen] = useState(false);
   /* which bottom-bar item is open, so it can be lit */
-  const navAt = leagueOpen ? "league" : leaderboardOpen ? "rank" : dailyTab ? "daily" : "home";
+  const navAt = leagueOpen ? "league" : leaderboardOpen ? "rank" : dailyTab ? "daily" : view === "games" ? "play" : "home";
   const [league, setLeague] = useState<LeagueStanding | null>(null);
   const [leagueLoading, setLeagueLoading] = useState(false);
   /* admin only: "all leagues" tab in the league sheet */
@@ -4476,6 +4476,17 @@ export function GameApp({
 
         {view === "games" && (
           <section className="view active games-view">
+            {/* a friend's room code: the first thing on Play, in the page (not
+                floating over the games) */}
+          <div className="join-bar">
+            <span className="join-bar-label">👥 <span className="join-bar-long">{ja ? "友だちの" : "Friend's "}</span>{ja ? "部屋" : "room"}</span>
+            <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
+              autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
+              onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+              onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
+            <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
+          </div>
+        
             <p className="games-lede">
               {lang === "ja"
                 ? "計算を使ったミニゲーム。アカウントがなくても、オフラインでも遊べます。"
@@ -5009,17 +5020,17 @@ export function GameApp({
         </div>
       )}
 
-      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" || dailyTab ? " home-dock" : ""}`} style={{ display: "flex" }}>
-        {view === "home" && guest ? (
+      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" || view === "games" || dailyTab ? " home-dock" : ""}`} style={{ display: "flex" }}>
+        {(view === "home" || view === "games") && guest ? (
           /* The home dock: a floating rounded bar with the games as a big raised
              PLAY button in the middle — the game is the point, everything else
              sits around it. For a guest, Save is a small chip, not a rival. */
           <div className="dock-bar">
-            <button className="bottomnav-item active" onClick={goHome}>
+            <button className={`bottomnav-item${view === "home" ? " active" : ""}`} onClick={goHome}>
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
-            <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
+            <button className={`dock-play${view === "games" ? " on" : ""}`} onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"} aria-current={view === "games" ? "page" : undefined}>
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
               <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
             </button>
@@ -5028,7 +5039,7 @@ export function GameApp({
               <span>{lang === "ja" ? "保存" : "Save"}</span>
             </a>
           </div>
-        ) : view === "home" || dailyTab ? (
+        ) : view === "home" || view === "games" || dailyTab ? (
           <div className="dock-bar">
             <button className={`bottomnav-item${navAt === "home" ? " active" : ""}`} onClick={goHome} aria-current={navAt === "home" ? "page" : undefined}>
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
@@ -5041,7 +5052,7 @@ export function GameApp({
               </span>
               <span>{lang === "ja" ? "デイリー" : "Daily"}</span>
             </button>
-            <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
+            <button className={`dock-play${view === "games" ? " on" : ""}`} onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"} aria-current={view === "games" ? "page" : undefined}>
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
               <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
             </button>
@@ -5056,21 +5067,9 @@ export function GameApp({
           </div>
         ) : (
           <>
-            <button className="btn btn-ghost back-footer-btn" aria-label={view === "games" ? "Home" : "Back"} onClick={handleBack}>
-              ←<span className="back-word"> {view === "games" ? (lang === "ja" ? "ホーム" : "Home") : (lang === "ja" ? "戻る" : "Back")}</span>
+            <button className="btn btn-ghost back-footer-btn" aria-label="Back" onClick={handleBack}>
+              ←<span className="back-word"> {lang === "ja" ? "戻る" : "Back"}</span>
             </button>
-            {/* the games menu: a friend's room code goes in the bar beside
-                Back, always in view and over nothing */}
-            {view === "games" && (
-              <div className="join-bar">
-                <span className="join-bar-label">👥 <span className="join-bar-long">{ja ? "友だちの" : "Friend's "}</span>{ja ? "部屋" : "room"}</span>
-                <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
-                  autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
-                  onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
-                  onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
-                <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
-              </div>
-            )}
             {view === "topic" && (
               <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
                 {t.stageMap.seeStageMap}

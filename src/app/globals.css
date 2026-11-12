@@ -5198,3 +5198,10 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .party-join{ position:sticky; bottom:-84px; z-index:5; border:3px solid var(--ink-line); box-shadow:0 4px 0 var(--ink-line); }
 .join-bar-label{ text-transform:capitalize; }
 @media (max-width:479px){ .join-bar-long{ display:none; } }
+
+/* Play is a tab now: when it is open the big button gets a gold ring and a
+   darker label, the same "you are here" the other tabs get */
+.dock-play.on .dock-play-ico{ box-shadow:0 0 0 4px #ffd84a, 0 0 0 7px var(--ink-line); }
+.dock-play.on .dock-play-label{ color:#c2185b; }
+/* the room-code row at the top of Play: in the page, full width */
+.games-view > .join-bar{ grid-column:1 / -1; margin:0; max-width:none; }
