@@ -931,6 +931,16 @@ export function GameApp({
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
   /* the same for a party room (?pr=CODE): tug of war, buzzer quiz, boss battle */
   const [partyJoinCode, setPartyJoinCode] = useState<string | null>(null);
+  /* the pinned "join a friend's room" bar on Home and the games menu */
+  const [joinBarCode, setJoinBarCode] = useState("");
+  function joinFromBar() {
+    if (joinBarCode.length !== 4) return;
+    if (guest) { setLockOpen("race-online"); return; }
+    setPartyJoinCode(joinBarCode);
+    setJoinBarCode("");
+    gameFromHomeRef.current = view === "home";
+    setView("party");
+  }
   /* the party game to show first — the arcade games open their own race */
   const [partyFirst, setPartyFirst] = useState<"tug" | "space" | "river">("tug");
   function guestLocked(kind: string): boolean {
@@ -4999,6 +5009,18 @@ export function GameApp({
             lang={lang}
             t={t}
           />
+        )}
+        {/* always in view on Home and the games menu: type a friend's room
+            code and go, without hunting for it at the bottom of a lobby */}
+        {(view === "home" || view === "games") && (
+          <div className={`join-bar${view === "home" ? " over-dock" : ""}`}>
+            <span className="join-bar-label">👥 {ja ? "友だちの部屋" : "Friend's room"}</span>
+            <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
+              autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
+              onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+              onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
+            <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
+          </div>
         )}
       </main>
 
