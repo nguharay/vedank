@@ -154,18 +154,6 @@ export function HomeView({
       {/* a slim level strip in place of the old banner: tap it to share */}
       {/* the level and the Daily winners link share one swipeable row */}
       <div className="home-rail home-rail-top">
-      <button className="level-strip" onClick={() => onShare("level")} aria-label={`${t.share.statLevel} ${li.level}, ${t.share.shareBtn}`}>
-        <span className="level-strip-lv"><small>{t.home.level}</small><b className="mono">{li.level}</b></span>
-        <span className="level-strip-main">
-          <span className="level-strip-top"><span className="level-strip-rank">{rank}</span><span className="mono">{li.into} / 150</span></span>
-          <span className="bar-track"><span className="bar-fill" style={{ width: `${li.pct}%` }} /></span>
-        </span>
-        <span className="level-strip-stats">
-          <span>👾 <b className="mono">{TOPICS.reduce((a, tp) => a + topicProgressOf(progress, tp.id).cleared, 0)}</b></span>
-          <span>👑 <b className="mono">{TOPICS.filter((tp) => topicProgressOf(progress, tp.id).cleared >= STAGE_COUNT).length}</b></span>
-        </span>
-      </button>
-
       {/* one line that opens the Daily tab, where the full winners list is */}
       {onOpenDaily && (
         <button className="dw-cta" onClick={onOpenDaily}>
@@ -185,6 +173,18 @@ export function HomeView({
           <span className="dw-cta-go" aria-hidden="true">›</span>
         </button>
       )}
+
+      <button className="level-strip" onClick={() => onShare("level")} aria-label={`${t.share.statLevel} ${li.level}, ${t.share.shareBtn}`}>
+        <span className="level-strip-lv"><small>{t.home.level}</small><b className="mono">{li.level}</b></span>
+        <span className="level-strip-main">
+          <span className="level-strip-top"><span className="level-strip-rank">{rank}</span><span className="mono">{li.into} / 150</span></span>
+          <span className="bar-track"><span className="bar-fill" style={{ width: `${li.pct}%` }} /></span>
+        </span>
+        <span className="level-strip-stats">
+          <span>👾 <b className="mono">{TOPICS.reduce((a, tp) => a + topicProgressOf(progress, tp.id).cleared, 0)}</b></span>
+          <span>👑 <b className="mono">{TOPICS.filter((tp) => topicProgressOf(progress, tp.id).cleared >= STAGE_COUNT).length}</b></span>
+        </span>
+      </button>
       </div>
 
         <>
