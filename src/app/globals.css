@@ -1,3 +1,17 @@
+/* ---- One emoji art set everywhere ----
+   Every emoji is drawn from the Twemoji colour font (open source, OFL) rather
+   than the phone's own set, so the app looks the same on iPhone, Android and
+   Windows. The font is registered under each text family's name, limited to
+   the emoji code points: the browser takes letters from the real family and
+   emoji from here, with no markup changes. Signs Twemoji has no drawing for
+   (★ ✕ ↗ ...) fall through to the text font as before. */
+@font-face{ font-family:"Nunito"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+@font-face{ font-family:"Baloo 2"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+@font-face{ font-family:"Caladea"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+@font-face{ font-family:"Rubik Mono One"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+@font-face{ font-family:"M PLUS Rounded 1c"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+@font-face{ font-family:"VedAnk Emoji"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+
 
 :root{ padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
 html,body{ height:100%; margin:0; }
