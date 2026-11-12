@@ -926,6 +926,23 @@ export function GameApp({
   /* the multiplayer lobby (no room open) is showing: its code field sits in
      the bottom bar beside Back */
   const [partyLobby, setPartyLobby] = useState(false);
+  const [partyCreate, setPartyCreate] = useState(false);
+  function createFromBar() {
+    if (guest) { setLockOpen("race-online"); return; }
+    setPartyCreate(true);
+    if (view !== "party") { gameFromHomeRef.current = false; setView("party"); }
+  }
+  /* the "friend's room" bar: make a new room, or type a code and join */
+  const roomBar = (
+    <div className="join-bar">
+      <button className="join-bar-new" onClick={createFromBar} aria-label={ja ? "部屋を作る" : "New room"}>＋ {ja ? <>部屋<span className="join-bar-long">を作る</span></> : <>New<span className="join-bar-long"> room</span></>}</button>
+      <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
+        autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
+        onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+        onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
+      <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
+    </div>
+  );
   function joinFromBar() {
     if (joinBarCode.length !== 4) return;
     if (guest) { setLockOpen("race-online"); return; }
@@ -4474,14 +4491,7 @@ export function GameApp({
           <section className="view active games-view">
             {/* a friend's room code: the first thing on Play, in the page (not
                 floating over the games) */}
-          <div className="join-bar">
-            <span className="join-bar-label">👥 <span className="join-bar-long">{ja ? "友だちの" : "Friend's "}</span>{ja ? "部屋" : "room"}</span>
-            <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
-              autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
-              onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
-              onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
-            <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
-          </div>
+          {roomBar}
         
             <p className="games-lede">
               {lang === "ja"
@@ -4715,7 +4725,8 @@ export function GameApp({
             <PartyGames key={partyFirst} lang={lang} sound={sound} celebrate={() => confetti.burstCenter(110, 0.4)} game={partyFirst}
               onCorrect={(n) => fireQuest("correct_answer", n)}
               joinCode={partyJoinCode} onJoined={() => setPartyJoinCode(null)} onBack={() => { setPartyFirst("tug"); setView("games"); }}
-              guest={guest} onNeedAccount={() => setLockOpen("race-online")} onLobby={setPartyLobby} />
+              guest={guest} onNeedAccount={() => setLockOpen("race-online")} onLobby={setPartyLobby}
+              createNow={partyCreate} onCreateTaken={() => setPartyCreate(false)} />
           </section>
         )}
         {view === "race" && (
@@ -5066,16 +5077,7 @@ export function GameApp({
             <button className="btn btn-ghost back-footer-btn" aria-label="Back" onClick={handleBack}>
               ←<span className="back-word"> {lang === "ja" ? "戻る" : "Back"}</span>
             </button>
-            {view === "party" && partyLobby && (
-              <div className="join-bar">
-                <span className="join-bar-label">👥 <span className="join-bar-long">{ja ? "友だちの" : "Friend's "}</span>{ja ? "部屋" : "room"}</span>
-                <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
-                  autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
-                  onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
-                  onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
-                <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
-              </div>
-            )}
+            {view === "party" && partyLobby && roomBar}
             {view === "topic" && (
               <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
                 {t.stageMap.seeStageMap}

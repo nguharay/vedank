@@ -5203,3 +5203,11 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .dock-play.on .dock-play-label{ color:#c2185b; }
 /* the room-code row at the top of Play: in the page, full width */
 .games-view > .join-bar{ grid-column:1 / -1; margin:0; max-width:none; }
+/* "New room": makes a room straight away (the game can be switched inside) */
+.join-bar-new{ flex:none; padding:8px 11px; border-radius:999px; border:2.5px solid var(--ink-line); background:#ff7a3d; color:#fff; font:900 12.5px/1 inherit;
+  font-family:inherit; white-space:nowrap; cursor:pointer; box-shadow:0 3px 0 var(--ink-line); }
+.join-bar-new:active{ transform:translateY(3px); box-shadow:none; }
+.join-bar-input{ margin-left:auto; }
+/* a phone's footer has Back beside the bar: the short "＋ New" fits */
+footer .join-bar .join-bar-long{ display:none; }
+@media (min-width:480px){ footer .join-bar .join-bar-long{ display:inline; } }

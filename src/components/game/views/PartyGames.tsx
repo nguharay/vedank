@@ -65,12 +65,16 @@ function recChip(g: PartyGame, r: Record_, ja: boolean): string | null {
 
 const allRecs = () => Object.fromEntries(PARTY_GAMES.map((g) => [g, readRec(g)])) as Record<PartyGame, Record_>;
 
-export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, onCorrect, guest, onNeedAccount, onLobby }: {
+export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, onCorrect, guest, onNeedAccount, onLobby, createNow, onCreateTaken }: {
   lang: L; sound: Sound; celebrate: () => void; game: PartyGame; joinCode: string | null; onJoined: () => void; onBack: () => void;
   onCorrect?: (n: number) => void; guest: boolean; onNeedAccount: () => void;
   /* told whether the game list (no room open) is showing: the app then puts
      the "friend's room" code field in its bottom bar beside Back */
   onLobby?: (inLobby: boolean) => void;
+  /* "New room" was tapped in the app's bottom bar: make a room (Turf War to
+     start, or the game the list opened on; the host can switch it in the
+     room) and say the request was taken */
+  createNow?: boolean; onCreateTaken?: () => void;
 }) {
   const ja = lang === "ja";
   const [room, setRoom] = useState<PartyRoomView | null>(null);
@@ -212,6 +216,16 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     void join(joinCode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [joinCode]);
+
+  const createdRef = useRef(false);
+  useEffect(() => {
+    if (!createNow) { createdRef.current = false; return; }
+    if (createdRef.current) return;
+    createdRef.current = true;
+    onCreateTaken?.();
+    void create(initialGame === "tug" ? "turf" : initialGame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createNow]);
 
   const inLobby = !room;
   useEffect(() => { onLobby?.(inLobby); }, [inLobby, onLobby]);
