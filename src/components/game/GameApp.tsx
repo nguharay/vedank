@@ -3150,7 +3150,7 @@ export function GameApp({
         <div className="header-title"><h1 className={/VedAnk/.test(headerTitle ?? "") ? "brand" : undefined}>{headerTitle}</h1></div>
         <div className="stats-row">
           {buddyShown && (
-            <button className={`buddy-face${buddy.say ? " talking" : ""} mood-${buddy.mood}`} onClick={tapBuddy}
+            <button className={`buddy-face${buddy.say ? " away" : ""}`} onClick={tapBuddy}
               aria-label={ja ? "バディ（タップで名言）" : "Buddy, tap for a quote"} aria-expanded={!!buddy.say}>
               <Buddy skinId={skin.skinId} mood={buddy.mood} animated={false} />
               {buddyDot && !buddy.say && <span className="buddy-dot" aria-hidden="true" />}
@@ -3171,8 +3171,12 @@ export function GameApp({
             top edge of the page. */}
         {buddyShown && buddy.say && (
           <button key={buddy.say.text} className={`buddy-strip${quoteBy ? " quoting" : ""} mood-${buddy.mood}`} role="status" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
-            <span className="buddy-strip-text">{buddy.say.text}{quoteBy && <em>{quoteBy}</em>}</span>
-            <span className="buddy-strip-x" aria-hidden="true">✕</span>
+            {/* the buddy itself, jumped down from the bar to say it */}
+            <span className="buddy-strip-who" aria-hidden="true"><Buddy skinId={skin.skinId} mood={buddy.mood} /></span>
+            <span className="buddy-strip-bubble">
+              <span className="buddy-strip-text">{buddy.say.text}{quoteBy && <em>{quoteBy}</em>}</span>
+              <span className="buddy-strip-x" aria-hidden="true">✕</span>
+            </span>
           </button>
         )}
       </header>
