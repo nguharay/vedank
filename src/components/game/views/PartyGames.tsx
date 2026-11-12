@@ -427,7 +427,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     return (
       <div className="rg party">
         <div className="race-online-menu party-menu">
-          <div className="rg-card-title">🎉 {ja ? "みんなであそぶ" : "Party games"}</div>
+          <div className="rg-card-title">🎉 {ja ? "みんなであそぶ" : "Multiplayer games"}</div>
           <p className="rg-card-sub">{ja ? `🤖 ひとりでコンピューターと、🌐 みんなで（2〜${PARTY_ROOM_MAX}人）でも。` : `🤖 Solo against the computer, or 🌐 with friends (2–${PARTY_ROOM_MAX}).`}</p>
           <div className="party-levels" role="radiogroup" aria-label={ja ? "コンピューターの強さ" : "Computer strength"}>
             <span>{ja ? "🤖 の強さ" : "🤖 strength"}</span>

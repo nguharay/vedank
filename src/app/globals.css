@@ -1,10 +1,24 @@
+/* ---- One emoji art set everywhere ----
+   Every emoji is drawn from the Twemoji colour font (open source, OFL) rather
+   than the phone's own set, so the app looks the same on iPhone, Android and
+   Windows. The font is registered under each text family's name, limited to
+   the emoji code points: the browser takes letters from the real family and
+   emoji from here, with no markup changes. Signs Twemoji has no drawing for
+   (★ ✕ ↗ ...) fall through to the text font as before. */
+@font-face{ font-family:"Nunito"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+@font-face{ font-family:"Baloo 2"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+@font-face{ font-family:"Caladea"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+@font-face{ font-family:"Rubik Mono One"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+@font-face{ font-family:"M PLUS Rounded 1c"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+@font-face{ font-family:"VedAnk Emoji"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
+
 
 :root{ padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
 html,body{ height:100%; margin:0; }
 [hidden]{ display:none !important; }
 
 :root{
-  --bg:#F3F3FA; --surface:#FFFFFF; --surface-2:#ECEDF8; --surface-3:#DFE0F2;
+  --bg:#FFF6E7; --surface:#FFFFFF; --surface-2:#ECEDF8; --surface-3:#DFE0F2;
   --ink:#191B2E; --ink-dim:#4A4D74; --muted:#7A7EA8; --line:#D8D9EE; --line-strong:#B9BBE0;
   /* shonen battle palette — crimson, electric blue, energy violet, hot gold. high-contrast, comic-poster energy. */
   --green:#1FE07A; --green-dk:#0FA857; --blue:#2979FF; --blue-dk:#1450C4; --gold:#FFCC00; --gold-dk:#D89B00;
@@ -3137,11 +3151,11 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 
 /* "install the app" banner at the top of Home (signed-in, not installed) */
 .install-banner{ display:flex; align-items:center; gap:10px; margin:0 0 14px; padding:10px 10px 10px 12px; border-radius:16px;
-  border:3px solid var(--ink-line); background:linear-gradient(130deg,#e6f0ff,#e9e2ff); box-shadow:3px 3px 0 var(--ink-line); }
+  border:3px solid var(--ink-line); background:linear-gradient(130deg,#d6f0ff,#d9f8e4); box-shadow:3px 3px 0 var(--ink-line); }
 .install-banner-ico{ font-size:26px; line-height:1; flex:none; }
 .install-banner-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
 .install-banner-body strong{ font-size:13px; color:var(--ink); }
-.install-banner-body span{ font-size:11.5px; font-weight:700; color:var(--muted); line-height:1.35; }
+.install-banner-body span{ font-size:11.5px; font-weight:700; color:#3f5a6b; line-height:1.35; }
 .install-banner-cta{ flex:none; padding:8px 14px; border-radius:999px; border:2px solid var(--ink-line); background:#2B6FEA; color:#fff; font:900 13px/1 inherit; font-family:inherit; cursor:pointer; box-shadow:0 3px 0 var(--ink-line); }
 .install-banner-cta:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--ink-line); }
 .install-banner-x{ flex:none; width:24px; height:24px; border-radius:50%; border:none; background:rgba(0,0,0,.08); color:var(--muted); font-size:11px; font-weight:900; cursor:pointer; padding:0; }
@@ -5156,3 +5170,92 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .dw-more{ display:block; margin:8px auto 0; border:0; background:none; color:#3a2500; font:inherit; font-weight:900; font-size:12.5px; text-decoration:underline; cursor:pointer; }
 .daily-done .dw-card{ margin:16px 0; width:100%; }
 @media (min-width:1024px){ .home-view.active > .dw-card{ grid-column:2; } }
+/* the map heading now carries two lines of text: keep the first node's
+   "BATTLE!" bubble clear of it */
+.home-sec + .path-wrap{ margin-top:44px; }
+
+/* ---- Map nodes in the shape of their sign ----
+   The round button becomes a plus, a bar, a cross or a square. The shape is
+   two stacked layers (ink outline, then the topic's gradient inset inside
+   it); the hard shadow is a drop-shadow so it follows the outline. */
+.node-ico{ position:relative; z-index:1; line-height:1; }
+.node.node-shaped{ background:none !important; border-color:transparent; box-shadow:none; filter:drop-shadow(5px 5px 0 var(--ink-line));
+  --node-ink:var(--ink-line); --clip:none; --r:0; --inset:0; }
+.node.node-shaped.node-locked{ --node-bg:var(--line-strong); --node-ink:var(--line-strong); filter:drop-shadow(5px 5px 0 var(--line)); }
+.node.node-shaped::before, .node.node-shaped::after{ content:""; position:absolute; clip-path:var(--clip); border-radius:var(--r); rotate:var(--rot,0deg); }
+.node.node-shaped::before{ inset:var(--inset-y,-4px) -4px; background:var(--node-ink); }
+.node.node-shaped::after{ inset:calc(var(--inset-y,-4px) + 5px) 1px; background:var(--node-bg); }
+.node.shape-plus, .node.shape-cross, .node.shape-pm{ --clip:polygon(31% 0,69% 0,69% 31%,100% 31%,100% 69%,69% 69%,69% 100%,31% 100%,31% 69%,0 69%,0 31%,31% 31%); }
+.node.shape-plus::after, .node.shape-cross::after, .node.shape-pm::after{ inset:-4px; background:var(--node-bg);
+  clip-path:polygon(36.5% 6%,63.5% 6%,63.5% 36.5%,94% 36.5%,94% 63.5%,63.5% 63.5%,63.5% 94%,36.5% 94%,36.5% 63.5%,6% 63.5%,6% 36.5%,36.5% 36.5%); }
+.node.shape-cross{ --rot:45deg; }
+.node.shape-cross::before, .node.shape-cross::after{ scale:1.12; }
+.node.shape-minus{ --inset-y:13px; --r:16px; }
+.node.shape-minus::after{ border-radius:10px; }
+.node.shape-square{ --r:16px; }
+.node.shape-square::after{ border-radius:12px; }
+/* plus-or-minus: a plus with a bar under it */
+.node.shape-pm::before, .node.shape-pm::after{ translate:0 -9px; scale:.82; }
+.node.shape-pm .node-ico::before{ content:""; position:absolute; left:50%; top:26px; translate:-50% 0; width:58px; height:14px; border-radius:6px;
+  background:var(--node-bg); border:4px solid var(--node-ink); box-sizing:content-box; }
+.node.node-shaped .node-ico{ font-size:22px; }
+
+/* Home: one gold line that opens the Daily tab and its winners list */
+.dw-cta{ width:100%; display:flex; align-items:center; gap:10px; margin:0 0 12px; padding:9px 12px; border-radius:16px; border:3px solid var(--ink,#1c1838);
+  background:linear-gradient(135deg,#fff3c4,#ffd86b 55%,#ffb84a); color:#3a2500; box-shadow:0 4px 0 var(--ink,#1c1838); font:inherit; text-align:left; cursor:pointer; }
+.dw-cta:active{ transform:translateY(3px); box-shadow:none; }
+.dw-cta-cup{ font-size:24px; line-height:1; }
+.dw-cta-text{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.dw-cta-text b{ font-size:14.5px; font-weight:900; line-height:1.2; }
+.dw-cta-text small{ font-size:11.5px; font-weight:700; opacity:.8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dw-cta-go{ font-size:22px; font-weight:900; }
+@media (min-width:1024px){ .home-view.active > .dw-cta{ grid-column:2; } }
+/* the Daily tab before playing */
+.daily-lobby{ text-align:center; padding:18px 8px 20px; }
+.daily-lobby-icon{ font-size:52px; line-height:1; }
+.daily-lobby h1{ font-size:22px; margin:8px 0 6px; }
+.daily-lobby p{ font-size:13.5px; font-weight:700; color:var(--muted); line-height:1.5; margin:0 auto 16px; max-width:300px; }
+/* the top rail: level strip, then the Daily winners link */
+.home-rail-top{ margin-top:0; margin-bottom:4px; }
+.home-rail-top > *{ margin:0; width:auto; }
+.home-rail > :only-child{ flex-basis:100%; }
+@media (min-width:1024px){
+  .home-view.active > .home-rail-top > .level-strip{ grid-column:1; }
+  .home-view.active > .home-rail-top > .dw-cta{ grid-column:2; }
+}
+
+/* the open tab in the bottom bar: a filled pill and a bold label, not just a
+   change of text colour */
+.dock-bar .bottomnav-item{ border-radius:16px; padding-top:5px; padding-bottom:4px; margin:0 2px; transition:background .15s; }
+.dock-bar .bottomnav-item.active{ background:#ffe3c2; color:#c2410c; box-shadow:inset 0 0 0 2px #ffb877; font-weight:900; }
+.dock-bar .bottomnav-item.active .bottomnav-icon{ transform:translateY(-1px) scale(1.08); }
+:root[data-theme="dark"] .dock-bar .bottomnav-item.active{ background:rgba(255,160,80,.2); color:#ffb877; box-shadow:inset 0 0 0 2px rgba(255,160,80,.5); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .dock-bar .bottomnav-item.active{ background:rgba(255,160,80,.2); color:#ffb877; box-shadow:inset 0 0 0 2px rgba(255,160,80,.5); } }
+
+/* ---- Games menu as a grid of tiles ----
+   Two columns of square-ish tiles (art on top, name, one or two lines) in
+   place of a long list of full-width rows. The two headline entries (Cross
+   Math, Party games) and today's shared board keep the full width. */
+.games-view.active{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; align-items:stretch; grid-auto-flow:row dense; }
+.games-view > *{ grid-column:1 / -1; }
+.games-view > .games-grid{ display:contents; }
+.games-view > .ttt-card, .games-view .games-grid > .game-card{ grid-column:auto; margin:0; }
+.games-view > .ttt-card.crossmath-feature, .games-view > .ttt-card.party-feature{ grid-column:1 / -1; }
+.games-view > .games-lede{ margin-bottom:2px; }
+.games-view > .daily-game{ margin:0; }
+/* the tile */
+.games-view > .ttt-card:not(.crossmath-feature):not(.party-feature), .games-view .games-grid > .game-card{
+  flex-direction:column; align-items:flex-start; gap:8px; padding:12px 12px 13px; min-height:150px; }
+.games-view > .ttt-card:not(.crossmath-feature):not(.party-feature) .game-card-go, .games-view .games-grid > .game-card .game-card-go{ display:none; }
+.games-view > .ttt-card:not(.crossmath-feature):not(.party-feature) .feature-art,
+.games-view > .ttt-card:not(.crossmath-feature):not(.party-feature) .ttt-card-board{ width:60px; height:60px; }
+.games-view > .ttt-card:not(.crossmath-feature):not(.party-feature) .ttt-card-name{ font-size:15.5px; line-height:1.2; }
+.games-view > .ttt-card:not(.crossmath-feature):not(.party-feature) .ttt-card-sub,
+.games-view .games-grid > .game-card .game-card-blurb{ font-size:11px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.games-view .games-grid > .game-card::before{ width:100%; height:6px; bottom:auto; }
+.games-view .games-grid > .game-card{ padding-top:16px; }
+.games-view .games-grid > .game-card .game-card-lock{ position:absolute; top:12px; right:10px; }
+.games-view .prog-lock-chip{ font-size:10.5px; margin:0; white-space:normal; line-height:1.25; }
+.games-view > .ttt-card .ttt-card-body, .games-view .games-grid > .game-card .game-card-body{ width:100%; }
+@media (min-width:700px){ .games-view.active{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media (min-width:1024px){ .games-view.active{ grid-template-columns:repeat(4,minmax(0,1fr)); } }

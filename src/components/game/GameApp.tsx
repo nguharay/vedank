@@ -294,16 +294,15 @@ export function GameApp({
     }
   }
 
-  /* the Daily button in the bottom bar: play today's challenge, or, once it
-     is done, say so and show where the points went */
-  function openDailyFromNav() {
+  /* the Daily tab: today's winners, plus a Start button until today's
+     challenge is played (then the result). Opening it never starts the timed
+     quiz by itself, so it is safe to open just to look at the winners. */
+  function openDailyTab() {
     if (guestLocked("daily")) return;
-    if (dailyStatus?.played) {
-      spawnToast(ja ? "⭕ 今日のデイリーチャレンジはクリア！また明日。" : "⭕ Today's Daily Challenge is done! Come back tomorrow.", null);
-      if (!leagueOpen) void toggleLeague();
-      return;
-    }
-    startDaily();
+    setDailyQs([]);
+    setDailyDone(null);
+    dailyWinnersAction().then(setDailyWinners).catch(() => {});
+    setView("daily");
   }
   function startDaily() {
     if (dailyStatus?.played) return;
@@ -1084,12 +1083,16 @@ export function GameApp({
   const [dailyStatus, setDailyStatus] = useState<DailyStatus | null>(null);
   const [dailyWinners, setDailyWinners] = useState<DailyWinners | null>(null);
   const [dailyQs, setDailyQs] = useState<DailyQuestion[]>([]);
+  /* the Daily tab (winners, Start or result) as opposed to the quiz running */
   const [dailyIdx, setDailyIdx] = useState(0);
   const [dailyCorrect, setDailyCorrect] = useState(0);
   const [dailyPick, setDailyPick] = useState<number | null>(null);
   const [dailyDone, setDailyDone] = useState<{ points: number; correct: number } | null>(null);
+  const dailyTab = view === "daily" && (dailyQs.length === 0 || !!dailyDone || !!dailyStatus?.played);
   const dailyStartRef = useRef(0);
   const [leagueOpen, setLeagueOpen] = useState(false);
+  /* which bottom-bar item is open, so it can be lit */
+  const navAt = leagueOpen ? "league" : leaderboardOpen ? "rank" : dailyTab ? "daily" : "home";
   const [league, setLeague] = useState<LeagueStanding | null>(null);
   const [leagueLoading, setLeagueLoading] = useState(false);
   /* admin only: "all leagues" tab in the league sheet */
@@ -4196,7 +4199,7 @@ export function GameApp({
             li={li}
             dailyStreak={dailyStreak}
             dailyWinners={guest ? null : dailyWinners}
-            onPlayDaily={dailyStatus && !dailyStatus.played ? startDaily : undefined}
+            onOpenDaily={guest ? undefined : openDailyTab}
             onOpenTopic={openTopic}
             onOpenBlitz={openBlitzPicker}
             onOpenTricks={() => { if (guestLocked("tricks")) return; setTrickId(null); setView("tricks"); }}
@@ -4491,7 +4494,7 @@ export function GameApp({
         )}
 
         {view === "games" && (
-          <section className="view active">
+          <section className="view active games-view">
             <p className="games-lede">
               {lang === "ja"
                 ? "計算を使ったミニゲーム。アカウントがなくても、オフラインでも遊べます。"
@@ -4509,7 +4512,7 @@ export function GameApp({
             <button className="ttt-card party-feature" onClick={() => { gameFromHomeRef.current = false; setView("party"); }}>
               <span className="feature-art party" aria-hidden="true"><b>🪢</b><b>🔔</b><b>🐉</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🎉 みんなであそぶ" : "🎉 Party games"}<span className="feature-new">NEW</span></span>
+                <span className="ttt-card-name">{lang === "ja" ? "🎉 みんなであそぶ" : "🎉 Multiplayer games"}<span className="feature-new">NEW</span></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "計算ナワバリ・スートラタワー・つなひき・早押しクイズ・計算ビンゴ・スペースシューター・かえるジャンプ。ひとりでも、友だちやクラス（最大50人）でも！" : "Turf War, Sutra Tower, Tug of War, Buzzer Quiz, Math Bingo, Space Blaster and River Hop. Play solo, or with friends and classes (up to 50)!"}</span>
               </span>
               <span className="game-card-go">›</span>
@@ -4957,6 +4960,7 @@ export function GameApp({
             done={dailyDone}
             status={dailyStatus}
             winners={dailyWinners}
+            onStart={startDaily}
             lang={lang}
             onPick={onDailyPick}
             onHome={goHome}
@@ -5024,7 +5028,7 @@ export function GameApp({
         </div>
       )}
 
-      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" ? " home-dock" : ""}`} style={{ display: "flex" }}>
+      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" || dailyTab ? " home-dock" : ""}`} style={{ display: "flex" }}>
         {view === "home" && guest ? (
           /* The home dock: a floating rounded bar with the games as a big raised
              PLAY button in the middle — the game is the point, everything else
@@ -5043,13 +5047,13 @@ export function GameApp({
               <span>{lang === "ja" ? "保存" : "Save"}</span>
             </a>
           </div>
-        ) : view === "home" ? (
+        ) : view === "home" || dailyTab ? (
           <div className="dock-bar">
-            <button className="bottomnav-item active" onClick={goHome}>
+            <button className={`bottomnav-item${navAt === "home" ? " active" : ""}`} onClick={goHome} aria-current={navAt === "home" ? "page" : undefined}>
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
-            <button className={`bottomnav-item${dailyStatus?.played ? " done" : ""}`} onClick={openDailyFromNav}>
+            <button className={`bottomnav-item${navAt === "daily" ? " active" : ""}${dailyStatus?.played ? " done" : ""}`} onClick={openDailyTab} aria-current={navAt === "daily" ? "page" : undefined}>
               <span className="bottomnav-icon">
                 <UiIcon name="today" />
                 {!dailyStatus?.played && <span className="nav-dot" aria-hidden="true" />}
@@ -5060,11 +5064,11 @@ export function GameApp({
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
               <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
             </button>
-            <button className="bottomnav-item" onClick={toggleLeague}>
+            <button className={`bottomnav-item${navAt === "league" ? " active" : ""}`} onClick={toggleLeague}>
               <span className="bottomnav-icon"><UiIcon name="league" /></span>
               <span>{lang === "ja" ? "リーグ" : "League"}</span>
             </button>
-            <button className="bottomnav-item" onClick={toggleLeaderboard}>
+            <button className={`bottomnav-item${navAt === "rank" ? " active" : ""}`} onClick={toggleLeaderboard}>
               <span className="bottomnav-icon"><UiIcon name="rank" /></span>
               <span>{lang === "ja" ? "ランク" : "Rank"}</span>
             </button>

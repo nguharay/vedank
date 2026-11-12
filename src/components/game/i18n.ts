@@ -94,7 +94,7 @@ export type UIDict = {
 export const UI: Record<LangCode, UIDict> = {
   en: {
     appName: "VedAnk Sprint",
-    headerTitles: { home: "VedAnk Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Dojo", blitz: "Speed Quiz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "Games", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense", konbini: "Konbini Cashier", crossword: "Number Crossword", crossmath: "Cross Math", rhythm: "Rhythm Tap", town: "Math Town", ninja: "Ninja Slice", party: "Party Games", space: "Space Blaster", river: "River Hop" },
+    headerTitles: { home: "VedAnk Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Dojo", blitz: "Speed Quiz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "Games", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense", konbini: "Konbini Cashier", crossword: "Number Crossword", crossmath: "Cross Math", rhythm: "Rhythm Tap", town: "Math Town", ninja: "Ninja Slice", party: "Multiplayer Games", space: "Space Blaster", river: "River Hop" },
     menu: {
       accountLabel: "Account menu",
       player: "Player",

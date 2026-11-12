@@ -3,7 +3,6 @@
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
 import type { HomeGameId } from "../homeGames";
 import { Mascot } from "../Mascot";
-import { DailyWinnersCard } from "../DailyWinnersCard";
 import type { DailyWinners } from "@/lib/game/league";
 import { monsterFor } from "../monsters";
 import type { ShareFocus } from "../ShareCard";
@@ -24,7 +23,7 @@ import { StreakIcon } from "../StreakIcon";
 export function HomeView({
   progress,
   li,
-  dailyStreak, dailyWinners, onPlayDaily,
+  dailyStreak, dailyWinners, onOpenDaily,
   onOpenTopic,
   onOpenBlitz,
   onOpenTricks,
@@ -55,7 +54,7 @@ export function HomeView({
   dailyStreak: number;
   /* today's Daily Challenge winners (accounts only), and a way to go and play it */
   dailyWinners?: DailyWinners | null;
-  onPlayDaily?: () => void;
+  onOpenDaily?: () => void;
   onOpenTopic: (id: string) => void;
   onOpenBlitz: () => void;
   onOpenTricks: () => void;
@@ -146,7 +145,6 @@ export function HomeView({
     };
   }, [progress, lang]);
 
-  const totalCleared = TOPICS.reduce((acc, tp) => acc + topicProgressOf(progress, tp.id).cleared, 0);
 
   return (
     <section className="view active home-view">
@@ -154,6 +152,28 @@ export function HomeView({
           then the extras (cards, streak, shop, friends, invite). The Daily
           Challenge, the games, the League and the Rank are in the bottom bar. */}
       {/* a slim level strip in place of the old banner: tap it to share */}
+      {/* the level and the Daily winners link share one swipeable row */}
+      <div className="home-rail home-rail-top">
+      {/* one line that opens the Daily tab, where the full winners list is */}
+      {onOpenDaily && (
+        <button className="dw-cta" onClick={onOpenDaily}>
+          <span className="dw-cta-cup" aria-hidden="true">🏆</span>
+          <span className="dw-cta-text">
+            <b>{!dailyWinners || dailyWinners.isToday
+              ? (lang === "ja" ? "今日のデイリー勝者を見る" : "See today's Daily winners")
+              : (lang === "ja" ? "今日の勝者はまだいないよ" : "No Daily winner yet today")}</b>
+            <small>{!dailyWinners
+              ? (lang === "ja" ? "8問ぜんぶ正解した人たち" : "Everyone who got all 8 right")
+              : dailyWinners.isToday && dailyWinners.winners.length > 0
+              ? (lang === "ja"
+                ? `${dailyWinners.winners[0].name}さん${dailyWinners.winners.length > 1 ? `、ほか${dailyWinners.winners.length - 1}人` : ""}が全問正解`
+                : `${dailyWinners.winners[0].name}${dailyWinners.winners.length > 1 ? ` and ${dailyWinners.winners.length - 1} more` : ""} got all 8 right`)
+              : (lang === "ja" ? "8問ぜんぶ正解で1番のりしよう" : "Get all 8 right and be the first")}</small>
+          </span>
+          <span className="dw-cta-go" aria-hidden="true">›</span>
+        </button>
+      )}
+
       <button className="level-strip" onClick={() => onShare("level")} aria-label={`${t.share.statLevel} ${li.level}, ${t.share.shareBtn}`}>
         <span className="level-strip-lv"><small>{t.home.level}</small><b className="mono">{li.level}</b></span>
         <span className="level-strip-main">
@@ -165,8 +185,7 @@ export function HomeView({
           <span>👑 <b className="mono">{TOPICS.filter((tp) => topicProgressOf(progress, tp.id).cleared >= STAGE_COUNT).length}</b></span>
         </span>
       </button>
-
-      <DailyWinnersCard data={dailyWinners ?? null} ja={lang === "ja"} onPlay={onPlayDaily} />
+      </div>
 
         <>
       {/* one swipeable row instead of three stacked cards: the next lesson,
@@ -204,18 +223,6 @@ export function HomeView({
         <span className="blitz-cta-arrow">›</span>
       </div>
       </div>
-
-      {/* A brand-new player gets a plain-words intro: what this is, in three steps. */}
-        {totalCleared === 0 && (
-          <div className="howto">
-            <div className="howto-title">{lang === "ja" ? "このゲームって？" : "What is this game?"}</div>
-            <p className="howto-text">
-              {lang === "ja"
-                ? "インド式数学の「ひらめき」を、モンスターとのバトルで楽しく身につけよう。"
-                : "Learn the clever shortcuts of Indian maths by battling monsters and playing games with friends."}
-            </p>
-          </div>
-        )}
 
       {assignment && assignedTopic && (
         <button className="assign-card" onClick={() => onOpenTopic(assignedTopic.id)}>
@@ -278,7 +285,9 @@ export function HomeView({
       ) : null}
 
       <ThreeStarList progress={progress} lang={lang} onOpenTopic={onOpenTopic} locked={(id, i) => !topicUnlocked(progress, id) || i >= guestTopicLimit} />
-      <SectionHead icon="🗺️" title={lang === "ja" ? "インド式数学の学びのマップ" : "Learning map for Vedic Math"} sub={lang === "ja" ? "トピックを順番にクリアして、先へ進もう" : "Clear topics in order to move ahead"} />
+      <SectionHead icon="🗺️" title={lang === "ja" ? "インド式数学の学びのマップ" : "Learning map for Vedic Math"} sub={lang === "ja"
+        ? "インド式数学の「ひらめき」を、モンスターとのバトルで身につけよう。トピックを順番にクリアして、先へ進もう。"
+        : "Learn the clever shortcuts of Indian maths by battling monsters. Clear topics in order to move ahead."} />
 
       <div className="path-wrap" ref={pathWrapRef}>
         {mapGeo.d && (
@@ -291,6 +300,7 @@ export function HomeView({
           const p = topicProgressOf(progress, tp.id);
           const locked = !topicUnlocked(progress, tp.id) || i >= guestTopicLimit;
           const isCurrent = i === firstIncompleteIdx;
+          const shape = NODE_SHAPE[tp.icon];
           return (
             <div key={tp.id}>
               <div className={`path-row pos-${PATH_POS[i % PATH_POS.length]}`} data-topic={tp.id}>
@@ -298,11 +308,11 @@ export function HomeView({
                   {isCurrent && <div className="node-bubble">{t.home.play}</div>}
                   <span className="node-level">{i + 1}</span>
                   <div
-                    className={`node${isCurrent ? " current" : ""}${locked ? " node-locked" : ""}`}
-                    style={locked ? undefined : { background: gradCss(tp.grad) }}
+                    className={`node${isCurrent ? " current" : ""}${locked ? " node-locked" : ""}${shape ? ` node-shaped shape-${shape}` : ""}`}
+                    style={locked ? undefined : { background: gradCss(tp.grad), ["--node-bg" as string]: gradCss(tp.grad) }}
                     onClick={() => onOpenTopic(tp.id)}
                   >
-                    {locked ? "🔒" : tp.icon}
+                    <span className="node-ico">{locked ? "🔒" : shape ? "" : tp.icon}</span>
                     <span className="stage-pips">
                       {/* gold = 3 stars, pale = cleared with 1–2 stars (try again), grey = not cleared */}
                       {Array.from({ length: STAGE_COUNT }, (_, k) => {
@@ -429,6 +439,13 @@ export function HomeView({
 
 
 /* A short labelled heading that tells a new player what the cards below it are for. */
+/* A lesson on the map is drawn in the shape of its sign: a plus for adding,
+   a bar for subtracting, a cross for multiplying, a square for squaring.
+   Lessons with no single sign (digit sums, base method, designs) stay round. */
+const NODE_SHAPE: Record<string, "plus" | "minus" | "cross" | "square"> = {
+  "➕": "plus", "−": "minus", "➖": "minus", "✕": "cross", "²": "square",
+};
+
 function SectionHead({ icon, title, sub }: { icon: string; title: string; sub: string }) {
   return (
     <div className="home-sec">
