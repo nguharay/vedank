@@ -187,31 +187,3 @@ export function quoteOfTheDay(d = new Date()): Quote {
   const day = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000);
   return QUOTES[((day % QUOTES.length) + QUOTES.length) % QUOTES.length];
 }
-
-/* Walks the list in a shuffled order and only reshuffles once it is exhausted,
-   so tapping repeatedly never repeats until every quote has been seen. */
-export function makeQuoteCycle(seed = QUOTES.length) {
-  let order: number[] = [];
-  let at = 0;
-
-  function reshuffle(avoid?: number) {
-    order = QUOTES.map((_, i) => i);
-    for (let i = order.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [order[i], order[j]] = [order[j], order[i]];
-    }
-    /* Don't open the new pass with the quote that closed the last one. */
-    if (avoid !== undefined && order[0] === avoid && order.length > 1) {
-      [order[0], order[1]] = [order[1], order[0]];
-    }
-    at = 0;
-  }
-
-  reshuffle();
-  void seed;
-
-  return function next(): Quote {
-    if (at >= order.length) reshuffle(order[order.length - 1]);
-    return QUOTES[order[at++]];
-  };
-}
