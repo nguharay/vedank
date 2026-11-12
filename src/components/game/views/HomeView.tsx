@@ -185,8 +185,9 @@ export function HomeView({
       </div>
 
         <>
-      {/* one swipeable row instead of three stacked cards: the next lesson,
-          then the two ways to practise the tricks peeking in from the right */}
+      {/* one swipeable row instead of stacked cards: the next lesson, then
+          Magic Tricks, Fix Your Misses and the Speed Quiz peeking in from the
+          right */}
       <div className="home-rail" role="group" aria-label={lang === "ja" ? "レッスンとれんしゅう" : "Lesson and practice"}>
       <div className="continue-card" style={{ background: gradCss(continueTopic.grad) }} onClick={() => onContinue(continueTopic.id, continueStageN)}>
         <div className="continue-card-label">{lang === "ja" ? "📘 つぎのレッスン" : "📘 Next lesson"}</div>
@@ -199,16 +200,6 @@ export function HomeView({
         <span className="continue-card-arrow">▶</span>
       </div>
 
-      {/* practice the tricks: timed drill and party tricks */}
-      <div className="blitz-cta" onClick={onOpenBlitz}>
-        <div className="blitz-cta-icon">⚡</div>
-        <div className="blitz-cta-info">
-          <div className="blitz-cta-title">{t.home.blitzTitle}</div>
-          <div className="blitz-cta-sub">{t.home.blitzSub}</div>
-        </div>
-        <span className="blitz-cta-arrow">›</span>
-      </div>
-
       <div className="blitz-cta trick-cta" onClick={onOpenTricks}>
         <div className="blitz-cta-icon">🔮</div>
         <div className="blitz-cta-info">
@@ -219,26 +210,8 @@ export function HomeView({
         </div>
         <span className="blitz-cta-arrow">›</span>
       </div>
-      </div>
 
-      {assignment && assignedTopic && (
-        <button className="assign-card" onClick={() => onOpenTopic(assignedTopic.id)}>
-          <span className="assign-card-icon">{assignedTopic.icon}</span>
-          <span className="assign-card-info">
-            <span className="assign-card-label">
-              🏫 {lang === "ja" ? `${assignment.teacherName} 先生から` : `From ${assignment.teacherName}`}
-            </span>
-            <span className="assign-card-title">
-              {lang === "ja" ? assignedTopic.titleJa : assignedTopic.title}
-            </span>
-            {assignment.assignedNote && (
-              <span className="assign-card-note">{assignment.assignedNote}</span>
-            )}
-          </span>
-          <span className="assign-card-go">›</span>
-        </button>
-      )}
-
+      {/* mistakes to fix (or when the next ones are due) */}
       {reviewCount > 0 ? (
         <button className="review-cta" onClick={onStartReview}>
           <div className="review-cta-icon">🩹</div>
@@ -280,6 +253,37 @@ export function HomeView({
           )}
         </div>
       ) : null}
+
+      {/* the timed drill */}
+      <div className="blitz-cta" onClick={onOpenBlitz}>
+        <div className="blitz-cta-icon">⚡</div>
+        <div className="blitz-cta-info">
+          <div className="blitz-cta-title">{t.home.blitzTitle}</div>
+          <div className="blitz-cta-sub">{t.home.blitzSub}</div>
+        </div>
+        <span className="blitz-cta-arrow">›</span>
+      </div>
+
+      </div>
+
+      {assignment && assignedTopic && (
+        <button className="assign-card" onClick={() => onOpenTopic(assignedTopic.id)}>
+          <span className="assign-card-icon">{assignedTopic.icon}</span>
+          <span className="assign-card-info">
+            <span className="assign-card-label">
+              🏫 {lang === "ja" ? `${assignment.teacherName} 先生から` : `From ${assignment.teacherName}`}
+            </span>
+            <span className="assign-card-title">
+              {lang === "ja" ? assignedTopic.titleJa : assignedTopic.title}
+            </span>
+            {assignment.assignedNote && (
+              <span className="assign-card-note">{assignment.assignedNote}</span>
+            )}
+          </span>
+          <span className="assign-card-go">›</span>
+        </button>
+      )}
+
 
       <ThreeStarList progress={progress} lang={lang} onOpenTopic={onOpenTopic} locked={(id, i) => !topicUnlocked(progress, id) || i >= guestTopicLimit} />
       <SectionHead icon="🗺️" title={lang === "ja" ? "インド式数学の学びのマップ" : "Learning map for Vedic Math"} sub={lang === "ja"

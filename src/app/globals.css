@@ -5211,3 +5211,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 /* a phone's footer has Back beside the bar: the short "＋ New" fits */
 footer .join-bar .join-bar-long{ display:none; }
 @media (min-width:480px){ footer .join-bar .join-bar-long{ display:inline; } }
+/* Fix Your Misses rides in the Home rail too: same height as its neighbours */
+.home-rail > .review-cta, .home-rail > .review-rest{ margin:0; height:auto; }
+@media (min-width:1024px){ .home-view.active > .home-rail > .review-cta, .home-view.active > .home-rail > .review-rest{ grid-column:2; } }
