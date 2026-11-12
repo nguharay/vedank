@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { submitStageResult, importGuestProgress, submitPuzzleSolved, getLeaderboard } from "@/lib/game/progress";
-import { getDailyStatus, submitDaily, getLeagueStanding, getAllLeagues } from "@/lib/game/league";
+import { getDailyStatus, submitDaily, getLeagueStanding, getAllLeagues, getDailyWinners } from "@/lib/game/league";
 import {
   getQuests, reportQuestEvent, claimQuest, getInventory, getWallet,
   buyItem, consumeItem, recordMistake, getMistakes, countMistakes, fixMistake, reviewStats,
@@ -66,6 +66,11 @@ export async function dailyStatusAction() {
 export async function submitDailyAction(correct: number, elapsedMs: number) {
   const userId = await requireUserId();
   return submitDaily(userId, correct, elapsedMs);
+}
+
+export async function dailyWinnersAction() {
+  const userId = await requireUserId();
+  return getDailyWinners(userId);
 }
 
 export async function leagueAction() {

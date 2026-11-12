@@ -48,7 +48,7 @@ import {
   stageOutcome,
   type ProgressState,
 } from "@/lib/game/state";
-import { finishStageAction, solvePuzzleAction, leaderboardAction, dailyStatusAction, submitDailyAction, leagueAction, leagueAllAction } from "@/lib/actions/game-actions";
+import { finishStageAction, solvePuzzleAction, leaderboardAction, dailyStatusAction, dailyWinnersAction, submitDailyAction, leagueAction, leagueAllAction } from "@/lib/actions/game-actions";
 import {
   shopStateAction, buyItemAction,
   importGuestProgressAction,
@@ -89,7 +89,7 @@ import { buildMatchRound, isPair, matchScore,
   dailySeed, dailyGameId, dailyGameKey, QUICK_GAMES, quickGame,
   type QuickRound,
   type MatchTile } from "@/lib/game/minigames";
-import type { DailyStatus, LeagueStanding } from "@/lib/game/league";
+import type { DailyStatus, DailyWinners, LeagueStanding } from "@/lib/game/league";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
 import dynamic from "next/dynamic";
@@ -263,6 +263,7 @@ export function GameApp({
 
   useEffect(() => {
     dailyStatusAction().then(setDailyStatus).catch(() => {});
+    dailyWinnersAction().then(setDailyWinners).catch(() => {});
   }, []);
 
   /* the streak the next gem chest opens at: day 5, day 7, then every 7th day */
@@ -338,6 +339,7 @@ export function GameApp({
         setDailyDone({ points: res.points, correct: res.correct });
         setDailyStatus({ day: todayKey(), played: true, correct: res.correct, total: dailyQs.length, points: res.points });
         setLeague(null);
+        dailyWinnersAction().then(setDailyWinners).catch(() => {});
         if (res.correct >= 6) confetti.burstCenter();
       } else {
         setDailyIdx((i) => i + 1);
@@ -1080,6 +1082,7 @@ export function GameApp({
   const [trickNum, setTrickNum] = useState(0);
 
   const [dailyStatus, setDailyStatus] = useState<DailyStatus | null>(null);
+  const [dailyWinners, setDailyWinners] = useState<DailyWinners | null>(null);
   const [dailyQs, setDailyQs] = useState<DailyQuestion[]>([]);
   const [dailyIdx, setDailyIdx] = useState(0);
   const [dailyCorrect, setDailyCorrect] = useState(0);
@@ -4192,6 +4195,8 @@ export function GameApp({
             progress={progress}
             li={li}
             dailyStreak={dailyStreak}
+            dailyWinners={guest ? null : dailyWinners}
+            onPlayDaily={dailyStatus && !dailyStatus.played ? startDaily : undefined}
             onOpenTopic={openTopic}
             onOpenBlitz={openBlitzPicker}
             onOpenTricks={() => { if (guestLocked("tricks")) return; setTrickId(null); setView("tricks"); }}
@@ -4951,6 +4956,7 @@ export function GameApp({
             pick={dailyPick}
             done={dailyDone}
             status={dailyStatus}
+            winners={dailyWinners}
             lang={lang}
             onPick={onDailyPick}
             onHome={goHome}

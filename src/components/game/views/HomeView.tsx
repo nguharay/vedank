@@ -3,6 +3,8 @@
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
 import type { HomeGameId } from "../homeGames";
 import { Mascot } from "../Mascot";
+import { DailyWinnersCard } from "../DailyWinnersCard";
+import type { DailyWinners } from "@/lib/game/league";
 import { monsterFor } from "../monsters";
 import type { ShareFocus } from "../ShareCard";
 import type { UIDict } from "../i18n";
@@ -22,7 +24,7 @@ import { StreakIcon } from "../StreakIcon";
 export function HomeView({
   progress,
   li,
-  dailyStreak,
+  dailyStreak, dailyWinners, onPlayDaily,
   onOpenTopic,
   onOpenBlitz,
   onOpenTricks,
@@ -51,6 +53,9 @@ export function HomeView({
   progress: ProgressState;
   li: ReturnType<typeof levelInfo>;
   dailyStreak: number;
+  /* today's Daily Challenge winners (accounts only), and a way to go and play it */
+  dailyWinners?: DailyWinners | null;
+  onPlayDaily?: () => void;
   onOpenTopic: (id: string) => void;
   onOpenBlitz: () => void;
   onOpenTricks: () => void;
@@ -161,6 +166,8 @@ export function HomeView({
         </span>
       </button>
 
+      <DailyWinnersCard data={dailyWinners ?? null} ja={lang === "ja"} onPlay={onPlayDaily} />
+
         <>
       {/* one swipeable row instead of three stacked cards: the next lesson,
           then the two ways to practise the tricks peeking in from the right */}
@@ -207,13 +214,6 @@ export function HomeView({
                 ? "インド式数学の「ひらめき」を、モンスターとのバトルで楽しく身につけよう。"
                 : "Learn the clever shortcuts of Indian maths by battling monsters and playing games with friends."}
             </p>
-            <div className="howto-steps">
-              <span><b>⚔️</b>{lang === "ja" ? "たたかう" : "Battle"}</span>
-              <i aria-hidden="true">➜</i>
-              <span><b>🎮</b>{lang === "ja" ? "あそぶ" : "Play"}</span>
-              <i aria-hidden="true">➜</i>
-              <span><b>🏆</b>{lang === "ja" ? "ランクアップ" : "Rank up"}</span>
-            </div>
           </div>
         )}
 

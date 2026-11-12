@@ -5134,3 +5134,25 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
   .home-view.active > .home-rail > .continue-card{ grid-column:1; }
   .home-view.active > .home-rail > .blitz-cta{ grid-column:2; }
 }
+
+/* ---- Daily Challenge winners (Home, and the Daily result screen) ---- */
+.dw-card{ margin:0 0 12px; padding:12px 12px 10px; border-radius:18px; border:3px solid var(--ink,#1c1838);
+  background:linear-gradient(135deg,#fff3c4,#ffd86b 55%,#ffb84a); color:#3a2500; box-shadow:0 5px 0 var(--ink,#1c1838); text-align:left; }
+.dw-head{ display:flex; align-items:center; gap:10px; }
+.dw-cup{ font-size:28px; line-height:1; }
+.dw-titles{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.dw-titles b{ font-size:16px; font-weight:900; line-height:1.2; }
+.dw-titles small{ font-size:11.5px; font-weight:700; opacity:.8; line-height:1.3; }
+.dw-play{ flex:0 0 auto; border:2px solid var(--ink,#1c1838); border-radius:999px; background:#fff; color:#3a2500; font:inherit; font-weight:900; font-size:13px;
+  padding:6px 12px; cursor:pointer; box-shadow:0 3px 0 var(--ink,#1c1838); }
+.dw-play:active{ transform:translateY(3px); box-shadow:none; }
+.dw-list{ list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:5px; }
+.dw-row{ display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; background:rgba(255,255,255,.72); font-weight:800; font-size:14px; }
+.dw-row.me{ background:#fff; outline:2px solid var(--ink,#1c1838); }
+.dw-pos{ flex:0 0 22px; text-align:center; font-size:14px; }
+.dw-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dw-streak{ flex:0 0 auto; font-size:11px; font-weight:900; color:#fff; background:#e8452c; border-radius:999px; padding:2px 8px; white-space:nowrap; }
+.dw-time{ flex:0 0 auto; font-size:12px; opacity:.7; }
+.dw-more{ display:block; margin:8px auto 0; border:0; background:none; color:#3a2500; font:inherit; font-weight:900; font-size:12.5px; text-decoration:underline; cursor:pointer; }
+.daily-done .dw-card{ margin:16px 0; width:100%; }
+@media (min-width:1024px){ .home-view.active > .dw-card{ grid-column:2; } }

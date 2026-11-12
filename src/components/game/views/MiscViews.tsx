@@ -1,5 +1,8 @@
 "use client";
 
+import { DailyWinnersCard } from "../DailyWinnersCard";
+import type { DailyWinners } from "@/lib/game/league";
+
 import { fmt } from "../util";
 import { CountdownTimer } from "./PracticeView";
 import type { UIDict } from "../i18n";
@@ -16,6 +19,7 @@ export function DailyView({
   pick,
   done,
   status,
+  winners,
   lang,
   onPick,
   onHome,
@@ -25,6 +29,7 @@ export function DailyView({
   pick: number | null;
   done: { points: number; correct: number } | null;
   status: DailyStatus | null;
+  winners?: DailyWinners | null;
   lang: Lang;
   onPick: (v: number) => void;
   onHome: () => void;
@@ -44,6 +49,7 @@ export function DailyView({
               ? "同じ問題を世界中のみんなが解いています。また明日！"
               : "Everyone in the world got these same questions today. Come back tomorrow!"}
           </p>
+          <DailyWinnersCard data={winners ?? null} ja={lang === "ja"} />
           <button className="btn btn-primary" onClick={onHome}>
             {lang === "ja" ? "ホームへ" : "Back home"}
           </button>
