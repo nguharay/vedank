@@ -50,7 +50,7 @@ import {
 } from "@/lib/game/state";
 import { finishStageAction, solvePuzzleAction, leaderboardAction, dailyStatusAction, submitDailyAction, leagueAction, leagueAllAction } from "@/lib/actions/game-actions";
 import {
-  questsAction, reportQuestAction, claimQuestAction, shopStateAction, buyItemAction,
+  shopStateAction, buyItemAction,
   importGuestProgressAction,
   consumeItemAction, recordMistakeAction, reviewListAction, fixMistakeAction,
 } from "@/lib/actions/game-actions";
@@ -71,7 +71,7 @@ import {
 } from "@/lib/actions/game-actions";
 import type { CompetitionSummary, CompQuestion, CompRow } from "@/lib/game/competition";
 import { COMP_LEVELS } from "@/lib/game/competition";
-import type { QuestState, InventoryState, ReviewStats } from "@/lib/game/engagement";
+import type { InventoryState, ReviewStats } from "@/lib/game/engagement";
 import type { LeaderboardData } from "@/lib/game/progress";
 import type { LeagueTable } from "@/lib/game/league";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
@@ -109,7 +109,6 @@ const SpaceBlaster = dynamic(() => import("./views/SpaceBlaster").then((m) => m.
 const RiverHop = dynamic(() => import("./views/RiverHop").then((m) => m.RiverHop), { ssr: false });
 import type { HomeGameId } from "./homeGames";
 import { addTownCoins, useTown } from "./town";
-import { feedDragon, stageOf } from "./dragon";
 import { StoryIntro } from "./StoryIntro";
 import { GameDemo, demoDue, markDemoSeen } from "./GameDemo";
 import { InviteSheet } from "./InviteSheet";
@@ -129,7 +128,6 @@ import { LEAGUES, leagueOf, TOP_LEAGUE } from "@/lib/game/daily";
 import { ri, shuffle, weightedPick, urlBase64ToUint8Array, RollUp, fmt, sameLoc, haptic, rankLabel, SPRINT_LEN, BLITZ_DEFAULT_LEVEL, BLITZ_BOOST_MS } from "./util";
 import type { View, Mode, Loc } from "./util";
 import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, TricksView, BlitzView } from "./views";
-import type { HomeTab } from "./views/HomeView";
 import { SITE_URL } from "@/lib/site";
 
 /* A reward that snaps into place reads as a label. One that climbs reads as
@@ -141,43 +139,30 @@ import { SITE_URL } from "@/lib/site";
 /* "tomorrow" / "in 3 days" — a date stamp would mean nothing to a child, and
    the exact hour is noise when reviews land at the start of a day. */
 
-/* The dragon's notification asks. One is picked each time the sheet opens
-   (never the same one twice running), so it reads like the dragon talking,
-   not a system dialog. None of them mention how often or when — by request. */
-const DRAGON_ASKS = [
-  { titleJa: "ドラゴンからのおねがい", bodyJa: "「おなかがすいたら、おしえてもいい？」\nごはんの時間や、ストリークが消えそうなときに声をかけるね。",
-    titleEn: "A request from your dragon", bodyEn: "\u201cCan I tell you when I\u2019m hungry?\u201d\nI\u2019ll call you at meal time, and when your streak is about to end.",
+/* The notification asks. One is picked each time the sheet opens (never the
+   same one twice running), so it reads like the buddy talking, not a system
+   dialog. None of them mention how often or when, by request. */
+const NOTIFY_ASKS = [
+  { titleJa: "ちょっとおねがい", bodyJa: "「ときどき声をかけてもいい？」\nストリークが消えそうなときや、リーグが動くときに知らせるね。",
+    titleEn: "One small request", bodyEn: "\u201cCan I give you a shout now and then?\u201d\nI\u2019ll tell you when your streak is about to end and when your league moves.",
     yesJa: "いいよ、おしえて！", yesEn: "Yes, remind me!" },
-  { titleJa: "ドラゴンがのぞいてる…👀", bodyJa: "「ねえねえ、ときどき声をかけてもいい？」\nストリークが消えそうなときも教えるよ。",
-    titleEn: "Your dragon is peeking… 👀", bodyEn: "\u201cPsst \u2014 can I give you a shout now and then?\u201d\nI\u2019ll warn you before your streak runs out, too.",
-    yesJa: "うん、よんでね！", yesEn: "Sure, call me!" },
-  { titleJa: "たまごがコトコト… 🥚", bodyJa: "「ひなになる日、いっしょにお祝いしたいな」\nごはんの時間になったら知らせるね。",
-    titleEn: "The egg is wobbling… 🥚", bodyEn: "\u201cI want you there when I hatch!\u201d\nI\u2019ll let you know when it\u2019s meal time.",
-    yesJa: "見のがさない！", yesEn: "Don\u2019t let me miss it!" },
-  { titleJa: "キングピコが動きだした ⚔️", bodyJa: "ドラゴン：「モンスターが来たら、すぐ知らせるね！」\nお城を守るチャンスをのがさないで。",
-    titleEn: "King Blip is on the move ⚔️", bodyEn: "Dragon: \u201cI\u2019ll shout the moment monsters show up!\u201d\nNever miss a chance to defend your castle.",
+  { titleJa: "キングピコが動きだした ⚔️", bodyJa: "「モンスターが来たら、すぐ知らせるね！」\nお城を守るチャンスをのがさないで。",
+    titleEn: "King Blip is on the move ⚔️", bodyEn: "\u201cI\u2019ll shout the moment monsters show up!\u201d\nNever miss a chance to defend your castle.",
     yesJa: "知らせて！", yesEn: "Warn me!" },
-  { titleJa: "ドラゴンからの手紙 💌", bodyJa: "「きみが来ない日は、ちょっとさみしい」\nそっとお知らせしてもいい？",
-    titleEn: "A letter from your dragon 💌", bodyEn: "\u201cDays without you are a bit lonely.\u201d\nMay I send you a gentle note?",
-    yesJa: "いいよ 💛", yesEn: "Of course 💛" },
-  { titleJa: "ストリーク、守りたい？🔥", bodyJa: "ドラゴン：「ストリークが消える前に、ぼくが知らせてあげる！」",
-    titleEn: "Want to keep your streak? 🔥", bodyEn: "Dragon: \u201cI\u2019ll nudge you before your streak runs out!\u201d",
+  { titleJa: "ストリーク、守りたい？🔥", bodyJa: "「ストリークが消える前に、知らせてあげる！」",
+    titleEn: "Want to keep your streak? 🔥", bodyEn: "\u201cI\u2019ll nudge you before your streak runs out!\u201d",
     yesJa: "守る！", yesEn: "Protect it!" },
 ];
-/* Guests get their own asks: the egg with no home, progress that lives only
-   on this phone — still the dragon talking. */
-const GUEST_ASKS: typeof DRAGON_ASKS = [
-  { titleJa: "たまごがあなたを見てる 🥚", bodyJa: "「ゲストでも、ぼくは待ってるよ」\nごはんの時間になったら知らせてもいい？",
-    titleEn: "The egg is watching you 🥚", bodyEn: "\u201cGuest or not, I\u2019ll be waiting.\u201d\nCan I tell you when it\u2019s meal time?",
-    yesJa: "うん、知らせて！", yesEn: "Yes, tell me!" },
-  { titleJa: "ドラゴン、ひとりぼっち？🐉", bodyJa: "「このスマホの中で、きみを待ってるんだ」\nそっと声をかけるね。",
-    titleEn: "Is your dragon all alone? 🐉", bodyEn: "\u201cI live right here on this phone, waiting for you.\u201d\nI\u2019ll call you softly.",
-    yesJa: "よんでいいよ", yesEn: "You can call me" },
-  { titleJa: "ちょっとだけ、おねがい 🙏", bodyJa: "ドラゴン：「きみの記録、なくしたくないな」\nお知らせで、続けるのを手伝うよ。",
-    titleEn: "One tiny favour 🙏", bodyEn: "Dragon: \u201cI don\u2019t want your progress to fade.\u201d\nA little reminder keeps it going.",
+/* Guests get their own asks: progress that lives only on this phone. */
+const GUEST_ASKS: typeof NOTIFY_ASKS = [
+  { titleJa: "ちょっとだけ、おねがい 🙏", bodyJa: "「きみの記録、なくしたくないな」\nお知らせで、続けるのを手伝うよ。",
+    titleEn: "One tiny favour 🙏", bodyEn: "\u201cI don\u2019t want your progress to fade.\u201d\nA little reminder keeps it going.",
     yesJa: "手伝って！", yesEn: "Help me keep going!" },
+  { titleJa: "また遊びにきてね 👋", bodyJa: "「ゲストでも、待ってるよ」\nそっと声をかけてもいい？",
+    titleEn: "Come back and play 👋", bodyEn: "\u201cGuest or not, I\u2019ll be waiting.\u201d\nMay I call you softly?",
+    yesJa: "よんでいいよ", yesEn: "You can call me" },
 ];
-const asksFor = (guest: boolean) => (guest ? GUEST_ASKS : DRAGON_ASKS);
+const asksFor = (guest: boolean) => (guest ? GUEST_ASKS : NOTIFY_ASKS);
 /* a different ask from the last one shown */
 function pickAskLine(guest: boolean): number {
   const list = asksFor(guest);
@@ -308,6 +293,17 @@ export function GameApp({
     }
   }
 
+  /* the Daily button in the bottom bar: play today's challenge, or, once it
+     is done, say so and show where the points went */
+  function openDailyFromNav() {
+    if (guestLocked("daily")) return;
+    if (dailyStatus?.played) {
+      spawnToast(ja ? "⭕ 今日のデイリーチャレンジはクリア！また明日。" : "⭕ Today's Daily Challenge is done! Come back tomorrow.", null);
+      if (!leagueOpen) void toggleLeague();
+      return;
+    }
+    startDaily();
+  }
   function startDaily() {
     if (dailyStatus?.played) return;
     setDailyQs(dailyQuestions(todayKey()));
@@ -458,9 +454,7 @@ export function GameApp({
 
   const rank = lang === "ja" ? RANKS_JA[li.rank] || li.rank : li.rank;
 
-  /* ---------- engagement loop: quests, shop wallet, mistake review ---------- */
-  const [quests, setQuests] = useState<QuestState[]>([]);
-  const [questsOpen, setQuestsOpen] = useState(false);
+  /* ---------- engagement loop: shop wallet, mistake review ---------- */
   const [inventory, setInventory] = useState<InventoryState | null>(null);
   const [gemBalance, setGemBalance] = useState<number | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
@@ -480,13 +474,6 @@ export function GameApp({
   /* consecutive misses on the current question, so the buddy escalates its help */
   const wrongRunRef = useRef(0);
 
-  const claimableQuests = quests.filter((q) => q.done && !q.claimed).length;
-
-  async function refreshQuests() {
-    try {
-      setQuests((await questsAction()).quests);
-    } catch {}
-  }
   async function refreshShop() {
     try {
       const st = await shopStateAction();
@@ -522,11 +509,10 @@ export function GameApp({
     let alive = true;
     (async () => {
       try {
-        const [q, sh, rv, fr] = await Promise.all([
-          questsAction(), shopStateAction(), reviewListAction(), friendsAction(),
+        const [sh, rv, fr] = await Promise.all([
+          shopStateAction(), reviewListAction(), friendsAction(),
         ]);
         if (!alive) return;
-        setQuests(q.quests);
         setInventory(sh.inventory);
         setGemBalance(sh.balance);
         setReviewCount(rv.total);
@@ -543,35 +529,11 @@ export function GameApp({
     };
   }, [guest]);
 
-  /* Fire-and-forget: a quest that fails to record must never break gameplay. */
+  /* Quests are gone; what is left of this hook is that every right answer, in
+     any game, pays into Math Town (guests too). The name stays because every
+     game calls it. */
   function fireQuest(event: QuestEvent, amount = 1) {
-    /* every right answer, in any game, also pays into Math Town and feeds
-       the dragon — guests too */
-    if (event === "correct_answer") {
-      addTownCoins(amount);
-      const fed = feedDragon(amount);
-      if (fed.grew) {
-        spawnToast(ja ? `${fed.grew.emoji} ドラゴンが${fed.grew.nameJa}に成長した！` : `${fed.grew.emoji} Your dragon grew into a ${fed.grew.name.toLowerCase()}!`, null);
-        confetti.burstCenter(80, 0.4);
-      } else if (fed.fedNow) {
-        spawnToast(ja ? "🐉 今日のごはん、おなかいっぱい！" : "🐉 Dragon fed for today!", null);
-      }
-    }
-    if (guest) return;
-    reportQuestAction(event, amount)
-      .then((r) => setQuests(r.quests))
-      .catch(() => {});
-  }
-
-  async function onClaimQuest(id: string) {
-    const res = await claimQuestAction(id);
-    if (res.ok) {
-      setBonusGems((g) => g + res.reward);
-      spawnToast(`+${res.reward} 💎`, null);
-      confetti.burstCenter(70, 0.4);
-      sound.correct();
-    }
-    await Promise.all([refreshQuests(), refreshShop()]);
+    if (event === "correct_answer") addTownCoins(amount);
   }
 
   async function onBuy(itemId: string) {
@@ -880,7 +842,6 @@ export function GameApp({
     setReviewFixed(0);
     setReviewFeedback(null);
     dealReviewQuestion(queue, 0);
-    setQuestsOpen(false);
     setView("review");
   }
 
@@ -915,48 +876,6 @@ export function GameApp({
     }, ok ? 700 : 1400);
   }
 
-  /* today's quests (and the "fix your misses" button): shown as a Home tab */
-  const questsList = (
-    <>
-      <div className="quest-list">
-        {quests.map((q) => (
-          <div key={q.id} className={`quest-row${q.claimed ? " claimed" : q.done ? " ready" : ""}`}>
-            <span className="quest-icon">{q.claimed ? "⭕" : q.icon}</span>
-            <div className="quest-body">
-              <div className="quest-title">{lang === "ja" ? q.titleJa : q.title}</div>
-              <div className="quest-track">
-                <div
-                  className="quest-fill"
-                  style={{ width: `${Math.min(100, (q.count / q.target) * 100)}%` }}
-                />
-              </div>
-              <div className="quest-sub mono">
-                {Math.min(q.count, q.target)} / {q.target}
-              </div>
-            </div>
-            {q.claimed ? (
-              <span className="quest-done">{lang === "ja" ? "受取済" : "Claimed"}</span>
-            ) : q.done ? (
-              <button className="quest-claim" onClick={() => onClaimQuest(q.id)}>
-                +{q.reward} 💎
-              </button>
-            ) : (
-              <span className="quest-reward mono">+{q.reward} 💎</span>
-            )}
-          </div>
-        ))}
-        {quests.length === 0 && (
-          <div className="quest-empty">{lang === "ja" ? "読み込み中…" : "Loading…"}</div>
-        )}
-      </div>
-      {reviewCount > 0 && (
-        <button className="quest-review-cta" onClick={startReview}>
-          🩹 {lang === "ja" ? `まちがい ${reviewCount} 問をなおす` : `Fix ${reviewCount} missed question${reviewCount === 1 ? "" : "s"}`}
-        </button>
-      )}
-    </>
-  );
-
   /* share sheet: every header stat and the blitz result open it focused on that number */
   const [shareOpen, setShareOpen] = useState(false);
   const [shareFocus, setShareFocus] = useState<ShareFocus>("level");
@@ -980,7 +899,6 @@ export function GameApp({
     /* already on Home (say, on the Learn tab): Home still means "back to the
        start" — the Play tab, at the top */
     if (viewRef.current === "home") {
-      window.dispatchEvent(new CustomEvent("vedank:hometab", { detail: "play" }));
       window.scrollTo({ top: 0, behavior: "smooth" });
       document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -2532,12 +2450,11 @@ export function GameApp({
 
   /* the section the player is in, by its real name — each visit's row in
      the sheet lists these in order with the time spent and the score on each */
-  const [homeTab, setHomeTab] = useState<HomeTab>("play");
   const sectionName = (() => {
     const EN = UI.en.headerTitles;
     const topic = currentTopic ? currentTopic.title : "";
     switch (view) {
-      case "home": return `Home · ${homeTab[0].toUpperCase()}${homeTab.slice(1)}`;
+      case "home": return "Home · Lessons";
       case "topic": return `Lesson · ${topic} · Intro`;
       case "stagemap": return `Lesson · ${topic} · Stage map`;
       case "practice": return `Lesson · ${topic} · ${curStage.n === STAGE_COUNT ? "Boss stage" : `Stage ${curStage.n}`}`;
@@ -2887,13 +2804,13 @@ export function GameApp({
   }, [lang, guest]);
 
   /* ---------- asking for notifications when the app opens ----------
-     The browser's permission dialog can only follow a tap, so the dragon asks
+     The browser's permission dialog can only follow a tap, so the buddy asks
      with a pop-up shortly after the app opens; the player's "Yes" is the tap.
      "Not now" waits a week and asks once more, then stops. On an iPhone that
      is not installed to the Home Screen push cannot work, so the same sheet
      explains Add to Home Screen instead. */
   const [pushAsk, setPushAsk] = useState<null | "push" | "ios">(null);
-  /* which of the dragon's asks to show — picked when the sheet opens, so it
+  /* which of the asks to show — picked when the sheet opens, so it
      differs from one time to the next */
   const [askLine, setAskLine] = useState(0);
   const isIosBrowser = () => {
@@ -3098,7 +3015,7 @@ export function GameApp({
   /* the peeking buddy: not inside a game or a battle (nothing to say there),
      with a dot when something is waiting to be claimed or fixed */
   const buddyShown = !buddy.hidden && !((GAME_VIEWS.includes(view) && view !== "town") || view === "practice");
-  const buddyDot = claimableQuests > 0 || reviewCount > 0;
+  const buddyDot = reviewCount > 0;
   return (
     <div id="app" data-skin={skin.skinId}>
       <div className="sparkle-field">
@@ -3579,7 +3496,7 @@ export function GameApp({
         <>
           <div className="menu-overlay" onClick={() => setPushAsk(null)} />
           <div className={`hint-sheet lock-sheet push-ask${pushAsk === "ios" ? " ios" : ""}`} role="dialog" aria-modal="true">
-            <div className="push-ask-dragon" aria-hidden="true">🐉</div>
+            <div className="push-ask-dragon" aria-hidden="true">🔔</div>
             {pushAsk === "push" ? (
               <>
                 <h3>{ja ? asksFor(guest)[askLine].titleJa : asksFor(guest)[askLine].titleEn}</h3>
@@ -3934,21 +3851,6 @@ export function GameApp({
         </>
       )}
 
-      {questsOpen && (
-        <>
-          <div className="menu-overlay" onClick={() => setQuestsOpen(false)} />
-          <div className="sheet-panel">
-            <div className="sheet-panel-title">
-              <span>📜 {lang === "ja" ? "今日のクエスト" : "Today's Quests"}</span>
-              <span className="sheet-panel-count">
-                {quests.filter((q) => q.claimed).length}/{quests.length}
-              </span>
-            </div>
-            {questsList}
-          </div>
-        </>
-      )}
-
       {shopOpen && (
         <>
           <div className="menu-overlay" onClick={() => setShopOpen(false)} />
@@ -4203,7 +4105,7 @@ export function GameApp({
                       : me.position === 1 ? (ja ? "👑 いま1位！このままレッスンをすすめよう" : "👑 You're #1, keep clearing lessons!")
                       : next}
                   </div>
-                  <button className="btn btn-primary lb-go" onClick={() => { setLeaderboardOpen(false); goHome(); setTimeout(() => window.dispatchEvent(new CustomEvent("vedank:hometab", { detail: "learn" })), 60); }}>
+                  <button className="btn btn-primary lb-go" onClick={() => { setLeaderboardOpen(false); goHome(); }}>
                     📘 {ja ? "レッスンをすすめる" : "Do a lesson"}
                   </button>
                 </div>
@@ -4264,7 +4166,7 @@ export function GameApp({
                   <span className="install-banner-ico" aria-hidden="true">📲</span>
                   <div className="install-banner-body">
                     <strong>{ja ? "アプリにすると、もっと楽しい！" : "It\u2019s even better as an app!"}</strong>
-                    <span>{ja ? "ホーム画面から1タップ。ドラゴンのお知らせもとどくよ。" : "One tap from your Home Screen, and your dragon can reach you."}</span>
+                    <span>{ja ? "ホーム画面から1タップ。お知らせもとどくよ。" : "One tap from your Home Screen, with reminders when you want them."}</span>
                   </div>
                   <button className="install-banner-cta" onClick={() => { if (canInstall) void onInstall(); else setPushAsk("ios"); }}>{ja ? "入れる" : "Install"}</button>
                   <button className="install-banner-x" aria-label={ja ? "閉じる" : "Dismiss"} onClick={hideInstallBanner}>✕</button>
@@ -4284,7 +4186,6 @@ export function GameApp({
         )}
         {view === "home" && (
           <HomeView
-            onTabChange={setHomeTab}
             focusTopic={homeFocus}
             guest={guest}
             guestTopicLimit={guest ? GUEST_TOPICS : Infinity}
@@ -4294,13 +4195,10 @@ export function GameApp({
             onOpenTopic={openTopic}
             onOpenBlitz={openBlitzPicker}
             onOpenTricks={() => { if (guestLocked("tricks")) return; setTrickId(null); setView("tricks"); }}
-            onOpenDaily={() => { if (guestLocked("daily")) return; startDaily(); }}
-            dailyPlayed={!!dailyStatus?.played}
             onContinue={continueStage}
             onShare={openShare}
             reviewCount={reviewCount}
             reviewStats={reviewStats}
-            onOpenQuests={() => { setQuestsOpen(true); refreshQuests(); }}
 
             onOpenShop={() => { setShopOpen(true); refreshShop(); }}
             onStartReview={startReview}
@@ -4314,8 +4212,6 @@ export function GameApp({
             onAcceptDuel={acceptDuel}
             onOpenClasses={classesEnabled && lang === "ja" ? () => setClassesFrom("home") : undefined}
             onPlayGame={playGame}
-            onOpenTown={() => openTown(true)}
-            onOpenGames={openGames}
             lang={lang}
             t={t}
           />
@@ -5147,12 +5043,12 @@ export function GameApp({
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
-            <button className="bottomnav-item" onClick={() => { setQuestsOpen((o) => !o); refreshQuests(); refreshReview(); }}>
+            <button className={`bottomnav-item${dailyStatus?.played ? " done" : ""}`} onClick={openDailyFromNav}>
               <span className="bottomnav-icon">
-                <UiIcon name="quests" />
-                {(claimableQuests > 0 || reviewCount > 0) && <span className="nav-dot" aria-hidden="true" />}
+                <UiIcon name="today" />
+                {!dailyStatus?.played && <span className="nav-dot" aria-hidden="true" />}
               </span>
-              <span>{lang === "ja" ? "クエスト" : "Quests"}</span>
+              <span>{lang === "ja" ? "デイリー" : "Daily"}</span>
             </button>
             <button className="dock-play" onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"}>
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
