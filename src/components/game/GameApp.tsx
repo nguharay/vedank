@@ -2046,7 +2046,7 @@ export function GameApp({
   /* invite friends: opened from the menu, Home, or a results screen (event) */
   const [invite, setInvite] = useState<{ extra?: string } | null>(null);
   /* which group of the account menu is open */
-  const [menuGroup, setMenuGroup] = useState<"settings" | "watch" | "contact" | "rewards" | null>(null);
+  const [menuGroup, setMenuGroup] = useState<"settings" | "watch" | "rewards" | null>(null);
   useEffect(() => {
     const on = (e: Event) => { setInvite({ extra: (e as CustomEvent<{ extra?: string }>).detail?.extra }); track("invite_open"); };
     window.addEventListener("vedank:invite", on);
@@ -3171,24 +3171,18 @@ export function GameApp({
               </button>
               </div>
             )}
-            <button className={`menu-row menu-group${menuGroup === "contact" ? " open" : ""}`} onClick={() => setMenuGroup((g) => (g === "contact" ? null : "contact"))} aria-expanded={menuGroup === "contact"}>
-              <span>💬 {ja ? "つながる" : "Contact"}</span>
-              <span className="menu-row-val"><i className="menu-chev">›</i></span>
+            {/* the class (and, in Japanese, Ray's own classes) as plain rows,
+                not tucked inside a group */}
+            {classesEnabled && lang === "ja" && <button className="menu-row" onClick={() => { setMenuOpen(false); setClassesFrom("menu"); }}>
+              <span>🧮 Ray（礼）先生と学ぶ（授業）</span>
+              <span className="menu-row-val">›</span>
+            </button>}
+            <button className="menu-row" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
+              <span>🏫 {ja ? "クラス" : "Class"}</span>
+              <span className="menu-row-val">
+                {enrolled.length ? enrolled[0].name : ja ? "未参加" : "Not joined"}
+              </span>
             </button>
-            {menuGroup === "contact" && (
-              <div className="menu-sub-list">
-              {classesEnabled && lang === "ja" && <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); setClassesFrom("menu"); }}>
-                <span>🧮 Ray（礼）先生と学ぶ（授業）</span>
-                <span className="menu-row-val">›</span>
-              </button>}
-              <button className="menu-row menu-sub" onClick={() => { setMenuOpen(false); setClassOpen(true); setClassNote(null); refreshClasses(); }}>
-                <span>🏫 {ja ? "クラス" : "Class"}</span>
-                <span className="menu-row-val">
-                  {enrolled.length ? enrolled[0].name : ja ? "未参加" : "Not joined"}
-                </span>
-              </button>
-              </div>
-            )}
             <button className="menu-row menu-row-invite" onClick={() => { setMenuOpen(false); setInvite({}); track("invite_open"); }}>
               <span>🎁 {ja ? "友だちを招待" : "Invite friends"}</span>
               <span className="menu-row-val">{ja ? "シェア" : "Share"}</span>
