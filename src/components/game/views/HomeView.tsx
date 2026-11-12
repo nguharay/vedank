@@ -162,6 +162,9 @@ export function HomeView({
       </button>
 
         <>
+      {/* one swipeable row instead of three stacked cards: the next lesson,
+          then the two ways to practise the tricks peeking in from the right */}
+      <div className="home-rail" role="group" aria-label={lang === "ja" ? "レッスンとれんしゅう" : "Lesson and practice"}>
       <div className="continue-card" style={{ background: gradCss(continueTopic.grad) }} onClick={() => onContinue(continueTopic.id, continueStageN)}>
         <div className="continue-card-label">{lang === "ja" ? "📘 つぎのレッスン" : "📘 Next lesson"}</div>
         <div className="continue-card-title">
@@ -192,6 +195,7 @@ export function HomeView({
           </div>
         </div>
         <span className="blitz-cta-arrow">›</span>
+      </div>
       </div>
 
       {/* A brand-new player gets a plain-words intro: what this is, in three steps. */}
