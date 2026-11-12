@@ -122,7 +122,6 @@ import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkin
 import { Buddy } from "./Buddy";
 import { useBuddy, line } from "./useBuddy";
 import { makeQuoteCycle, quoteText } from "@/lib/game/quotes";
-import { useBuddyPos } from "./useBuddyPos";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI } from "./i18n";
 import { LEAGUES, leagueOf, TOP_LEAGUE } from "@/lib/game/daily";
@@ -432,16 +431,11 @@ export function GameApp({
      (combos, cleared stages) still interrupt on their own. */
   const nextQuote = useRef(makeQuoteCycle());
   const [quoteBy, setQuoteBy] = useState<string | null>(null);
-  /* Until it has been tapped once, the buddy wears a hint badge — a character
-     in the corner with no affordance is a feature nobody finds. */
-  const [buddyTapped, setBuddyTapped] = useState(false);
-  /* Drag it anywhere; position is remembered. tapBuddy is declared below, so the
-     handler reads it through a ref rather than capturing it before it exists. */
-  const tapRef = useRef<() => void>(() => {});
-  const buddyPos = useBuddyPos(() => tapRef.current());
+  /* The buddy lives in the top bar (it used to float over the page and cover
+     cards). Tap it for a quote; what it says drops down as a slim strip under
+     the header. */
 
   function tapBuddy() {
-    setBuddyTapped(true);
     if (buddy.say) {
       buddy.quiet();
       setQuoteBy(null);
@@ -452,7 +446,7 @@ export function GameApp({
     buddy.speak({
       text: quoteText(q, lang === "ja"),
       mood: q.kind === "hope" ? "excited" : "happy",
-      hold: 9000,
+      hold: 8000,
     });
   }
   const ja = lang === "ja";
@@ -511,8 +505,6 @@ export function GameApp({
     } catch {}
   }
 
-  tapRef.current = tapBuddy;
-
   /* A quote once, a beat after the app settles, so a first-time player sees what
      the buddy does instead of having to guess that it is tappable. */
   /* The language can settle after mount (a saved preference), so the first
@@ -524,16 +516,6 @@ export function GameApp({
     langRef.current = lang;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
-  useEffect(() => {
-    if (buddy.hidden) return;
-    const id = setTimeout(() => {
-      const q = nextQuote.current();
-      setQuoteBy(q.by ?? null);
-      buddy.speak({ text: quoteText(q, langRef.current === "ja"), mood: "happy", hold: 11000 });
-    }, 1600);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   /* One parallel load on mount; each value is also refreshed by the action that
      changes it, so the panels never show a stale number. The alive flag keeps a
@@ -3116,6 +3098,10 @@ export function GameApp({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, curMode, curProblem, tileOptions, eliminated, checkEnabled, blitzProblem, blitzOptions]);
 
+  /* the header buddy: not inside a game or a battle (nothing to say there), and
+     a dot when something is waiting to be claimed or fixed */
+  const buddyShown = !buddy.hidden && !((GAME_VIEWS.includes(view) && view !== "town") || view === "practice");
+  const buddyDot = claimableQuests > 0 || reviewCount > 0;
   return (
     <div id="app" data-skin={skin.skinId}>
       <div className="sparkle-field">
@@ -3163,6 +3149,13 @@ export function GameApp({
         </button>
         <div className="header-title"><h1 className={/VedAnk/.test(headerTitle ?? "") ? "brand" : undefined}>{headerTitle}</h1></div>
         <div className="stats-row">
+          {buddyShown && (
+            <button className={`buddy-face${buddy.say ? " talking" : ""} mood-${buddy.mood}`} onClick={tapBuddy}
+              aria-label={ja ? "バディ（タップで名言）" : "Buddy, tap for a quote"} aria-expanded={!!buddy.say}>
+              <Buddy skinId={skin.skinId} mood={buddy.mood} animated={false} />
+              {buddyDot && !buddy.say && <span className="buddy-dot" aria-hidden="true" />}
+            </button>
+          )}
           <button className={`stat stat-flame${dailyStreak > 0 ? " lit" : ""}`} onClick={() => openShare("streak")} aria-label={`${t.share.statStreak} ${dailyStreak}, ${t.share.shareBtn}`}>
             <span aria-hidden="true"><StreakIcon lit={dailyStreak > 0} /></span> {dailyStreak}
           </button>
@@ -3173,6 +3166,15 @@ export function GameApp({
             <span aria-hidden="true"><UiIcon name="heart" size="1.15em" /></span> {hearts}
           </button>
         </div>
+        {/* what the buddy says: one slim strip hanging under the header, gone by
+            itself after a few seconds or on a tap. It overlays nothing but the
+            top edge of the page. */}
+        {buddyShown && buddy.say && (
+          <button key={buddy.say.text} className={`buddy-strip${quoteBy ? " quoting" : ""} mood-${buddy.mood}`} role="status" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
+            <span className="buddy-strip-text">{buddy.say.text}{quoteBy && <em>{quoteBy}</em>}</span>
+            <span className="buddy-strip-x" aria-hidden="true">✕</span>
+          </button>
+        )}
       </header>
 
       {menuOpen && (
@@ -3224,12 +3226,6 @@ export function GameApp({
                 <span>🌐 {t.menu.language}</span>
                 <span className="menu-row-val">{lang === "ja" ? "日本語" : "English"}</span>
               </button>
-              {buddyPos.pos && (
-                <button className="menu-row menu-sub" onClick={buddyPos.reset}>
-                  <span>📍 {ja ? "バディの位置をもどす" : "Reset buddy position"}</span>
-                  <span className="menu-row-val">›</span>
-                </button>
-              )}
               <button className="menu-row menu-sub" onClick={() => setSkinsOpen((o) => !o)}>
                 <span>🎨 {ja ? "衣装とテーマ" : "Outfit & theme"}</span>
                 <span className="menu-row-val">{skinName(activeSkin, ja)}</span>
@@ -5438,54 +5434,6 @@ export function GameApp({
           </div>
         </div>
       )}
-
-      {/* The companion. Fixed above the nav so it never covers an answer tile,
-          and tappable to hush it, a helper you can't silence is a nuisance.
-          Inside a game or a stage it stays out of the way altogether: a mascot
-          over the field, the Digit-Sum Square or the Back button is just
-          something in the way of playing. */}
-      {!buddy.hidden && !((GAME_VIEWS.includes(view) && view !== "town") || view === "practice") && (() => {
-        /* A moved buddy on the right half of the screen opens its bubble to the
-           LEFT (anchored by `right`), so a quote never runs off the edge. The
-           position only exists on the client, so reading the width is safe. */
-        const onRight = !!buddyPos.pos && buddyPos.pos.x + 29 > window.innerWidth / 2;
-        const dockStyle = !buddyPos.pos ? undefined
-          : onRight ? { right: Math.max(0, window.innerWidth - buddyPos.pos.x - 58), top: buddyPos.pos.y, left: "auto" }
-          : { left: buddyPos.pos.x, top: buddyPos.pos.y };
-        return (
-        <div
-          className={`buddy-dock${buddy.say ? " talking" : ""}${buddyPos.pos ? " free" : ""}${onRight ? " right" : ""}${buddyPos.dragging ? " dragging" : ""}`}
-          style={dockStyle}
-        >
-          {buddy.say && (
-            <div className={`buddy-bubble${quoteBy ? " quoting" : ""}`}>
-              <button className="buddy-close" aria-label={ja ? "閉じる" : "Close"} onClick={() => { buddy.quiet(); setQuoteBy(null); }}>✕</button>
-              <button className="buddy-bubble-text" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
-                {buddy.say.text}
-                {quoteBy && <span className="buddy-cite">{quoteBy}</span>}
-              </button>
-              <button className="buddy-hide" onClick={() => {
-                buddy.quiet(); setQuoteBy(null); buddy.toggleHidden();
-                spawnToast(ja ? "バディをかくしました（メニューでもどせます）" : "Buddy hidden, turn it back on in the menu", null);
-              }}>
-                🙈 {ja ? "バディをかくす" : "Hide buddy"}
-              </button>
-            </div>
-          )}
-          <button
-            className="buddy-tap"
-            {...buddyPos.handlers}
-            aria-label={ja ? "バディ（タップで名言、ドラッグで移動）" : "Buddy, tap for a quote, drag to move"}
-            title={ja ? "タップ：名言 / ドラッグ：移動" : "Tap for a quote · drag to move"}
-          >
-            <Buddy skinId={skin.skinId} mood={buddy.mood} />
-            {!buddyTapped && !buddy.say && (
-              <span className="buddy-hint" aria-hidden="true">💬</span>
-            )}
-          </button>
-        </div>
-        );
-      })()}
 
       <ShareSheet
         open={shareOpen}
