@@ -65,9 +65,12 @@ function recChip(g: PartyGame, r: Record_, ja: boolean): string | null {
 
 const allRecs = () => Object.fromEntries(PARTY_GAMES.map((g) => [g, readRec(g)])) as Record<PartyGame, Record_>;
 
-export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, onCorrect, guest, onNeedAccount }: {
+export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, onCorrect, guest, onNeedAccount, onLobby }: {
   lang: L; sound: Sound; celebrate: () => void; game: PartyGame; joinCode: string | null; onJoined: () => void; onBack: () => void;
   onCorrect?: (n: number) => void; guest: boolean; onNeedAccount: () => void;
+  /* told whether the game list (no room open) is showing: the app then puts
+     the "friend's room" code field in its bottom bar beside Back */
+  onLobby?: (inLobby: boolean) => void;
 }) {
   const ja = lang === "ja";
   const [room, setRoom] = useState<PartyRoomView | null>(null);
@@ -198,15 +201,21 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
     setBusy(false);
   }
 
-  /* a shared ?pr= link joins straight away */
-  const joinedRef = useRef(false);
+  /* a code from a shared ?pr= link, or typed in the app's bottom bar, joins
+     straight away (each code once: the app clears it as soon as it is taken) */
+  const joinedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!joinCode || joinedRef.current) return;
-    joinedRef.current = true;
+    if (!joinCode) { joinedRef.current = null; return; }
+    if (joinedRef.current === joinCode) return;
+    joinedRef.current = joinCode;
     onJoined();
     void join(joinCode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [joinCode]);
+
+  const inLobby = !room;
+  useEffect(() => { onLobby?.(inLobby); }, [inLobby, onLobby]);
+  useEffect(() => () => onLobby?.(false), [onLobby]);
 
   const roomCode = solo ? null : room?.code;
   const roomGame = room?.game;
@@ -450,14 +459,6 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
                 </span>
               </div>
             ))}
-          </div>
-          <div className="party-join">
-            <span className="party-or">{ja ? "友だちのコードで参加" : "Join a friend's room"}</span>
-            <span className="race-join">
-              <input className="race-join-input mono" value={code} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
-                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} onKeyDown={(e) => { if (e.key === "Enter" && code.length === 4) join(code); }} enterKeyHint="go" aria-label={ja ? "部屋のコード" : "Room code"} />
-              <button className="btn btn-join" onClick={() => join(code)} disabled={busy || code.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
-            </span>
           </div>
           {note && <p className="race-note">{note}</p>}
         </div>

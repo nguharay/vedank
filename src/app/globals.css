@@ -5194,8 +5194,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
   cursor:pointer; box-shadow:0 3px 0 var(--ink-line); }
 .join-bar-go:disabled{ background:#d8d4e6; color:#8a86a8; box-shadow:none; cursor:default; }
 .join-bar-go:not(:disabled):active{ transform:translateY(3px); box-shadow:none; }
-/* the multiplayer lobby's own join box stays in view too */
-.party-join{ position:sticky; bottom:-84px; z-index:5; border:3px solid var(--ink-line); box-shadow:0 4px 0 var(--ink-line); }
 .join-bar-label{ text-transform:capitalize; }
 @media (max-width:479px){ .join-bar-long{ display:none; } }
 

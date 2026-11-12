@@ -923,13 +923,15 @@ export function GameApp({
   const [partyJoinCode, setPartyJoinCode] = useState<string | null>(null);
   /* the pinned "join a friend's room" bar on the games menu */
   const [joinBarCode, setJoinBarCode] = useState("");
+  /* the multiplayer lobby (no room open) is showing: its code field sits in
+     the bottom bar beside Back */
+  const [partyLobby, setPartyLobby] = useState(false);
   function joinFromBar() {
     if (joinBarCode.length !== 4) return;
     if (guest) { setLockOpen("race-online"); return; }
     setPartyJoinCode(joinBarCode);
     setJoinBarCode("");
-    gameFromHomeRef.current = false;
-    setView("party");
+    if (view !== "party") { gameFromHomeRef.current = false; setView("party"); }
   }
   /* the party game to show first — the arcade games open their own race */
   const [partyFirst, setPartyFirst] = useState<"tug" | "space" | "river">("tug");
@@ -4489,8 +4491,8 @@ export function GameApp({
         
             <p className="games-lede">
               {lang === "ja"
-                ? "スピード、ひらめき、友だちとの真剣勝負。計算パワーで勝ちぬこう！"
-                : "Speed, smarts and showdowns with friends. Win with your maths power!"}
+                ? "時間と競って、友だちとバトル。クラスいちばんのひらめき王をめざそう！"
+                : "Race the clock, battle your friends and prove you're the sharpest mind in class!"}
             </p>
             <button className="ttt-card crossmath-feature" onClick={shelf(() => setView("crossmath"), "crossmath")}>
               <span className="feature-art crossmath" aria-hidden="true"><i>7</i><i>+</i><i>5</i><i>×</i><i></i><i>=</i><i>=</i><i></i><i>12</i></span>
@@ -4719,7 +4721,7 @@ export function GameApp({
             <PartyGames key={partyFirst} lang={lang} sound={sound} celebrate={() => confetti.burstCenter(110, 0.4)} game={partyFirst}
               onCorrect={(n) => fireQuest("correct_answer", n)}
               joinCode={partyJoinCode} onJoined={() => setPartyJoinCode(null)} onBack={() => { setPartyFirst("tug"); setView("games"); }}
-              guest={guest} onNeedAccount={() => setLockOpen("race-online")} />
+              guest={guest} onNeedAccount={() => setLockOpen("race-online")} onLobby={setPartyLobby} />
           </section>
         )}
         {view === "race" && (
@@ -5070,6 +5072,16 @@ export function GameApp({
             <button className="btn btn-ghost back-footer-btn" aria-label="Back" onClick={handleBack}>
               ←<span className="back-word"> {lang === "ja" ? "戻る" : "Back"}</span>
             </button>
+            {view === "party" && partyLobby && (
+              <div className="join-bar">
+                <span className="join-bar-label">👥 <span className="join-bar-long">{ja ? "友だちの" : "Friend's "}</span>{ja ? "部屋" : "room"}</span>
+                <input className="join-bar-input mono" value={joinBarCode} maxLength={4} placeholder={ja ? "コード" : "CODE"} inputMode="text" autoCapitalize="characters"
+                  autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="go" aria-label={ja ? "友だちの部屋コード" : "Friend's room code"}
+                  onChange={(e) => setJoinBarCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  onKeyDown={(e) => { if (e.key === "Enter") joinFromBar(); }} />
+                <button className="join-bar-go" onClick={joinFromBar} disabled={joinBarCode.length !== 4}>{ja ? "参加 ▶" : "Join ▶"}</button>
+              </div>
+            )}
             {view === "topic" && (
               <button className="btn btn-primary" onClick={() => openStageMap(currentTopicId!)}>
                 {t.stageMap.seeStageMap}
