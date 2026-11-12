@@ -3,7 +3,6 @@
 import { PATH_POS, fmtDue, msUntilUTCMidnight } from "../util";
 import type { HomeGameId } from "../homeGames";
 import { Mascot } from "../Mascot";
-import { DailyWinnersCard } from "../DailyWinnersCard";
 import type { DailyWinners } from "@/lib/game/league";
 import { monsterFor } from "../monsters";
 import type { ShareFocus } from "../ShareCard";
@@ -24,7 +23,7 @@ import { StreakIcon } from "../StreakIcon";
 export function HomeView({
   progress,
   li,
-  dailyStreak, dailyWinners, onPlayDaily,
+  dailyStreak, dailyWinners, onOpenDaily,
   onOpenTopic,
   onOpenBlitz,
   onOpenTricks,
@@ -55,7 +54,7 @@ export function HomeView({
   dailyStreak: number;
   /* today's Daily Challenge winners (accounts only), and a way to go and play it */
   dailyWinners?: DailyWinners | null;
-  onPlayDaily?: () => void;
+  onOpenDaily?: () => void;
   onOpenTopic: (id: string) => void;
   onOpenBlitz: () => void;
   onOpenTricks: () => void;
@@ -165,7 +164,25 @@ export function HomeView({
         </span>
       </button>
 
-      <DailyWinnersCard data={dailyWinners ?? null} ja={lang === "ja"} onPlay={onPlayDaily} />
+      {/* one line that opens the Daily tab, where the full winners list is */}
+      {onOpenDaily && (
+        <button className="dw-cta" onClick={onOpenDaily}>
+          <span className="dw-cta-cup" aria-hidden="true">🏆</span>
+          <span className="dw-cta-text">
+            <b>{!dailyWinners || dailyWinners.isToday
+              ? (lang === "ja" ? "今日のデイリー勝者を見る" : "See today's Daily winners")
+              : (lang === "ja" ? "今日の勝者はまだいないよ" : "No Daily winner yet today")}</b>
+            <small>{!dailyWinners
+              ? (lang === "ja" ? "8問ぜんぶ正解した人たち" : "Everyone who got all 8 right")
+              : dailyWinners.isToday && dailyWinners.winners.length > 0
+              ? (lang === "ja"
+                ? `${dailyWinners.winners[0].name}さん${dailyWinners.winners.length > 1 ? `、ほか${dailyWinners.winners.length - 1}人` : ""}が全問正解`
+                : `${dailyWinners.winners[0].name}${dailyWinners.winners.length > 1 ? ` and ${dailyWinners.winners.length - 1} more` : ""} got all 8 right`)
+              : (lang === "ja" ? "8問ぜんぶ正解で1番のりしよう" : "Get all 8 right and be the first")}</small>
+          </span>
+          <span className="dw-cta-go" aria-hidden="true">›</span>
+        </button>
+      )}
 
         <>
       {/* one swipeable row instead of three stacked cards: the next lesson,
@@ -280,6 +297,7 @@ export function HomeView({
           const p = topicProgressOf(progress, tp.id);
           const locked = !topicUnlocked(progress, tp.id) || i >= guestTopicLimit;
           const isCurrent = i === firstIncompleteIdx;
+          const shape = NODE_SHAPE[tp.icon];
           return (
             <div key={tp.id}>
               <div className={`path-row pos-${PATH_POS[i % PATH_POS.length]}`} data-topic={tp.id}>
@@ -287,11 +305,11 @@ export function HomeView({
                   {isCurrent && <div className="node-bubble">{t.home.play}</div>}
                   <span className="node-level">{i + 1}</span>
                   <div
-                    className={`node${isCurrent ? " current" : ""}${locked ? " node-locked" : ""}`}
-                    style={locked ? undefined : { background: gradCss(tp.grad) }}
+                    className={`node${isCurrent ? " current" : ""}${locked ? " node-locked" : ""}${shape ? ` node-shaped shape-${shape}` : ""}`}
+                    style={locked ? undefined : { background: gradCss(tp.grad), ["--node-bg" as string]: gradCss(tp.grad) }}
                     onClick={() => onOpenTopic(tp.id)}
                   >
-                    {locked ? "🔒" : tp.icon}
+                    <span className="node-ico">{locked ? "🔒" : shape ? "" : tp.icon}</span>
                     <span className="stage-pips">
                       {/* gold = 3 stars, pale = cleared with 1–2 stars (try again), grey = not cleared */}
                       {Array.from({ length: STAGE_COUNT }, (_, k) => {
@@ -418,6 +436,13 @@ export function HomeView({
 
 
 /* A short labelled heading that tells a new player what the cards below it are for. */
+/* A lesson on the map is drawn in the shape of its sign: a plus for adding,
+   a bar for subtracting, a cross for multiplying, a square for squaring.
+   Lessons with no single sign (digit sums, base method, designs) stay round. */
+const NODE_SHAPE: Record<string, "plus" | "minus" | "cross" | "square"> = {
+  "➕": "plus", "−": "minus", "➖": "minus", "✕": "cross", "²": "square",
+};
+
 function SectionHead({ icon, title, sub }: { icon: string; title: string; sub: string }) {
   return (
     <div className="home-sec">

@@ -21,6 +21,7 @@ export function DailyView({
   status,
   winners,
   lang,
+  onStart,
   onPick,
   onHome,
 }: {
@@ -30,6 +31,7 @@ export function DailyView({
   done: { points: number; correct: number } | null;
   status: DailyStatus | null;
   winners?: DailyWinners | null;
+  onStart?: () => void;
   lang: Lang;
   onPick: (v: number) => void;
   onHome: () => void;
@@ -59,7 +61,23 @@ export function DailyView({
   }
 
   const q = qs[idx];
-  if (!q) return null;
+  /* the Daily tab before today's challenge is played: what it is, a Start
+     button, and today's winners */
+  if (!q) {
+    return (
+      <section className="view active">
+        <div className="daily-lobby">
+          <div className="daily-lobby-icon" aria-hidden="true">🗓️</div>
+          <h1>{lang === "ja" ? "デイリーチャレンジ" : "Daily Challenge"}</h1>
+          <p>{lang === "ja"
+            ? `みんな同じ${DAILY_QUESTIONS}問。1日1回だけ。ぜんぶ正解で勝者にのるよ。`
+            : `The same ${DAILY_QUESTIONS} questions for everyone, one try a day. Get them all right to join the winners.`}</p>
+          <button className="btn btn-primary" onClick={onStart}>{lang === "ja" ? "スタート ▶" : "Start ▶"}</button>
+        </div>
+        <DailyWinnersCard data={winners ?? null} ja={lang === "ja"} />
+      </section>
+    );
+  }
   return (
     <section className="view active">
       <div className="daily-top">

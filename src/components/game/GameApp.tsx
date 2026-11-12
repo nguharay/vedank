@@ -294,16 +294,15 @@ export function GameApp({
     }
   }
 
-  /* the Daily button in the bottom bar: play today's challenge, or, once it
-     is done, say so and show where the points went */
-  function openDailyFromNav() {
+  /* the Daily tab: today's winners, plus a Start button until today's
+     challenge is played (then the result). Opening it never starts the timed
+     quiz by itself, so it is safe to open just to look at the winners. */
+  function openDailyTab() {
     if (guestLocked("daily")) return;
-    if (dailyStatus?.played) {
-      spawnToast(ja ? "⭕ 今日のデイリーチャレンジはクリア！また明日。" : "⭕ Today's Daily Challenge is done! Come back tomorrow.", null);
-      if (!leagueOpen) void toggleLeague();
-      return;
-    }
-    startDaily();
+    setDailyQs([]);
+    setDailyDone(null);
+    dailyWinnersAction().then(setDailyWinners).catch(() => {});
+    setView("daily");
   }
   function startDaily() {
     if (dailyStatus?.played) return;
@@ -1084,10 +1083,12 @@ export function GameApp({
   const [dailyStatus, setDailyStatus] = useState<DailyStatus | null>(null);
   const [dailyWinners, setDailyWinners] = useState<DailyWinners | null>(null);
   const [dailyQs, setDailyQs] = useState<DailyQuestion[]>([]);
+  /* the Daily tab (winners, Start or result) as opposed to the quiz running */
   const [dailyIdx, setDailyIdx] = useState(0);
   const [dailyCorrect, setDailyCorrect] = useState(0);
   const [dailyPick, setDailyPick] = useState<number | null>(null);
   const [dailyDone, setDailyDone] = useState<{ points: number; correct: number } | null>(null);
+  const dailyTab = view === "daily" && (dailyQs.length === 0 || !!dailyDone || !!dailyStatus?.played);
   const dailyStartRef = useRef(0);
   const [leagueOpen, setLeagueOpen] = useState(false);
   const [league, setLeague] = useState<LeagueStanding | null>(null);
@@ -4196,7 +4197,7 @@ export function GameApp({
             li={li}
             dailyStreak={dailyStreak}
             dailyWinners={guest ? null : dailyWinners}
-            onPlayDaily={dailyStatus && !dailyStatus.played ? startDaily : undefined}
+            onOpenDaily={guest ? undefined : openDailyTab}
             onOpenTopic={openTopic}
             onOpenBlitz={openBlitzPicker}
             onOpenTricks={() => { if (guestLocked("tricks")) return; setTrickId(null); setView("tricks"); }}
@@ -4957,6 +4958,7 @@ export function GameApp({
             done={dailyDone}
             status={dailyStatus}
             winners={dailyWinners}
+            onStart={startDaily}
             lang={lang}
             onPick={onDailyPick}
             onHome={goHome}
@@ -5024,7 +5026,7 @@ export function GameApp({
         </div>
       )}
 
-      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" ? " home-dock" : ""}`} style={{ display: "flex" }}>
+      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" || dailyTab ? " home-dock" : ""}`} style={{ display: "flex" }}>
         {view === "home" && guest ? (
           /* The home dock: a floating rounded bar with the games as a big raised
              PLAY button in the middle — the game is the point, everything else
@@ -5043,13 +5045,13 @@ export function GameApp({
               <span>{lang === "ja" ? "保存" : "Save"}</span>
             </a>
           </div>
-        ) : view === "home" ? (
+        ) : view === "home" || dailyTab ? (
           <div className="dock-bar">
-            <button className="bottomnav-item active" onClick={goHome}>
+            <button className={`bottomnav-item${dailyTab ? "" : " active"}`} onClick={goHome}>
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
             </button>
-            <button className={`bottomnav-item${dailyStatus?.played ? " done" : ""}`} onClick={openDailyFromNav}>
+            <button className={`bottomnav-item${dailyTab ? " active" : ""}${dailyStatus?.played ? " done" : ""}`} onClick={openDailyTab}>
               <span className="bottomnav-icon">
                 <UiIcon name="today" />
                 {!dailyStatus?.played && <span className="nav-dot" aria-hidden="true" />}
