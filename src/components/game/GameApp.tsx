@@ -3100,21 +3100,6 @@ export function GameApp({
 
   /* PROTOTYPE ONLY: ?buddy=play | peek | emote picks a buddy variation to try */
   const buddyVariant = useSyncExternalStore(() => () => {}, () => new URLSearchParams(window.location.search).get("buddy") ?? "", () => "");
-  const peekRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (buddyVariant !== "peek") return;
-    const place = () => {
-      const t = document.querySelectorAll(".home-tabs .home-tab")[1] as HTMLElement | undefined;
-      const el = peekRef.current;
-      if (!t || !el) return;
-      const r = t.getBoundingClientRect();
-      el.style.left = `${r.left + r.width / 2 - 24}px`;
-      el.style.top = `${r.top - 27}px`;
-    };
-    place();
-    const id = setInterval(place, 300);
-    return () => clearInterval(id);
-  }, [buddyVariant, view]);
   useEffect(() => {
     if (buddyVariant !== "emote") return;
     const id = setTimeout(() => sayLine("levelUp"), 1200);
@@ -3172,7 +3157,7 @@ export function GameApp({
         </button>
         <div className="header-title"><h1 className={/VedAnk/.test(headerTitle ?? "") ? "brand" : undefined}>{headerTitle}</h1></div>
         <div className="stats-row">
-          {buddyShown && buddyVariant !== "play" && buddyVariant !== "peek" && (
+          {buddyShown && buddyVariant !== "play" && !buddyVariant.startsWith("peek") && (
             <button className={`buddy-face${buddyVariant === "emote" ? ` emote${buddy.say && !quoteBy ? ` react-${buddy.mood}` : ""}` : ""}${buddy.say && (buddyVariant !== "emote" || quoteBy) ? " away" : ""}`} onClick={tapBuddy}
               aria-label={ja ? "バディ（タップで名言）" : "Buddy, tap for a quote"} aria-expanded={!!buddy.say}>
               <Buddy skinId={skin.skinId} mood={buddy.mood} animated={false} />
@@ -3193,7 +3178,7 @@ export function GameApp({
         {/* what the buddy says: one slim strip hanging under the header, gone by
             itself after a few seconds or on a tap. It overlays nothing but the
             top edge of the page. */}
-        {buddyShown && buddy.say && buddyVariant !== "play" && buddyVariant !== "peek" && (buddyVariant !== "emote" || quoteBy) && (
+        {buddyShown && buddy.say && buddyVariant !== "play" && !buddyVariant.startsWith("peek") && (buddyVariant !== "emote" || quoteBy) && (
           <button key={buddy.say.text} className={`buddy-strip${quoteBy ? " quoting" : ""} mood-${buddy.mood}`} role="status" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
             {/* the buddy itself, jumped down from the bar to say it */}
             <span className="buddy-strip-who" aria-hidden="true"><Buddy skinId={skin.skinId} mood={buddy.mood} /></span>
@@ -5473,8 +5458,8 @@ export function GameApp({
           <button className="buddy-ride-who" onClick={tapBuddy} aria-label="Buddy"><Buddy skinId={skin.skinId} mood={buddy.mood} /></button>
         </div>
       )}
-      {buddyShown && buddyVariant === "peek" && view === "home" && (
-        <div ref={peekRef} className={`buddy-peek${buddy.say ? " talking" : ""}`}>
+      {buddyShown && buddyVariant.startsWith("peek") && view === "home" && (
+        <div className={`buddy-peek ${buddyVariant === "peekleft" ? "left" : "right"}${buddy.say ? " talking" : ""}`}>
           <button className="buddy-peek-clip" onClick={() => { if (buddy.say) buddy.quiet(); else { setQuoteBy(null); buddy.speak({ text: ja ? "今日のチャレンジが待ってるよ！" : "Today's challenge is waiting!", mood: "excited", hold: 6000 }); } }} aria-label="Buddy">
             <Buddy skinId={skin.skinId} mood={buddy.mood} />
           </button>
