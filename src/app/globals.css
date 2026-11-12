@@ -2224,7 +2224,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .ttt-sum{ font-weight:800; color:var(--ink); text-align:center; }
 /* tiles whose sums size themselves to the tile (util.tsx fitStyle) */
 .fit-tile{ container-type:inline-size; }
-.fit-text{ display:block; white-space:nowrap; line-height:1.1; letter-spacing:-.3px;
+.fit-text{ display:block; white-space:normal; overflow-wrap:normal; text-align:center; line-height:1.1; letter-spacing:-.3px;
   font-size:min(var(--fit-max, 30px), calc((100cqw - 10px) / (var(--units, 4) * .58))); }
 .ttt-cell .fit-text{ --fit-max:34px; }
 .match-tile .fit-text{ --fit-max:30px; }
