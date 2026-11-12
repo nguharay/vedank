@@ -1,7 +1,7 @@
 "use client";
 import { FestiveBanner } from "./FestiveBanner";
 
-import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useSyncExternalStore, Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { boardFitStyle, transition } from "./util";
 import { UiIcon, GameArt } from "./Art";
@@ -3098,6 +3098,29 @@ export function GameApp({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, curMode, curProblem, tileOptions, eliminated, checkEnabled, blitzProblem, blitzOptions]);
 
+  /* PROTOTYPE ONLY: ?buddy=play | peek | emote picks a buddy variation to try */
+  const buddyVariant = useSyncExternalStore(() => () => {}, () => new URLSearchParams(window.location.search).get("buddy") ?? "", () => "");
+  const peekRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (buddyVariant !== "peek") return;
+    const place = () => {
+      const t = document.querySelectorAll(".home-tabs .home-tab")[1] as HTMLElement | undefined;
+      const el = peekRef.current;
+      if (!t || !el) return;
+      const r = t.getBoundingClientRect();
+      el.style.left = `${r.left + r.width / 2 - 24}px`;
+      el.style.top = `${r.top - 27}px`;
+    };
+    place();
+    const id = setInterval(place, 300);
+    return () => clearInterval(id);
+  }, [buddyVariant, view]);
+  useEffect(() => {
+    if (buddyVariant !== "emote") return;
+    const id = setTimeout(() => sayLine("levelUp"), 1200);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buddyVariant]);
   /* the header buddy: not inside a game or a battle (nothing to say there), and
      a dot when something is waiting to be claimed or fixed */
   const buddyShown = !buddy.hidden && !((GAME_VIEWS.includes(view) && view !== "town") || view === "practice");
@@ -3149,11 +3172,12 @@ export function GameApp({
         </button>
         <div className="header-title"><h1 className={/VedAnk/.test(headerTitle ?? "") ? "brand" : undefined}>{headerTitle}</h1></div>
         <div className="stats-row">
-          {buddyShown && (
-            <button className={`buddy-face${buddy.say ? " away" : ""}`} onClick={tapBuddy}
+          {buddyShown && buddyVariant !== "play" && buddyVariant !== "peek" && (
+            <button className={`buddy-face${buddyVariant === "emote" ? ` emote${buddy.say && !quoteBy ? ` react-${buddy.mood}` : ""}` : ""}${buddy.say && (buddyVariant !== "emote" || quoteBy) ? " away" : ""}`} onClick={tapBuddy}
               aria-label={ja ? "バディ（タップで名言）" : "Buddy, tap for a quote"} aria-expanded={!!buddy.say}>
               <Buddy skinId={skin.skinId} mood={buddy.mood} animated={false} />
               {buddyDot && !buddy.say && <span className="buddy-dot" aria-hidden="true" />}
+              {buddyVariant === "emote" && buddy.say && !quoteBy && <span className="buddy-emote" aria-hidden="true">{buddy.mood === "sad" ? "💧" : "🎉"}</span>}
             </button>
           )}
           <button className={`stat stat-flame${dailyStreak > 0 ? " lit" : ""}`} onClick={() => openShare("streak")} aria-label={`${t.share.statStreak} ${dailyStreak}, ${t.share.shareBtn}`}>
@@ -3169,7 +3193,7 @@ export function GameApp({
         {/* what the buddy says: one slim strip hanging under the header, gone by
             itself after a few seconds or on a tap. It overlays nothing but the
             top edge of the page. */}
-        {buddyShown && buddy.say && (
+        {buddyShown && buddy.say && buddyVariant !== "play" && buddyVariant !== "peek" && (buddyVariant !== "emote" || quoteBy) && (
           <button key={buddy.say.text} className={`buddy-strip${quoteBy ? " quoting" : ""} mood-${buddy.mood}`} role="status" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
             {/* the buddy itself, jumped down from the bar to say it */}
             <span className="buddy-strip-who" aria-hidden="true"><Buddy skinId={skin.skinId} mood={buddy.mood} /></span>
@@ -5436,6 +5460,25 @@ export function GameApp({
               <button className="btn btn-ghost" onClick={() => { setBlitzOver(false); goHome(); }}>{t.blitz.backHome}</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {buddyShown && buddyVariant === "play" && view === "home" && (
+        <div className={`buddy-ride${buddy.say ? " talking" : ""}`}>
+          {buddy.say && (
+            <button className="buddy-ride-bubble" onClick={() => { buddy.quiet(); setQuoteBy(null); }}>
+              {buddy.say.text}{quoteBy && <em>{quoteBy}</em>}
+            </button>
+          )}
+          <button className="buddy-ride-who" onClick={tapBuddy} aria-label="Buddy"><Buddy skinId={skin.skinId} mood={buddy.mood} /></button>
+        </div>
+      )}
+      {buddyShown && buddyVariant === "peek" && view === "home" && (
+        <div ref={peekRef} className={`buddy-peek${buddy.say ? " talking" : ""}`}>
+          <button className="buddy-peek-clip" onClick={() => { if (buddy.say) buddy.quiet(); else { setQuoteBy(null); buddy.speak({ text: ja ? "今日のチャレンジが待ってるよ！" : "Today's challenge is waiting!", mood: "excited", hold: 6000 }); } }} aria-label="Buddy">
+            <Buddy skinId={skin.skinId} mood={buddy.mood} />
+          </button>
+          {buddy.say && <span className="buddy-peek-bubble">{buddy.say.text}</span>}
         </div>
       )}
 

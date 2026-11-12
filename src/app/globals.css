@@ -1456,6 +1456,25 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 @keyframes buddyJumpDown{ 0%{ opacity:0; transform:translate(140px,-58px) scale(.5) rotate(25deg); } 60%{ opacity:1; transform:translate(0,6px) scale(1.05) rotate(-6deg); } 100%{ transform:none; } }
 @keyframes buddyStripIn{ from{ opacity:0; transform:scale(.6); } to{ opacity:1; transform:none; } }
 @media (prefers-reduced-motion: reduce){ .buddy-strip-who, .buddy-strip-bubble{ animation:none !important; } }
+/* PROTOTYPE variations (?buddy=play|peek|emote) */
+.buddy-ride{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(86px + env(safe-area-inset-bottom,0px)); z-index:41; display:flex; flex-direction:column; align-items:center; gap:4px; pointer-events:none; width:min(320px, 86vw); }
+.buddy-ride-who{ pointer-events:auto; width:50px; height:50px; padding:0; border:none; background:none; cursor:pointer; animation:buddyFloat 3.5s ease-in-out infinite; filter:drop-shadow(0 4px 5px rgba(20,20,50,.3)); }
+.buddy-ride-who svg{ width:100%; height:100%; display:block; }
+.buddy-ride-bubble{ pointer-events:auto; position:relative; font-family:inherit; text-align:center; font-size:13px; font-weight:800; line-height:1.4; color:var(--ink); background:var(--surface); border:2.5px solid var(--ink-line); border-radius:16px; padding:9px 13px; box-shadow:0 4px 0 color-mix(in srgb, var(--ink-line) 22%, transparent); animation:buddyStripIn .3s cubic-bezier(.2,1.4,.4,1) both; transform-origin:50% 100%; cursor:pointer; }
+.buddy-ride-bubble em{ display:block; font-style:normal; font-size:11px; color:var(--muted); margin-top:2px; }
+.buddy-ride-bubble::after{ content:""; position:absolute; left:50%; bottom:-9px; margin-left:-7px; width:12px; height:12px; background:var(--surface); border-right:2.5px solid var(--ink-line); border-bottom:2.5px solid var(--ink-line); transform:rotate(45deg); }
+.buddy-peek{ position:fixed; z-index:7; width:48px; pointer-events:none; }
+.buddy-peek-clip{ pointer-events:auto; display:block; width:48px; height:28px; overflow:hidden; padding:0; border:none; background:none; cursor:pointer; }
+.buddy-peek-clip svg{ width:48px; height:48px; display:block; animation:buddyPeek 2.6s ease-in-out infinite; }
+@keyframes buddyPeek{ 0%,100%{ transform:translateY(6px); } 45%,70%{ transform:translateY(0); } }
+.buddy-peek-bubble{ position:absolute; left:50%; bottom:34px; transform:translateX(-50%); white-space:nowrap; font-size:12.5px; font-weight:800; color:var(--ink); background:color-mix(in srgb, var(--gold, #ffb800) 25%, var(--surface)); border:2.5px solid var(--ink-line); border-radius:14px; padding:6px 11px; box-shadow:0 3px 0 color-mix(in srgb, var(--ink-line) 22%, transparent); animation:buddyStripIn .3s cubic-bezier(.2,1.4,.4,1) both; }
+.buddy-face.emote{ width:40px; height:40px; margin:-8px -2px -8px 0; }
+.buddy-face.emote.react-excited{ animation:buddyHop .5s cubic-bezier(.2,1.6,.4,1) 6; }
+.buddy-face.emote.react-sad{ animation:buddyNod 1s ease-in-out 3; }
+.buddy-face.emote.react-happy{ animation:buddyNod .6s ease-in-out 4; }
+@keyframes buddyNod{ 0%,100%{ transform:rotate(0); } 50%{ transform:rotate(-12deg); } }
+@keyframes buddyHop{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-7px) scale(1.1); } }
+.buddy-emote{ position:absolute; right:-8px; top:-10px; font-size:17px; animation:buddyStripIn .35s cubic-bezier(.2,1.6,.4,1) both; }
 .buddy-dock{ position:fixed; z-index:40; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px));
   width:100%; max-width:480px; transform:translateX(-50%); padding:0 12px;
   display:flex; align-items:flex-end; gap:8px; pointer-events:none; }
