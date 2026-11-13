@@ -9,7 +9,7 @@ export const ROSTER = [
   { emoji: "🦊", en: "Foxy", ja: "コンタ" },
   { emoji: "🤖", en: "Robo", ja: "ロボッチ" },
   { emoji: "🦂", en: "Scorp", ja: "サソリン" },
-  { emoji: "🐉", en: "Drako", ja: "ドラゴ" },
+  { emoji: "🥷", en: "Kaze", ja: "カゼマル" },
   { emoji: "🦇", en: "Batty", ja: "コウモリン" },
   { emoji: "🐺", en: "Wolfy", ja: "ウルフ" },
   { emoji: "🦈", en: "Sharky", ja: "シャーク" },

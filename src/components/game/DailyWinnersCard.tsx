@@ -20,11 +20,11 @@ export function DailyWinnersCard({ data, ja, onPlay }: {
   const list = all ? winners : winners.slice(0, SHOWN);
   const more = winners.length - list.length;
   return (
-    <div className="dw-card" role="region" aria-label={ja ? "デイリーチャレンジの勝者" : "Daily Challenge winners"}>
+    <div className="dw-card" role="region" aria-label={ja ? "チャレンジの勝者" : "Challenge winners"}>
       <div className="dw-head">
         <span className="dw-cup" aria-hidden="true">🏆</span>
         <span className="dw-titles">
-          <b>{isToday ? (ja ? "今日のデイリー勝者" : "Today's Daily winners") : (ja ? "きのうのデイリー勝者" : "Yesterday's Daily winners")}</b>
+          <b>{isToday ? (ja ? "今日のチャレンジ勝者" : "Today's challenge winners") : (ja ? "きのうのチャレンジ勝者" : "Yesterday's challenge winners")}</b>
           <small>{winners.length === 0
             ? (ja ? "まだいないよ。10問ぜんぶ正解で名前がのる！" : "No one yet. Get all 10 right to see your name here!")
             : !isToday

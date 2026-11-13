@@ -9,83 +9,113 @@ export type Quote = {
   text: string;
   textJa?: string;
   by?: string;
+  /* the attribution as the Japanese book prints it */
+  byJa?: string;
 };
 
 export const QUOTES: Quote[] = [
   /* ---- mathematics ---- */
-  { kind: "math", text: "The whole heaven is number and harmony.", by: "Aristotle (384–322 BC)" },
-  { kind: "math", text: "Number rules the universe.", by: "Pythagoras (570–490 BC)" },
+  { kind: "math", text: "The whole heaven is number and harmony.", by: "Aristotle (384–322 BC)", textJa: "天空のすべては数と調和である。", byJa: "アリストテレス（前384–322）" },
+  { kind: "math", text: "Number rules the universe.", by: "Pythagoras (570–490 BC)", textJa: "数が宇宙を支配する。", byJa: "ピタゴラス（前570–490）" },
   {
     kind: "math",
     text: "Where there is life there is pattern, and where there is pattern there is mathematics.",
     by: "John D. Barrow (1952–2020)",
+    textJa: "生命があるところにパターンがあり、パターンがあるところに数学がある。",
+    byJa: "ジョン・D・バロウ（1952–2020）",
   },
   {
     kind: "math",
     text: "Do not worry about your difficulties in Mathematics. I can assure you mine are still greater.",
     by: "Albert Einstein (1879–1955)",
+    textJa: "数学が苦手でも心配しないで。私の方がもっと苦手だから。",
+    byJa: "アルベルト・アインシュタイン（1879–1955）",
   },
   {
     kind: "math",
     text: "Mathematics, rightly viewed, possesses not only truth but supreme beauty.",
     by: "Bertrand Russell (1872–1970)",
+    textJa: "正しく見れば、数学は真理だけでなく最高の美しさをもっている。",
+    byJa: "バートランド・ラッセル（1872–1970）",
   },
   {
     kind: "india",
     text: "We owe a lot to the Indians, who taught us how to count, without which no worthwhile scientific discovery could have been made.",
     by: "Albert Einstein (1879–1955)",
+    textJa: "私たちはインド人に大きな借りがある。数え方を教えてくれた彼らなしに、価値ある科学の発見はなかっただろう。",
+    byJa: "アルベルト・アインシュタイン（1879–1955）",
   },
   {
     kind: "math",
     text: "The important thing is not to stop questioning. Curiosity has its own reason for existence.",
     by: "Albert Einstein (1879–1955)",
+    textJa: "大切なのは、問い続けることをやめないこと。好奇心には、それ自体に存在する理由がある。",
+    byJa: "アルベルト・アインシュタイン（1879–1955）",
   },
   {
     kind: "math",
     text: "What is mathematics? It is only a systematic effort of solving puzzles posed by nature.",
     by: "Shakuntala Devi (1929–2013)",
+    textJa: "数学とは何か。それは自然が出すパズルを、順序よく解こうとする努力にすぎない。",
+    byJa: "シャクンタラ・デヴィ（1929–2013）",
   },
   {
     kind: "math",
     text: "Mathematics is the most beautiful and most powerful creation of the human spirit.",
     by: "Stefan Banach (1892–1945)",
+    textJa: "数学は人間の精神が生んだ、もっとも美しくもっとも力強い作品である。",
+    byJa: "ステファン・バナフ（1892–1945）",
   },
-  { kind: "math", text: "Mathematics is the music of reason.", by: "James Joseph Sylvester (1814–1897)" },
+  { kind: "math", text: "Mathematics is the music of reason.", by: "James Joseph Sylvester (1814–1897)", textJa: "数学は理性の音楽である。", byJa: "ジェームズ・ジョセフ・シルベスター（1814–1897）" },
   {
     kind: "math",
     text: "Mathematics is the language with which God has written the universe.",
     by: "Galileo Galilei (1564–1642)",
+    textJa: "数学は、神が宇宙を書くのに使った言語である。",
+    byJa: "ガリレオ・ガリレイ（1564–1642）",
   },
-  { kind: "math", text: "Nature is written in mathematical language.", by: "Galileo Galilei (1564–1642)" },
+  { kind: "math", text: "Nature is written in mathematical language.", by: "Galileo Galilei (1564–1642)", textJa: "自然は数学の言葉で書かれている。", byJa: "ガリレオ・ガリレイ（1564–1642）" },
   {
     kind: "math",
     text: "Without mathematics, there's nothing you can do. Everything around you is mathematics. Everything around you is numbers.",
     by: "Shakuntala Devi (1929–2013)",
+    textJa: "数学がなければ、何もできない。まわりのすべてが数学で、まわりのすべてが数だ。",
+    byJa: "シャクンタラ・デヴィ（1929–2013）",
   },
   {
     kind: "math",
     text: "Mathematics is the queen of science, and arithmetic is the queen of mathematics.",
     by: "Carl Friedrich Gauss (1777–1855)",
+    textJa: "数学は科学の女王であり、算術は数学の女王である。",
+    byJa: "カール・フリードリヒ・ガウス（1777–1855）",
   },
   {
     kind: "math",
     text: "Mathematics is the most powerful weapon you can use to change the world.",
     by: "Max Tegmark (1967– )",
+    textJa: "数学は、世界を変えるために使える最強の武器である。",
+    byJa: "マックス・テグマーク（1967–）",
   },
   {
     kind: "india",
     text: "The origin of mathematics in India can be traced to the Indus Valley Civilization, where numerals were widely used.",
     by: "Kim Plofker (1964– )",
+    textJa: "インド数学の起源は、数字が広く使われたインダス文明までさかのぼる。",
+    byJa: "キム・プロフカー（1964–）",
   },
   {
     kind: "math",
     text: "An equation for me has no meaning, unless it expresses a thought of God.",
     by: "Srinivasa Ramanujan (1887–1920)",
+    textJa: "私にとって、神の思いを表さない式には意味がない。",
+    byJa: "シュリニヴァーサ・ラマヌジャン（1887–1920）",
   },
   {
     kind: "hope",
     text: "A person who never made a mistake never tried anything new.",
     by: "Albert Einstein (1879–1955)",
+    textJa: "一度もまちがえたことのない人は、新しいことに挑戦したことがない。",
+    byJa: "アルベルト・アインシュタイン（1879–1955）",
   },
 
   /* ---- encouragement ---- */
@@ -178,6 +208,9 @@ export const QUOTES: Quote[] = [
 
 export function quoteText(q: Quote, ja: boolean): string {
   return ja && q.textJa ? q.textJa : q.text;
+}
+export function quoteBy(q: Quote, ja: boolean): string | undefined {
+  return ja && q.byJa ? q.byJa : q.by;
 }
 
 /* The quote of the day: one quote for the whole day, the same for everyone,
