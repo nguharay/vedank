@@ -119,8 +119,9 @@ import { track, trackAppOpen, setAudience, trackScreen } from "@/lib/analytics";
 import { useTheme } from "./useTheme";
 import { useSkins, SKINS, skinName, skinBlurb, skinUnlockLabel } from "./useSkins";
 import { Buddy } from "./Buddy";
+import { NinjaKid } from "./NinjaKid";
 import { useBuddy, line } from "./useBuddy";
-import { quoteOfTheDay, quoteText, type Quote } from "@/lib/game/quotes";
+import { quoteOfTheDay, quoteText, quoteBy, type Quote } from "@/lib/game/quotes";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI } from "./i18n";
 import { LEAGUES, leagueOf } from "@/lib/game/daily";
@@ -4178,7 +4179,7 @@ export function GameApp({
                   <span className="quote-banner-who" aria-hidden="true"><Buddy skinId={skin.skinId} mood="happy" animated={false} /></span>
                   <span key={quote.text} className="quote-banner-body">
                     <span className="quote-banner-text">{quoteText(quote, ja)}</span>
-                    {quote.by && <em>{quote.by}</em>}
+                    {quoteBy(quote, ja) && <em>{quoteBy(quote, ja)}</em>}
                   </span>
                 </div>
               ) }] : []),
@@ -4495,8 +4496,8 @@ export function GameApp({
         
             <p className="games-lede">
               {lang === "ja"
-                ? "時間と競って、友だちとバトル。クラスいちばんのひらめき王をめざそう！"
-                : "Race the clock, battle your friends and prove you're the sharpest mind in class!"}
+                ? "時間と競って、友だちとバトル。町いちばんのひらめき王をめざそう！"
+                : "Race the clock, battle your friends and prove you're the sharpest mind in the town!"}
             </p>
             <button className="ttt-card crossmath-feature" onClick={shelf(() => setView("crossmath"), "crossmath")}>
               <span className="feature-art crossmath" aria-hidden="true"><i>7</i><i>+</i><i>5</i><i>×</i><i></i><i>=</i><i>=</i><i></i><i>12</i></span>
@@ -4508,7 +4509,7 @@ export function GameApp({
               <span className="game-card-go">›</span>
             </button>
             <button className="ttt-card party-feature" onClick={() => { gameFromHomeRef.current = false; setView("party"); }}>
-              <span className="feature-art party" aria-hidden="true"><b>🪢</b><b>🔔</b><b>🐉</b></span>
+              <span className="feature-art party" aria-hidden="true"><b>🪢</b><b>🔔</b><b><NinjaKid size="30px" /></b></span>
               <span className="ttt-card-body">
                 <span className="ttt-card-name">{lang === "ja" ? "🎉 みんなであそぶ" : "🎉 Multiplayer games"}<span className="feature-new">NEW</span></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "計算ナワバリ・スートラタワー・つなひき・早押しクイズ・計算ビンゴ・スペースシューター・かえるジャンプ。ひとりでも、友だちやクラス（最大50人）でも！" : "Turf War, Sutra Tower, Tug of War, Buzzer Quiz, Math Bingo, Space Blaster and River Hop. Play solo, or with friends and classes (up to 50)!"}</span>

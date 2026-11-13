@@ -1,5 +1,6 @@
 "use client";
 
+import { NinjaKid } from "./NinjaKid";
 import { useEffect, useRef, useState } from "react";
 import { Mascot } from "./Mascot";
 
@@ -61,7 +62,7 @@ export function StoryIntro({ lang, onDone, guest = true }: { lang: "en" | "ja"; 
         {scene === 1 && (
           <>
             {["1", "2", "3", "5", "7", "9", "+", "×"].map((n, i) => <b key={n} className={`wi-num n${i}`}>{n}</b>)}
-            {["🎮", "🏁", "🐉", "🍣", "🎈", "🪢"].map((g, i) => <i key={g} className={`wi-game g${i}`}>{g}</i>)}
+            {["🎮", "🏁", "ninja", "🍣", "🎈", "🪢"].map((g, i) => <i key={g} className={`wi-game g${i}`}>{g === "ninja" ? <NinjaKid /> : g}</i>)}
             <span className="wi-buddy bob"><Mascot animated={false} mood="happy" /></span>
           </>
         )}

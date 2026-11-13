@@ -149,7 +149,7 @@ export function HomeView({
           then the extras (cards, streak, shop, friends, invite). The Daily
           Challenge, the games, the League and the Rank are in the bottom bar. */}
       {/* a slim level strip in place of the old banner: tap it to share */}
-      {/* the level and the Daily winners link share one swipeable row */}
+      {/* the challenge winners link and the level share one swipeable row */}
       <div className="home-rail home-rail-top">
       {/* one line that opens the Daily tab, where the full winners list is */}
       {onOpenDaily && (
@@ -157,8 +157,8 @@ export function HomeView({
           <span className="dw-cta-cup" aria-hidden="true">🏆</span>
           <span className="dw-cta-text">
             <b>{!dailyWinners || dailyWinners.isToday
-              ? (lang === "ja" ? "今日のデイリー勝者を見る" : "See today's Daily winners")
-              : (lang === "ja" ? "今日の勝者はまだいないよ" : "No Daily winner yet today")}</b>
+              ? (lang === "ja" ? "今日のチャレンジ勝者を見る" : "See today's challenge winners")
+              : (lang === "ja" ? "今日の勝者はまだいないよ" : "No challenge winner yet today")}</b>
             <small>{!dailyWinners
               ? (lang === "ja" ? "10問ぜんぶ正解した人たち" : "Everyone who got all 10 right")
               : dailyWinners.isToday && dailyWinners.winners.length > 0

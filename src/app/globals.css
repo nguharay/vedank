@@ -5134,7 +5134,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .daily-lobby-icon{ font-size:52px; line-height:1; }
 .daily-lobby h1{ font-size:22px; margin:8px 0 6px; }
 .daily-lobby p{ font-size:13.5px; font-weight:700; color:var(--muted); line-height:1.5; margin:0 auto 16px; max-width:300px; }
-/* the top rail: level strip, then the Daily winners link */
+/* the top rail: the challenge winners link, then the level strip */
 .home-rail-top{ margin-top:0; margin-bottom:4px; }
 .home-rail-top > *{ margin:0; width:auto; }
 .home-rail > :only-child{ flex-basis:100%; }
