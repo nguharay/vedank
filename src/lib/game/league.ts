@@ -135,7 +135,7 @@ export async function submitDaily(userId: string, correct: number, elapsedMs: nu
 export type DailyWinner = { userId: string; name: string; secs: number; streak: number; isMe: boolean };
 export type DailyWinners = { day: string; isToday: boolean; winners: DailyWinner[] };
 const WINNER_LIMIT = 40, STREAK_LOOKBACK = 120;
-const dayBefore = (day: string, n = 1) => { const d = new Date(day + "T00:00:00"); d.setDate(d.getDate() - n); return todayKey(d); };
+const dayBefore = (day: string, n = 1) => { const d = new Date(day + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - n); return todayKey(d); };
 
 export async function getDailyWinners(viewerId: string): Promise<DailyWinners> {
   const db = getDb();
@@ -206,8 +206,8 @@ export async function getAllLeagues(viewerId: string, week = weekStartKey()): Pr
   /* A new week starts empty until people play, so on a Monday whole leagues
      vanished. Last week's players who have not played yet are listed in the
      league they are in now, by the same rule as the player's own sheet. */
-  const prevDate = new Date(week + "T00:00:00");
-  prevDate.setDate(prevDate.getDate() - 7);
+  const prevDate = new Date(week + "T00:00:00Z");
+  prevDate.setUTCDate(prevDate.getUTCDate() - 7);
   const prev = await db.select(pick).from(leaguePoints)
     .innerJoin(users, eq(users.id, leaguePoints.userId))
     .where(eq(leaguePoints.weekStart, todayKey(prevDate)))
@@ -254,7 +254,7 @@ export async function runLeagueReminders(): Promise<{ day: string; targets: numb
   if (!claimed.length) return { day, targets: 0, sent: 0, skipped: "already ran today" };
 
   /* league players: anyone with a row this week or last, and push turned on */
-  const lastWeek = new Date(week + "T00:00:00"); lastWeek.setDate(lastWeek.getDate() - 7);
+  const lastWeek = new Date(week + "T00:00:00Z"); lastWeek.setUTCDate(lastWeek.getUTCDate() - 7);
   const subbed = db.selectDistinct({ userId: pushSubscriptions.userId }).from(pushSubscriptions);
   const players = await db.selectDistinct({ userId: leaguePoints.userId }).from(leaguePoints)
     .where(and(inArray(leaguePoints.weekStart, [week, todayKey(lastWeek)]), inArray(leaguePoints.userId, subbed)));

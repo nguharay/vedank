@@ -20,19 +20,19 @@ export function leagueOf(tier: number): League {
   return LEAGUES[Math.max(0, Math.min(TOP_LEAGUE, tier))];
 }
 
-/** YYYY-MM-DD in the player's own timezone, so "today" means their today. */
+/** The challenge day as YYYY-MM-DD. A new day starts at 9:00 in Japan
+ * (00:00 UTC) for everyone, on every phone and on the server alike, so the
+ * questions, the "played today" record, the winners and the league all turn
+ * over together. */
 export function todayKey(d = new Date()): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return d.toISOString().slice(0, 10);
 }
 
-/** Monday of the week containing `d`, as YYYY-MM-DD. */
+/** Monday of the challenge week containing `d` (the week starts Monday 9:00 JST). */
 export function weekStartKey(d = new Date()): string {
-  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const dow = (x.getDay() + 6) % 7; // Monday = 0
-  x.setDate(x.getDate() - dow);
+  const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const dow = (x.getUTCDay() + 6) % 7; // Monday = 0
+  x.setUTCDate(x.getUTCDate() - dow);
   return todayKey(x);
 }
 
