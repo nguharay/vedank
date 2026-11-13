@@ -62,29 +62,7 @@ body{ margin:0; background:var(--bg); color:var(--ink); min-height:100%; font-fa
   }
   #app{ min-height:calc(100vh - 48px); border-radius:28px; overflow:hidden; box-shadow:0 20px 50px -20px rgba(20,20,50,.5), 0 0 0 3px var(--ink-line); }
 }
-@media (min-width:720px){ #app{ max-width:600px; } }
 
-/* ---------- desktop: true full-bleed web app, not a phone card ---------- */
-@media (min-width:1024px){
-  body{ padding-block:0; background:var(--bg); }
-  #app{ max-width:none; width:100%; min-height:100vh; border-radius:0; border:none; box-shadow:none; }
-  header, .footerbar{ padding-inline:max(28px, calc((100% - 1100px) / 2 + 28px)); }
-  main{ padding-inline:0; }
-  main > .view{ max-width:1100px; margin-inline:auto; padding-inline:28px; }
-  .unit-banner h1{ font-size:30px; }
-  .unit-banner .eyebrow{ font-size:12.5px; }
-  .question{ font-size:42px; }
-  .tf-equation{ font-size:34px; }
-  .blitz-hud{ --hud-bleed:28px; }
-  .choice-tile{ font-size:30px; min-height:72px; }
-  .tile-grid{ grid-template-columns:repeat(3,1fr); }
-  .tile-grid.cols-3{ grid-template-columns:repeat(4,1fr); }
-  .balloon-grid{ grid-template-columns:repeat(4,1fr); }
-  .diamond-tile-grid{ grid-template-columns:repeat(4,1fr); }
-  .path-row.pos-l{ padding-left:16%; } .path-row.pos-r{ padding-right:16%; }
-  .stage-row.pos-l{ padding-left:20%; } .stage-row.pos-r{ padding-right:20%; }
-  .header-title h1{ font-size:16px; }
-}
 
 h1,h2,h3{ font-family:"Baloo 2",system-ui,sans-serif; margin:0; text-wrap:balance; }
 h1{ font-family:"Rubik Mono One","Baloo 2",system-ui,sans-serif; letter-spacing:.01em; text-transform:uppercase; }
@@ -1454,7 +1432,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .buddy-dock{ position:fixed; z-index:40; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px));
   width:100%; max-width:480px; transform:translateX(-50%); padding:0 12px;
   display:flex; align-items:flex-end; gap:8px; pointer-events:none; }
-@media (min-width:1024px){ .buddy-dock{ max-width:1100px; padding:0 28px; } }
 .buddy-tap{ pointer-events:auto; flex:0 0 auto; width:58px; height:58px; padding:0; border:none; cursor:pointer;
   background:none; animation:buddyFloat 4.5s ease-in-out infinite;
   filter:drop-shadow(0 6px 8px rgba(20,20,50,.28)); }
@@ -1662,50 +1639,8 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
    the journey on the left, the day's business in a column beside it — which
    removes most of the scrolling without changing the markup order, so the phone
    layout (and its reading order for screen readers) is untouched. */
-@media (min-width:1024px){
-  .view.active.home-view{
-    display:grid;
-    grid-template-columns:minmax(0,1.3fr) minmax(320px,0.85fr);
-    /* Dense, because the path is last in the markup (which is the right order
-       on a phone) and default sparse placement would drop it below the whole
-       right-hand column instead of backfilling the empty left one. */
-    grid-auto-flow:row dense;
-    align-items:start;
-    column-gap:22px;
-    row-gap:0;
-  }
-  /* The hero spans both columns. */
-  .home-view.active > .unit-banner{ grid-column:1 / -1; margin-bottom:16px; }
-
-  /* Left: what you are working through. */
-  .home-view.active > .continue-card,
-  .home-view.active > .assign-card,
-  .home-view.active > .path-wrap{ grid-column:1; }
-
-  /* Right: today's business, kept in view while the path scrolls. */
-  .home-view.active > .streak-calendar,
-  .home-view.active > .home-quick,
-  .home-view.active > .review-cta,
-  .home-view.active > .review-rest,
-  .home-view.active > .duel-card,
-  .home-view.active > .blitz-cta{ grid-column:2; }
-
-  /* Cards already carry their own top margin; the grid supplies the rhythm, so
-     collapse the doubled gap and keep both columns starting at the same line. */
-  .home-view.active > *{ margin-top:0; margin-bottom:12px; }
-  .home-view.active > .path-wrap{ margin-bottom:0; }
-
-  /* The path is far taller than any one row. Spanning it keeps the right-hand
-     column's rhythm intact instead of one enormous row stretching both. */
-  .home-view.active > .path-wrap{ grid-row:span 10; align-self:start; }
-}
 
 /* Wider still: the column cap grows rather than leaving ever more empty gutter. */
-@media (min-width:1500px){
-  header, .footerbar{ padding-inline:max(28px, calc((100% - 1320px) / 2 + 28px)); }
-  main > .view{ max-width:1320px; }
-  .buddy-dock{ max-width:1320px; }
-}
 
 /* the attribution under a quote, and a roomier bubble for the longer ones */
 .buddy-bubble.quoting{ font-weight:700; font-size:12px; max-width:none; }
@@ -1760,7 +1695,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .buddy-dock.dragging .buddy-tap{ animation:none; cursor:grabbing; transform:scale(1.08); }
 .buddy-dock.dragging .buddy-bubble{ opacity:.35; }
 .buddy-tap{ cursor:grab; touch-action:none; }
-@media (min-width:1024px){ .buddy-dock.free{ max-width:420px; padding:0; } }
 
 /* ---------- auth: the real tree, and a wordmark beside it ---------- */
 .auth-lockup{ display:flex; align-items:center; justify-content:center; gap:12px; margin:0 auto 14px; }
@@ -5060,13 +4994,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .home-rail > *{ flex:0 0 84%; min-width:0; margin-top:0; scroll-snap-align:start; }
 .home-rail > .continue-card{ flex-wrap:wrap; row-gap:2px; }
 .home-rail > .continue-card .continue-card-label{ flex:1 0 100%; }
-@media (min-width:1024px){
-  /* wide screens have room: the rail dissolves and its cards join the grid */
-  .home-view.active > .home-rail{ display:contents; }
-  .home-view.active > .home-rail > *{ margin-top:0; margin-bottom:12px; }
-  .home-view.active > .home-rail > .continue-card{ grid-column:1; }
-  .home-view.active > .home-rail > .blitz-cta{ grid-column:2; }
-}
 
 /* ---- Daily Challenge winners (Home, and the Daily result screen) ---- */
 .dw-card{ margin:0 0 12px; padding:12px 12px 10px; border-radius:18px; border:3px solid var(--ink,#1c1838);
@@ -5088,7 +5015,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .dw-time{ flex:0 0 auto; font-size:12px; opacity:.7; }
 .dw-more{ display:block; margin:8px auto 0; border:0; background:none; color:#3a2500; font:inherit; font-weight:900; font-size:12.5px; text-decoration:underline; cursor:pointer; }
 .daily-done .dw-card{ margin:16px 0; width:100%; }
-@media (min-width:1024px){ .home-view.active > .dw-card{ grid-column:2; } }
 /* the map heading now carries two lines of text: keep the first node's
    "BATTLE!" bubble clear of it */
 .home-sec + .path-wrap{ margin-top:44px; }
@@ -5128,7 +5054,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .dw-cta-text b{ font-size:14.5px; font-weight:900; line-height:1.2; }
 .dw-cta-text small{ font-size:11.5px; font-weight:700; opacity:.8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dw-cta-go{ font-size:22px; font-weight:900; }
-@media (min-width:1024px){ .home-view.active > .dw-cta{ grid-column:2; } }
 /* the Daily tab before playing */
 .daily-lobby{ text-align:center; padding:18px 8px 20px; }
 .daily-lobby-icon{ font-size:52px; line-height:1; }
@@ -5138,10 +5063,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .home-rail-top{ margin-top:0; margin-bottom:4px; }
 .home-rail-top > *{ margin:0; width:auto; }
 .home-rail > :only-child{ flex-basis:100%; }
-@media (min-width:1024px){
-  .home-view.active > .home-rail-top > .level-strip{ grid-column:1; }
-  .home-view.active > .home-rail-top > .dw-cta{ grid-column:2; }
-}
 
 /* the open tab in the bottom bar: a filled pill and a bold label, not just a
    change of text colour */
@@ -5176,8 +5097,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .games-view .games-grid > .game-card .game-card-lock{ position:absolute; top:12px; right:10px; }
 .games-view .prog-lock-chip{ font-size:10.5px; margin:0; white-space:normal; line-height:1.25; }
 .games-view > .ttt-card .ttt-card-body, .games-view .games-grid > .game-card .game-card-body{ width:100%; }
-@media (min-width:700px){ .games-view.active{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
-@media (min-width:1024px){ .games-view.active{ grid-template-columns:repeat(4,minmax(0,1fr)); } }
 
 /* ---- Pinned "join a friend's room" bar (games menu) ----
    It lives in the footer bar beside Back. (The lobby's own box below is
@@ -5210,7 +5129,5 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .join-bar-input{ margin-left:auto; }
 /* a phone's footer has Back beside the bar: the short "＋ New" fits */
 footer .join-bar .join-bar-long{ display:none; }
-@media (min-width:480px){ footer .join-bar .join-bar-long{ display:inline; } }
 /* Fix Your Misses rides in the Home rail too: same height as its neighbours */
 .home-rail > .review-cta, .home-rail > .review-rest{ margin:0; height:auto; }
-@media (min-width:1024px){ .home-view.active > .home-rail > .review-cta, .home-view.active > .home-rail > .review-rest{ grid-column:2; } }

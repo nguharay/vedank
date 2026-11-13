@@ -81,7 +81,7 @@ export function DailyView({
   return (
     <section className="view active">
       <div className="daily-top">
-        <div className="daily-chip">🗓️ {lang === "ja" ? "デイリー" : "Daily"}</div>
+        <div className="daily-chip">🗓️ {lang === "ja" ? "毎日" : "Daily"}</div>
         <div className="daily-count">{idx + 1} / {qs.length}</div>
       </div>
       <div className="daily-progress">

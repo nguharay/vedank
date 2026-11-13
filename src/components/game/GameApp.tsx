@@ -5058,7 +5058,7 @@ export function GameApp({
                 <UiIcon name="today" />
                 {!dailyStatus?.played && <span className="nav-dot" aria-hidden="true" />}
               </span>
-              <span>{lang === "ja" ? "デイリー" : "Daily"}</span>
+              <span>{lang === "ja" ? "毎日" : "Daily"}</span>
             </button>
             <button className={`dock-play${view === "games" ? " on" : ""}`} onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"} aria-current={view === "games" ? "page" : undefined}>
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
