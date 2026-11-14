@@ -13,7 +13,7 @@ import {
 } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
-type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect?: (n: number) => void; autoStart?: boolean };
+type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; autoStart?: boolean };
 
 function readBest(key: string) {
   try { return Number(localStorage.getItem(key) || 0); } catch { return 0; }
@@ -59,7 +59,7 @@ const KONBINI_NOTES: Record<number, { en: string; ja: string }> = {
   6: { en: "Customers add coins to get round change", ja: "小銭をたしてキリのいいおつりに" },
 };
 
-export function KonbiniCashier({ lang, sound, celebrate, onCorrect, autoStart }: Props) {
+export function KonbiniCashier({ lang, sound, celebrate, autoStart }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "play" | "over">("ready");
   const [q, setQ] = useState<KonbiniQ | null>(null);
@@ -115,7 +115,7 @@ export function KonbiniCashier({ lang, sound, celebrate, onCorrect, autoStart }:
       return;
     }
     st.busy = true;
-    sound.correct(); haptic(12); onCorrect?.(1);
+    sound.correct(); haptic(12);
     const before = konbiniLevel(st.served);
     st.served += 1; setServed(st.served);
     const after = konbiniLevel(st.served);
@@ -155,7 +155,7 @@ export function KonbiniCashier({ lang, sound, celebrate, onCorrect, autoStart }:
     if (!autoStart) return;
     const t = setTimeout(() => start(), 0);
     return () => clearTimeout(t);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="rg">
@@ -207,7 +207,7 @@ export function KonbiniCashier({ lang, sound, celebrate, onCorrect, autoStart }:
             <button className="btn btn-primary" onClick={start}>{ja ? "レジに入る" : "Open the register"}</button>
           </div>
         )}
-        {phase === "over" && <RunResults game="konbini" score={served} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} detail={ja ? "おきゃくさん" : "customers"} />}
+        {phase === "over" && <RunResults game="konbini" score={served} prevBest={best} newBest={newBest} lang={lang} onAgain={start} detail={ja ? "おきゃくさん" : "customers"} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && served > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "閉店です" : "Store closed")}</div>
@@ -241,7 +241,7 @@ export function KonbiniCashier({ lang, sound, celebrate, onCorrect, autoStart }:
 const CROSS_KEY = "sutraSprint.crossBest";
 const CROSS_AT = "sutraSprint.crossAt";        /* the level to resume on */
 
-export function NumberCrossword({ lang, sound, celebrate, onCorrect }: Props) {
+export function NumberCrossword({ lang, sound, celebrate }: Props) {
   const ja = lang === "ja";
   const [level, setLevel] = useState(1);
   const [grid, setGrid] = useState<Crossword | null>(null);
@@ -265,7 +265,7 @@ export function NumberCrossword({ lang, sound, celebrate, onCorrect }: Props) {
     started.current = true;
     /* the puzzle is random, so it is built after mount, not during render */
     load(resumeLevel(CROSS_AT, CROSS_KEY));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const maxDigits = grid && Math.max(...grid.cells) >= 10 ? 2 : 1;
 
@@ -278,7 +278,7 @@ export function NumberCrossword({ lang, sound, celebrate, onCorrect }: Props) {
     const rowsOk = grid.rowSums.every((sum, r) => Array.from({ length: n }, (_, c) => val(r * n + c)).reduce((a, b) => a + b, 0) === sum);
     const colsOk = grid.colSums.every((sum, c) => Array.from({ length: n }, (_, r) => val(r * n + c)).reduce((a, b) => a + b, 0) === sum);
     if (rowsOk && colsOk) {
-      setSolved(true); setWrong([]); sound.stageClear(); haptic([15, 30, 15]); onCorrect?.(grid.blanks.length);
+      setSolved(true); setWrong([]); sound.stageClear(); haptic([15, 30, 15]);
       if (level > best) { writeBest(CROSS_KEY, level); setBest(level); }
       writeBest(CROSS_AT, level + 1);
       if (level % 3 === 0) celebrate();
@@ -372,7 +372,7 @@ const CM_INTRO: Record<number, [string, string]> = {
   5: ["Level 5: ÷ joins in!", "レベル5：➗ が登場！"],
 };
 
-export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
+export function CrossMath({ lang, sound, celebrate }: Props) {
   const ja = lang === "ja";
   const [level, setLevel] = useState(1);
   const [p, setP] = useState<CrossMath | null>(null);
@@ -402,7 +402,7 @@ export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
     /* back on the level the player was on last time */
     const lv = force ? 7 : resumeLevel(CROSSMATH_AT, CROSSMATH_KEY);
     setup(buildCrossMath(lv, force), lv);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!p) return <div className="rg" />;
   const lineOk = p.eqs.map((eq) => cmLineOk(p, filled, eq));
@@ -425,7 +425,7 @@ export function CrossMath({ lang, sound, celebrate, onCorrect }: Props) {
     const empty = p.blanks.find((i) => next[i] === null);
     if (empty !== undefined) { setSel(empty); return; }
     if (cmSolved(p, next)) {
-      setSolved(true); setSel(null); sound.stageClear(); haptic([15, 30, 15]); onCorrect?.(p.blanks.length);
+      setSolved(true); setSel(null); sound.stageClear(); haptic([15, 30, 15]);
       if (level > best) { writeBest(CROSSMATH_KEY, level); setBest(level); }
       writeBest(CROSSMATH_AT, level + 1);
       if (level % 3 === 0) celebrate();

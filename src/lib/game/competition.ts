@@ -251,7 +251,6 @@ export async function createFriendCompetition(
 
 /* The host ends their own race. `endCompetition` checks teacherId, which is
    the host here, so it already covers this — this is only a clearer name. */
-export const endFriendCompetition = endCompetition;
 
 export async function createCompetition(
   teacherId: string,
@@ -573,13 +572,4 @@ export async function competitionsForClass(
   if (!(await ownsClass(teacherId, classId))) return { ok: false, error: "Not your class." };
   const all = await visibleCompetitions(teacherId);
   return { ok: true, rows: all.filter((c) => c.classId === classId) };
-}
-
-export async function competitionCount(classId: string): Promise<number> {
-  const db = getDb();
-  const rows = await db
-    .select({ n: raw<number>`count(*)::int` })
-    .from(competitions)
-    .where(and(eq(competitions.classId, classId), eq(competitions.status, "live")));
-  return rows[0]?.n ?? 0;
 }

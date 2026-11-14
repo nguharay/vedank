@@ -12,7 +12,6 @@
 @font-face{ font-family:"M PLUS Rounded 1c"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
 @font-face{ font-family:"VedAnk Emoji"; src:url("/fonts/twemoji.woff2") format("woff2"); unicode-range:U+1F000-1FAFF, U+2600-27BF, U+2B00-2BFF, U+2300-23FF, U+2190-21FF, U+2934-2935, U+3030, U+303D, U+3297, U+3299, U+200D, U+FE0F, U+20E3, U+E0020-E007F; font-display:swap; }
 
-
 :root{ padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
 html,body{ height:100%; margin:0; }
 [hidden]{ display:none !important; }
@@ -63,7 +62,6 @@ body{ margin:0; background:var(--bg); color:var(--ink); min-height:100%; font-fa
   #app{ min-height:calc(100vh - 48px); border-radius:28px; overflow:hidden; box-shadow:0 20px 50px -20px rgba(20,20,50,.5), 0 0 0 3px var(--ink-line); }
 }
 
-
 h1,h2,h3{ font-family:"Baloo 2",system-ui,sans-serif; margin:0; text-wrap:balance; }
 h1{ font-family:"Rubik Mono One","Baloo 2",system-ui,sans-serif; letter-spacing:.01em; text-transform:uppercase; }
 .mono{ font-family:var(--font-num); font-variant-numeric:lining-nums tabular-nums; }
@@ -83,8 +81,8 @@ header{ position:sticky; top:0; z-index:6; padding:calc(10px + env(safe-area-ins
 .stat:active{ transform:scale(.92); }
 .stat:focus-visible{ outline:3px solid var(--blue); outline-offset:1px; }
 @media (hover:hover){ .stat:hover{ background:var(--surface-2); } }
-.stat-flame{ color:var(--sun1); } .stat-gem{ color:var(--blue); } .stat-heart{ color:var(--red); }
-.stat-gem.pop{ animation: statPop .32s ease; }
+.stat-flame{ color:var(--sun1); } .stat-heart{ color:var(--red); }
+
 @keyframes statPop{ 0%{ transform:scale(1); } 50%{ transform:scale(1.4); } 100%{ transform:scale(1); } }
 .stats-row{ display:flex; gap:12px; flex:0 0 auto; }
 
@@ -92,7 +90,7 @@ main{ flex:1; overflow-x:clip; overflow-y:auto; padding:14px 14px calc(96px + en
 .view{ display:none; }
 .view.active{ display:block; animation: viewIn .3s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes viewIn{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
-@media (prefers-reduced-motion: reduce){ .view.active, .topic-card, .node, .sparkle-field span, .stage-node.current{ animation:none !important; } }
+@media (prefers-reduced-motion: reduce){ .view.active, .node, .sparkle-field span, .stage-node.current{ animation:none !important; } }
 
 .footerbar{ position:sticky; bottom:0; z-index:6; background:var(--surface); border-top:3px solid var(--ink-line);
   padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px)); display:none; gap:6px; }
@@ -105,8 +103,6 @@ main{ flex:1; overflow-x:clip; overflow-y:auto; padding:14px 14px calc(96px + en
 .bottomnav-item:active{ transform:scale(.92); }
 .bottomnav-item.active{ color:var(--sun1); }
 .bottomnav-icon{ font-size:22px; line-height:1; }
-.bottomnav-avatar{ width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--sun1),var(--sky1));
-  color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
 
 /* ---------- detached sheet panels (achievements / leaderboard) ---------- */
 .sheet-panel{ position:fixed; left:50%; bottom:calc(78px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%);
@@ -125,7 +121,7 @@ button{ font-family:inherit; }
 .btn:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
 .btn-primary{ background:linear-gradient(135deg,var(--sun1),var(--sun3)); color:#fff; box-shadow:4px 4px 0 var(--ink-line); }
 .btn-primary:disabled{ background:var(--surface-3); color:var(--muted); box-shadow:4px 4px 0 var(--line-strong); border-color:var(--line-strong); cursor:not-allowed; }
-.btn-green{ background:var(--green); color:#fff; box-shadow:4px 4px 0 var(--ink-line); }
+
 .btn-ghost{ background:var(--surface); color:var(--ink-dim); flex:0 0 auto; box-shadow:4px 4px 0 var(--ink-line); border:3px solid var(--ink-line); }
 .btn-ghost:disabled{ opacity:.45; }
 
@@ -141,17 +137,7 @@ button{ font-family:inherit; }
 @media (prefers-reduced-motion: reduce){ .sakura-field{ display:none; } }
 
 /* ---------- unit banner ---------- */
-.unit-banner{ border-radius:22px; padding:18px 18px; position:relative; overflow:hidden; color:#fff;
-  background:
-    radial-gradient(circle at 0 0, rgba(255,255,255,.35) 1.5px, transparent 1.6px) 0 0/16px 16px,
-    radial-gradient(120% 160% at 100% -20%, rgba(255,255,255,.3), transparent 55%),
-    linear-gradient(135deg, var(--violet), var(--sun3) 55%, var(--sun1));
-  box-shadow:4px 4px 0 var(--ink-line); border:3px solid var(--ink-line); }
-.unit-banner .mandala{ position:absolute; right:-26px; top:-26px; width:150px; height:150px; opacity:.2; }
-.unit-banner .mascot{ position:absolute; right:8px; bottom:6px; width:52px; height:52px; filter:drop-shadow(0 4px 6px rgba(0,0,0,.25)); z-index:1; }
-.unit-banner .eyebrow{ font-size:11px; letter-spacing:.12em; text-transform:uppercase; font-weight:800; opacity:.85; padding-right:60px; }
-.unit-banner h1{ font-size:22px; margin-top:4px; padding-right:60px; }
-.levelrow{ display:flex; justify-content:space-between; font-size:12px; font-weight:800; opacity:.92; margin:12px 0 5px; padding-right:60px; position:relative; z-index:2; }
+
 .bar-track{ height:9px; border-radius:999px; background:rgba(255,255,255,.28); overflow:hidden; }
 .bar-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg,#FFE28A,#FFF7DA); transition:width .6s cubic-bezier(.2,.8,.2,1); }
 
@@ -186,19 +172,12 @@ button{ font-family:inherit; }
   border-radius:10px; white-space:nowrap; text-transform:uppercase; letter-spacing:.04em; }
 .node-bubble::after{ content:""; position:absolute; left:50%; bottom:-5px; transform:translateX(-50%); border:6px solid transparent; border-top-color:var(--ink); }
 
-.boss-row{ margin:6px 0 30px; display:flex; justify-content:center; position:relative; z-index:1; }
-.boss-row::before{ content:""; position:absolute; top:50%; left:50%; width:220px; height:220px; transform:translate(-50%,-50%);
-  background:conic-gradient(from 0deg, transparent 0 10deg, color-mix(in srgb, var(--sun1) 30%, transparent) 12deg 14deg, transparent 16deg 30deg) repeat;
-  animation:raySpin 10s linear infinite; z-index:-1; opacity:.6; pointer-events:none; }
-@keyframes raySpin{ to{ transform:translate(-50%,-50%) rotate(360deg); } }
 .boss-node{ width:94px; height:94px; border-radius:26px; border:4px solid var(--ink-line); display:flex; align-items:center; justify-content:center;
   font-size:38px; color:#fff; cursor:pointer; position:relative; box-shadow:5px 5px 0 var(--ink-line);
   background: radial-gradient(120% 160% at 30% 0%, rgba(255,255,255,.35), transparent 55%), linear-gradient(135deg,var(--violet),var(--sun2));
   transform:rotate(3deg); transition:transform .12s; animation:bossGlow 2.4s ease-in-out infinite; }
 .boss-node:active{ transform:rotate(3deg) translateY(6px); box-shadow:none; }
 @keyframes bossGlow{ 0%,100%{ filter:drop-shadow(0 0 0 rgba(155,48,255,0)); } 50%{ filter:drop-shadow(0 0 16px rgba(155,48,255,.75)); } }
-@media (prefers-reduced-motion: reduce){ .boss-row::before{ animation:none; } }
-.boss-chip{ position:absolute; top:-10px; right:-10px; background:var(--surface); border-radius:999px; padding:4px 9px; font-size:10.5px; font-weight:800; box-shadow:0 3px 0 var(--line-strong); color:var(--ink); }
 
 /* ---------- topic / lesson page ---------- */
 .sutra-tag{ display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:6px 13px; font-size:12.5px; font-weight:800; margin-bottom:12px; color:#fff;
@@ -206,7 +185,6 @@ button{ font-family:inherit; }
 .topic-head h1{ font-size:23px; }
 .icon-badge{ width:58px; height:58px; border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:28px; color:#fff;
   margin-bottom:12px; box-shadow:4px 4px 0 var(--ink-line); border:3px solid var(--ink-line); }
-.topic-illus{ margin:0 0 16px; border-radius:18px; overflow:hidden; border:3px solid var(--ink-line); box-shadow:4px 4px 0 color-mix(in srgb, var(--ink-line) 25%, transparent); }
 
 /* ---------- book-method illustration (matches the PPT: Method box + Example card) ---------- */
 .bookmethod-wrap{ margin:0 0 16px; display:flex; flex-direction:column; gap:12px; }
@@ -249,7 +227,7 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .digitarrow-ansnum{ font-family:var(--font-num); font-size:26px; font-weight:800; fill:var(--green-dk); }
 /* ---------- book-faithful topic diagrams ---------- */
 .bd-svg{ width:100%; max-width:300px; height:auto; display:block; margin:0 auto; padding:10px 0 12px; }
-.bd-digit{ font-family:var(--font-num); font-size:22px; font-weight:800; fill:var(--ink); }
+
 .bd-digit-lg{ font-family:var(--font-num); font-size:26px; font-weight:800; fill:var(--ink); }
 .bd-mid{ fill:var(--blue); }
 .bd-fan{ stroke:var(--ink); stroke-width:1.6; fill:none; }
@@ -287,23 +265,17 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .bd-hopHead{ fill:var(--blue); stroke:none; }
 .bd-hoplabel{ font-family:"Nunito",sans-serif; font-size:13px; font-weight:800; fill:var(--blue); }
 .bd-tag{ font-family:"Nunito",sans-serif; font-size:12px; font-weight:800; fill:var(--muted); }
-.bd-sandwich{ fill:var(--muted); }
-.bd-sweep{ stroke:var(--sun1); stroke-width:1.6; fill:none; }
-.bd-sweepHead{ fill:var(--sun1); stroke:none; }
-.bd-stagewrite{ font-family:"Nunito",sans-serif; font-size:12px; font-weight:800; fill:var(--blue-dk); }
+
 .bd-window{ fill:none; stroke:var(--blue); stroke-width:2; }
-.bd-seg{ stroke:var(--line-strong); stroke-width:2; }
-.bd-vert{ stroke:var(--blue); stroke-width:2; fill:none; }
-.bd-cross{ stroke:var(--sun1); stroke-width:2; fill:none; }
+
 .bd-nine{ font-family:var(--font-num); font-size:14px; font-weight:800; fill:var(--blue); }
-.bd-pair{ stroke:var(--green-dk); stroke-width:2; fill:none; }
+
 .bd-partbox{ fill:var(--surface-2); stroke:var(--line-strong); stroke-width:2; }
 .bd-partbox-hi{ fill:color-mix(in srgb, var(--blue) 10%, var(--surface)); stroke:var(--blue); }
 .bd-partline{ font-family:var(--font-num); font-size:14px; font-weight:800; fill:var(--ink); }
 
 /* ---------- daily challenge + leagues ---------- */
-.daily-cta{ background:linear-gradient(135deg,var(--violet-dk),var(--sky2)) !important; }
-.daily-cta.played{ background:linear-gradient(135deg,#475569,#94A3B8) !important; }
+
 .daily-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
 .daily-chip{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#0F766E;
   background:color-mix(in srgb, #14B8A6 16%, var(--surface)); border:2px solid #0F766E; border-radius:999px; padding:4px 12px; }
@@ -318,7 +290,7 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .daily-done-score{ font-size:46px; font-weight:800; color:#0F766E; margin:12px 0 4px; }
 .daily-done-points{ font-size:15px; font-weight:800; color:var(--gold-dk); }
 .daily-done-note{ font-size:13px; font-weight:600; color:var(--muted); line-height:1.5; margin:14px 0 20px; }
-.league-note{ font-size:11.5px; font-weight:600; color:var(--muted); line-height:1.45; padding:0 6px 10px; }
+
 .choice-tile.daily-right{ border-color:var(--green-dk); background:color-mix(in srgb, var(--green) 30%, var(--surface-2));
   box-shadow:3px 3px 0 var(--green-dk); color:var(--green-dk); }
 .choice-tile.daily-wrong{ border-color:var(--wrong-dk); background:color-mix(in srgb, var(--wrong) 26%, var(--surface-2));
@@ -376,31 +348,14 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
 .bookmethod-pill.minus{ color:var(--wrong-dk); border-color:var(--wrong-dk); background:color-mix(in srgb, var(--wrong) 12%, var(--surface)); }
 
 /* ---------- animated topic illustrations ---------- */
-.illus-dot{ animation: illusDotPulse 2.4s ease-in-out infinite; transform-origin:center; transform-box:fill-box; }
-@keyframes illusDotPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.35); } }
-.illus-runner{ animation: illusRunnerSlide 2.4s cubic-bezier(.3,.7,.3,1) infinite; }
-@keyframes illusRunnerSlide{ 0%,8%{ cx:20; opacity:1; } 45%,55%{ cx:150; opacity:1; } 92%,100%{ cx:280; opacity:1; } }
-.illus-cell{ animation: illusCellWave 2.6s ease-in-out infinite; transform-origin:center; transform-box:fill-box; }
-@keyframes illusCellWave{ 0%,100%{ opacity:.3; transform:scale(1); } 50%{ opacity:1; transform:scale(1.06); } }
-.illus-rung{ animation: illusRungGlow 2.2s ease-in-out infinite; }
-@keyframes illusRungGlow{ 0%,100%{ opacity:.35; } 50%{ opacity:1; } }
-.illus-runner-v{ animation: illusRunnerBob 2.2s ease-in-out infinite; }
-@keyframes illusRunnerBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-8px); } }
-.illus-loop-runner{ filter:drop-shadow(0 0 4px rgba(255,255,255,.6)); }
-@media (prefers-reduced-motion: reduce){
-  .illus-dot, .illus-runner, .illus-cell, .illus-rung, .illus-runner-v{ animation:none; }
-  .illus-loop-runner{ display:none; }
-}
+
 .card{ background:var(--surface); border:3px solid var(--ink-line); border-radius:20px; padding:18px; margin-top:16px; box-shadow:4px 4px 0 color-mix(in srgb, var(--ink-line) 20%, transparent); }
 .card h4{ font-size:12.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:12px; font-weight:800; }
 .steps{ margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:12px; }
 .steps li{ display:flex; gap:12px; font-size:14.5px; line-height:1.5; font-weight:600; }
 .steps li .n{ flex:0 0 26px; height:26px; border-radius:9px; color:#fff; font-weight:800; font-size:12.5px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
-.worked-caption{ margin-top:16px; font-size:11.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+
 .worked{ margin-top:8px; background:var(--surface-2); border-radius:14px; padding:14px 16px; font-size:14px; border:2px solid var(--line); }
-.worked .ex-line{ display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:2px dashed var(--line); }
-.worked .ex-line:last-child{ border-bottom:none; font-weight:800; }
-.worked .ex-line b{ font-family:var(--font-num); text-align:right; }
 
 /* ---------- stage select map ---------- */
 .stagemap-head{ text-align:center; margin-bottom:8px; }
@@ -436,16 +391,13 @@ marker .digitarrow-elbow{ fill:var(--blue-dk); stroke:none; }
   padding:8px 0 8px; margin:0 0 4px;
   border-bottom:2px solid color-mix(in srgb, var(--ink-line) 14%, transparent);
   box-shadow:0 10px 12px -12px rgba(20,20,50,.5); }
-.practice-hud .progress-top{ margin-bottom:8px; }
+
 .practice-hud .timer-count{ margin-bottom:0; }
 .practice-hud .timer-bar-wrap{ margin-bottom:0; }
 /* The bar is what keeps the heading from tucking under the pinned block. */
 .practice-hud + .topic-head{ margin-top:10px !important; }
 /* Anything scrolled to lands below the HUD rather than beneath it. */
 main{ scroll-padding-top:104px; }
-
-.progress-top{ height:16px; border-radius:999px; background:var(--surface-2); border:2px solid var(--line); overflow:hidden; margin-bottom:18px; padding:2px; }
-.progress-top-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg,var(--green),#7BE23A); transition:width .4s ease; }
 
 /* ---------- per-question countdown timer ---------- */
 .timer-bar-wrap{ height:12px; border-radius:999px; background:var(--surface-3); overflow:hidden; margin-bottom:14px;
@@ -780,8 +732,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   border:2px solid var(--line); display:flex; flex-direction:column; gap:7px; }
 .auth-perks li{ font-size:12.5px; font-weight:700; color:var(--ink-dim); padding-left:24px; position:relative; line-height:1.4; }
 .auth-perks li::before{ content:"★"; position:absolute; left:4px; top:0; color:var(--sun1); font-size:13px; }
-.field-row{ display:flex; gap:10px; }
-.field-row .field{ flex:1; min-width:0; }
+
 .field-hint{ font-size:11.5px; color:var(--muted); font-weight:600; margin-top:6px; line-height:1.4; }
 .field-optional{ font-size:10.5px; font-weight:800; color:var(--muted); background:var(--surface-2);
   border:1.5px solid var(--line); border-radius:999px; padding:2px 7px; margin-left:6px; text-transform:none; letter-spacing:0; }
@@ -842,17 +793,12 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .stage-row{ animation: cardIn .35s cubic-bezier(.2,.9,.3,1) both; }
 
 /* ---------- brand lockup ---------- */
-.brand-lockup{ display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:14px; }
-.brand-lockup img{ height:28px; width:auto; }
-.brand-lockup span{ font-size:11px; font-weight:800; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+
 .header-mark{ width:52px; height:52px; border-radius:12px; flex:0 0 auto; object-fit:contain; }
 .auth-logo{ display:block; margin:0 auto 14px; height:40px; width:auto; }
 /* the full lockup is a wide tree+wordmark, so size it by width instead of height */
-.auth-logo-full{ height:auto; width:100%; max-width:300px; margin:0 auto 14px; }
-.home-byline{ display:flex; align-items:center; gap:8px; margin-top:8px; opacity:.9; }
-.home-byline img{ height:46px; width:auto; border-radius:8px; background:rgba(255,255,255,.85); padding:3px 5px; }
+
 /* no text-transform — the brand is cased "VedAnk", never VEDANK */
-.home-byline span{ font-size:13px; font-weight:700; color:#fff; letter-spacing:.04em; }
 
 /* ---------- account menu ---------- */
 .avatar-btn{ background:linear-gradient(135deg,var(--sun1),var(--sky1)); color:#fff; font-weight:800; font-size:15px; }
@@ -990,8 +936,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .leaderboard-rank{ flex:0 0 20px; text-align:center; font-weight:800; color:var(--muted); font-size:13px; }
 .leaderboard-rank.top1{ font-size:16px; } .leaderboard-rank.top2{ font-size:15px; } .leaderboard-rank.top3{ font-size:15px; }
 .leaderboard-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink); }
-.leaderboard-level{ flex:0 0 auto; color:var(--muted); font-size:11px; }
-.leaderboard-gems{ flex:0 0 auto; color:var(--blue); }
 
 /* ---------- skin color overrides ---------- */
 .arcade-board.skin-inferno .scoreboard-runs{ background:#2A1208; color:#FF7A3D; }
@@ -1019,7 +963,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .arcade-board.skin-gold .ball-tile.picked{ background:radial-gradient(circle at 35% 30%,#FFF0B8,#FFCC00 60%,#A87700); box-shadow:0 5px 0 #A87700; }
 .catch-field.skin-gold{ background:linear-gradient(180deg,#2A1D02 0%,#1A1201 60%,#0A0A16 100%); }
 .catch-field.skin-gold .catch-tile{ background:linear-gradient(160deg,#FFCC00,#D89B00); }
-
 
 /* ---------- share sheet (tap any score to brag) ---------- */
 .share-overlay{ z-index:70; }
@@ -1085,18 +1028,12 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .share-net-facebook{ background:#1877F2; color:#fff; }
 
 /* the level bar on home, and the blitz result score, are share entry points too */
-.levelrow-share{ width:100%; font-family:inherit; border:none; background:transparent; color:inherit; cursor:pointer;
-  align-items:center; padding:3px 60px 3px 5px; margin:12px -5px 5px; border-radius:10px; text-align:left; }
-.levelrow-share:focus-visible{ outline:3px solid #fff; outline-offset:2px; }
-@media (hover:hover){ .levelrow-share:hover{ background:rgba(255,255,255,.14); } }
-.levelrow-right{ display:inline-flex; align-items:center; gap:6px; }
-.levelrow-share-ico{ font-size:12px; opacity:.85; }
+
 .score-share-btn{ margin:2px auto 0; display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-family:inherit;
   font-size:13px; font-weight:800; color:var(--blue-dk); background:color-mix(in srgb, var(--blue) 12%, var(--surface));
   border:2px solid color-mix(in srgb, var(--blue) 40%, var(--line)); border-radius:999px; padding:7px 16px; }
 .score-share-btn:active{ transform:scale(.95); }
 .score-share-btn:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
-
 
 /* ---------- skins: full accent retheme ----------
    Stamped on <html> so the body background behind the app card re-skins too.
@@ -1208,8 +1145,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .admin-empty{ padding:34px 12px; text-align:center; color:var(--muted); font-weight:700; white-space:normal; }
 
 /* ---------- daily quests ---------- */
-@keyframes questClaim{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.18); } }
-@media (prefers-reduced-motion: reduce){ .quest-claim{ animation:none; } }
+
 .quest-review-cta{ width:100%; font-family:inherit; font-size:12.5px; font-weight:800; cursor:pointer; color:#fff;
   background:linear-gradient(135deg,var(--violet),var(--violet-dk)); border:none; border-top:2px solid var(--line);
   padding:12px; }
@@ -1405,7 +1341,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 }
 
 /* the dock: above the bottom nav, clear of the answer tiles */
-@keyframes buddyStripIn{ from{ opacity:0; transform:scale(.6); } to{ opacity:1; transform:none; } }
+
 /* the swipeable strip at the top of Home (HomeBanner.tsx) */
 .home-banner{ margin:0 0 14px; }
 .home-banner-track{ display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; gap:10px; -webkit-overflow-scrolling:touch; }
@@ -1427,31 +1363,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .quote-banner-body em{ font-style:normal; font-size:11px; font-weight:800; color:var(--muted); }
 /* the buddy leans in from the screen edge, low on the page above the dock;
    its bubble opens inward when tapped or when it has news */
-@keyframes buddyPeekR{ 0%,100%{ transform:translateX(14px) rotate(-14deg); } 40%,75%{ transform:translateX(0) rotate(-20deg); } }
-@keyframes buddyPeekL{ 0%,100%{ transform:translateX(-14px) rotate(14deg); } 40%,75%{ transform:translateX(0) rotate(20deg); } }
-.buddy-dock{ position:fixed; z-index:40; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px));
-  width:100%; max-width:480px; transform:translateX(-50%); padding:0 12px;
-  display:flex; align-items:flex-end; gap:8px; pointer-events:none; }
-.buddy-tap{ pointer-events:auto; flex:0 0 auto; width:58px; height:58px; padding:0; border:none; cursor:pointer;
-  background:none; animation:buddyFloat 4.5s ease-in-out infinite;
-  filter:drop-shadow(0 6px 8px rgba(20,20,50,.28)); }
-.buddy-tap:active{ transform:scale(.9); }
-.buddy-tap:focus-visible{ outline:3px solid var(--blue); outline-offset:3px; border-radius:50%; }
-@keyframes buddyFloat{
-  0%,100%{ transform:translateY(0) rotate(-2deg); }
-  50%{ transform:translateY(-9px) rotate(2deg); }
-}
-@media (prefers-reduced-motion: reduce){ .buddy-tap{ animation:none; } }
-.buddy-dock.talking .buddy-tap{ animation-duration:2.2s; }
-
-.buddy-bubble{ pointer-events:auto; flex:1 1 auto; min-width:0; text-align:left; cursor:pointer; font-family:inherit;
-  font-size:12.5px; font-weight:800; line-height:1.4; color:var(--ink);
-  background:var(--surface); border:3px solid var(--ink-line); border-radius:16px 16px 4px 16px;
-  padding:9px 12px; box-shadow:3px 3px 0 color-mix(in srgb, var(--ink-line) 22%, transparent);
-  animation:buddyBubbleIn .24s cubic-bezier(.2,1.4,.4,1) both; }
-@keyframes buddyBubbleIn{ from{ opacity:0; transform:translateY(6px) scale(.95); } to{ opacity:1; transform:none; } }
-@media (prefers-reduced-motion: reduce){ .buddy-bubble{ animation:none; } }
-.buddy-bubble:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
 
 /* outfit preview in the skins panel — the buddy wearing it, not a colour dot */
 .skin-row-preview{ position:relative; flex:0 0 auto; width:44px; height:44px; border-radius:12px;
@@ -1461,11 +1372,8 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 /* White text on a saturated gradient is the app's house style, but the light end
    of those gradients only reaches ~1.6:1 against white. A shadow lifts the
    glyph edges off the fill and helps every skin, the default included. */
-.blitz-cta, .daily-cta, .trick-cta, .review-cta, .duel-card-head, .quest-review-cta{
+.blitz-cta, .trick-cta, .review-cta, .duel-card-head, .quest-review-cta{
   text-shadow:0 1px 2px rgba(0,0,0,.34);
-}
-.unit-banner h1, .unit-banner .eyebrow, .home-byline span, .levelrow{
-  text-shadow:0 1px 2px rgba(0,0,0,.28);
 }
 
 /* ---------- review: nothing due ----------
@@ -1643,23 +1551,10 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 /* Wider still: the column cap grows rather than leaving ever more empty gutter. */
 
 /* the attribution under a quote, and a roomier bubble for the longer ones */
-.buddy-bubble.quoting{ font-weight:700; font-size:12px; max-width:none; }
-.buddy-cite{ display:block; margin-top:5px; font-size:10.5px; font-weight:800; color:var(--muted);
-  font-style:italic; }
 
 /* A little speech badge until the buddy has been tapped once. */
-.buddy-tap{ position:relative; }
-.buddy-hint{ position:absolute; top:-2px; right:-4px; width:22px; height:22px; border-radius:50%;
-  background:var(--surface); border:2px solid var(--ink-line); display:flex; align-items:center;
-  justify-content:center; font-size:11px; line-height:1;
-  animation:buddyHint 2.2s ease-in-out infinite; }
-@keyframes buddyHint{
-  0%,100%{ transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--blue) 55%, transparent); }
-  50%{ transform:scale(1.12); box-shadow:0 0 0 7px transparent; }
-}
-@media (prefers-reduced-motion: reduce){ .buddy-hint{ animation:none; } }
+
 /* Big enough to read as a character rather than a dot. */
-.buddy-tap{ width:66px; height:66px; }
 
 /* The daily chest's whole card is the tap target — it says "tap to open", and a
    64px emoji was the only thing that responded, which reads as a stuck dialog. */
@@ -1672,29 +1567,12 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 /* ---------- a buddy you can move ----------
    Default is the docked bottom row. Once dragged it becomes freely positioned,
    with left/top set inline and the centring transform dropped. */
-.buddy-dock.free{ left:0; top:0; width:auto; max-width:min(78vw, 420px); transform:none;
-  padding:0; align-items:flex-start; flex-direction:row-reverse; }
-.buddy-dock.free .buddy-bubble{ margin-right:8px; }
+
 /* on the right half the bubble sits to the buddy's left */
-.buddy-dock.free.right{ flex-direction:row; }
-.buddy-dock.free.right .buddy-bubble{ margin-right:0; margin-left:8px; border-radius:16px 4px 16px 16px; }
+
 /* the bubble holds the quote (tap to close) and a hide button */
-.buddy-bubble{ display:flex; flex-direction:column; align-items:stretch; gap:6px; }
-.buddy-bubble-text{ all:unset; cursor:pointer; display:block; font:inherit; color:inherit; line-height:inherit; }
-.buddy-bubble-text:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; border-radius:6px; }
-.buddy-hide{ align-self:flex-end; font:800 10.5px/1 inherit; font-family:inherit; color:var(--muted); background:var(--surface-2, #f3f1fb);
-  border:1.5px solid var(--line, #d8d4ea); border-radius:999px; padding:5px 9px; cursor:pointer; }
-.buddy-hide:active{ transform:scale(.95); }
+
 /* a clear ✕ in the bubble's corner; the text keeps room for it */
-.buddy-bubble{ position:relative; }
-.buddy-bubble-text{ padding-right:18px; }
-.buddy-close{ position:absolute; top:5px; right:5px; width:22px; height:22px; border-radius:50%; border:1.5px solid var(--line, #d8d4ea);
-  background:var(--surface-2, #f3f1fb); color:var(--muted); font:900 11px/1 system-ui,sans-serif; display:grid; place-items:center; cursor:pointer; padding:0; }
-.buddy-close:hover{ color:var(--ink); }
-.buddy-close:active{ transform:scale(.9); }
-.buddy-dock.dragging .buddy-tap{ animation:none; cursor:grabbing; transform:scale(1.08); }
-.buddy-dock.dragging .buddy-bubble{ opacity:.35; }
-.buddy-tap{ cursor:grab; touch-action:none; }
 
 /* ---------- auth: the real tree, and a wordmark beside it ---------- */
 .auth-lockup{ display:flex; align-items:center; justify-content:center; gap:12px; margin:0 auto 14px; }
@@ -1774,15 +1652,13 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .bookexample-second{ margin-top:10px; }
 
 /* the carry the book prints as a small subscript to the left of the answer */
-.bd-flagcarry{ font-family:var(--font-num); font-size:11px; font-weight:700; fill:var(--ink-dim); }
-.bd-tick{ stroke:var(--sun1); stroke-width:1.4; fill:none; }
+
 /* three-panel steps sit three across wherever there is room */
 .bd-flagrow-3{ grid-template-columns:repeat(3,1fr); }
 @media (min-width:560px){ .bd-flagrow-3{ grid-template-columns:repeat(3,1fr); } }
 /* the three-digit window slid across a 111 multiplication */
 .bd-window{ fill:color-mix(in srgb, var(--sun2) 30%, transparent); stroke:var(--sun1); stroke-width:1.2; }
 .bd-flagrow-2{ grid-template-columns:repeat(2,1fr); }
-
 
 /* ---------- auth hero (the pitch, above the sign-in form) ---------- */
 .auth-hero{ text-align:center; margin:2px 0 18px; padding:16px 14px 18px; border-radius:18px;
@@ -1894,8 +1770,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .guest-banner-cta{ flex:none; text-decoration:none; font-weight:800; font-size:12.5px;
   padding:8px 14px; border-radius:999px; color:#fff; background:var(--gold-dk);
   border:2px solid var(--ink-line); }
-.guest-save-btn{ flex:1; text-decoration:none; display:grid; place-items:center;
-  padding:14px 16px; font-size:14px; }
+
 .auth-try{ display:block; margin-top:14px; text-align:center; text-decoration:none;
   font-weight:800; font-size:13px; color:var(--sun1);
   border:2px dashed color-mix(in srgb, var(--sun1) 45%, transparent);
@@ -1927,12 +1802,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .rollup{ font-variant-numeric:lining-nums tabular-nums; }
 
 /* ---------- show-the-rest of the path ---------- */
-.path-more{ position:relative; z-index:2; display:flex; flex-direction:column; align-items:center;
-  gap:2px; margin:6px auto 4px; padding:12px 22px; cursor:pointer;
-  border:3px dashed var(--line-strong); border-radius:18px; background:var(--surface);
-  font-family:inherit; font-weight:800; font-size:13.5px; color:var(--ink-dim); }
-.path-more:active{ transform:scale(.97); }
-.path-more-sub{ font-size:10.5px; font-weight:700; color:var(--faint); }
 
 /* ---------- a clean sweep ---------- */
 .result-perfect{ display:flex; justify-content:center; margin:2px 0 6px; }
@@ -2081,7 +1950,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .lesson-editor-actions{ display:flex; gap:8px; justify-content:flex-end; }
 .lesson-editor-actions .btn{ padding:10px 16px; font-size:13px; }
 
-
 /* ---------- tile text scales with the tile ----------
    The circles and balloons are the right size on a wide screen; the numbers
    inside them were not — a 450px circle carried 19px type. Container units
@@ -2098,7 +1966,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .catch-tile .tile-num{ font-size:min(clamp(14px, 27cqi, 34px), calc(86cqi / (var(--chars, 3) * 0.55))); }
 .tile-num, .balloon-body{ white-space:nowrap; letter-spacing:-.02em; line-height:1; }
 
-
 /* ---------- guest locks ---------- */
 .game-card.locked{ opacity:.72; }
 .game-card.locked .game-card-icon{ filter:grayscale(.6); }
@@ -2108,7 +1975,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .lock-sheet h3{ font-size:18px; margin-bottom:8px; }
 .lock-sheet p{ font-size:13px; color:var(--muted); line-height:1.7; margin:0 0 16px; }
 .lock-sheet .auth-submit{ display:block; text-decoration:none; text-align:center; }
-.lock-sheet-signin{ margin-top:8px; }
+
 .lock-sheet-later{ width:100%; margin-top:8px; font-weight:700; color:var(--muted); border-color:transparent; box-shadow:none; }
 
 /* ---------- Math Tic-Tac-Toe ---------- */
@@ -2227,10 +2094,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .bookpattern-badge{ background:#3B2A7A; color:#fff; font-weight:900; }
 .bookpattern-card{ margin-bottom:10px; }
 .bd-opk{ font-family:var(--font-num); font-size:14px; font-weight:800; fill:var(--ink); }
-.bd-fnum{ font-family:var(--font-num); font-size:17px; font-weight:800; fill:var(--ink); }
-.bd-sub{ font-family:var(--font-num); font-size:11px; font-weight:800; fill:var(--ink); }
-.bd-blue{ fill:var(--blue); }
-.bd-orange{ font-family:"Nunito",sans-serif; font-size:13px; font-weight:900; fill:var(--sun1); }
 
 /* ---------- classes with a teacher ---------- */
 .classes-card{ display:flex; align-items:center; gap:12px; width:100%; margin:18px 0 8px; padding:14px 16px; cursor:pointer; text-align:left;
@@ -2243,9 +2106,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .classes-card-title{ font-size:16px; font-weight:900; }
 .classes-card-sub{ font-size:12px; font-weight:700; color:var(--ink-dim); line-height:1.4; }
 .classes-card-go{ font-size:12px; font-weight:900; color:var(--sun1); white-space:nowrap; }
-.classes-strip{ display:block; width:100%; margin:14px 0 4px; padding:12px 14px; cursor:pointer; font-family:inherit; text-align:left;
-  font-size:13px; font-weight:800; color:var(--ink); border-radius:14px; border:2px dashed transparent;
-  background:color-mix(in srgb, var(--gold) 18%, var(--surface)); }
+
 .interest-sheet{ max-height:88vh; overflow-y:auto; }
 .interest-sheet h3{ font-size:19px; margin:0 0 6px; }
 .interest-lede{ font-size:13px; color:var(--muted); line-height:1.6; margin:0 0 12px; }
@@ -2303,7 +2164,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 @keyframes ifBurst{ from{ transform:translate(-50%,0) scale(.4); opacity:0; }
   to{ transform:translate(calc(-50% + (var(--k) - 2.5) * 38px), calc(-30px - (var(--k) - 2.5) * (var(--k) - 2.5) * 3px)) scale(1); opacity:1; } }
 @media (prefers-reduced-motion: reduce){ .interest-burst span{ animation:none; opacity:0; } }
-.interest-points{ list-style:none; padding:0; margin:0 0 14px; display:flex; flex-direction:column; gap:6px; font-size:13.5px; font-weight:700; color:var(--ink-dim); }
 
 .classes-hero{ display:flex; align-items:center; gap:12px; padding:14px; margin:0 0 10px; border-radius:20px; color:#fff; text-align:left;
   border:3px solid var(--ink-line); box-shadow:4px 4px 0 var(--ink-line);
@@ -2349,8 +2209,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
              radial-gradient(circle at 8% 110%, rgba(255,255,255,.14) 0 22%, transparent 23%),
              linear-gradient(120deg,#FF6B00,#FF3D77 50%,#7B3FA0); }
 .lp-hero-text{ flex:1; min-width:0; }
-.lp-kicker{ font-size:12px; font-weight:900; letter-spacing:.1em; opacity:.92; }
-.lp-kicker-dark{ color:var(--sun1); opacity:1; }
+
 .lp-hero h1{ font-size:clamp(28px, 7vw, 46px); line-height:1.15; margin:6px 0 10px; font-weight:900; }
 .lp-hero p{ font-size:15px; font-weight:700; line-height:1.7; margin:0 0 16px; opacity:.95; }
 .lp-hero-btns{ display:flex; flex-wrap:wrap; gap:10px; }
@@ -2363,23 +2222,11 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .lp-btn-primary{ color:#fff; background:linear-gradient(100deg,#FF6B00,#FF3D77 55%,#7B3FA0); }
 .lp-hero .lp-btn-primary{ background:var(--ink-line); }
 .lp-btn-ghost{ color:var(--ink); background:#fff; }
-.lp-btn-big{ font-size:17px; padding:15px 22px; }
-.lp-features{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin:22px 0; }
-.lp-feature{ padding:16px; border-radius:20px; border:2px solid var(--line-strong); background:var(--surface); }
-.lp-feature:nth-child(1){ background:color-mix(in srgb, var(--sky2) 10%, var(--surface)); }
-.lp-feature:nth-child(2){ background:color-mix(in srgb, var(--gold) 14%, var(--surface)); }
-.lp-feature:nth-child(3){ background:color-mix(in srgb, var(--green, #2E8B57) 10%, var(--surface)); }
-.lp-feature:nth-child(4){ background:color-mix(in srgb, #FF3D77 9%, var(--surface)); }
-.lp-feature-ic{ font-size:30px; }
-.lp-feature-title{ font-size:16px; font-weight:900; margin:6px 0 4px; }
-.lp-feature p{ margin:0; font-size:13px; font-weight:700; color:var(--ink-dim); line-height:1.6; }
-.lp-game{ padding:22px; border-radius:24px; border:3px solid var(--ink-line); box-shadow:5px 5px 0 var(--ink-line);
-  background:linear-gradient(135deg, color-mix(in srgb, var(--gold) 26%, var(--surface)), color-mix(in srgb, var(--sky2) 16%, var(--surface))); }
-.lp-game h2, .lp-form h2, .lp-final h2{ font-size:clamp(22px, 5vw, 30px); line-height:1.3; margin:6px 0 12px; font-weight:900; }
-.lp-game ul{ list-style:none; padding:0; margin:0 0 16px; display:flex; flex-direction:column; gap:6px; font-size:14.5px; font-weight:800; }
-.lp-game-note{ margin-top:8px; font-size:12px; font-weight:700; color:var(--ink-dim); }
+
+.lp-form h2, .lp-final h2{ font-size:clamp(22px, 5vw, 30px); line-height:1.3; margin:6px 0 12px; font-weight:900; }
+
 .lp-form{ margin:28px 0; scroll-margin-top:12px; }
-.lp-form-lede{ margin:0 0 12px; font-size:14px; font-weight:700; color:var(--ink-dim); }
+
 .lp-form-card{ max-width:560px; padding:16px; border-radius:24px; border:3px solid var(--ink-line); background:var(--surface); box-shadow:5px 5px 0 var(--ink-line); }
 .lp-final{ text-align:center; padding:26px 16px; border-radius:24px; background:color-mix(in srgb, var(--gold) 18%, var(--surface)); border:2px dashed var(--line-strong); }
 .lp-final-mascot{ width:90px; margin:0 auto; }
@@ -2390,8 +2237,8 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   .lp-hero{ flex-direction:column-reverse; text-align:center; padding:22px 16px; }
   .lp-hero-btns{ justify-content:center; }
   .lp-hero-btns .lp-btn{ width:100%; }
-  .lp-game, .lp-form-card{ padding:14px; }
-  .lp-game .lp-btn-big{ width:100%; }
+  .lp-form-card{ padding:14px; }
+
 }
 @media (prefers-reduced-motion: reduce){ .lp-hero-mascot{ animation:none; } }
 .lp h1, .lp h2, .lp-hero h1{ text-transform:none; letter-spacing:normal; font-family:"Baloo 2", system-ui, sans-serif; }
@@ -2407,20 +2254,10 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .lp-bubble{ padding:6px 7px; font-size:11.5px; font-weight:800; line-height:1.4; color:#1B1B2F; background:#fff;
   border:2px solid #1B1B2F; border-radius:12px; }
 @media (max-width:420px){ .lp-panel-head{ font-size:11px; } .lp-bubble{ font-size:11px; } }
-.lp-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
-.lp-chips span{ font-size:12px; font-weight:800; padding:5px 9px; border-radius:999px; border:2px solid var(--ink-line);
-  background:color-mix(in srgb, var(--gold) 22%, var(--surface)); }
+
 .lp-facts{ list-style:none; padding:0; margin:0 0 10px; display:flex; flex-direction:column; gap:4px; font-size:13px; font-weight:600; color:var(--ink-dim); }
 .lp-facts b{ color:var(--ink); margin-right:6px; }
-.lp-flow{ list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }
-.lp-flow li{ display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; font-size:11.5px; font-weight:800; line-height:1.3;
-  padding:8px 4px; border-radius:14px; border:2px dashed var(--line-strong); background:var(--surface); }
-.lp-flow span{ display:grid; place-items:center; width:24px; height:24px; border-radius:50%; font-weight:900; color:#fff; background:linear-gradient(120deg,#FF6B00,#FF3D77); }
-.lp-ray{ display:flex; gap:14px; align-items:flex-start; padding:14px; border-radius:20px; border:3px solid var(--ink-line);
-  box-shadow:4px 4px 0 var(--ink-line); background:var(--surface); }
-.lp-ray-photo{ width:clamp(88px, 24vw, 170px); height:auto; flex:none; border-radius:14px; border:3px solid var(--ink-line); }
-.lp-ray-text p{ margin:0 0 6px; font-size:13px; font-weight:600; color:var(--ink-dim); line-height:1.7; }
-.lp-ray-text b{ color:var(--ink); }
+
 .lp-final{ display:flex; align-items:center; gap:14px; text-align:left; padding:16px; border-radius:20px; background:color-mix(in srgb, var(--gold) 18%, var(--surface)); border:2px dashed var(--line-strong); }
 .lp-final-mascot{ width:80px; flex:none; margin:0; }
 .lp-final p{ margin:0 0 10px; font-size:13px; font-weight:700; color:var(--ink-dim); }
@@ -2490,9 +2327,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .result-monster-line{ font-size:15px; font-weight:900; color:var(--ink); }
 
 /* ---------- adventure: hero stats, monsters on the maps, boss loot ---------- */
-.hero-stats{ display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:8px; font-size:12px; font-weight:800; color:#fff; opacity:.95; }
-.hero-stats span{ padding:3px 10px; border-radius:999px; background:rgba(0,0,0,.18); }
-.hero-stats b{ font-size:13px; }
+
 .continue-monster{ font-size:20px; margin-right:6px; vertical-align:-2px; display:inline-block; animation:monsterIdle 1.8s ease-in-out infinite; }
 .node-wrap{ position:relative; }
 .node-monster{ position:absolute; top:-6px; right:-14px; z-index:3; font-size:24px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,0,0,.25));
@@ -2695,7 +2530,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .sushi-stack i{ display:block; width:26px; height:7px; margin-top:-2px; border-radius:50%; background:var(--plate);
   border:1px solid rgba(0,0,0,.25); box-shadow:0 1px 0 rgba(255,255,255,.5) inset; }
 .sushi-face{ display:block; width:56px; height:56px; margin:0 0 2px 18px; }
-.sushi-mood{ position:absolute; top:26px; right:6px; font-size:18px; }
+
 .sushi-bubble{ position:absolute; top:4px; left:50%; transform:translateX(-50%); white-space:nowrap; background:#fff; color:#1d1b33;
   font-size:10.5px; font-weight:800; padding:3px 7px; border-radius:10px; box-shadow:0 2px 0 rgba(0,0,0,.2); }
 .sushi-bubble.call{ background:#ffcf3a; }
@@ -2743,35 +2578,11 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .castle-powers .btn{ padding:10px 12px; font-size:13px; }
 
 /* ---------- games on the Home tab ---------- */
-.today-game{ display:flex; align-items:center; gap:12px; width:100%; margin:12px 0; padding:14px 16px; border-radius:20px; cursor:pointer;
-  border:3px solid var(--ink-line); box-shadow:4px 4px 0 var(--ink-line); color:#fff; text-align:left; font-family:inherit; }
-.today-game:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink-line); }
-.today-game-icon{ font-size:40px; line-height:1; flex:none; animation:run-bob .5s ease-in-out infinite alternate; }
-.today-game-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
-.today-game-tag{ font-size:10.5px; font-weight:900; letter-spacing:.08em; opacity:.9; }
-.today-game-name{ font-family:"Baloo 2",system-ui,sans-serif; font-size:19px; font-weight:800; line-height:1.15; }
-.today-game-sub{ font-size:12px; font-weight:700; opacity:.92; line-height:1.35; }
-.today-game-go{ flex:none; background:#fff; color:#1d1b33; font-weight:900; font-size:12.5px; padding:8px 12px; border-radius:999px; box-shadow:0 3px 0 rgba(0,0,0,.25); }
+
 /* the stop sits at the map's edge, icon outermost, name toward the path */
-.bonus-row{ display:flex; align-items:center; gap:8px; margin:6px 0 18px; position:relative; z-index:1; padding:0 3%; justify-content:flex-start; }
-.bonus-row.left{ flex-direction:row; }
-.bonus-row.right{ flex-direction:row-reverse; }
-.bonus-row.right .bonus-stop-name{ text-align:right; }
-.bonus-stop{ position:relative; width:58px; height:58px; border-radius:50%; border:3px solid var(--ink-line); box-shadow:0 4px 0 var(--ink-line);
-  display:grid; place-items:center; cursor:pointer; animation:bonus-float 2.4s ease-in-out infinite; }
-.bonus-stop-icon{ font-size:28px; line-height:1; }
-.bonus-stop-tag{ position:absolute; bottom:-9px; left:50%; transform:translateX(-50%); background:#ffcf3a; color:#1d1b33; font-size:8.5px; font-weight:900;
-  padding:2px 6px; border-radius:999px; letter-spacing:.06em; white-space:nowrap; border:1.5px solid var(--ink-line); }
-.bonus-stop-name{ font-size:11.5px; font-weight:800; color:var(--muted); max-width:110px; line-height:1.25; }
+
 @keyframes bonus-float{ 50%{ transform:translateY(-5px) rotate(-4deg); } }
-@media (prefers-reduced-motion: reduce){ .today-game-icon, .bonus-stop{ animation:none; } }
-.boss-bonus{ display:flex; align-items:center; gap:10px; width:100%; margin:12px 0 4px; padding:12px 14px; border-radius:16px; cursor:pointer;
-  border:3px solid #1d1b33; box-shadow:0 4px 0 #1d1b33; color:#fff; text-align:left; font-family:inherit; animation:sushi-call 1.2s ease-in-out infinite; }
-.boss-bonus-icon{ font-size:30px; }
-.boss-bonus-body{ flex:1; display:flex; flex-direction:column; gap:1px; }
-.boss-bonus-tag{ font-size:10px; font-weight:900; letter-spacing:.06em; opacity:.9; }
-.boss-bonus-name{ font-size:14.5px; font-weight:800; }
-.boss-bonus-go{ font-size:16px; }
+
 /* shelf feature cards */
 .ttt-card.castle-feature{ background:linear-gradient(130deg,#5a3fb8,#2f6fd0 60%,#3f9dd8); }
 .ttt-card.sushi-feature{ background:linear-gradient(130deg,#b8322e,#e0773a 60%,#f2a93b); }
@@ -2812,7 +2623,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .konbini-queue span{ display:block; width:40px; height:40px; margin-left:-6px; }
 .konbini-customer{ position:absolute; left:50%; top:10px; transform:translateX(-50%); text-align:center; }
 .konbini-face{ display:block; width:76px; height:76px; }
-.konbini-mood{ position:absolute; right:-14px; top:-4px; font-size:20px; }
+
 .konbini-customer .sushi-bubble{ top:-18px; }
 .konbini-customer.happy{ animation:sushi-leave 1.1s ease-in forwards; }
 .konbini-counter{ position:absolute; left:0; right:0; bottom:0; height:92px; background:linear-gradient(#b98a57,#9c6f41); border-top:6px solid #7b532d; }
@@ -2876,48 +2687,9 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .rhythm-pad.p0{ background:#2EE6A8; } .rhythm-pad.p1{ background:#ffb52e; } .rhythm-pad.p2{ background:#ff4f9a; }
 
 /* ---------- 🏙️ Math Town ---------- */
-.town-head{ display:flex; gap:10px; align-items:stretch; }
-.town-rank{ flex:1; display:flex; flex-direction:column; gap:3px; background:var(--surface); border:2px solid var(--line); border-radius:16px; padding:10px 12px; }
-.town-rank-name{ font:800 17px/1.1 "Baloo 2",system-ui,sans-serif; color:var(--ink); }
-.town-rank-sub{ font-size:11.5px; font-weight:700; color:var(--muted); }
-.town-rank-bar{ height:7px; border-radius:4px; background:var(--line); overflow:hidden; }
-.town-rank-bar i{ display:block; height:100%; background:linear-gradient(90deg,#2E8B57,#7ED957); }
-.town-coins{ display:grid; place-items:center; padding:0 14px; border-radius:16px; background:#ffcf3a; color:#1d1b33; font-size:20px; font-weight:900; border:3px solid var(--ink-line); }
-.town-gift{ width:100%; margin-top:10px; padding:12px; border-radius:14px; border:3px dashed #e0457b; background:#ffe6ef; color:#b8325f; font-weight:900; cursor:pointer; font-family:inherit; animation:sushi-call 1.2s ease-in-out infinite; }
-.town-lede{ margin:10px 0 8px; font-size:12.5px; font-weight:700; color:var(--muted); text-align:center; }
-.town-map{ position:relative; display:grid; gap:6px; padding:10px; border-radius:22px; border:3px solid var(--ink);
-  background:repeating-linear-gradient(45deg,#8fd16a 0 14px,#86c963 14px 28px); }
-.town-plot{ aspect-ratio:1; border-radius:12px; border:2px dashed rgba(255,255,255,.55); background:rgba(255,255,255,.12); cursor:pointer; display:grid; place-items:center; font-family:inherit; padding:0; }
-.town-plot.built{ border:none; background:rgba(0,0,0,.06); }
-.town-plot.sel{ box-shadow:0 0 0 3px #ffcf3a; }
-.town-plot.pop .town-bld{ animation:town-pop .6s cubic-bezier(.2,1.6,.4,1); }
-@keyframes town-pop{ from{ transform:scale(.2) translateY(12px); } to{ transform:none; } }
-.town-bld{ font-size:clamp(26px, 9vw, 40px); line-height:1; filter:drop-shadow(0 3px 0 rgba(0,0,0,.2)); }
-.town-empty{ font-size:20px; font-weight:900; color:rgba(255,255,255,.7); }
-.town-mayor{ position:absolute; right:-8px; bottom:-14px; width:50px; height:50px; pointer-events:none; }
-.town-sheet{ max-height:78vh; overflow:auto; }
-.town-sheet h3{ margin:4px 0 10px; text-align:center; }
-.town-sheet-big{ font-size:64px; text-align:center; line-height:1; }
-.town-sheet-sub{ text-align:center; font-weight:700; color:var(--muted); margin:0 0 12px; }
-.town-sheet .btn{ width:100%; margin-top:8px; }
-.town-shop{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-.town-item{ position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 4px; border-radius:14px; border:2px solid var(--line);
-  background:var(--surface); cursor:pointer; font-family:inherit; color:var(--ink); }
-.town-item:not(:disabled):active{ transform:scale(.95); }
-.town-item.poor{ opacity:.5; }
-.town-item.locked{ opacity:.4; }
-.town-item-emoji{ font-size:30px; line-height:1; }
-.town-item-name{ font-size:11.5px; font-weight:800; text-align:center; }
-.town-item-cost{ font-size:11px; font-weight:800; color:#c2410c; }
-.town-item-game{ position:absolute; top:4px; right:5px; font-size:11px; }
+
 /* home + shelf cards */
-.town-card{ display:flex; align-items:center; gap:12px; width:100%; margin:0 0 12px; padding:12px 14px; border-radius:20px; cursor:pointer; font-family:inherit; text-align:left;
-  border:3px solid var(--ink-line); box-shadow:4px 4px 0 var(--ink-line); color:#1d1b33; background:linear-gradient(130deg,#bff0a8,#8fd16a 60%,#6fc3ef); }
-.town-card-art{ font-size:32px; line-height:1; letter-spacing:-6px; }
-.town-card-body{ flex:1; display:flex; flex-direction:column; gap:2px; }
-.town-card-name{ font:800 17px/1.1 "Baloo 2",system-ui,sans-serif; }
-.town-card-sub{ font-size:12px; font-weight:700; opacity:.85; }
-.town-card-coins{ font-weight:900; background:#ffcf3a; padding:6px 10px; border-radius:999px; border:2px solid #1d1b33; white-space:nowrap; }
+
 .ttt-card.rhythm-feature{ background:linear-gradient(130deg,#1b1440,#6a3fb8 55%,#ff4f9a); }
 .feature-art.rhythm{ background:radial-gradient(ellipse at 50% 120%, #ff4f9a, #6a3fb8 60%, #1b1440); }
 .fa-note1{ left:8px; top:8px; font-size:16px; animation:run-bob .3s ease-in-out infinite alternate; }
@@ -2926,10 +2698,7 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 /* ---------- 🥷 Ninja Slice ---------- */
 .ninja-arena{ position:relative; height:440px; border-radius:22px; overflow:hidden; border:3px solid var(--ink); touch-action:none; user-select:none; cursor:crosshair;
   background:linear-gradient(#1a1740 0%, #3b2a6e 50%, #6a3f8a 100%); }
-.ninja-bg{ position:absolute; inset:0; pointer-events:none; }
-.ninja-moon{ position:absolute; top:22px; right:26px; width:54px; height:54px; border-radius:50%; background:#fff5c2; box-shadow:0 0 30px rgba(255,245,194,.6); }
-.ninja-hills{ position:absolute; left:-10%; right:-10%; bottom:0; height:90px;
-  background:radial-gradient(ellipse 160px 90px at 25% 100%, #2a2250 98%, transparent), radial-gradient(ellipse 200px 80px at 75% 100%, #231c48 98%, transparent); }
+
 .ninja-q{ position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:3; white-space:nowrap; font-size:24px; font-weight:800; color:#1d1b33;
   background:rgba(255,255,255,.94); border:3px solid #1d1b33; border-radius:16px; padding:4px 16px 6px; box-shadow:0 4px 0 #1d1b33; text-align:center; }
 .ninja-wave{ display:block; font-size:10px; font-weight:800; color:#6a6688; letter-spacing:.06em; }
@@ -2951,27 +2720,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 /* ---------- 🐉 Dragon Pet ---------- */
 
 /* ---------- Math Town: friends ---------- */
-.town-gift-banner{ margin-top:10px; padding:10px 12px; border-radius:14px; background:#fff3c4; border:2px solid #e2b53b; font-size:13px; font-weight:800; color:#6b4a00; }
-.town-friends{ margin-top:14px; }
-.town-friends-head{ font:800 16px/1.2 "Baloo 2",system-ui,sans-serif; color:var(--ink); margin-bottom:8px; }
-.town-friends-list{ display:grid; gap:8px; }
-.town-friend{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:16px; border:2px solid var(--line); background:var(--surface); cursor:pointer; font-family:inherit; text-align:left; color:var(--ink); }
-.town-friend-art{ display:flex; gap:0; font-size:22px; }
-.town-friend-art i{ font-style:normal; margin-right:-6px; }
-.town-friend-body{ flex:1; display:flex; flex-direction:column; gap:1px; }
-.town-friend-name{ font-weight:900; font-size:14.5px; }
-.town-friend-sub{ font-size:11px; font-weight:700; color:var(--muted); }
-.town-plot.shop{ cursor:pointer; box-shadow:0 0 0 2px #ffcf3a inset; }
-.town-plot:disabled{ cursor:default; }
-.town-price{ position:absolute; bottom:2px; right:4px; font-size:9.5px; font-weight:900; background:#ffcf3a; border-radius:999px; padding:1px 5px; color:#1d1b33; }
-.town-plot{ position:relative; }
-.town-note{ text-align:center; margin-top:8px; }
-.town-stickers-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:12px; font-size:12px; font-weight:800; color:var(--muted); }
-.town-sticker-btn{ width:36px; height:36px; border-radius:50%; border:2px solid var(--line); background:var(--surface); font-size:18px; cursor:pointer; }
-.town-sticker-btn:active{ transform:scale(.9); }
-.town-stickers{ list-style:none; padding:0; margin:8px 0 0; display:flex; flex-wrap:wrap; gap:6px; }
-.town-stickers li{ background:var(--surface); border:2px solid var(--line); border-radius:999px; padding:3px 10px 3px 6px; font-size:12px; font-weight:800; color:var(--ink); }
-.town-stickers li b{ font-size:14px; }
 
 /* ---------- admin: reminders ---------- */
 .rem-main{ max-width:900px; margin:0 auto; padding:16px; }
@@ -3023,7 +2771,6 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .path-coming-title{ font:800 18px/1.2 "Baloo 2",system-ui,sans-serif; }
 .path-coming-sub{ margin-top:4px; font-size:13px; font-weight:700; color:var(--muted); line-height:1.5; }
 @media (prefers-reduced-motion: reduce){ .path-coming-icons span{ animation:none; } }
-.town-card-friends{ font-size:11.5px; font-weight:800; color:#1d4ed8; margin-top:1px; }
 
 /* "install the app" banner at the top of Home (signed-in, not installed) */
 .install-banner{ display:flex; align-items:center; gap:10px; margin:0 0 14px; padding:10px 10px 10px 12px; border-radius:16px;
@@ -3058,31 +2805,17 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
   font-size:10.5px; font-weight:800; color:var(--gold-dk, #b45309); text-decoration:none; }
 .dock-save .bottomnav-icon{ font-size:20px; }
 /* the buddy and toasts sit above the taller dock */
-body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(safe-area-inset-bottom,0px)); }
 
 /* ---------- Home sections: say what each group of cards is for ---------- */
 .home-sec{ margin:22px 2px 8px; }
 .home-sec-title{ font:800 19px/1.15 "Baloo 2",system-ui,sans-serif; color:var(--ink); }
 .home-sec-sub{ font-size:12.5px; font-weight:700; color:var(--muted); margin-top:1px; line-height:1.4; }
-.howto{ margin:14px 0 4px; padding:14px; border-radius:20px; border:3px solid var(--ink-line); background:linear-gradient(135deg,#fff7e8,#f3ecff); }
-.howto-title{ font:800 18px/1.15 "Baloo 2",system-ui,sans-serif; color:var(--ink); }
-.howto-text{ margin:4px 0 10px; font-size:13px; font-weight:700; color:var(--muted); line-height:1.5; }
 
 /* ---------- Home tabs ---------- */
-.home-tabdesc{ margin:4px 2px 10px; font-size:12.5px; font-weight:700; color:var(--muted); line-height:1.4; }
+
 /* a tighter hero on Home, so the tabs and the first lesson are not a screen away */
-.home-view .home-byline{ display:none; }
 
 /* "there are many more games" card at the end of the Play tab */
-.arcade-card{ position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:100%; margin:4px 0 12px; padding:14px 16px 16px;
-  border-radius:20px; border:3px solid var(--ink-line); box-shadow:4px 4px 0 var(--ink-line); cursor:pointer; text-align:left; font-family:inherit; color:#fff;
-  background:radial-gradient(circle at 85% 20%, rgba(255,255,255,.18) 0 40px, transparent 41px), linear-gradient(130deg,#1b1440,#4b2a8a 55%,#ff4f9a); }
-.arcade-card:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--ink-line); }
-.arcade-card-art{ font-size:24px; letter-spacing:2px; line-height:1.2; }
-.arcade-card-title{ font:800 19px/1.15 "Baloo 2",system-ui,sans-serif; }
-.arcade-card-sub{ font-size:12.5px; font-weight:700; opacity:.92; line-height:1.4; }
-.arcade-card-lock{ margin-top:4px; font-size:11.5px; font-weight:800; background:rgba(255,255,255,.18); border-radius:999px; padding:3px 10px; }
-.arcade-card-go{ align-self:flex-end; margin-top:6px; background:#fff; color:#1d1b33; font-weight:900; font-size:12.5px; padding:7px 12px; border-radius:999px; box-shadow:0 3px 0 rgba(0,0,0,.3); }
 
 /* ---------- Ninja Slice demo: a 4-second scripted "how to play" ---------- */
 .ninja-demo{ position:absolute; inset:0; z-index:6; pointer-events:none; }
@@ -3128,21 +2861,7 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 /* ---------- the story intro (pictures, not paragraphs) ---------- */
 .story{ position:fixed; inset:0; z-index:80; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;
   background:radial-gradient(ellipse at 50% 30%, #3b2a6e, #1a1740 70%); color:#fff; overflow:hidden; }
-.story-scene{ position:relative; width:min(420px, 100vw); height:min(560px, 78vh); animation:storyIn .5s ease-out both; }
-@keyframes storyIn{ from{ opacity:0; transform:scale(.96); } }
-.story-cap{ position:absolute; left:0; right:0; bottom:8%; text-align:center; font:800 26px/1.2 "Baloo 2",system-ui,sans-serif; text-shadow:0 3px 0 rgba(0,0,0,.4);
-  animation:capIn .6s .5s both; }
-@keyframes capIn{ from{ opacity:0; transform:translateY(12px); } }
-.story-skip{ position:absolute; top:max(14px, env(safe-area-inset-top)); right:14px; z-index:2; font:800 13px/1 inherit; font-family:inherit; color:#fff;
-  background:rgba(255,255,255,.15); border:2px solid rgba(255,255,255,.5); border-radius:999px; padding:8px 14px; cursor:pointer; }
-.story-dots{ position:absolute; bottom:max(22px, env(safe-area-inset-bottom)); display:flex; gap:8px; }
-.story-dots i{ width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,.3); }
-.story-dots i.on{ background:#ffcf3a; width:26px; border-radius:6px; }
-.story-dots i.done{ background:rgba(255,255,255,.7); }
-.story-go{ position:absolute; bottom:max(56px, calc(env(safe-area-inset-bottom) + 40px)); font:900 18px/1 "Baloo 2",system-ui,sans-serif; color:#1d1b33;
-  background:linear-gradient(135deg,#ffe27a,#ff9a3d); border:3px solid #1d1b33; border-radius:999px; padding:14px 30px; box-shadow:0 5px 0 #1d1b33; cursor:pointer;
-  animation:capIn .5s 1.6s both, dock-bounce 2s 2.2s ease-in-out infinite; }
-.story-scene > span{ position:absolute; line-height:1; }
+
 /* 1 · the Number Kingdom, then the monsters */
 .st-stars{ inset:0; background:radial-gradient(2px 2px at 20% 20%, #fff 50%, transparent), radial-gradient(2px 2px at 70% 12%, #fff 50%, transparent),
   radial-gradient(1.5px 1.5px at 85% 40%, #fff 50%, transparent), radial-gradient(1.5px 1.5px at 35% 55%, #fff 50%, transparent); opacity:.8; }
@@ -3186,7 +2905,7 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .st-home{ right:16%; bottom:40%; font-size:34px; font-weight:900; color:#ffe27a; text-shadow:0 0 14px rgba(255,226,122,.8); opacity:0; animation:homeFly 3.6s both; }
 @keyframes homeFly{ 0%,62%{ opacity:0; transform:none; } 70%{ opacity:1; } 100%{ opacity:1; transform:translate(-120px,-180px) scale(1.3); } }
 /* 4 · the egg hatches, the adventure begins */
-.story-scene.s4{ background:linear-gradient(#7fc4ff 0%, #c9ecff 60%, transparent 61%); border-radius:24px; }
+
 .st-sun{ top:8%; right:14%; width:66px; height:66px; border-radius:50%; background:radial-gradient(#fff6a8,#ffcf3a); box-shadow:0 0 0 10px rgba(255,214,70,.25); }
 .st-hill{ left:-10%; right:-10%; bottom:16%; height:32%; border-radius:50% 50% 0 0; background:#7cc85e; }
 .st-town{ left:50%; bottom:44%; transform:translateX(-50%); font-size:30px; letter-spacing:4px; white-space:nowrap; animation:townGrow 3.6s both; }
@@ -3371,22 +3090,12 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .illus .sushi-seat.waiting{ background:radial-gradient(ellipse 34% 8% at 50% 95%, rgba(0,0,0,.3), transparent), rgba(255,207,58,.22); }
 
 /* ======== Math Town, illustrated: an island in a river ======== */
-.town-map{ padding:18px 14px 26px; border-color:#1d4e7a; gap:8px;
-  background:
-    radial-gradient(ellipse 46% 9% at 50% 2%, #7cc85e 98%, transparent) ,
-    linear-gradient(118deg, transparent 0 58%, #5fb4ff 58% 66%, transparent 66%),
-    repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 10px, transparent 10px 20px),
-    linear-gradient(#8fd16a, #7cc85e); }
+
 /* water all round the island: a blue ring with a sandy shore */
-.town-map{ box-shadow:inset 0 0 0 10px #4aa3e8, inset 0 0 0 14px #f0d8a0, inset 0 0 0 16px rgba(0,0,0,.08); }
+
 /* empty lots: fenced dirt with a little signpost; built lots: a shadow under the building */
-.town-plot{ border:2px dashed rgba(122,79,46,.55); background:linear-gradient(#e8cf9a, #d9b97c); box-shadow:inset 0 -3px 0 rgba(0,0,0,.08); }
-.town-plot .town-empty{ color:#7a4f2e; font-size:16px; }
-.town-plot.built{ background:radial-gradient(ellipse 60% 18% at 50% 88%, rgba(0,0,0,.28), transparent); border:none; box-shadow:none; }
-.town-bld{ font-size:clamp(30px, 10vw, 46px); filter:drop-shadow(0 4px 0 rgba(0,0,0,.18)); }
+
 /* a few scenery bits drawn on the map */
-.town-map::after{ content:"⛵"; position:absolute; right:10px; bottom:4px; font-size:22px; animation:townBoat 6s ease-in-out infinite alternate; }
-@keyframes townBoat{ to{ transform:translateX(-40px) rotate(-4deg); } }
 
 /* ======== painted backgrounds (public/games/*.jpg) ======== */
 /* Ninja Slice: the dojo painting, with the warm vignette on top */
@@ -3400,10 +3109,7 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .illus .sushi-noren, .sushi-lamp{ display:none; }
 .illus .sushi-chef{ top:142px; }
 /* Math Town: the island painting under the plots */
-.town-map{ background:url(/games/town.jpg) center / 100% 100% no-repeat; box-shadow:none; padding:9% 11% 10%; }
-.town-map::after{ display:none; }
-.town-plot:not(.built){ background:rgba(255,248,225,.22); border:2px dashed rgba(255,255,255,.9); box-shadow:0 1px 4px rgba(0,0,0,.18); }
-.town-plot:not(.built) .town-empty{ color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5); }
+
 /* line the painted horizon (GOAL arch) up with the far end of the road (≈200px down):
    the painting is 900×1610 shown at the track's width; its horizon sits at 55.6% */
 .rg:has(.race-track.r3d){ container-type:inline-size; }
@@ -3684,7 +3390,7 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 @keyframes rr-in{ from{ transform:translateY(30px) scale(.9); opacity:0 } }
 .rr-x{ position:absolute; right:10px; top:8px; width:30px; height:30px; border-radius:50%; border:2px solid #1d1b33; background:#fff; font:900 18px/1 inherit; font-family:inherit; cursor:pointer; color:#1d1b33; }
 .rr-game{ font-size:13px; font-weight:900; color:#7a6f8f; display:flex; justify-content:center; align-items:center; gap:6px; }
-.rr-hot{ font-size:11px; background:#ff5a36; color:#fff; border-radius:999px; padding:2px 8px; }
+
 .rr-ribbon{ display:inline-block; margin-top:6px; background:#ff3d7f; color:#fff; font:900 15px/1 "Baloo 2",system-ui,sans-serif; padding:6px 14px; border-radius:999px; animation:rr-wiggle 1s .2s ease-in-out 2; }
 @keyframes rr-wiggle{ 25%{ transform:rotate(-4deg) scale(1.06) } 75%{ transform:rotate(4deg) scale(1.06) } }
 .rr-stars{ display:flex; justify-content:center; gap:6px; margin:8px 0 0; }
@@ -3703,15 +3409,9 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .rr-bar{ height:12px; border-radius:999px; background:#e9e1cf; border:2px solid #1d1b33; overflow:hidden; margin-top:4px; }
 .rr-bar i{ display:block; height:100%; background:linear-gradient(90deg, #7a58c0, #b06cff); border-radius:999px; animation:rr-fill 1s .5s ease-out both; }
 @keyframes rr-fill{ from{ width:var(--from) } }
-.rr-chest{ margin:12px auto 0; display:flex; align-items:center; justify-content:center; gap:10px; width:100%; font-family:inherit; font-size:14px; font-weight:900; color:#1d1b33; cursor:pointer;
-  background:#ffe7a3; border:3px dashed #c98a00; border-radius:16px; padding:8px; }
-.rr-chest-box{ font-size:34px; line-height:1; animation:rr-shake 1.2s ease-in-out infinite; }
+
 @keyframes rr-shake{ 0%,60%,100%{ transform:none } 70%{ transform:rotate(-12deg) } 80%{ transform:rotate(12deg) } 90%{ transform:rotate(-8deg) } }
-.rr-loot{ margin:12px 0 0; display:flex; flex-direction:column; align-items:center; background:#e6ffd9; border:3px solid #3fbf2a; border-radius:16px; padding:8px; animation:rr-in .4s cubic-bezier(.2,1.6,.4,1) both; }
-.rr-loot span{ font:900 30px/1.1 "Baloo 2",system-ui,sans-serif; color:#1d6b10; }
-.rr-loot small{ font-size:11.5px; font-weight:800; color:#4a7a40; }
-.rr-loot b{ color:#ff3d7f; font-size:15px; }
-.rr-loot.jackpot{ background:#fff0c2; border-color:#ff3d7f; }
+
 .rr-again{ width:100%; margin-top:12px; animation:rr-pulse 1.6s 1.5s ease-in-out infinite; }
 @keyframes rr-pulse{ 50%{ transform:scale(1.04) } }
 
@@ -3781,11 +3481,7 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .rw-btns{ display:flex; flex-direction:column; gap:8px; margin-top:12px; }
 .rw-btns .btn{ width:100%; }
 .rw-new{ display:inline-block; margin-top:8px; background:#ff3d7f; color:#fff; font-weight:900; font-size:13px; padding:4px 12px; border-radius:999px; }
-.rw-coins{ font:900 24px/1 "Baloo 2",system-ui,sans-serif; color:#1d6b10; margin-top:8px; }
-.rw-gift{ width:100%; display:flex; flex-direction:column; align-items:center; gap:6px; padding:18px 8px; cursor:pointer; font-family:inherit; color:#1d1b33;
-  background:#ffe7a3; border:3px dashed #c98a00; border-radius:20px; font-size:14px; font-weight:800; }
-.rw-gift b{ font:900 22px/1.2 "Baloo 2",system-ui,sans-serif; }
-.rw-gift-box{ font-size:72px; line-height:1; animation:rr-shake 1.2s ease-in-out infinite; }
+
 .rw-flip{ display:flex; justify-content:center; perspective:800px; }
 .rw-flip .mcard{ animation:rw-flip .8s cubic-bezier(.2,1.2,.4,1) both; }
 @keyframes rw-flip{ from{ transform:rotateY(180deg) scale(.6); opacity:0 } 60%{ opacity:1 } }
@@ -3860,31 +3556,6 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .menu-sub{ font-size:.95em; }
 
 /* ======== League panel: ladder, how-it-works, your status, zones ======== */
-.league-ladder{ display:flex; gap:4px; overflow-x:auto; margin:4px 0 10px; padding-bottom:2px; }
-.league-step{ --lc:#999; flex:1 0 auto; min-width:44px; display:flex; flex-direction:column; align-items:center; gap:1px; padding:5px 4px; border-radius:12px;
-  border:2px solid var(--line); background:var(--surface-2); opacity:.55; font-size:10.5px; font-weight:800; color:var(--ink-dim); }
-.league-step i{ font-style:normal; font-size:18px; line-height:1; }
-.league-step.past{ opacity:.8; }
-.league-step.on{ opacity:1; border-color:var(--lc); background:color-mix(in srgb, var(--lc) 18%, var(--surface)); color:var(--ink); transform:scale(1.08); box-shadow:0 3px 0 var(--lc); }
-.league-how{ list-style:none; margin:0; padding:10px 12px; display:flex; flex-direction:column; gap:7px; border-radius:14px; background:var(--surface-2); border:2px solid var(--line); }
-.league-how li{ display:flex; gap:8px; align-items:flex-start; font-size:12.5px; font-weight:700; line-height:1.45; color:var(--ink-dim); }
-.league-how li b{ flex:0 0 22px; font-size:16px; line-height:1.2; }
-.league-how strong{ color:var(--ink); }
-.league-ends{ margin:8px 2px 0; font-size:12px; font-weight:800; color:var(--muted); text-align:right; }
-.league-me{ margin:8px 0 10px; padding:10px 12px; border-radius:14px; border:3px solid var(--gold-dk, #c99a00); background:color-mix(in srgb, var(--gold, #ffcf3a) 18%, var(--surface));
-  display:flex; flex-direction:column; gap:8px; font-size:13.5px; font-weight:700; color:var(--ink); }
-.league-me.off{ border-style:dashed; }
-.league-go{ width:100%; }
-.league-done{ font-size:12.5px; font-weight:800; color:var(--muted); }
-.leaderboard-row.zone-up{ box-shadow:inset 4px 0 0 #3fbf2a; }
-.leaderboard-row.zone-down{ box-shadow:inset 4px 0 0 #e5484d; }
-.zone-tag{ font-size:13px; margin-right:4px; }
-.league-ladder, .league-how, .league-ends, .league-me{ flex-shrink:0; }
-.league-title-right{ display:inline-flex; align-items:center; gap:8px; }
-.league-info-btn{ width:28px; height:28px; border-radius:50%; border:2px solid var(--line-strong); background:var(--surface-2); color:var(--ink);
-  font:900 15px/1 inherit; font-family:inherit; cursor:pointer; display:grid; place-items:center; padding:0; }
-.league-info-btn.on{ background:var(--ink); color:var(--surface, #fff); border-color:var(--ink); }
-.league-info{ flex-shrink:0; animation:dm-fade .2s both; }
 
 /* ======== small phones: every game's answers stay on screen ======== */
 /* the scenes shrink on short screens, and the answer row sticks to the
@@ -3920,20 +3591,19 @@ body:has(.footerbar.home-dock) .buddy-dock:not(.free){ bottom:calc(122px + env(s
 .stat-flame.lit span{ display:inline-block; animation:flame 1.1s ease-in-out infinite alternate; transform-origin:50% 100%; }
 @keyframes flame{ from{ transform:scale(1) rotate(-4deg) } to{ transform:scale(1.18) rotate(4deg) } }
 /* big cards get a slow light sweep and press down when tapped */
-.ttt-card, .game-card, .continue-card, .arcade-card, .invite-card, .collection-card{ position:relative; overflow:hidden; isolation:isolate; }
-.ttt-card::after, .continue-card::after, .arcade-card::after{ content:""; position:absolute; inset:0; pointer-events:none; z-index:1;
+.ttt-card, .game-card, .continue-card, .invite-card, .collection-card{ position:relative; overflow:hidden; isolation:isolate; }
+.ttt-card::after, .continue-card::after{ content:""; position:absolute; inset:0; pointer-events:none; z-index:1;
   background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.28) 48%, transparent 60%); background-size:260% 100%; animation:card-shine 6s linear infinite; }
 @keyframes card-shine{ 0%{ background-position:140% 0 } 35%,100%{ background-position:-120% 0 } }
 .ttt-card:active, .game-card:active, .continue-card:active{ transform:translateY(3px) scale(.99); }
 @media (prefers-reduced-motion: reduce){
-  .rg-ans.right, .dock-play-ico::after, .stat-flame.lit span, .ttt-card::after, .continue-card::after, .arcade-card::after{ animation:none; }
+  .rg-ans.right, .dock-play-ico::after, .stat-flame.lit span, .ttt-card::after, .continue-card::after{ animation:none; }
 }
 
 /* sign-up / sign-in: password eye, optional-field toggle */
 .pw-wrap{ position:relative; }
 .pw-wrap input{ padding-right:48px; }
 .pw-eye{ position:absolute; right:8px; top:50%; transform:translateY(-50%); margin-top:3px; width:36px; height:36px; border:none; background:none; font-size:18px; cursor:pointer; border-radius:10px; }
-.field-more{ display:block; margin-top:14px; background:none; border:none; padding:0; font-family:inherit; font-size:13px; font-weight:800; color:var(--blue-dk); cursor:pointer; text-decoration:underline; }
 
 /* ======== drawn scenes (public/games/*.svg): Runner, Castle, Konbini ======== */
 /* Math Runner: painted sky + sun, far mountains, rolling hills, treeline, dirt path */
@@ -4118,7 +3788,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .mcard.locked .mcard-art{ background:repeating-conic-gradient(#d8d1c2 0 9deg, #cfc7b6 9deg 18deg); -webkit-text-stroke:0; text-shadow:none; }
 .mcard.locked .mcard-art::before{ display:none; }
 @keyframes mcard-rays{ to{ transform:rotate(360deg); } }
-@media (prefers-reduced-motion: reduce){ .mcard.big .mcard-art::before, .home-tab-ico .ui-ico{ animation:none; transition:none; } }
+@media (prefers-reduced-motion: reduce){ .mcard.big .mcard-art::before{ animation:none; transition:none; } }
 .mcard.big .mcard-art{ font-size:68px; }
 .mcard-art span{ position:relative; line-height:1; }
 .mcard-art span.long{ font-size:.48em; }
@@ -4188,12 +3858,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .lb-rule{ margin:2px 10px 8px; padding:9px 12px; border-radius:14px; background:color-mix(in srgb, var(--blue) 10%, var(--surface-2)); border:2px solid color-mix(in srgb, var(--blue) 30%, var(--line)); display:flex; flex-direction:column; gap:2px; }
 .lb-rule b{ font-size:13.5px; color:var(--ink); }
 .lb-rule span{ font-size:11.5px; font-weight:700; color:var(--muted); line-height:1.4; }
-.league-rule{ background:color-mix(in srgb, var(--gold, #ffb800) 14%, var(--surface-2)); border-color:color-mix(in srgb, var(--gold, #ffb800) 45%, var(--line)); }
-.league-target{ position:relative; margin:4px 10px 10px; height:22px; border-radius:999px; background:var(--surface-2); border:2px solid var(--line); overflow:hidden; }
-.league-target i{ position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#ffd84a,#3ddc84); border-radius:999px; transition:width .5s; }
-.league-target span{ position:relative; display:block; text-align:center; font-size:12px; font-weight:900; line-height:18px; color:var(--ink); }
-.league-rule-go{ margin-top:7px; align-self:stretch; font-size:14px; padding:9px 12px; }
-.league-rule-done{ margin-top:5px; font-style:normal; font-size:12px; font-weight:900; color:var(--green-dk, #2e8b57); }
+
 .lb-me{ margin:0 10px 10px; padding:10px 12px 12px; border-radius:16px; border:3px solid var(--ink-line); background:linear-gradient(135deg,#fff6d8,#ffe7f0); color:#1d1b33; box-shadow:0 4px 0 var(--ink-line); }
 .lb-me-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .lb-me-pos{ font:900 26px/1 "Baloo 2",system-ui,sans-serif; }
@@ -4206,14 +3871,6 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .lb-lessons{ flex:0 0 auto; font-size:12px; color:var(--ink); }
 .lb-stars{ flex:0 0 52px; text-align:right; font-size:12px; color:var(--gold-dk, #b45309); }
 /* league sheet: the admin's "all leagues" tab */
-.league-admin-tabs{ display:flex; gap:6px; margin:0 10px 8px; padding:4px; border-radius:12px; background:var(--surface-2); border:2px solid var(--line); }
-.league-admin-tabs button{ flex:1; border:none; border-radius:9px; padding:7px 4px; font:800 12px/1.1 inherit; font-family:inherit; color:var(--muted); background:none; cursor:pointer; }
-.league-admin-tabs button.on{ background:var(--surface); color:var(--ink); box-shadow:0 2px 0 var(--ink-line); }
-.league-idle-filter{ display:flex; align-items:center; gap:8px; margin:0 4px 10px; font-size:12.5px; font-weight:700; color:var(--muted); cursor:pointer; }
-.league-idle-filter input{ width:16px; height:16px; accent-color:var(--brand, #5B3FA0); }
-.league-all-group{ display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
-.league-all-head{ display:flex; align-items:baseline; justify-content:space-between; padding:6px 10px; border-radius:10px; font-weight:900; font-size:13.5px; color:#fff; background:var(--lc, #7a58c0); }
-.league-all-head small{ font-size:11px; font-weight:800; opacity:.9; }
 
 /* ======== party games (PartyGames.tsx): tug of war, buzzer quiz, boss battle ======== */
 .ttt-card.party-feature{ background:linear-gradient(130deg,#7a58c0,#e0457b 55%,#ff9f1c); }
@@ -4278,25 +3935,8 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 
 /* 🐉 boss battle: the dragon's lair */
 .party-boss .party-stage{ background:radial-gradient(ellipse at 50% 110%, #ff7a3d 0, #b5361f 35%, #3a1430 75%, #1c0c22 100%); }
-.boss-stage{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; padding:10px 12px; gap:6px; }
-.boss-hearts{ display:flex; gap:4px; font-size:18px; }
-.boss-hearts span{ filter:grayscale(1) brightness(.6); opacity:.5; } .boss-hearts span.on{ filter:none; opacity:1; }
-.boss-hp{ position:relative; width:86%; height:18px; border-radius:9px; background:#2a1020; border:3px solid #1d1b33; overflow:hidden; }
-.boss-hp i{ position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#ff3d77,#ff9f1c); transition:width .3s; }
-.boss-hp span{ position:relative; display:block; text-align:center; font-size:11px; font-weight:900; color:#fff; line-height:12px; }
-.boss-dragon{ font-size:96px; line-height:1; margin-top:4px; filter:drop-shadow(0 6px 0 rgba(0,0,0,.35)); animation:boss-float 2.4s ease-in-out infinite; }
-.boss-dragon.hit{ animation:boss-hit .3s ease-out, boss-float 2.4s ease-in-out .3s infinite; }
-.boss-dragon.down{ animation:boss-down 1s ease-in forwards; }
-@keyframes boss-float{ 50%{ transform:translateY(-8px) rotate(-3deg); } }
-@keyframes boss-hit{ 0%{ transform:translateX(0); filter:brightness(2.2) drop-shadow(0 6px 0 rgba(0,0,0,.35)); } 50%{ transform:translateX(-8px) scale(.94); } }
-@keyframes boss-down{ to{ transform:translateY(60px) rotate(25deg) scale(.6); opacity:.2; } }
-.boss-fire{ position:absolute; left:0; right:0; top:46%; text-align:center; font-size:46px; animation:boss-fire .9s ease-out forwards; pointer-events:none; }
-@keyframes boss-fire{ from{ transform:scale(.4) translateY(-40px); opacity:1; } to{ transform:scale(1.6) translateY(40px); opacity:0; } }
-.boss-wave{ margin-top:auto; width:100%; display:flex; flex-direction:column; gap:4px; background:rgba(0,0,0,.45); border-radius:12px; padding:6px 10px; color:#fff; font-size:12.5px; font-weight:800; text-align:center; }
-.boss-wave.ok{ background:rgba(46,139,87,.75); }
-.boss-wave-bar{ height:6px; border-radius:4px; background:rgba(255,255,255,.2); overflow:hidden; }
-.boss-wave-bar i{ display:block; height:100%; background:#ffcf3a; transition:width .1s linear; }
-@media (prefers-reduced-motion: reduce){ .tug-kid, .boss-dragon, .buzz-bell.ring{ animation:none; } }
+
+@media (prefers-reduced-motion: reduce){ .tug-kid, .buzz-bell.ring{ animation:none; } }
 /* tug layout: the rope is the field's width; teams stand either side of the knot */
 .tug-rope{ left:0; right:0; display:block; }
 .tug-rope::before{ left:-60%; right:-60%; }
@@ -4370,10 +4010,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .tug-line.c{ top:24%; width:6px; margin-left:-3px; background:#fff; box-shadow:0 0 0 2px rgba(29,27,51,.35); }
 .tug-line.c::before{ content:"🚩"; position:absolute; top:-22px; left:50%; transform:translateX(-30%); font-size:18px; }
 /* an on/off switch for menu rows */
-.menu-switch{ flex:none; position:relative; width:44px; height:26px; border-radius:999px; background:#cfcbe0; border:2px solid #1d1b33; transition:background .2s; }
-.menu-switch i{ position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; border:2px solid #1d1b33; transition:left .2s cubic-bezier(.3,1.4,.5,1); }
-.menu-switch.on{ background:#3cbf74; }
-.menu-switch.on i{ left:20px; }
+
 /* lobby, for a friend who joined: clearly "you're in, waiting for the host" */
 .party-game-now{ display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:14px; border:3px solid #1d1b33; background:#ffcf3a; font:900 16px/1 "Baloo 2",system-ui,sans-serif; box-shadow:0 3px 0 #1d1b33; }
 .party-game-now span{ font-size:24px; }
@@ -4388,14 +4025,14 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 /* Rank / League rows: gold icons with a dark edge, numbers in high-contrast colours */
 .lb-ico{ font-style:normal; display:inline-block; margin-right:3px; filter:drop-shadow(0 0 .6px #3b2600) drop-shadow(0 0 .6px #3b2600) drop-shadow(0 1px 0 rgba(59,38,0,.6)); }
 .lb-stars{ color:#7a4300; font-weight:900; }
-.leaderboard-gems{ color:#1450c4; font-weight:900; }
+
 .leaderboard-row.me{ border-color:#d98a00; background:#fff3cf; }
 :root[data-theme="dark"] .lb-stars{ color:#ffc94d; }
-:root[data-theme="dark"] .leaderboard-gems{ color:#7fb0ff; }
+
 :root[data-theme="dark"] .leaderboard-row.me{ background:#3a2f12; border-color:#d98a00; }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]) .lb-stars{ color:#ffc94d; }
-  :root:not([data-theme="light"]) .leaderboard-gems{ color:#7fb0ff; }
+
   :root:not([data-theme="light"]) .leaderboard-row.me{ background:#3a2f12; border-color:#d98a00; }
 }
 /* star counts: a deep, rich gold (not brown) */
@@ -4439,13 +4076,13 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 
 /* 1. welcome */
 .wi-glow{ left:50%; top:4%; width:300px; height:300px; margin-left:-150px; border-radius:50%; background:radial-gradient(circle, rgba(255,255,255,.95), rgba(255,255,255,0) 65%); animation:wi-breathe 2.4s ease-in-out infinite alternate; }
-.wi-logo{ left:50%; top:10%; width:min(230px, 62vw); transform:translateX(-50%); animation:wi-drop .8s cubic-bezier(.2,1.5,.4,1) .1s both; filter:drop-shadow(0 6px 10px rgba(122,63,181,.25)); }
+
 .wi-bubble{ left:58%; bottom:38%; background:#fff; border:3px solid #1d1b33; border-radius:16px; padding:6px 12px; font:900 16px/1 "Baloo 2",system-ui,sans-serif; box-shadow:0 3px 0 #1d1b33; animation:wi-pop .5s cubic-bezier(.2,1.6,.4,1) .9s both; }
 .wi-spark{ font-style:normal; font-size:22px; animation:wi-twinkle 1.6s ease-in-out infinite; }
 .wi-spark.k0{ left:8%; top:18%; } .wi-spark.k1{ right:6%; top:12%; animation-delay:.3s; } .wi-spark.k2{ left:14%; top:52%; animation-delay:.6s; }
 .wi-spark.k3{ right:12%; top:46%; animation-delay:.9s; } .wi-spark.k4{ left:40%; top:2%; animation-delay:1.2s; } .wi-spark.k5{ right:30%; top:60%; animation-delay:.45s; }
 @keyframes wi-breathe{ to{ transform:scale(1.12); } }
-@keyframes wi-drop{ from{ transform:translate(-50%, -60px) scale(.6); opacity:0; } }
+
 @keyframes wi-twinkle{ 50%{ transform:scale(1.5) rotate(20deg); opacity:.4; } }
 
 /* 2. numbers become games */
@@ -4495,12 +4132,12 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
    logo — no empty gap in the middle of the screen */
 .wi{ justify-content:center; gap:6px; padding-top:calc(56px + env(safe-area-inset-top,0px)); }
 .wi-art{ flex:none; height:clamp(250px, 48vh, 380px); min-height:0; }
-.wi-logo{ top:2%; }
+
 .wi-glow{ top:-6%; }
 .wi.wi-hello .wi-buddy{ bottom:2%; }
 .wi.wi-hello .wi-bubble{ bottom:44%; }
 .wi-art{ height:clamp(240px, 42vh, 340px); }
-.wi.wi-hello .wi-logo{ top:6%; }
+
 .wi.wi-hello .wi-buddy{ width:140px; height:140px; margin-left:-70px; bottom:0; }
 .wi.wi-hello .wi-bubble{ bottom:40%; }
 .wi-text{ margin-top:4px; }
@@ -4794,29 +4431,13 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 @keyframes bdDsDraw{ to{ stroke-dashoffset:0; } }
 .dsq-line{ animation-duration:1.1s; animation-delay:.15s; }
 @media (prefers-reduced-motion: reduce){ .bd-dsline{ animation:none; stroke-dashoffset:0; } }
-.bd-dspick{ display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:5px; padding:0 10px 8px; }
-.bd-dspick span{ width:100%; text-align:center; font-size:12px; font-weight:800; color:var(--muted); }
-.bd-dspick button{ flex:1 1 0; min-width:0; max-width:36px; aspect-ratio:1; padding:0; border-radius:10px; border:2px solid var(--c); background:var(--surface); color:var(--c); font:800 15px var(--font-num); cursor:pointer; }
-.bd-dspick button.on{ background:var(--c); color:#fff; }
-.bd-dsmode{ display:flex; justify-content:center; gap:8px; padding:0 10px 12px; }
-.bd-dsmode button{ padding:7px 14px; border-radius:999px; border:2px solid var(--line-strong); background:var(--surface); color:var(--ink); font-weight:800; font-size:13px; cursor:pointer; }
-.bd-dsmode button.on{ border-color:var(--ink); background:var(--ink); color:var(--surface); }
+
 .bd-dsnote{ margin:0 14px 12px; padding:9px 12px; border-radius:10px; background:var(--surface-2); font-size:12.5px; font-weight:700; line-height:1.5; text-wrap:balance; }
 /* the picture beside a design-lesson question */
 .qvis{ display:flex; justify-content:center; margin:2px 0 10px; }
 .qvis-svg{ width:100%; max-width:220px; height:auto; display:block; }
 
 /* league: the plain-words status, and the labelled up/down lines in the table */
-.league-status{ margin:8px 0 2px; padding:10px 12px; border-radius:12px; font-size:13px; font-weight:800; line-height:1.5; background:var(--surface-2); color:var(--ink); text-wrap:pretty; }
-.league-status.up{ background:color-mix(in srgb,#3fbf2a 16%,var(--surface)); }
-.league-status.down{ background:color-mix(in srgb,#e5484d 14%,var(--surface)); }
-.league-divider{ display:flex; align-items:center; gap:8px; margin:6px 0; font-size:11.5px; font-weight:800; }
-.league-divider::before,.league-divider::after{ content:""; flex:1; height:2px; border-radius:2px; }
-.league-divider span{ flex:0 1 auto; text-align:center; line-height:1.35; }
-.league-divider.up{ color:#2f8f1f; }
-.league-divider.up::before,.league-divider.up::after{ background:#3fbf2a; }
-.league-divider.down{ color:#c2373b; }
-.league-divider.down::before,.league-divider.down::after{ background:#e5484d; }
 
 /* map pips: pale star = cleared but under 3 stars */
 .stage-pips i.part{ color:#b9b4d9; text-shadow:none; }
@@ -4849,7 +4470,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .tf-btn .ic .batsu{ color:#2A5BC9; font-weight:900; font-size:40px; line-height:1; font-family:system-ui, sans-serif; }
 /* admin all-leagues: last week's players who have not played yet this week */
 .leaderboard-row.waiting{ opacity:.6; }
-.leaderboard-gems.waiting-tag{ font-size:11px; font-weight:800; color:var(--muted); }
+
 /* Digit Sum in a Circle — draw-the-design question */
 .dc{ display:flex; flex-direction:column; align-items:center; gap:4px; }
 .dc-step{ font-size:clamp(17px,4.6vw,22px); font-weight:800; color:var(--ink); }
@@ -4870,7 +4491,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 
 /* lesson and practice text is for reading, not copying: Ray asked that the
    book's material cannot be selected and lifted from the app */
-.view:has(.topic-head), .buddy-bubble{ user-select:none; -webkit-user-select:none; }
+.view:has(.topic-head){ user-select:none; -webkit-user-select:none; }
 
 /* ---------- 🏯 Sutra Tower ---------- */
 .party-pick.tower{ background:linear-gradient(120deg,#ffe7c2,#fff); }
@@ -5104,7 +4725,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
    is negative.) */
 .join-bar{ flex:1; min-width:0; display:flex; align-items:center; gap:6px; margin-left:auto; padding:5px 6px 5px 10px; border-radius:14px;
   border:2.5px solid var(--ink-line); background:#f1ecff; }
-.join-bar-label{ flex:1; min-width:0; font-size:12.5px; font-weight:900; color:#3b2a6e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
 .join-bar-input{ flex:0 1 84px; width:84px; min-width:60px; text-align:center; font-size:17px; font-weight:800; letter-spacing:.16em; padding:6px 4px; border-radius:10px;
   background:#fff; color:#1d1b33; border:2.5px dashed #8a86a8; }
 .join-bar-input::placeholder{ color:#c3bfd6; letter-spacing:.1em; font-weight:700; font-size:14px; }
@@ -5113,7 +4734,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
   cursor:pointer; box-shadow:0 3px 0 var(--ink-line); }
 .join-bar-go:disabled{ background:#d8d4e6; color:#8a86a8; box-shadow:none; cursor:default; }
 .join-bar-go:not(:disabled):active{ transform:translateY(3px); box-shadow:none; }
-.join-bar-label{ text-transform:capitalize; }
+
 @media (max-width:479px){ .join-bar-long{ display:none; } }
 
 /* Play is a tab now: when it is open the big button gets a gold ring and a
@@ -5131,3 +4752,40 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 footer .join-bar .join-bar-long{ display:none; }
 /* Fix Your Misses rides in the Home rail too: same height as its neighbours */
 .home-rail > .review-cta, .home-rail > .review-rest{ margin:0; height:auto; }
+
+/* seven stops in the dock: tighter items and a smaller raised Play */
+
+/* the League board: one band per league, your league on your card */
+.lb-league-head{ display:flex; align-items:center; gap:6px; margin:10px 4px 4px; padding-bottom:3px; border-bottom:2px dashed; font:900 13px/1.2 "Baloo 2",system-ui,sans-serif; letter-spacing:.02em; }
+.lb-league-head:first-child{ margin-top:2px; }
+.lb-me-league{ font:900 14px/1.2 "Baloo 2",system-ui,sans-serif; margin:2px 0 6px; }
+.lb-me-chase{ margin-top:4px; font-size:12px; font-weight:800; color:#c2410c; }
+
+/* the Train tab: the drills, one card each, and a friend invite */
+.train-view.active{ display:flex; flex-direction:column; gap:12px; }
+.train-card{ color:#fff; }
+.train-speed{ background:linear-gradient(135deg,#ff9a3d,#ff3d77); }
+.train-magic{ background:linear-gradient(135deg,#7a58c0,#4f6bed); }
+.train-dojo{ background:linear-gradient(135deg,#0f9b8e,#3cc3a0); }
+.train-art{ flex:0 0 auto; display:grid; place-items:center; width:68px; height:68px; border-radius:18px; background:rgba(255,255,255,.92); border:3px solid var(--ink-line); }
+.train-invite{ display:flex; align-items:center; gap:12px; width:100%; padding:14px; border-radius:20px; cursor:pointer; text-align:left; font-family:inherit; color:#1d1b33;
+  background:linear-gradient(135deg,#fff6d8,#ffe0ec); border:3px dashed #ff7a59; }
+.train-invite-ico{ font-size:34px; line-height:1; }
+.train-invite-body{ flex:1; display:flex; flex-direction:column; gap:2px; }
+.train-invite-body strong{ font:900 16px/1.2 "Baloo 2",system-ui,sans-serif; }
+.train-invite-body span{ font-size:12.5px; font-weight:700; color:#5b5675; }
+.train-invite-cta{ padding:8px 14px; border-radius:999px; background:#ff7a59; color:#fff; font-weight:900; font-size:13px; border:2px solid var(--ink-line); box-shadow:0 3px 0 var(--ink-line); }
+.lb-league-rest{ margin:6px 4px 2px; padding:10px 12px; border-radius:14px; text-align:center; font-size:13px; font-weight:800; color:var(--muted); background:color-mix(in srgb, var(--ink-line) 5%, transparent); }
+.league-badge{ display:inline-block; vertical-align:-.25em; flex:0 0 auto; }
+.lb-league-head .league-badge{ width:20px; height:20px; }
+.lb-rule-tight{ gap:6px; padding-block:8px; }
+.lb-tiers{ display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.lb-tier{ display:flex; align-items:center; gap:6px; padding:5px 7px; border-radius:11px; background:rgba(255,255,255,.75); }
+.lb-tier-txt{ display:flex; flex-direction:column; min-width:0; line-height:1.15; }
+.lb-tier-txt b{ font-size:12px; font-weight:900; color:#1d1b33; }
+.lb-tier-txt small{ font-size:10.5px; font-weight:800; color:#5b5675; }
+.sheet-panel .ui-ico{ display:inline-block; vertical-align:-.15em; }
+.lb-tier-txt small{ white-space:nowrap; }
+.lb-you{ display:flex; align-items:baseline; gap:6px; min-width:0; }
+.lb-you b{ font-weight:900; letter-spacing:.04em; color:#2563eb; }
+.lb-you small{ font-size:11px; font-weight:700; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }

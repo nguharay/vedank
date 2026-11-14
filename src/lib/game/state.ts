@@ -6,12 +6,6 @@ export type ProgressState = {
   arena: { solved: Record<string, boolean>; bestMoves: Record<string, number> };
 };
 
-export function emptyProgress(): ProgressState {
-  const topics: Record<string, TopicProgressRow> = {};
-  for (const t of TOPICS) topics[t.id] = { cleared: 0, stageStars: {} };
-  return { topics, arena: { solved: {}, bestMoves: {} } };
-}
-
 export function topicProgressOf(state: ProgressState, id: string): TopicProgressRow {
   return state.topics[id] || { cleared: 0, stageStars: {} };
 }

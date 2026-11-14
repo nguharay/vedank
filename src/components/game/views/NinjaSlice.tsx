@@ -8,7 +8,7 @@ import type { useSound } from "../useSound";
 import { buildNinjaWave, NINJA_WAVES_PER_TIER } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
-type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect?: (n: number) => void };
+type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void };
 
 /* ---------- 🥷 Ninja Slice ----------
    Fruit is tossed up from the bottom carrying numbers. Swipe your finger
@@ -48,7 +48,7 @@ const clock = () => performance.now();
 const rand = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 const pickFruit = () => FRUITS[Math.floor(Math.random() * FRUITS.length)];
 
-export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
+export function NinjaSlice({ lang, sound, celebrate }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "demo" | "demoDone" | "play" | "over">("ready");
   const demoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -201,7 +201,7 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
     const pts = 10 + Math.min(st.combo, 15) * 2;
     st.score += pts; setScore(st.score);
     flash(f.x, f.y, `+${pts}`, "good");
-    sound.hit(); haptic(12); onCorrect?.(1);
+    sound.hit(); haptic(12);
     if (st.combo % 10 === 0) celebrate();
     /* all the right fruit sliced: the rest of the wave is just scenery */
     if (st.wave.pending <= 0) retireWave(st.fruits, st.wave.id);
@@ -364,7 +364,7 @@ export function NinjaSlice({ lang, sound, celebrate, onCorrect }: Props) {
             <button className="btn btn-primary" onClick={begin}>{ja ? "いざ、参る！" : "Begin!"}</button>
           </div>
         )}
-        {phase === "over" && <RunResults game="ninja" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} detail={ja ? `ウェーブ ${waveNo}` : `Wave ${waveNo}`} />}
+        {phase === "over" && <RunResults game="ninja" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} detail={ja ? `ウェーブ ${waveNo}` : `Wave ${waveNo}`} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && score > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "修行おわり" : "Training over")}</div>

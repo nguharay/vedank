@@ -38,7 +38,7 @@ export function DailyWinnersCard({ data, ja, onPlay }: {
           {list.map((w, i) => (
             <li key={w.userId} className={`dw-row${w.isMe ? " me" : ""}`}>
               <span className="dw-pos mono">{i < 3 ? ["🥇", "🥈", "🥉"][i] : i + 1}</span>
-              <span className="dw-name">{w.name}{w.isMe ? (ja ? "（きみ）" : " (you)") : ""}</span>
+              {w.isMe ? <span className="dw-name lb-you"><b>{ja ? "あなた" : "YOU"}</b><small>{w.name}</small></span> : <span className="dw-name">{w.name}</span>}
               {w.streak > 1 && (
                 <span className="dw-streak" title={ja ? `${w.streak}日れんぞく` : `${w.streak} days in a row`}>
                   🔥 <b className="mono">{w.streak}</b> {ja ? "日れんぞく" : "days in a row"}

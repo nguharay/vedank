@@ -18,7 +18,7 @@ const store = new Map<string, string>();
 const cacheApi = {
   open: async () => ({
     add: async (u: string) => void store.set(u, "precached"),
-    put: async (k: unknown, _v: unknown) => void store.set(typeof k === "string" ? k : (k as { url: string }).url, "put"),
+    put: async (k: unknown) => void store.set(typeof k === "string" ? k : (k as { url: string }).url, "put"),
     keys: async () => [...store.keys()].map((url) => ({ url })),
   }),
   keys: async () => ["sutra-v1"],

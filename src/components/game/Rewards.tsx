@@ -188,22 +188,6 @@ export function RewardsLayer({ lang, onPlay }: { lang: L; onPlay: (id: string) =
   );
 }
 
-/* the little "🃏 7/28" button that opens the collection */
-export function CollectionChip({ lang }: { lang: L }) {
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    const read = () => setN(Object.keys(ownedCards()).length);
-    const t = setTimeout(read, 0);
-    window.addEventListener("vedank:card", read);
-        return () => { clearTimeout(t); window.removeEventListener("vedank:card", read); };
-  }, []);
-  return (
-    <button className="collection-chip" onClick={() => window.dispatchEvent(new CustomEvent("vedank:collection"))} aria-label={lang === "ja" ? "偉人カード図鑑" : "Card collection"}>
-      🃏 <b className="mono">{n}/{CARDS.length}</b>
-    </button>
-  );
-}
-
 /* the Home card for the collection */
 export function CollectionCard({ lang }: { lang: L }) {
   const ja = lang === "ja";

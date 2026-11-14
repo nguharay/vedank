@@ -45,7 +45,7 @@ export function DailyView({
           <div className="daily-done-icon">{correct >= 6 ? "🎉" : correct >= 4 ? "👏" : "💪"}</div>
           <h1>{lang === "ja" ? "今日の挑戦は完了！" : "Today's challenge is done!"}</h1>
           <div className="daily-done-score mono">{correct} / {DAILY_QUESTIONS}</div>
-          <div className="daily-done-points">+{points} {lang === "ja" ? "リーグポイント" : "league points"}</div>
+          <div className="daily-done-points">+{points} {lang === "ja" ? "ポイント" : "points"}</div>
           <p className="daily-done-note">
             {lang === "ja"
               ? "同じ問題を世界中のみんなが解いています。次の問題は朝9時（日本時間）に出るよ！"

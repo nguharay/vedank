@@ -65,9 +65,9 @@ function recChip(g: PartyGame, r: Record_, ja: boolean): string | null {
 
 const allRecs = () => Object.fromEntries(PARTY_GAMES.map((g) => [g, readRec(g)])) as Record<PartyGame, Record_>;
 
-export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, onCorrect, guest, onNeedAccount, onLobby, createNow, onCreateTaken }: {
+export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode, onJoined, onBack, guest, onNeedAccount, onLobby, createNow, onCreateTaken }: {
   lang: L; sound: Sound; celebrate: () => void; game: PartyGame; joinCode: string | null; onJoined: () => void; onBack: () => void;
-  onCorrect?: (n: number) => void; guest: boolean; onNeedAccount: () => void;
+  guest: boolean; onNeedAccount: () => void;
   /* told whether the game list (no room open) is showing: the app then puts
      the "friend's room" code field in its bottom bar beside Back */
   onLobby?: (inLobby: boolean) => void;
@@ -78,7 +78,6 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
 }) {
   const ja = lang === "ja";
   const [room, setRoom] = useState<PartyRoomView | null>(null);
-  const [code, setCode] = useState("");
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [myDone, setMyDone] = useState(0);
@@ -325,7 +324,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
         else partyAnswerAction(room.code, tile, v).then((r) => { if (!("error" in r)) take(r); }).catch(() => {});
         return;
       }
-      sound.correct(); haptic(12); onCorrect?.(1);
+      sound.correct(); haptic(12);
       setFx({ k: clock(), kind: "pull" });
       setTimeout(() => setPicked(null), 160);
       setSel(null);
@@ -361,7 +360,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
         const mine = res.players.find((p) => p.me);
         const winner = res.buzz?.wins[idx];
         if (winner && winner === mine?.key) {
-          sound.correct(); haptic(12); onCorrect?.(1);
+          sound.correct(); haptic(12);
           setFx({ k: clock(), kind: "pull" });
         } else if (winner) {
           const who = res.players.find((p) => p.key === winner);
@@ -375,7 +374,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       } catch { setLock(false); setPicked(null); }
       return;
     }
-    sound.correct(); haptic(12); onCorrect?.(1);
+    sound.correct(); haptic(12);
     setFx({ k: clock(), kind: "pull" });
     if (room.game !== "buzz") setMyDone(idx + 1);
     setTimeout(() => setPicked(null), 160);
@@ -403,7 +402,7 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
       lockTimer.current = setTimeout(() => { setLock(false); setPicked(null); }, 1200);
       return;
     }
-    sound.correct(); haptic(12); onCorrect?.(1);
+    sound.correct(); haptic(12);
     setMyDone((d) => d | (1 << cell));
     if (solo) {
       const st = soloRef.current;

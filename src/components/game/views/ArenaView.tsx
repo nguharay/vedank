@@ -21,9 +21,6 @@ export function ArenaView({
   status,
   svgRef,
   onSlotClick,
-  onHint,
-  onReset,
-  onNext,
   t,
 }: {
   puzIdx: number;
@@ -40,9 +37,6 @@ export function ArenaView({
   status: { text: string; color: string };
   svgRef: React.RefObject<SVGSVGElement | null>;
   onSlotClick: (loc: "board" | "tray", gi: number | null, slot: string | null, idx: number | null) => void;
-  onHint: () => void;
-  onReset: () => void;
-  onNext: () => void;
   t: UIDict;
 }) {
   const [dragging, setDragging] = useState(false);

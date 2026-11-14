@@ -89,21 +89,6 @@ export const dailyChallenge = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.day] })]
 );
 
-// points earned inside one ISO week, which decides league standing
-export const leaguePoints = pgTable(
-  "league_points",
-  {
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    weekStart: date("week_start").notNull(),
-    points: integer("points").notNull().default(0),
-    tier: integer("tier").notNull().default(0),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.userId, t.weekStart] })]
-);
-
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
@@ -133,23 +118,6 @@ export const inventory = pgTable("inventory", {
   freezeUsedOn: date("freeze_used_on"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
-
-// Three quests per calendar day, chosen deterministically from the day's seed.
-// One row per quest so progress increments are single-statement upserts.
-export const questProgress = pgTable(
-  "quest_progress",
-  {
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    day: date("day").notNull(),
-    questId: text("quest_id").notNull(),
-    count: integer("count").notNull().default(0),
-    claimed: boolean("claimed").notNull().default(false),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.userId, t.day, t.questId] })]
-);
 
 // Questions answered wrong, kept for spaced review. Keyed on the prompt so the
 // same question missed twice sharpens one row rather than piling up duplicates.
@@ -372,15 +340,6 @@ export const partyRooms = pgTable("party_rooms", {
   hostId: uuid("host_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   state: jsonb("state").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
-
-export const towns = pgTable("towns", {
-  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
-  state: jsonb("state").notNull(),
-  gifts: integer("gifts").notNull().default(0),
-  visits: integer("visits").notNull().default(0),
-  stickers: jsonb("stickers").notNull().default([]),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

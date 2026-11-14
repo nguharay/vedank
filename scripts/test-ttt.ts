@@ -1,4 +1,4 @@
-import { pass, expired, turnSeconds, newGame, play, findWinner, cpuMove, roomCode, normaliseRoomCode, type TTTState, type Mark, type TTTLevel } from "../src/lib/game/ttt";
+import { pass, expired, turnSeconds, newGame, play, findWinner, cpuMove, roomCode, normaliseRoomCode, type TTTState, type Mark } from "../src/lib/game/ttt";
 const fails: string[] = [];
 const ok = (l: string, c: boolean) => { if (!c) fails.push(l); };
 

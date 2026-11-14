@@ -2,38 +2,12 @@ import { TOPICS, type Problem, type Difficulty } from "./topics";
 
 export const DAILY_QUESTIONS = 10;
 
-export type League = { tier: number; name: string; nameJa: string; icon: string; color: string };
-
-export const LEAGUES: League[] = [
-  { tier: 0, name: "Clay", nameJa: "土", icon: "🥉", color: "#A16207" },
-  { tier: 1, name: "Bronze", nameJa: "銅", icon: "🟤", color: "#B45309" },
-  { tier: 2, name: "Silver", nameJa: "銀", icon: "⚪", color: "#64748B" },
-  { tier: 3, name: "Gold", nameJa: "金", icon: "🟡", color: "#D97706" },
-  { tier: 4, name: "Sapphire", nameJa: "青玉", icon: "🔵", color: "#2563EB" },
-  { tier: 5, name: "Ruby", nameJa: "紅玉", icon: "🔴", color: "#DC2626" },
-  { tier: 6, name: "Diamond", nameJa: "金剛石", icon: "💎", color: "#0891B2" },
-];
-
-export const TOP_LEAGUE = LEAGUES.length - 1;
-
-export function leagueOf(tier: number): League {
-  return LEAGUES[Math.max(0, Math.min(TOP_LEAGUE, tier))];
-}
-
 /** The challenge day as YYYY-MM-DD. A new day starts at 9:00 in Japan
  * (00:00 UTC) for everyone, on every phone and on the server alike, so the
- * questions, the "played today" record, the winners and the league all turn
+ * questions, the "played today" record and the winners all turn
  * over together. */
 export function todayKey(d = new Date()): string {
   return d.toISOString().slice(0, 10);
-}
-
-/** Monday of the challenge week containing `d` (the week starts Monday 9:00 JST). */
-export function weekStartKey(d = new Date()): string {
-  const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  const dow = (x.getUTCDay() + 6) % 7; // Monday = 0
-  x.setUTCDate(x.getUTCDate() - dow);
-  return todayKey(x);
 }
 
 /** Deterministic PRNG so every player gets the same puzzle on the same date. */
@@ -127,37 +101,3 @@ export function scoreDaily(correct: number, elapsedMs: number): number {
   return base + speed + perfect;
 }
 
-/* ---------- the league rules ----------
-   Moving UP is by points: reach your league's weekly target (Daily Challenge
-   points, Monday to Monday) and you move up one league at the reset, however
-   many others played. A perfect day is worth about 1,000 points, so a
-   target is roughly 3 to 5 good days.
-   Moving DOWN is by missed days: a player who misses the Daily Challenge two
-   days in a row drops one league (personal reminders go out on each of those
-   two evenings). One lapse costs one league, however long it lasts. */
-export const LEAGUE_TARGETS = [2500, 3000, 3500, 4000, 4500, 5000];      /* by tier; Diamond has none */
-export const LAPSE_DAYS = 2;
-export function weeklyTarget(tier: number): number | null {
-  return tier < TOP_LEAGUE ? LEAGUE_TARGETS[Math.min(tier, LEAGUE_TARGETS.length - 1)] : null;
-}
-/* whole days from day a to day b (YYYY-MM-DD) */
-export function daysBetween(a: string, b: string): number {
-  return Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400_000);
-}
-/* full days missed in a row before `today`, counting back from yesterday */
-export function missedDaysBefore(lastPlay: string | null, today: string): number {
-  return lastPlay ? Math.max(0, daysBetween(lastPlay, today) - 1) : 0;
-}
-/* A player's league right now.
-     cur      this week's row, if they have played this week
-     prev     their latest earlier row (settled: +1 if it met its target)
-     lastPlay their last Daily Challenge day before today
-     playedToday  a lapse is applied (once) by today's play, so after it
-              nothing is pending
-   A lapse of LAPSE_DAYS+ missed days not yet applied takes one league off. */
-export function settleTier(o: { curTier: number | null; prev: { tier: number; points: number } | null; lastPlay: string | null; playedToday: boolean; today: string }): { tier: number; lapsed: boolean } {
-  let tier = o.curTier ?? (o.prev ? (o.prev.points >= (weeklyTarget(o.prev.tier) ?? Infinity) ? o.prev.tier + 1 : o.prev.tier) : 0);
-  tier = Math.max(0, Math.min(TOP_LEAGUE, tier));
-  const lapsed = !o.playedToday && missedDaysBefore(o.lastPlay, o.today) >= LAPSE_DAYS && tier > 0;
-  return { tier: lapsed ? tier - 1 : tier, lapsed };
-}

@@ -93,7 +93,7 @@ export function AdminTable({ rows, summary, adminEmail }: { rows: SignupRow[]; s
     const head = [
       "Name", "Email", "Username", "Country code", "Country", "Phone", "Language",
       "Signed up", "Last active", "Level", "Rank", "Gems", "Daily streak", "Best streak",
-      "Stages cleared", "Puzzles solved", "Dailies played", "Week points", "Locked",
+      "Stages cleared", "Puzzles solved", "Dailies played", "Locked",
     ];
     const lines = [head.map(csvCell).join(",")];
     for (const r of filtered) {
@@ -101,7 +101,7 @@ export function AdminTable({ rows, summary, adminEmail }: { rows: SignupRow[]; s
         [
           r.name, r.email, r.username, r.country, r.countryName, r.phone, r.preferredLang,
           r.createdAt, r.lastActiveDate, r.level, r.rank, r.gems, r.dailyStreak, r.bestDailyStreak,
-          r.stagesCleared, r.puzzlesSolved, r.dailiesPlayed, r.weekPoints, r.locked ? "yes" : "no",
+          r.stagesCleared, r.puzzlesSolved, r.dailiesPlayed, r.locked ? "yes" : "no",
         ].map(csvCell).join(",")
       );
     }
