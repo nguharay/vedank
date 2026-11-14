@@ -4793,3 +4793,5 @@ footer .join-bar .join-bar-long{ display:none; }
 .brand-word{ font:400 25px/1 "Delius","Baloo 2",system-ui,sans-serif; letter-spacing:.01em; text-transform:none; color:#1d6260; -webkit-text-stroke:.7px currentColor; }
 :root[data-theme="dark"] .brand-word, :root[data-theme="dark"] .brand-sub{ color:#7fd3cd; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .brand-word, :root:not([data-theme="light"]) .brand-sub{ color:#7fd3cd; } }
+/* the wordmark sits right beside the tree (the tree image has its own white margin) */
+header .header-home + .header-title{ margin-left:-10px; }
