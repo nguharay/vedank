@@ -3921,6 +3921,10 @@ export function GameApp({
         const lb = leaderboard;
         const me = lb?.me ?? null;
         const L = (tier: number) => rankLeague(tier);
+        /* your own row says YOU, with your name small beside it */
+        const youName = (name: string) => (
+          <span className="leaderboard-name lb-you"><b>{ja ? "あなた" : "YOU"}</b><small>{name}</small></span>
+        );
         const lname = (tier: number) => (ja ? `${L(tier).nameJa}リーグ` : `${L(tier).name} League`);
         /* what it takes to pass someone: more stages, or the same stages and more ⭐ */
         const gapTo = (o: { lessons: number; stars: number }) => {
@@ -3996,7 +4000,7 @@ export function GameApp({
                     )}
                     <div className={`leaderboard-row${e.userId === me?.userId ? " me" : ""}`}>
                       <span className={`leaderboard-rank${i < 3 ? ` top${i + 1}` : ""}`}>{i + 1}</span>
-                      <span className="leaderboard-name">{e.name}</span>
+                      {e.userId === me?.userId ? youName(e.name) : <span className="leaderboard-name">{e.name}</span>}
                       <span className="lb-lessons mono"><UiIcon name="learn" size="1em" /> {e.lessons}</span>
                       <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{e.stars}</span>
                     </div>
@@ -4005,7 +4009,7 @@ export function GameApp({
                 {!leaderboardLoading && me?.position && me.league > 0 && me.position > (lb?.top.filter((e) => e.league > 0).length ?? 0) && (
                   <div className="leaderboard-row me leaderboard-row-me-sep">
                     <span className="leaderboard-rank">{me.position}</span>
-                    <span className="leaderboard-name"><LeagueBadge tier={me.league} /> {me.name}</span>
+                    {youName(me.name)}
                     <span className="lb-lessons mono"><UiIcon name="learn" size="1em" /> {me.lessons}</span>
                     <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{me.stars}</span>
                   </div>
@@ -4024,7 +4028,7 @@ export function GameApp({
                       {meIn && me && (
                         <div className="leaderboard-row me">
                           <span className="leaderboard-rank">{me.position}</span>
-                          <span className="leaderboard-name">{me.name}</span>
+                          {youName(me.name)}
                           <span className="lb-lessons mono"><UiIcon name="learn" size="1em" /> {me.lessons}</span>
                           <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{me.stars}</span>
                         </div>

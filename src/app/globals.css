@@ -5169,3 +5169,6 @@ footer .join-bar .join-bar-long{ display:none; }
 .lb-tier-txt small{ font-size:10.5px; font-weight:800; color:#5b5675; }
 .sheet-panel .ui-ico{ display:inline-block; vertical-align:-.15em; }
 .lb-tier-txt small{ white-space:nowrap; }
+.lb-you{ display:flex; align-items:baseline; gap:6px; min-width:0; }
+.lb-you b{ font-weight:900; letter-spacing:.04em; color:#c2410c; }
+.lb-you small{ font-size:11px; font-weight:700; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
