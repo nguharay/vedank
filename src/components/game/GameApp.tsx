@@ -3947,12 +3947,17 @@ export function GameApp({
                 <span><UiIcon name="league" size="1.1em" /> {ja ? "リーグ" : "Leagues"}</span>
                 {me?.position && <span className="sheet-panel-count">{ja ? `${me.position}位 / ${lb!.total}人` : `#${me.position} of ${lb!.total}`}</span>}
               </div>
-              <div className="lb-rule">
-                <b><UiIcon name="learn" size="1.1em" /> {ja ? "レッスンのステージをクリアするほど、上のリーグへ" : "Clear more lesson stages to climb the leagues"}</b>
-                <span>{ja ? "みんながすすむと線も上がるから、上にいるにはクリアしつづけよう！" : "When others clear more, the line moves up, so keep clearing to stay on top!"}</span>
+              <div className="lb-rule lb-rule-tight">
+                <b>{ja ? "ステージをクリアして、上のリーグへ！ほかの人もすすむから、クリアしつづけよう。" : "Clear stages to climb. Others climb too, so keep going!"}</b>
                 <span className="lb-tiers">
                   {[3, 2, 1, 0].map((t) => (
-                    <span key={t} className="lb-tier"><LeagueBadge tier={t} size="22px" /><b>{t === 3 ? "1–2" : t === 2 ? "3–6" : t === 1 ? "7–11" : "12+"}</b><small>{ja ? L(t).nameJa : L(t).name}</small></span>
+                    <span key={t} className="lb-tier">
+                      <LeagueBadge tier={t} size="24px" />
+                      <span className="lb-tier-txt">
+                        <b>{ja ? L(t).nameJa : L(t).name}</b>
+                        <small>{t === 3 ? (ja ? "上位2人" : "Top 2 players") : t === 2 ? (ja ? "次の4人" : "Next 4 players") : t === 1 ? (ja ? "次の5人" : "Next 5 players") : (ja ? "ほかのみんな" : "All other players")}</small>
+                      </span>
+                    </span>
                   ))}
                 </span>
               </div>
