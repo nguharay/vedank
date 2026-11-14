@@ -3009,20 +3009,15 @@ export function GameApp({
       </div>
 
       <header>
-        {view === "home" && (
+        {(view === "home" || view === "games" || view === "train" || dailyTab) && (
           <button className="back-btn avatar-btn" aria-label={t.menu.accountLabel} onClick={() => setMenuOpen((o) => !o)}>
             {(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
           </button>
         )}
-        <button
-          className="header-home"
-          /* the logo: on Home it reloads the page (fresh data, back to the Learn
-             tab); anywhere else it goes to Home */
-          onClick={() => { if (view === "home") window.location.reload(); else goHome(); }}
-          aria-label={view === "home" ? (ja ? "ページを更新" : "Refresh") : (ja ? "ホームへ" : "Go to home")}
-        >
+        {/* the logo is only the logo: tapping it does nothing (the bottom bar moves between tabs) */}
+        <span className="header-home" aria-hidden="true">
           <img src="/brand/vedank-mark.png" alt="" className="header-mark" />
-        </button>
+        </span>
         <div className="header-title">
           {/^VedAnk/.test(headerTitle ?? "") ? (
             /* the app's own name as a wordmark, in the logo's lettering and teal */

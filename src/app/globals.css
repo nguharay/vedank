@@ -1308,11 +1308,8 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .score-duel-btn:active{ transform:scale(.95); }
 
 /* ---------- header logo is a home button ---------- */
-.header-home{ flex:0 0 auto; padding:0; border:none; background:none; cursor:pointer; line-height:0;
+.header-home{ flex:0 0 auto; padding:0; border:none; background:none; line-height:0;
   border-radius:12px; }
-.header-home:active{ transform:scale(.92); }
-.header-home:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
-@media (hover:hover){ .header-home:hover{ filter:brightness(1.06); } }
 
 /* ---------- the buddy ----------
    Layered SVGs in one square: cape behind, mascot, attire in front, sparks on
@@ -4791,8 +4788,8 @@ footer .join-bar .join-bar-long{ display:none; }
 .lb-you small{ font-size:11px; font-weight:700; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* the header wordmark: "VedAnk" in the logo's lettering (Delius) and teal */
-.header-title h1.brand{ display:flex; align-items:baseline; gap:7px; white-space:nowrap; font-size:inherit; line-height:1; }
-.brand-sub{ white-space:nowrap; flex:0 0 auto; font:700 13px/1 "M PLUS Rounded 1c","Nunito",system-ui,sans-serif; letter-spacing:.06em; text-transform:none; color:#1d6260; opacity:.75; }
-.brand-word{ font:400 28px/1 "Delius","Baloo 2",system-ui,sans-serif; letter-spacing:.01em; text-transform:none; color:#1d6260; -webkit-text-stroke:.7px currentColor; }
+.header-title h1.brand{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; white-space:nowrap; font-size:inherit; line-height:1; }
+.brand-sub{ white-space:nowrap; flex:0 0 auto; padding-left:2px; font:700 10.5px/1 "M PLUS Rounded 1c","Nunito",system-ui,sans-serif; letter-spacing:.06em; text-transform:none; color:#1d6260; opacity:.75; }
+.brand-word{ font:400 25px/1 "Delius","Baloo 2",system-ui,sans-serif; letter-spacing:.01em; text-transform:none; color:#1d6260; -webkit-text-stroke:.7px currentColor; }
 :root[data-theme="dark"] .brand-word, :root[data-theme="dark"] .brand-sub{ color:#7fd3cd; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .brand-word, :root:not([data-theme="light"]) .brand-sub{ color:#7fd3cd; } }
