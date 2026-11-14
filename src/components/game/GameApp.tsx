@@ -3023,7 +3023,15 @@ export function GameApp({
         >
           <img src="/brand/vedank-mark.png" alt="" className="header-mark" />
         </button>
-        <div className="header-title"><h1 className={/VedAnk/.test(headerTitle ?? "") ? "brand" : undefined}>{headerTitle}</h1></div>
+        <div className="header-title">
+          {/^VedAnk/.test(headerTitle ?? "") ? (
+            /* the app's own name as a wordmark, in the logo's lettering and teal */
+            <h1 className="brand">
+              <span className="brand-word">VedAnk</span>
+              {lang === "ja" && (headerTitle ?? "").replace(/^VedAnk\s*/, "") && <small className="brand-sub">{(headerTitle ?? "").replace(/^VedAnk\s*/, "")}</small>}
+            </h1>
+          ) : <h1>{headerTitle}</h1>}
+        </div>
         <div className="stats-row">
           <button className={`stat stat-flame${dailyStreak > 0 ? " lit" : ""}`} onClick={() => openShare("streak")} aria-label={`${t.share.statStreak} ${dailyStreak}, ${t.share.shareBtn}`}>
             <span aria-hidden="true"><StreakIcon lit={dailyStreak > 0} /></span> {dailyStreak}
