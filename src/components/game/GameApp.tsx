@@ -5,7 +5,7 @@ import { HomeBanner } from "./HomeBanner";
 import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { boardFitStyle, transition } from "./util";
-import { UiIcon, GameArt } from "./Art";
+import { UiIcon, GameArt, LeagueBadge } from "./Art";
 import { PartyGames } from "./views/PartyGames";
 import { StreakIcon } from "./StreakIcon";
 import { signOut } from "next-auth/react";
@@ -3289,7 +3289,7 @@ export function GameApp({
             </div>
             {blitzHard && (
               <div className="lvl-hard">
-                <b>🔥 {ja ? `${rankLeague(BLITZ_HARD_MIN_TIER).icon} ${rankLeague(BLITZ_HARD_MIN_TIER).nameJa}リーグ以上・木〜日はハードモード` : `${rankLeague(BLITZ_HARD_MIN_TIER).icon} ${rankLeague(BLITZ_HARD_MIN_TIER).name} League and up: hard mode Thu to Sun`}</b>
+                <b><LeagueBadge tier={BLITZ_HARD_MIN_TIER} /> {ja ? `${rankLeague(BLITZ_HARD_MIN_TIER).nameJa}リーグ以上・木〜日はハードモード` : `${rankLeague(BLITZ_HARD_MIN_TIER).name} League and up: hard mode Thu to Sun`}</b>
                 <span>{ja ? "問題が1段むずかしく、選択肢は下2けたが同じ。ちゃんと計算しよう！" : "Questions one step harder, and every option ends in the same two digits. Work it out!"}</span>
               </div>
             )}
@@ -3929,34 +3929,39 @@ export function GameApp({
             ? (ja ? `ステージをあと ${g + 1} こ` : `${g + 1} more stage${g + 1 > 1 ? "s" : ""}`)
             : (ja ? `⭐をあと ${o.stars - (me?.stars ?? 0) + 1} こ` : `${o.stars - (me?.stars ?? 0) + 1} more ⭐`);
         };
-        let next: string | null = null;
+        let next: React.ReactNode = null;
         if (me?.position && lb?.nextGate) {
-          next = ja ? `${gapTo(lb.nextGate)}で ${L(me.league + 1).icon} ${lname(me.league + 1)}！` : `${gapTo(lb.nextGate)} to reach ${L(me.league + 1).icon} ${lname(me.league + 1)}!`;
+          next = ja ? <>{gapTo(lb.nextGate)}で <LeagueBadge tier={me.league + 1} /> {lname(me.league + 1)}！</> : <>{gapTo(lb.nextGate)} to reach <LeagueBadge tier={me.league + 1} /> {lname(me.league + 1)}!</>;
         } else if (me?.position && lb?.above) {
           next = ja ? `${gapTo(lb.above)}で ${lb.above.name} さんをぬかせるよ！` : `${gapTo(lb.above)} to pass ${lb.above.name}!`;
         }
         /* someone just behind: the push to keep going */
         const chase = me?.position && lb?.below && me.lessons - lb.below.lessons <= 1
-          ? (ja ? `👀 ${lb.below.name} さんがすぐ後ろにいるよ！` : `👀 ${lb.below.name} is right behind you!`)
+          ? (ja ? `${lb.below.name} さんがすぐ後ろにいるよ！` : `${lb.below.name} is right behind you!`)
           : null;
         return (
           <>
             <div className="menu-overlay" onClick={() => setLeaderboardOpen(false)} />
             <div className="sheet-panel">
               <div className="sheet-panel-title">
-                <span>🏆 {ja ? "リーグ" : "Leagues"}</span>
+                <span><UiIcon name="league" size="1.1em" /> {ja ? "リーグ" : "Leagues"}</span>
                 {me?.position && <span className="sheet-panel-count">{ja ? `${me.position}位 / ${lb!.total}人` : `#${me.position} of ${lb!.total}`}</span>}
               </div>
               <div className="lb-rule">
-                <b>📘 {ja ? "レッスンのステージをクリアするほど、上のリーグへ" : "Clear more lesson stages to climb the leagues"}</b>
-                <span>{ja ? "1〜2位が🔥伝説の忍者、3〜6位が⚡雷の忍者、7〜11位が🌀風の忍者、ほかは🌱見習い忍者。みんながすすむと線も上がるから、上にいるにはクリアしつづけよう！" : "Places 1 to 2 are 🔥 Legend Ninjas, 3 to 6 ⚡ Thunder Ninjas, 7 to 11 🌀 Wind Ninjas, everyone else 🌱 Rookie Ninjas. When others clear more, the line moves up, so keep clearing to stay on top!"}</span>
+                <b><UiIcon name="learn" size="1.1em" /> {ja ? "レッスンのステージをクリアするほど、上のリーグへ" : "Clear more lesson stages to climb the leagues"}</b>
+                <span>{ja ? "みんながすすむと線も上がるから、上にいるにはクリアしつづけよう！" : "When others clear more, the line moves up, so keep clearing to stay on top!"}</span>
+                <span className="lb-tiers">
+                  {[3, 2, 1, 0].map((t) => (
+                    <span key={t} className="lb-tier"><LeagueBadge tier={t} size="22px" /><b>{t === 3 ? "1–2" : t === 2 ? "3–6" : t === 1 ? "7–11" : "12+"}</b><small>{ja ? L(t).nameJa : L(t).name}</small></span>
+                  ))}
+                </span>
               </div>
               {lb && me && (
                 <div className="lb-me" style={me.position ? { borderColor: L(me.league).color } : undefined}>
                   <div className="lb-me-top">
-                    <span className="lb-me-pos">{me.position ? <>{L(me.league).icon} {ja ? `${me.position}位` : `#${me.position}`}</> : "-"}</span>
+                    <span className="lb-me-pos">{me.position ? <><LeagueBadge tier={me.league} size="1em" /> {ja ? `${me.position}位` : `#${me.position}`}</> : "-"}</span>
                     <span className="lb-me-stats">
-                      <span>📘 <b className="mono">{me.lessons}</b><small> / {lb.lessonsTotal}</small></span>
+                      <span><UiIcon name="learn" size="1em" /> <b className="mono">{me.lessons}</b><small> / {lb.lessonsTotal}</small></span>
                       <span><i className="lb-ico" aria-hidden="true">⭐</i><b className="mono">{me.stars}</b></span>
                     </span>
                   </div>
@@ -3965,12 +3970,12 @@ export function GameApp({
                   <div className="lb-me-next">
                     {!me.position
                       ? (ja ? "ステージを1つクリアすると、リーグに入れるよ！" : "Clear your first stage to join a league!")
-                      : me.position === 1 ? (ja ? "👑 いま1位！みんなが追いかけてくるよ。ステージをすすめよう" : "👑 You're #1! Others are coming, keep clearing stages!")
+                      : me.position === 1 ? (ja ? "いま1位！みんなが追いかけてくるよ。ステージをすすめよう" : "You're #1! Others are coming, keep clearing stages!")
                       : next}
                   </div>
                   {chase && <div className="lb-me-chase">{chase}</div>}
                   <button className="btn btn-primary lb-go" onClick={() => { setLeaderboardOpen(false); goHome(); }}>
-                    📘 {ja ? "ステージをすすめる" : "Clear a stage"}
+                    <UiIcon name="learn" size="1.1em" /> {ja ? "ステージをすすめる" : "Clear a stage"}
                   </button>
                 </div>
               )}
@@ -3981,13 +3986,13 @@ export function GameApp({
                   <Fragment key={e.userId}>
                     {(i === 0 || rows[i - 1].league !== e.league) && (
                       <div className="lb-league-head" style={{ color: L(e.league).color, borderColor: L(e.league).color }}>
-                        <span>{L(e.league).icon} {lname(e.league)}</span>
+                        <LeagueBadge tier={e.league} /><span>{lname(e.league)}</span>
                       </div>
                     )}
                     <div className={`leaderboard-row${e.userId === me?.userId ? " me" : ""}`}>
                       <span className={`leaderboard-rank${i < 3 ? ` top${i + 1}` : ""}`}>{i + 1}</span>
                       <span className="leaderboard-name">{e.name}</span>
-                      <span className="lb-lessons mono">📘 {e.lessons}</span>
+                      <span className="lb-lessons mono"><UiIcon name="learn" size="1em" /> {e.lessons}</span>
                       <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{e.stars}</span>
                     </div>
                   </Fragment>
@@ -3995,8 +4000,8 @@ export function GameApp({
                 {!leaderboardLoading && me?.position && me.league > 0 && me.position > (lb?.top.filter((e) => e.league > 0).length ?? 0) && (
                   <div className="leaderboard-row me leaderboard-row-me-sep">
                     <span className="leaderboard-rank">{me.position}</span>
-                    <span className="leaderboard-name">{L(me.league).icon} {me.name}</span>
-                    <span className="lb-lessons mono">📘 {me.lessons}</span>
+                    <span className="leaderboard-name"><LeagueBadge tier={me.league} /> {me.name}</span>
+                    <span className="lb-lessons mono"><UiIcon name="learn" size="1em" /> {me.lessons}</span>
                     <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{me.stars}</span>
                   </div>
                 )}
@@ -4009,13 +4014,13 @@ export function GameApp({
                   return (
                     <>
                       <div className="lb-league-head" style={{ color: L(0).color, borderColor: L(0).color }}>
-                        <span>{L(0).icon} {lname(0)}</span>
+                        <LeagueBadge tier={0} /><span>{lname(0)}</span>
                       </div>
                       {meIn && me && (
                         <div className="leaderboard-row me">
                           <span className="leaderboard-rank">{me.position}</span>
                           <span className="leaderboard-name">{me.name}</span>
-                          <span className="lb-lessons mono">📘 {me.lessons}</span>
+                          <span className="lb-lessons mono"><UiIcon name="learn" size="1em" /> {me.lessons}</span>
                           <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{me.stars}</span>
                         </div>
                       )}

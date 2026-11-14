@@ -3,15 +3,15 @@
    next 5 Wind and everyone else Rookie. When others clear more stages they push
    the line up, so staying on top means clearing more. */
 
-export type RankLeague = { tier: number; name: string; nameJa: string; icon: string; color: string; upTo: number };
+export type RankLeague = { tier: number; name: string; nameJa: string; color: string; upTo: number };
 
 /* best first; upTo = the last place inside this league: the top 2 are
    Legend, the next 4 Thunder, the next 5 Wind, everyone else Rookie */
 export const RANK_LEAGUES: RankLeague[] = [
-  { tier: 3, name: "Legend Ninja", nameJa: "伝説の忍者", icon: "🔥", color: "#DC2626", upTo: 2 },
-  { tier: 2, name: "Thunder Ninja", nameJa: "雷の忍者", icon: "⚡", color: "#D97706", upTo: 6 },
-  { tier: 1, name: "Wind Ninja", nameJa: "風の忍者", icon: "🌀", color: "#0E8FA8", upTo: 11 },
-  { tier: 0, name: "Rookie Ninja", nameJa: "見習い忍者", icon: "🌱", color: "#3F8F3A", upTo: Infinity },
+  { tier: 3, name: "Legend Ninja", nameJa: "伝説の忍者", color: "#DC2626", upTo: 2 },
+  { tier: 2, name: "Thunder Ninja", nameJa: "雷の忍者", color: "#D97706", upTo: 6 },
+  { tier: 1, name: "Wind Ninja", nameJa: "風の忍者", color: "#0E8FA8", upTo: 11 },
+  { tier: 0, name: "Rookie Ninja", nameJa: "見習い忍者", color: "#3F8F3A", upTo: Infinity },
 ];
 
 export function rankLeague(tier: number): RankLeague {

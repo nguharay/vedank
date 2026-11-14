@@ -268,3 +268,37 @@ const GAME: Record<string, React.ReactNode> = {
   ),
 };
 
+
+/* ---------- ninja league badges ----------
+   A round badge in the league's colour with its sign: a sprout (Rookie), a
+   wind swirl (Wind), a lightning bolt (Thunder), a flame (Legend). Drawn, so
+   they look the same on every phone. */
+const BADGE_FILL = ["#4caf50", "#18a7c2", "#ffb020", "#ff4d4d"];
+const BADGE_RING = ["#2e7d32", "#0e7490", "#b45309", "#b91c1c"];
+export function LeagueBadge({ tier, size = "1.2em" }: { tier: number; size?: string }) {
+  const t = Math.max(0, Math.min(3, tier));
+  return (
+    <svg className="league-badge" viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+      <circle cx="16" cy="16" r="13.5" fill={BADGE_FILL[t]} {...s} />
+      <circle cx="16" cy="16" r="10.5" fill="none" stroke={BADGE_RING[t]} strokeWidth="1.4" opacity=".55" />
+      {t === 0 && (
+        <>
+          <path d="M16 24v-8" {...s} strokeWidth="2.4" fill="none" />
+          <path d="M16 16c0-4 3-6.5 7-6.5 0 4-3 6.5-7 6.5z" fill="#c8f7a0" {...s} strokeWidth="1.6" />
+          <path d="M16 18.5c0-3.2-2.4-5.2-5.6-5.2 0 3.2 2.4 5.2 5.6 5.2z" fill="#c8f7a0" {...s} strokeWidth="1.6" />
+        </>
+      )}
+      {t === 1 && (
+        <path d="M8.5 12.5h11a3 3 0 1 0-3-3M7.5 16.5h15.5a3.2 3.2 0 1 1-3.2 3.2M9.5 20.5h6" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+      )}
+      {t === 2 && <path d="M17.8 6.5L10 17h5.2l-1.6 8.5L22 14.5h-5.4z" fill="#fff6c2" {...s} strokeWidth="1.6" />}
+      {t === 3 && (
+        <>
+          <path d="M16 25.5c-4.4 0-7-2.8-7-6.4 0-4 3.2-5.6 3.6-9.6 2.4 1.4 3 3.4 3 5 1-1.8 1.4-4.6.6-7.5 4.4 2.4 7.8 6.6 7.8 12.1 0 3.6-3 6.4-8 6.4z" fill="#ffd34d" {...s} strokeWidth="1.6" />
+          <path d="M16 25.5c-2 0-3.2-1.3-3.2-3 0-2 1.6-2.8 2-4.8 1.6 1 2 2.4 1.8 3.4.8-.6 1.4-1.6 1.6-2.6 1 1 1.6 2.4 1.6 3.8 0 1.8-1.4 3.2-3.8 3.2z" fill="#fff" />
+        </>
+      )}
+      <path d="M8 10.5a9 9 0 0 1 4-4" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity=".6" />
+    </svg>
+  );
+}
