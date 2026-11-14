@@ -15,7 +15,6 @@ export function useLang(initialLang: LangCode = "en") {
          chat should open in Japanese without anyone hunting for a toggle. */
       if (navigator.language.toLowerCase().startsWith("ja")) setLangState("ja");
     } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* The name the app gets when it's added to the home screen follows the
@@ -50,7 +49,7 @@ export function useLang(initialLang: LangCode = "en") {
 
 export type UIDict = {
   appName: string;
-  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string; blitz: string; tricks: string; daily: string; review: string; comp: string; match: string; games: string; memory: string; quick: string; ttt: string; pop: string; runner: string; race: string; sushi: string; castle: string; konbini: string; crossword: string; crossmath: string; rhythm: string; town: string; ninja: string; party: string; space: string; river: string; train: string };
+  headerTitles: { home: string; topic: string; stagemap: string; practice: string; arena: string; blitz: string; tricks: string; daily: string; review: string; comp: string; match: string; games: string; memory: string; quick: string; ttt: string; pop: string; runner: string; race: string; sushi: string; castle: string; konbini: string; crossword: string; crossmath: string; rhythm: string; ninja: string; party: string; space: string; river: string; train: string };
   menu: {
     accountLabel: string; player: string; sound: string; on: string; off: string;
     theme: string; auto: string; light: string; dark: string; skins: string; language: string; signOut: string;
@@ -94,7 +93,7 @@ export type UIDict = {
 export const UI: Record<LangCode, UIDict> = {
   en: {
     appName: "VedAnk Sprint",
-    headerTitles: { home: "VedAnk Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Puzzles", blitz: "Speed Quiz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "VedAnk Games", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense", konbini: "Konbini Cashier", crossword: "Number Crossword", crossmath: "Cross Math", rhythm: "Rhythm Tap", town: "Math Town", ninja: "Ninja Slice", party: "Multiplayer Games", space: "Space Blaster", river: "River Hop", train: "Dojo" },
+    headerTitles: { home: "VedAnk Sprint", topic: "Lesson", stagemap: "Stage Map", practice: "Battle", arena: "Matchstick Puzzles", blitz: "Speed Quiz", tricks: "Magic Tricks", daily: "Daily Challenge", review: "Fix Your Misses", comp: "Competition", match: "Number Match", games: "VedAnk Games", memory: "Memory Pairs", quick: "Quick Game", ttt: "Math Tic-Tac-Toe", pop: "Number Pop", runner: "Math Runner", race: "Math Race", sushi: "Sushi Shop", castle: "Castle Defense", konbini: "Konbini Cashier", crossword: "Number Crossword", crossmath: "Cross Math", rhythm: "Rhythm Tap", ninja: "Ninja Slice", party: "Multiplayer Games", space: "Space Blaster", river: "River Hop", train: "Dojo" },
     menu: {
       accountLabel: "Account menu",
       player: "Player",
@@ -227,7 +226,7 @@ export const UI: Record<LangCode, UIDict> = {
   },
   ja: {
     appName: "インド式数学",
-    headerTitles: { home: "インド式数学", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒パズル", blitz: "スピードクイズ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "VedAnkゲーム", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！", konbini: "コンビニのレジ", crossword: "数字クロスワード", crossmath: "クロス計算", rhythm: "リズムタップ", town: "計算タウン", ninja: "忍者スライス", party: "みんなであそぶ", space: "スペースシューター", river: "かえるジャンプ", train: "道場" },
+    headerTitles: { home: "インド式数学", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒パズル", blitz: "スピードクイズ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "VedAnkゲーム", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！", konbini: "コンビニのレジ", crossword: "数字クロスワード", crossmath: "クロス計算", rhythm: "リズムタップ", ninja: "忍者スライス", party: "みんなであそぶ", space: "スペースシューター", river: "かえるジャンプ", train: "道場" },
     menu: {
       accountLabel: "アカウントメニュー",
       player: "プレイヤー",

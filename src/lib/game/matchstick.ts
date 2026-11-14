@@ -205,7 +205,6 @@ export function evalEquation(parts: string[]): boolean {
   const rhs = parts.slice(eqIdx + 1).join("");
   if (!/^[0-9+-]+$/.test(lhs) || !/^[0-9]+$/.test(rhs)) return false;
   try {
-    // eslint-disable-next-line no-new-func
     const val = new Function(`"use strict";return (${lhs})`)();
     return val === Number(rhs);
   } catch {

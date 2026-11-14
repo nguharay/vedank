@@ -54,7 +54,7 @@ import {
   importGuestProgressAction,
   consumeItemAction, recordMistakeAction, reviewListAction, fixMistakeAction,
 } from "@/lib/actions/game-actions";
-import { SHOP_ITEMS, type QuestEvent } from "@/lib/game/quests";
+import { SHOP_ITEMS } from "@/lib/game/quests";
 import {
   friendCodeAction, addFriendAction, removeFriendAction, friendsAction,
   challengeAction, answerChallengeAction,
@@ -101,12 +101,10 @@ const KonbiniCashier = dynamic(() => import("./views/TownGames").then((m) => m.K
 const NumberCrossword = dynamic(() => import("./views/TownGames").then((m) => m.NumberCrossword), { ssr: false });
 const CrossMath = dynamic(() => import("./views/TownGames").then((m) => m.CrossMath), { ssr: false });
 const RhythmTap = dynamic(() => import("./views/RhythmTap").then((m) => m.RhythmTap), { ssr: false });
-const TownView = dynamic(() => import("./views/TownView").then((m) => m.TownView), { ssr: false });
 const NinjaSlice = dynamic(() => import("./views/NinjaSlice").then((m) => m.NinjaSlice), { ssr: false });
 const SpaceBlaster = dynamic(() => import("./views/SpaceBlaster").then((m) => m.SpaceBlaster), { ssr: false });
 const RiverHop = dynamic(() => import("./views/RiverHop").then((m) => m.RiverHop), { ssr: false });
 import type { HomeGameId } from "./homeGames";
-import { addTownCoins, useTown } from "./town";
 import { StoryIntro } from "./StoryIntro";
 import { GameDemo, demoDue, markDemoSeen } from "./GameDemo";
 import { InviteSheet } from "./InviteSheet";
@@ -225,11 +223,11 @@ export function GameApp({
     for (let r = 1; r <= 9; r++) for (let c = 1; c <= 9; c++) if (1 + ((r * c - 1) % 9) === t) out.push(`${r}×${c}`);
     return out.join("  ");
   };
-  const GAME_VIEWS: View[] = ["match", "memory", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja", "party", "space", "river"];
+  const GAME_VIEWS: View[] = ["match", "memory", "quick", "ttt", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "ninja", "party", "space", "river"];
   const [quickId, setQuickId] = useState<string>("digitsum");
   const [menuOpen, setMenuOpen] = useState(false);
   const [skinsOpen, setSkinsOpen] = useState(false);
-  const [bonusGems, setBonusGems] = useState(initialBonusGems || 0);
+  const [bonusGems] = useState(initialBonusGems || 0);
   const [chestReward, setChestReward] = useState<number | null>(dailyChestReward ?? null);
   const [chestOpened, setChestOpened] = useState(false);
   const theme = useTheme();
@@ -331,7 +329,6 @@ export function GameApp({
       if (dailyIdx + 1 >= dailyQs.length) {
         const elapsed = Date.now() - dailyStartRef.current;
         const res = await submitDailyAction(nextCorrect, elapsed);
-        fireQuest("daily_played");
         track("daily_done", { score: res.points, correct: res.correct, questions: dailyQs.length, secs: Math.round(elapsed / 1000) });
         setDailyDone({ points: res.points, correct: res.correct });
         setDailyStatus({ day: todayKey(), played: true, correct: res.correct, total: dailyQs.length, points: res.points });
@@ -456,7 +453,6 @@ export function GameApp({
   const [hintOpen, setHintOpen] = useState(false);
   /* correct answers are tallied per stage and reported once at the end rather
      than one round trip per question */
-  const stageCorrectRef = useRef(0);
   /* consecutive misses on the current question, so the buddy escalates its help */
   const wrongRunRef = useRef(0);
 
@@ -515,12 +511,6 @@ export function GameApp({
     };
   }, [guest]);
 
-  /* Quests are gone; what is left of this hook is that every right answer, in
-     any game, pays into Math Town (guests too). The name stays because every
-     game calls it. */
-  function fireQuest(event: QuestEvent, amount = 1) {
-    if (event === "correct_answer") addTownCoins(amount);
-  }
 
   async function onBuy(itemId: string) {
     setShopBusy(itemId);
@@ -843,7 +833,6 @@ export function GameApp({
       setReviewFixed((n) => n + 1);
       sayLine("reviewFixed");
       fixMistakeAction(p.prompt).then(refreshReview).catch(() => {});
-      fireQuest("mistake_fixed");
     } else {
       sound.wrong();
       haptic([25, 45, 25]);
@@ -911,7 +900,7 @@ export function GameApp({
   /* Guests get a taste — the first two topics, Blitz, Game of the Day and
      three shelf games — and a lock everywhere else. Everything is one tap
      from a sign-up that keeps their progress. */
-  const GUEST_GAMES = new Set(["match", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "town", "ninja", "space", "river"]);
+  const GUEST_GAMES = new Set(["match", "memory", "pop", "runner", "race", "sushi", "castle", "konbini", "crossword", "crossmath", "rhythm", "ninja", "space", "river"]);
   const [lockOpen, setLockOpen] = useState<string | null>(null);
   /* a room code from a shared ?rr= link, handed to the race view once */
   const [raceJoinCode, setRaceJoinCode] = useState<string | null>(null);
@@ -981,10 +970,6 @@ export function GameApp({
     else if (view === "stagemap") { openTopic(currentTopicId!); }
     /* Out of a game goes back to the shelf, not all the way home — finishing
        one and wanting another is the common case. */
-    else if (GAME_VIEWS.includes(view) && view !== "town" && gameFromTownRef.current) {
-      /* a game opened from a building in Math Town goes back to the town */
-      gameFromTownRef.current = false; setView("town");
-    }
     else if (GAME_VIEWS.includes(view) && gameFromHomeRef.current) {
       /* launched from Home (today's game) — go back there */
       gameFromHomeRef.current = false; goHome();
@@ -1012,7 +997,6 @@ export function GameApp({
          is remembered, so Home's "next lesson" and the map pick up from it */
       if (savedTopic) setCurrentTopicId(savedTopic);
     } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -1282,7 +1266,6 @@ export function GameApp({
     ]);
 
     if (ok) {
-      stageCorrectRef.current += 1;
       setCurStage((s) => {
         const correct = s.correct + 1;
         setBestStreakEver((b) => Math.max(b, correct));
@@ -1484,13 +1467,6 @@ export function GameApp({
       return next;
     });
 
-    /* Report the run's quest-relevant facts in one go. */
-    if (stageCorrectRef.current > 0) fireQuest("correct_answer", stageCorrectRef.current);
-    stageCorrectRef.current = 0;
-    if (result.passed) {
-      fireQuest("stage_cleared");
-      if (correct === QUESTIONS_PER_STAGE) fireQuest("stage_perfect");
-    }
 
     const wasBoss = n === STAGE_COUNT;
     if (result.passed) {
@@ -1544,7 +1520,6 @@ export function GameApp({
   /* ================= MATCHSTICK DOJO ================= */
   const [puzIdx, setPuzIdx] = useState(0);
   const [glyphs, setGlyphs] = useState<Glyph[]>([]);
-  const [startGlyphs, setStartGlyphs] = useState<Glyph[]>([]);
   const [tray, setTray] = useState<boolean[]>(new Array(TRAY_SIZE).fill(false));
   const [moveCount, setMoveCount] = useState(0);
   const [selection, setSelection] = useState<Loc | null>(null);
@@ -1571,7 +1546,6 @@ export function GameApp({
     setPuzIdx(idx);
     /* remember where the player is (not during Matchstick Sprint, which deals its own order) */
     if (!sprintRef.current) { try { localStorage.setItem("sutraSprint.dojoAt", String(idx)); } catch {} }
-    setStartGlyphs(start);
     setGlyphs(cloneGlyphs(start));
     setTray(new Array(TRAY_SIZE).fill(false));
     setMoveCount(0);
@@ -1660,7 +1634,6 @@ export function GameApp({
           retrySave(() => solvePuzzleAction(p.id, moves));
         }
       }
-      fireQuest("puzzle_solved");
       sayLine("puzzleSolved");
       setProgress((prev) => ({
         ...prev,
@@ -1773,7 +1746,6 @@ export function GameApp({
   const [blitzBests, setBlitzBests] = useState<Record<number, number>>({});
   const blitzLevelRef = useRef(BLITZ_DEFAULT_LEVEL);
   const [blitzTimerMs, setBlitzTimerMs] = useState(blitzLevel(BLITZ_DEFAULT_LEVEL).startMs);
-  const [blitzBoost, setBlitzBoost] = useState(false);
   /* read inside newBlitzQuestion, which runs from timers outside render */
   const blitzBoostRef = useRef(false);
   const [blitzTimerKey, setBlitzTimerKey] = useState(0);
@@ -1847,7 +1819,6 @@ export function GameApp({
     setBlitzHardRun(blitzHard);
     setBlitzLevelId(levelId);
     setBlitzPicker(false);
-    fireQuest("blitz_played");
     sayLine("blitzStart");
     /* Spend a Time Boost if one is held: the whole run gets a longer clock.
        Consumed server-side first, so a failed spend means no boost. */
@@ -1857,14 +1828,12 @@ export function GameApp({
           if (res.ok) {
             setInventory(res.inventory ?? null);
             blitzBoostRef.current = true;
-            setBlitzBoost(true);
             spawnToast(`⏱️ +${BLITZ_BOOST_MS / 1000}s`, null);
           }
         })
         .catch(() => {});
     } else {
       blitzBoostRef.current = false;
-      setBlitzBoost(false);
     }
     setBlitzScore(0);
     setBlitzHearts(3);
@@ -1973,7 +1942,6 @@ export function GameApp({
         recordDailyGame(score);
         confetti.burstCenter(140, 0.5);
         sound.levelUp();
-        fireQuest("correct_answer", matchTiles.length / 2);
       }
     } else {
       /* Show the wrong pairing for a beat rather than snapping it away —
@@ -2019,7 +1987,6 @@ export function GameApp({
     } catch {}
     readDailyGame();
     gameFromHomeRef.current = false;
-    gameFromTownRef.current = false;
     setView("games");
   }
   /* Tapping a shelf card is a free play, never the day's board. */
@@ -2061,10 +2028,8 @@ export function GameApp({
     return () => window.removeEventListener("vedank:invite", on);
   }, []);
   const gameLocked = (id: string) => guest && !GUEST_GAMES.has(id);
-  const townState = useTown();
   /* The Home tab's way into a game. Guest gating is the shelf's. */
   const gameFromHomeRef = useRef(false);
-  const gameFromTownRef = useRef(false);
   function playGame(id: HomeGameId) {
     const open: Record<HomeGameId, () => void> = {
       runner: () => setView("runner"), race: () => setView("race"),
@@ -2074,14 +2039,8 @@ export function GameApp({
       space: () => setView("space"), river: () => setView("river"),
       pop: startPop, ttt: openTtt,
     };
-    /* from the town, "back" returns to the town (gameFromTownRef); otherwise Home */
-    if (!gameFromTownRef.current) gameFromHomeRef.current = true;
+    gameFromHomeRef.current = true;
     shelf(open[id], id === "ttt" ? undefined : id)();
-  }
-  function openTown(fromHome: boolean) {
-    gameFromTownRef.current = false;
-    gameFromHomeRef.current = fromHome;
-    setView("town");
   }
   const GAMES = [
     {
@@ -2196,7 +2155,6 @@ export function GameApp({
       setPopOver({ score: sc, best });
       return sc;
     });
-    if (popStreak > 0) fireQuest("correct_answer", popStreak);
   }
   /* Leaving the view mid-round must not leave a balloon timer running. */
   useEffect(() => { if (view !== "pop") popClear(); }, [view]);
@@ -2443,7 +2401,6 @@ export function GameApp({
         try { localStorage.setItem(quickBestKey(quickId), String(quickStreak)); } catch {}
       }
       setTimeout(() => setQuickOver({ streak: quickStreak, best }), 1500);
-      if (quickStreak > 0) fireQuest("correct_answer", quickStreak);
     }
   }
 
@@ -2466,7 +2423,6 @@ export function GameApp({
       case "arena": return `Matchsticks · Puzzle ${puzIdx + 1}`;
       case "quick": return `Game · ${quickGame(quickId)?.name ?? "Quick game"}`;
       case "games": return "Games list";
-      case "town": return "Math Town";
       default: return GAME_VIEWS.includes(view) ? `Game · ${EN[view]}` : EN[view];
     }
   })();
@@ -2512,10 +2468,8 @@ export function GameApp({
 
   function endBlitz(finalScore: number) {
     const lvl = blitzLevelRef.current;
-    fireQuest("blitz_score", finalScore);
     if (finalScore >= 10 && friends.length > 0) sayLine("blitzGood");
     blitzBoostRef.current = false;
-    setBlitzBoost(false);
     /* A run started from a duel settles it — once, server-side. */
     if (activeDuelId) {
       const duel = duels.find((d) => d.id === activeDuelId);
@@ -4214,9 +4168,6 @@ export function GameApp({
             status={puzzleStatus}
             svgRef={puzzleSvgRef}
             onSlotClick={onSlotClick}
-            onHint={onHint}
-            onReset={() => loadPuzzle(puzIdx)}
-            onNext={() => loadPuzzle(puzIdx + 1)}
           />
         )}
 
@@ -4482,7 +4433,7 @@ export function GameApp({
             <button className={`ttt-card sushi-feature${isUnlocked("sushi") ? "" : " prog-locked"}`} onClick={shelf(() => setView("sushi"), "sushi")}>
               <span className="feature-art sushi" aria-hidden="true"><b className="fa-sushi">🍣</b><b className="fa-guest">🙋</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🍣 おすし屋さん" : "🍣 Sushi Shop"}<ArcadeMarks id="sushi" lang={lang} /></span>
+                <span className="ttt-card-name">{lang === "ja" ? "🍣 おすし屋さん" : "🍣 Sushi Shop"}<ArcadeMarks id="sushi" /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "回転寿司のお会計！お皿の合計を計算しよう。" : "Run a conveyor-belt sushi bar. Total the plates fast!"}</span>
                 {(gameBests.sushi ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "売上ベスト" : "Best day"} ¥{gameBests.sushi.toLocaleString("en-US")}</span>}
               </span>
@@ -4492,7 +4443,7 @@ export function GameApp({
             <button className={`ttt-card castle-feature${isUnlocked("castle") ? "" : " prog-locked"}`} onClick={shelf(() => setView("castle"), "castle")}>
               <span className="feature-art castle" aria-hidden="true"><b className="fa-castle">🏯</b><b className="fa-foe">👾</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🏯 お城をまもれ！" : "🏯 Castle Defense"}<ArcadeMarks id="castle" lang={lang} /></span>
+                <span className="ttt-card-name">{lang === "ja" ? "🏯 お城をまもれ！" : "🏯 Castle Defense"}<ArcadeMarks id="castle" /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "答えて矢をうて！モンスターからお城をまもろう。" : "Answer to fire arrows. Hold off the monster waves!"}</span>
                 {(gameBests.castle ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.castle}</span>}
               </span>
@@ -4502,7 +4453,7 @@ export function GameApp({
             <button className={`ttt-card rhythm-feature${isUnlocked("rhythm") ? "" : " prog-locked"}`} onClick={shelf(() => setView("rhythm"), "rhythm")}>
               <span className="feature-art rhythm" aria-hidden="true"><b className="fa-note1">🎵</b><b className="fa-note2">🎶</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🎵 リズムタップ" : "🎵 Rhythm Tap"}<ArcadeMarks id="rhythm" lang={lang} /></span>
+                <span className="ttt-card-name">{lang === "ja" ? "🎵 リズムタップ" : "🎵 Rhythm Tap"}<ArcadeMarks id="rhythm" /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "音楽にあわせて答えをタップ！" : "Tap the answers to the beat of the music!"}</span>
                 {(gameBests.rhythm ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.rhythm}</span>}
               </span>
@@ -4549,7 +4500,7 @@ export function GameApp({
                 <button key={g.id} className={`game-card${gameLocked(g.id) ? " locked" : ""}${!gameLocked(g.id) && !isUnlocked(g.id) ? " prog-locked" : ""}`} onClick={g.start} style={{ ["--g" as string]: g.tint }}>
                   <span className="game-card-icon"><GameArt id={g.id} fallback={g.icon} /></span>
                   <span className="game-card-body">
-                    <span className="game-card-name">{lang === "ja" ? g.nameJa : g.name}{g.id === "konbini" && <ArcadeMarks id="konbini" lang={lang} />}</span>
+                    <span className="game-card-name">{lang === "ja" ? g.nameJa : g.name}{g.id === "konbini" && <ArcadeMarks id="konbini" />}</span>
                     <span className="game-card-blurb">{lang === "ja" ? g.blurbJa : g.blurb}</span>
                     {/* the record sits under the text, so the row never runs out of room on a phone */}
                     {g.best > 0 && !gameLocked(g.id) && (
@@ -4567,7 +4518,7 @@ export function GameApp({
             <button className={`ttt-card space-feature${isUnlocked("space") ? "" : " prog-locked"}`} onClick={shelf(() => setView("space"), "space")}>
               <span className="feature-art space" aria-hidden="true"><b className="fa-rocket">🚀</b><b className="fa-rock">☄️</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🚀 スペースシューター" : "🚀 Space Blaster"}<ArcadeMarks id="space" lang={lang} /></span>
+                <span className="ttt-card-name">{lang === "ja" ? "🚀 スペースシューター" : "🚀 Space Blaster"}<ArcadeMarks id="space" /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "答えのいん石をレーザーでうちおとせ！UFOもやってくるぞ。" : "Blast the number rock with the answer. Watch out for the UFO!"}</span>
                 {(gameBests.space ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.space}</span>}
               </span>
@@ -4576,7 +4527,7 @@ export function GameApp({
             <button className={`ttt-card river-feature${isUnlocked("river") ? "" : " prog-locked"}`} onClick={shelf(() => setView("river"), "river")}>
               <span className="feature-art river" aria-hidden="true"><b className="fa-frog">🐸</b><b className="fa-pad" /></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🐸 かえるジャンプ" : "🐸 River Hop"}<ArcadeMarks id="river" lang={lang} /></span>
+                <span className="ttt-card-name">{lang === "ja" ? "🐸 かえるジャンプ" : "🐸 River Hop"}<ArcadeMarks id="river" /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "答えのハスの葉にジャンプして、川をわたろう！" : "Hop on the lily pad with the answer and cross the river!"}</span>
                 {(gameBests.river ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.river}</span>}
               </span>
@@ -4585,7 +4536,7 @@ export function GameApp({
             <button className={`ttt-card ninja-feature${isUnlocked("ninja") ? "" : " prog-locked"}`} onClick={shelf(() => setView("ninja"), "ninja")}>
               <span className="feature-art ninja" aria-hidden="true"><b className="fa-fruit">🍉</b><b className="fa-slash">／</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🥷 忍者スライス" : "🥷 Ninja Slice"}<ArcadeMarks id="ninja" lang={lang} /></span>
+                <span className="ttt-card-name">{lang === "ja" ? "🥷 忍者スライス" : "🥷 Ninja Slice"}<ArcadeMarks id="ninja" /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "答えのフルーツをスワイプで切れ！ばくだん注意。" : "Swipe to slice the fruit with the answer. Mind the bombs!"}</span>
                 {(gameBests.ninja ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.ninja}</span>}
               </span>
@@ -4595,7 +4546,7 @@ export function GameApp({
             <button className={`ttt-card run-feature${isUnlocked("runner") ? "" : " prog-locked"}`} onClick={shelf(() => setView("runner"), "runner")}>
               <span className="feature-art runner" aria-hidden="true"><b className="fa-boy"><Mascot animated={false} /></b><b className="fa-rock">🪨</b></span>
               <span className="ttt-card-body">
-                <span className="ttt-card-name">{lang === "ja" ? "🏃 計算ランナー" : "🏃 Math Runner"}<ArcadeMarks id="runner" lang={lang} /></span>
+                <span className="ttt-card-name">{lang === "ja" ? "🏃 計算ランナー" : "🏃 Math Runner"}<ArcadeMarks id="runner" /></span>
                 <span className="ttt-card-sub">{lang === "ja" ? "答えをタップしてジャンプ！どこまで走れるかな？" : "Answer to jump the rocks and logs. How far can you run?"}</span>
                 {(gameBests.runner ?? 0) > 0 && <span className="feature-best mono">{lang === "ja" ? "ベスト" : "Best"} {gameBests.runner}</span>}
               </span>
@@ -4610,74 +4561,57 @@ export function GameApp({
 
         {view === "runner" && (
           <section className="view active">
-            <RunnerGame lang={lang} sound={sound} autoStart={autoStartFor === "runner"} celebrate={() => confetti.burstCenter(60, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} />
+            <RunnerGame lang={lang} sound={sound} autoStart={autoStartFor === "runner"} celebrate={() => confetti.burstCenter(60, 0.35)} />
           </section>
         )}
         {view === "space" && (
           <section className="view active">
-            <SpaceBlaster lang={lang} sound={sound} autoStart={autoStartFor === "space"} celebrate={() => confetti.burstCenter(80, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} onFriends={() => { setPartyFirst("space"); setView("party"); }} />
+            <SpaceBlaster lang={lang} sound={sound} autoStart={autoStartFor === "space"} celebrate={() => confetti.burstCenter(80, 0.35)} onFriends={() => { setPartyFirst("space"); setView("party"); }} />
           </section>
         )}
         {view === "river" && (
           <section className="view active">
-            <RiverHop lang={lang} sound={sound} autoStart={autoStartFor === "river"} celebrate={() => confetti.burstCenter(80, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} onFriends={() => { setPartyFirst("river"); setView("party"); }} />
+            <RiverHop lang={lang} sound={sound} autoStart={autoStartFor === "river"} celebrate={() => confetti.burstCenter(80, 0.35)} onFriends={() => { setPartyFirst("river"); setView("party"); }} />
           </section>
         )}
         {view === "ninja" && (
           <section className="view active">
-            <NinjaSlice lang={lang} sound={sound} celebrate={() => confetti.burstCenter(80, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} />
+            <NinjaSlice lang={lang} sound={sound} celebrate={() => confetti.burstCenter(80, 0.35)} />
           </section>
         )}
         {view === "rhythm" && (
           <section className="view active">
-            <RhythmTap lang={lang} sound={sound} celebrate={() => confetti.burstCenter(80, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} />
-          </section>
-        )}
-        {view === "town" && (
-          <section className="view active">
-            <TownView lang={lang} sound={sound} guest={guest} celebrate={() => confetti.burstCenter(90, 0.35)}
-              onPlay={(gid) => { gameFromTownRef.current = true; playGame(gid as HomeGameId); }} />
+            <RhythmTap lang={lang} sound={sound} celebrate={() => confetti.burstCenter(80, 0.35)} />
           </section>
         )}
         {view === "konbini" && (
           <section className="view active">
-            <KonbiniCashier lang={lang} sound={sound} autoStart={autoStartFor === "konbini"} celebrate={() => confetti.burstCenter(70, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} />
+            <KonbiniCashier lang={lang} sound={sound} autoStart={autoStartFor === "konbini"} celebrate={() => confetti.burstCenter(70, 0.35)} />
           </section>
         )}
         {view === "crossword" && (
           <section className="view active">
-            <NumberCrossword lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} />
+            <NumberCrossword lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)} />
           </section>
         )}
         {view === "crossmath" && (
           <section className="view active">
-            <CrossMath lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} />
+            <CrossMath lang={lang} sound={sound} celebrate={() => confetti.burstCenter(70, 0.35)} />
           </section>
         )}
         {view === "sushi" && (
           <section className="view active">
-            <SushiShop lang={lang} sound={sound} autoStart={autoStartFor === "sushi"} celebrate={() => confetti.burstCenter(70, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} />
+            <SushiShop lang={lang} sound={sound} autoStart={autoStartFor === "sushi"} celebrate={() => confetti.burstCenter(70, 0.35)} />
           </section>
         )}
         {view === "castle" && (
           <section className="view active">
-            <CastleDefense lang={lang} sound={sound} autoStart={autoStartFor === "castle"} celebrate={() => confetti.burstCenter(80, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)} />
+            <CastleDefense lang={lang} sound={sound} autoStart={autoStartFor === "castle"} celebrate={() => confetti.burstCenter(80, 0.35)} />
           </section>
         )}
         {view === "party" && (
           <section className="view active">
             <PartyGames key={partyFirst} lang={lang} sound={sound} celebrate={() => confetti.burstCenter(110, 0.4)} game={partyFirst}
-              onCorrect={(n) => fireQuest("correct_answer", n)}
               joinCode={partyJoinCode} onJoined={() => setPartyJoinCode(null)} onBack={() => { setPartyFirst("tug"); setView("games"); }}
               guest={guest} onNeedAccount={() => setLockOpen("race-online")} onLobby={setPartyLobby}
               createNow={partyCreate} onCreateTaken={() => setPartyCreate(false)} />
@@ -4686,7 +4620,6 @@ export function GameApp({
         {view === "race" && (
           <section className="view active">
             <RaceGame lang={lang} sound={sound} celebrate={() => confetti.burstCenter(90, 0.35)}
-              onCorrect={(n) => fireQuest("correct_answer", n)}
               guest={guest} onNeedAccount={() => setLockOpen("race-online")}
               joinCode={raceJoinCode} onJoined={() => setRaceJoinCode(null)} />
           </section>
@@ -4932,7 +4865,6 @@ export function GameApp({
               setTrickStep(0);
               setTrickNum(tk.sample());
               haptic(12);
-              fireQuest("trick_viewed");
             }}
             onStep={(d) => {
               setTrickStep((s) => Math.max(0, s + d));

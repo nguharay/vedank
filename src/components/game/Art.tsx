@@ -8,7 +8,7 @@ const O = "#1d1b33"; /* the outline, the same ink as the cards' borders */
 const s = { stroke: O, strokeWidth: 2, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
 
 export type UiIconName =
-  | "learn" | "today" | "play" | "world" | "home" | "quests" | "league" | "rank" | "speed" | "magic" | "sticks" | "dojo" | "save" | "gem" | "heart" | "lock" | "card";
+  | "learn" | "today" | "play" | "home" | "league" | "speed" | "magic" | "sticks" | "dojo" | "save" | "heart" | "lock" | "card";
 
 export function UiIcon({ name, size = "1em" }: { name: UiIconName; size?: string }) {
   return (
@@ -48,30 +48,12 @@ const UI: Record<UiIconName, React.ReactNode> = {
       <path d="M8 11.5c2-1 4-1 6-1" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" opacity=".55" />
     </>
   ),
-  /* a little planet with a ring: your own world */
-  world: (
-    <>
-      <path d="M3.5 21c-2 3.5 9-1 16-6s10.5-8.5 8.5-10" fill="none" {...s} stroke="#ff9a3d" strokeWidth="2.6" />
-      <circle cx="16" cy="16" r="10" fill="#4fb3e8" {...s} />
-      <path d="M9 12c2 0 3 1.5 5 1s2 2 1 3.5-3 1-4 3-3 .5-3.5-1.5S7 12 9 12zM19 20.5c1.5-1 3.5-.5 4 .5s-1 2.5-2.5 2.5-2.5-2-1.5-3z" fill="#5fd068" stroke={O} strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M5.5 23c-.8 1.6 7-1.6 13-5.6" fill="none" stroke="#ff9a3d" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M11 8.5a8.5 8.5 0 0 1 4-1.5" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" opacity=".7" />
-    </>
-  ),
   home: (
     <>
       <path d="M4 15L16 4.5 28 15" fill="none" {...s} strokeWidth="6" />
       <path d="M7 13v13h18V13L16 5.5z" fill="#ffcf5a" {...s} />
       <path d="M13 26v-7h6v7" fill="#ff7a59" {...s} />
       <path d="M4 15L16 4.5 28 15" fill="none" stroke="#ff5a6e" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
-    </>
-  ),
-  quests: (
-    <>
-      <path d="M8 5h15a3 3 0 0 1 3 3v15H11V8a3 3 0 0 0-3-3z" fill="#fff2cc" {...s} />
-      <path d="M8 5a3 3 0 0 0-3 3v2h6" fill="#e9c77b" {...s} />
-      <path d="M11 23v1a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-1z" fill="#e9c77b" {...s} />
-      <path d="M15 11h7M15 15h7M15 19h4" stroke="#b07a3c" strokeWidth="1.8" strokeLinecap="round" />
     </>
   ),
   league: (
@@ -81,13 +63,6 @@ const UI: Record<UiIconName, React.ReactNode> = {
       <path d="M14 18h4l1 5h-6z" fill="#e0a21b" {...s} />
       <rect x="9.5" y="23" width="13" height="5" rx="1.5" fill="#7a58c0" {...s} />
       <path d="M12.5 8v3.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity=".75" />
-    </>
-  ),
-  rank: (
-    <>
-      <circle cx="16" cy="16" r="12" fill="#4fb3e8" {...s} />
-      <path d="M16 4c-4 4-4 20 0 24M16 4c4 4 4 20 0 24M4.5 12.5h23M4.5 19.5h23" fill="none" stroke={O} strokeWidth="1.5" />
-      <path d="M7 10c1.5-3 4-4.5 6.5-5" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" opacity=".7" />
     </>
   ),
   /* a lightning bolt: Speed Quiz */
@@ -141,13 +116,6 @@ const UI: Record<UiIconName, React.ReactNode> = {
     <>
       <path d="M9 25a6 6 0 0 1-.8-11.9A8 8 0 0 1 23.5 11 6 6 0 0 1 23 25z" fill="#fff" {...s} />
       <path d="M16 13.5v8M12.5 18l3.5 3.5 3.5-3.5" fill="none" stroke="#e0a21b" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-    </>
-  ),
-  gem: (
-    <>
-      <path d="M9 5h14l6 7-13 16L3 12z" fill="#5ab8ff" {...s} />
-      <path d="M3 12h26M9 5l3 7 4 16M23 5l-3 7-4 16M12 12l4-7 4 7" fill="none" stroke={O} strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M10 7.5l1.5 3.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity=".85" />
     </>
   ),
   heart: (

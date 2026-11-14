@@ -7,7 +7,7 @@ import type { useSound } from "../useSound";
 import { castleQuestion } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
-type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; autoStart?: boolean; onCorrect?: (n: number) => void; onFriends?: () => void };
+type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; autoStart?: boolean; onFriends?: () => void };
 
 /* ---------- 🐸 River Hop ----------
    A frog crosses a river of LANES lanes of drifting lily pads. Each hop is a
@@ -38,7 +38,7 @@ const rand = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
 function readBest() { try { return Number(localStorage.getItem(BEST_KEY) || 0); } catch { return 0; } }
 function writeBest(v: number) { try { localStorage.setItem(BEST_KEY, String(v)); } catch {} }
 
-export function RiverHop({ lang, sound, celebrate, autoStart, onCorrect, onFriends }: Props) {
+export function RiverHop({ lang, sound, celebrate, autoStart, onFriends }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "play" | "over">("ready");
   const [pads, setPads] = useState<Pad[]>([]);
@@ -216,7 +216,7 @@ export function RiverHop({ lang, sound, celebrate, autoStart, onCorrect, onFrien
     const pts = 10 + quick * 2 + Math.min(st.combo, 10);
     st.score += pts; setScore(st.score);
     flash(pad ? padX(pad, now) : target.x, laneY(target.lane) - 34, `+${pts}`, "good");
-    sound.hit(); haptic(12); onCorrect?.(1);
+    sound.hit(); haptic(12);
     setPrompt("");
   }
 
@@ -314,7 +314,7 @@ export function RiverHop({ lang, sound, celebrate, autoStart, onCorrect, onFrien
             {onFriends && <button className="btn arcade-friends" onClick={onFriends}>👥 {ja ? "友だちと対戦" : "Race your friends"}</button>}
           </div>
         )}
-        {phase === "over" && <RunResults game="river" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} detail={ja ? `川 ${river}・${hops}ジャンプ` : `River ${river} · ${hops} hops`} />}
+        {phase === "over" && <RunResults game="river" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} detail={ja ? `川 ${river}・${hops}ジャンプ` : `River ${river} · ${hops} hops`} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && score > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "ドボン！おしまい" : "Splash! Game over")}</div>

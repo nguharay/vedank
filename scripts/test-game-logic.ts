@@ -50,7 +50,6 @@ for (const t of TOPICS) {
           if (a - b !== r.answer) fails.push(`${t.id} mismatch: ${r.prompt} -> ${r.answer}`);
           if (a <= b) fails.push(`${t.id} non-positive operands: ${r.prompt}`);
         }
-        const divM = r.prompt.match(/^(\d+) ÷ 8/);
         const sq5 = r.prompt.match(/^(\d+)²$/);
         if (sq5 && t.id === "squareStart5") {
           const n = Number(sq5[1]);

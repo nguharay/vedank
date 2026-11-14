@@ -29,7 +29,6 @@ import { jstDay } from "@/lib/game/reminders";
 import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { saveTown, friendTowns, visitTown, buyFromTown, leaveSticker, collectGifts, type TownSnapshot } from "@/lib/game/townOnline";
 import { getAdminSession } from "@/lib/admin";
 import { createPartyRoom, joinPartyRoom, getPartyRoom, startPartyRoom, answerPartyRoom, switchPartyGame, throwPartyRoom } from "@/lib/game/partyOnline";
 import type { PartyGame } from "@/lib/game/party";
@@ -279,17 +278,6 @@ export async function tttMoveAction(code: string, i: number, chosen: number) {
   return moveRoom(await requireUserId(), String(code ?? ""), Number(i), Number(chosen));
 }
 export async function tttRematchAction(code: string) { return rematchRoom(await requireUserId(), String(code ?? "")); }
-
-/* ---------- math town: friends' towns ---------- */
-
-export async function townSaveAction(state: TownSnapshot) { await saveTown(await requireUserId(), state); return { ok: true as const }; }
-export async function townFriendsAction() { return friendTowns(await requireUserId()); }
-export async function townVisitAction(ownerId: string) { return visitTown(await requireUserId(), String(ownerId ?? "")); }
-export async function townBuyAction(ownerId: string, buildingId: string, amount: number) {
-  return buyFromTown(await requireUserId(), String(ownerId ?? ""), String(buildingId ?? ""), Number(amount));
-}
-export async function townStickerAction(ownerId: string, emoji: string) { return leaveSticker(await requireUserId(), String(ownerId ?? ""), String(emoji ?? "")); }
-export async function townCollectAction() { return collectGifts(await requireUserId()); }
 
 /* ---------- online math race ---------- */
 

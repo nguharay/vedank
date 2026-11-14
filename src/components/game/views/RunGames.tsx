@@ -18,7 +18,7 @@ import {
 } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
-type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect?: (n: number) => void; autoStart?: boolean };
+type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; autoStart?: boolean };
 
 function readBest(key: string) {
   try { return Number(localStorage.getItem(key) || 0); } catch { return 0; }
@@ -72,7 +72,7 @@ const OBS_HALF = 20;
 
 type RunState = "approach" | "cleared" | "wrong" | "crashed";
 
-export function RunnerGame({ lang, sound, celebrate, onCorrect, autoStart }: Props) {
+export function RunnerGame({ lang, sound, celebrate, autoStart }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "run" | "over">("ready");
   const [round, setRound] = useState<ChoiceRound | null>(null);
@@ -180,7 +180,7 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect, autoStart }: Pro
     st.score += pts; setScore(st.score);
     setPop({ k: st.score, text: `+${pts}` });
     sound.correct(); haptic(12);
-    onCorrect?.(1);
+   
     if (st.streak % 10 === 0) celebrate();
   }
 
@@ -245,7 +245,7 @@ export function RunnerGame({ lang, sound, celebrate, onCorrect, autoStart }: Pro
             <button className="btn btn-primary" onClick={start}>{ja ? "スタート！" : "Start!"}</button>
           </div>
         )}
-        {phase === "over" && <RunResults game="runner" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} />}
+        {phase === "over" && <RunResults game="runner" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && score > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "ゴール！" : "Run over!")}</div>
@@ -274,7 +274,7 @@ const RACE_UNLOCK_KEY = "sutraSprint.raceUnlocked";
 const RACE_WON_KEY = "sutraSprint.raceBest";
 const raceBestKey = (lv: number) => `sutraSprint.raceBest.L${lv}`;
 
-function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOnline: () => void }) {
+function CpuRace({ lang, sound, celebrate, onOnline }: Props & { onOnline: () => void }) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "count" | "race" | "over">("ready");
   const [sceneIdx, setSceneIdx] = useState(0);
@@ -365,7 +365,7 @@ function CpuRace({ lang, sound, celebrate, onCorrect, onOnline }: Props & { onOn
       st.timer = setTimeout(() => { setStumble(false); setPicked(null); setRound(buildChoiceRound(st.streak)); }, 800);
       return;
     }
-    sound.correct(); haptic(12); onCorrect?.(1);
+    sound.correct(); haptic(12);
     st.done += 1; st.streak += 1; setDone(st.done);
     const words = ja ? ["ダッシュ！", "いけー！", "ぐんぐん！", "ビュン！"] : ["DASH!", "GO GO!", "ZOOM!", "WHOOSH!"];
     setDash({ k: ++dashK.current, word: words[st.done % words.length], ok: true });
@@ -557,7 +557,7 @@ const FRIEND_AVATARS = ["🐶", "🐱", "🐼", "🦁", "🐰", "🦊", "🐸", 
    2–50 friends, one room code, the same sums for everyone. The room is polled
    once a second — like online tic-tac-toe, no socket needed; your own runner
    moves the instant you answer and the server confirms it. */
-function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onBack }: Props & {
+function OnlineRace({ lang, sound, celebrate, joinCode, onJoined, onBack }: Props & {
   joinCode: string | null; onJoined: () => void; onBack: () => void;
 }) {
   const ja = lang === "ja";
@@ -658,7 +658,7 @@ function OnlineRace({ lang, sound, celebrate, onCorrect, joinCode, onJoined, onB
       stumbleTimer.current = setTimeout(() => { setStumble(false); setPicked(null); }, 800);
       return;
     }
-    sound.correct(); haptic(12); onCorrect?.(1);
+    sound.correct(); haptic(12);
     const idx = myDone;
     setMyDone(idx + 1);
     setTimeout(() => setPicked(null), 150);

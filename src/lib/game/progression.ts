@@ -1,6 +1,6 @@
 /* ---------- progression: game unlocks and the card collection ----------
-   Everything here lives in the browser (localStorage), like Math Town and the
-   dragon — no server round trip, works for guests too.
+   Everything here lives in the browser (localStorage), with no server
+   round trip, works for guests too.
 
    - Games open in tiers. Five starters are open; the rest unlock as the
      player finishes games (any games). A game already played before this
@@ -108,7 +108,7 @@ function emit(name: string, detail: unknown) {
 /* every game is open from the start (the tiers are kept at 0 in case a
    gated rollout is wanted again) */
 export const UNLOCK_AT: Record<string, number> = {
-  ninja: 0, runner: 0, pop: 0, match: 0, ttt: 0, town: 0,
+  ninja: 0, runner: 0, pop: 0, match: 0, ttt: 0,
   sushi: 0, castle: 0, memory: 0, konbini: 0, digitsum: 0,
   rhythm: 0, crossword: 0, crossmath: 0,
   race: 0, sprint: 0, space: 0, river: 0,
@@ -121,7 +121,7 @@ export const GAME_NAMES: Record<string, [string, string]> = {
   digitsum: ["Digit Sum", "数字の和"], rhythm: ["Rhythm Tap", "リズムタップ"],
   crossword: ["Number Crossword", "数字クロスワード"], crossmath: ["Cross Math", "クロス計算"],
   race: ["Math Race", "計算レース"],
-  sprint: ["Matchstick Sprint", "マッチ棒スプリント"], ttt: ["Tic-Tac-Toe", "三目ならべ"], town: ["Math Town", "マスタウン"],
+  sprint: ["Matchstick Sprint", "マッチ棒スプリント"], ttt: ["Tic-Tac-Toe", "三目ならべ"],
   space: ["Space Blaster", "スペースシューター"], river: ["River Hop", "かえるジャンプ"],
 };
 
@@ -132,7 +132,6 @@ function unlockAll(): boolean {
     return localStorage.getItem("sutraSprint.unlockAll") === "1";
   } catch { return false; }
 }
-
 export function finishedTotal(p: Plays = load<Plays>(PLAYS_KEY, {})): number {
   return Object.values(p).reduce((t, x) => t + (x.f || 0), 0);
 }
@@ -150,10 +149,7 @@ export function gamesToUnlock(id: string): number {
 /* a game the player can play but hasn't yet */
 export function untriedGames(): string[] {
   const p = load<Plays>(PLAYS_KEY, {});
-  return Object.keys(UNLOCK_AT).filter((g) => g !== "town" && isUnlocked(g) && !p[g]?.o && !p[g]?.f);
-}
-export function playsOf(id: string): { o: number; f: number } {
-  return load<Plays>(PLAYS_KEY, {})[id] ?? { o: 0, f: 0 };
+  return Object.keys(UNLOCK_AT).filter((g) => isUnlocked(g) && !p[g]?.o && !p[g]?.f);
 }
 /* players from before unlocks existed keep the games they already had */
 export function seedPlayed(ids: string[]) {

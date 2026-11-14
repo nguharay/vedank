@@ -1,7 +1,7 @@
 import "./db-env";
 import { getDb } from "../src/db";
 import { users } from "../src/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import {
   ensureFriendCode, addFriendByCode, removeFriend, listFriends,
   createChallenge, listChallenges, answerChallenge, pendingChallengeCount, normaliseCode,

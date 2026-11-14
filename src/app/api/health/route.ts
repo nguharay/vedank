@@ -22,7 +22,6 @@ const EXPECTED: { table: string; column: string; feature: string }[] = [
   { table: "ttt_rooms", column: "state", feature: "online tic-tac-toe" },
   { table: "race_rooms", column: "state", feature: "online math race" },
   { table: "party_rooms", column: "state", feature: "party games (tug, buzzer, boss)" },
-  { table: "towns", column: "gifts", feature: "visiting friends' towns" },
   { table: "reminders", column: "slot", feature: "daily reminder notifications" },
   { table: "guest_push", column: "endpoint", feature: "notifications for guests" },
 ];

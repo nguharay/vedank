@@ -8,7 +8,7 @@ import type { useSound } from "../useSound";
 import { castleQuestion, type ChoiceRound } from "@/lib/game/minigames";
 
 type Sound = ReturnType<typeof useSound>;
-type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect?: (n: number) => void };
+type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void };
 
 /* ---------- 🎵 Rhythm Tap ----------
    A three-lane rhythm game. A row — one sum and three answers — falls down
@@ -48,7 +48,7 @@ const nextJudgeKey = () => ++judgeKey;
 function readBest() { try { return Number(localStorage.getItem(RHYTHM_KEY) || 0); } catch { return 0; } }
 function writeBest(v: number) { try { localStorage.setItem(RHYTHM_KEY, String(v)); } catch {} }
 
-export function RhythmTap({ lang, sound, celebrate, onCorrect }: Props) {
+export function RhythmTap({ lang, sound, celebrate }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "play" | "over">("ready");
   const [rows, setRows] = useState<Row[]>([]);
@@ -211,7 +211,7 @@ export function RhythmTap({ lang, sound, celebrate, onCorrect }: Props) {
     st.score += Math.round((r.result === "perfect" ? 100 : 60) * mult); setScore(st.score);
     flash(r.result === "perfect" ? (ja ? "パーフェクト！" : "PERFECT!") : (ja ? "グッド" : "GOOD"), r.result);
     if (sound.on) tone(ctx.currentTime, 84, 0.18, "sine", 0.18);
-    haptic(10); onCorrect?.(1);
+    haptic(10);
     if (st.combo > 0 && st.combo % 20 === 0) celebrate();
     setRows([...st.rows]);
   }
@@ -295,7 +295,7 @@ export function RhythmTap({ lang, sound, celebrate, onCorrect }: Props) {
             <button className="btn btn-primary" onClick={start}>{ja ? "スタート ♪" : "Start ♪"}</button>
           </div>
         )}
-        {phase === "over" && <RunResults game="rhythm" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} detail={ja ? `ステージ ${stage}` : `Stage ${stage}`} />}
+        {phase === "over" && <RunResults game="rhythm" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} detail={ja ? `ステージ ${stage}` : `Stage ${stage}`} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && score > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "演奏おわり" : "Song over")}</div>

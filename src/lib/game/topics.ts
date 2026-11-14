@@ -404,7 +404,7 @@ export const TOPICS: Topic[] = [
         ["combine", `${t1 * t2 + u}${pad2(u * u)}  →  ${a * b}`],
       ];
     },
-    gen: (diff) => {
+    gen: () => {
       const u = ri(1, 9);
       const t1 = ri(1, 9), t2 = 10 - t1;
       const a = 10 * t1 + u, b = 10 * t2 + u;

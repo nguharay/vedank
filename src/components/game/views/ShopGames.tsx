@@ -13,7 +13,7 @@ import {
 import { ROSTER } from "../monsters";
 
 type Sound = ReturnType<typeof useSound>;
-type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; onCorrect?: (n: number) => void; autoStart?: boolean };
+type Props = { lang: "en" | "ja"; sound: Sound; celebrate: () => void; autoStart?: boolean };
 
 function readBest(key: string) {
   try { return Number(localStorage.getItem(key) || 0); } catch { return 0; }
@@ -42,7 +42,7 @@ type Seat =
   | { state: "waiting"; face: number; bill: SushiBill; deadline: number; total: number }
   | { state: "leaving"; face: number; happy: boolean; until: number; text: string };
 
-export function SushiShop({ lang, sound, celebrate, onCorrect, autoStart }: Props) {
+export function SushiShop({ lang, sound, celebrate, autoStart }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "open" | "closed">("ready");
   const [seats, setSeats] = useState<Seat[]>([]);
@@ -143,7 +143,7 @@ export function SushiShop({ lang, sound, celebrate, onCorrect, autoStart }: Prop
       setTimeout(() => setPicked(null), 500);
       return;
     }
-    sound.correct(); haptic(12); onCorrect?.(1);
+    sound.correct(); haptic(12);
     const t = clock();
     const tipFast = seat.deadline - t > seat.total * 0.6;
     /* the shop earns what the customer spent, whatever the question was */
@@ -256,7 +256,7 @@ export function SushiShop({ lang, sound, celebrate, onCorrect, autoStart }: Prop
             <button className="btn btn-primary" onClick={open}>{ja ? "開店！" : "Open the shop!"}</button>
           </div>
         )}
-        {phase === "closed" && <RunResults game="sushi" score={sales} prevBest={best} newBest={newBest} lang={lang} onAgain={open} sound={sound} detail={ja ? `${served}人` : `${served} served`} />}
+        {phase === "closed" && <RunResults game="sushi" score={sales} prevBest={best} newBest={newBest} lang={lang} onAgain={open} detail={ja ? `${served}人` : `${served} served`} />}
         {phase === "closed" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && sales > 0 ? (ja ? "売上ベスト更新！" : "Best day ever!") : (ja ? "閉店です" : "Closing time")}</div>
@@ -306,7 +306,7 @@ const FREEZE_COST = 40, BOMB_COST = 60;
 
 type Foe = { id: number; emoji: string; hp: number; boss: boolean; row: number; q: ChoiceRound };
 
-export function CastleDefense({ lang, sound, celebrate, onCorrect, autoStart }: Props) {
+export function CastleDefense({ lang, sound, celebrate, autoStart }: Props) {
   const ja = lang === "ja";
   const [phase, setPhase] = useState<"ready" | "play" | "between" | "over">("ready");
   const [foes, setFoes] = useState<Foe[]>([]);
@@ -401,7 +401,7 @@ export function CastleDefense({ lang, sound, celebrate, onCorrect, autoStart }: 
       setTimeout(() => setPicked(null), 450);
       return;
     }
-    sound.hit(); haptic(12); onCorrect?.(1);
+    sound.hit(); haptic(12);
     st.streak += 1;
     const width = roadRef.current?.clientWidth ?? 320;
     setShot({ k: clock(), x: (st.pos.get(f.id) ?? 0.5) * width });
@@ -526,7 +526,7 @@ export function CastleDefense({ lang, sound, celebrate, onCorrect, autoStart }: 
             <button className="btn btn-primary" onClick={() => startWave(wave + 1)}>{ja ? `ウェーブ ${wave + 1} へ` : `Wave ${wave + 1}`}</button>
           </div>
         )}
-        {phase === "over" && <RunResults game="castle" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} sound={sound} detail={ja ? `ウェーブ ${wave}` : `Wave ${wave}`} />}
+        {phase === "over" && <RunResults game="castle" score={score} prevBest={best} newBest={newBest} lang={lang} onAgain={start} detail={ja ? `ウェーブ ${wave}` : `Wave ${wave}`} />}
         {phase === "over" && (
           <div className="rg-card">
             <div className="rg-card-title">{newBest && score > 0 ? (ja ? "自己ベスト更新！" : "New best!") : (ja ? "お城がおちた…" : "The castle fell…")}</div>

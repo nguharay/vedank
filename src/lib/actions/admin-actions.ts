@@ -1,11 +1,10 @@
 "use server";
 
 import { getDb } from "@/db";
-import { users, topicProgress, arenaProgress, dailyChallenge, leaguePoints } from "@/db/schema";
+import { users, topicProgress, arenaProgress, dailyChallenge } from "@/db/schema";
 import { getAdminSession } from "@/lib/admin";
 import { COUNTRIES } from "@/lib/countries";
 import { rankFor } from "@/lib/game/topics";
-import { weekStartKey } from "@/lib/game/daily";
 import { saveReminder, deleteReminder, sendTest, sendNow, type ReminderInput } from "@/lib/game/reminders";
 import { eq } from "drizzle-orm";
 
@@ -29,7 +28,6 @@ export type SignupRow = {
   stagesCleared: number;
   puzzlesSolved: number;
   dailiesPlayed: number;
-  weekPoints: number;
   locked: boolean;
 };
 
@@ -53,7 +51,7 @@ export async function listSignups(): Promise<
 
   /* Explicit column list — passwordHash and the reset-token table must never
      leave the server, so they are not selectable from here at all. */
-  const [userRows, tRows, aRows, dRows, lRows] = await Promise.all([
+  const [userRows, tRows, aRows, dRows] = await Promise.all([
     db
       .select({
         id: users.id,
@@ -75,7 +73,6 @@ export async function listSignups(): Promise<
     db.select().from(topicProgress),
     db.select().from(arenaProgress),
     db.select({ userId: dailyChallenge.userId }).from(dailyChallenge),
-    db.select({ userId: leaguePoints.userId, points: leaguePoints.points, weekStart: leaguePoints.weekStart }).from(leaguePoints),
   ]);
 
   const cleared = new Map<string, number>();
@@ -96,12 +93,6 @@ export async function listSignups(): Promise<
   const dailies = new Map<string, number>();
   for (const row of dRows) dailies.set(row.userId, (dailies.get(row.userId) || 0) + 1);
 
-  /* Current ISO week only — last week's standing isn't what an admin is checking. */
-  const thisWeek = weekStartKey();
-  const weekPts = new Map<string, number>();
-  for (const row of lRows) {
-    if (String(row.weekStart) === thisWeek) weekPts.set(row.userId, row.points);
-  }
 
   const now = Date.now();
   const rows: SignupRow[] = userRows.map((u) => {
@@ -128,7 +119,6 @@ export async function listSignups(): Promise<
       stagesCleared: cleared.get(u.id) || 0,
       puzzlesSolved: solved.get(u.id) || 0,
       dailiesPlayed: dailies.get(u.id) || 0,
-      weekPoints: weekPts.get(u.id) || 0,
       locked: !!u.lockedUntil && u.lockedUntil.getTime() > now,
     };
   });
