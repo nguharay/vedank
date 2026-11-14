@@ -3026,7 +3026,10 @@ export function GameApp({
         <div className="header-title">
           {/^VedAnk/.test(headerTitle ?? "") ? (
             /* the app's own name as a wordmark, in the logo's lettering and teal */
-            <h1 className="brand"><span className="brand-word">VedAnk</span></h1>
+            <h1 className="brand">
+              <span className="brand-word">VedAnk</span>
+              {lang === "ja" && (headerTitle ?? "").replace(/^VedAnk\s*/, "") && <small className="brand-sub">{(headerTitle ?? "").replace(/^VedAnk\s*/, "")}</small>}
+            </h1>
           ) : <h1>{headerTitle}</h1>}
         </div>
         <div className="stats-row">

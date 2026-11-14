@@ -4791,7 +4791,8 @@ footer .join-bar .join-bar-long{ display:none; }
 .lb-you small{ font-size:11px; font-weight:700; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* the header wordmark: "VedAnk" in the logo's lettering (Delius) and teal */
-.header-title h1.brand{ font-size:inherit; line-height:1; }
+.header-title h1.brand{ display:flex; align-items:baseline; gap:7px; white-space:nowrap; font-size:inherit; line-height:1; }
+.brand-sub{ white-space:nowrap; flex:0 0 auto; font:700 13px/1 "M PLUS Rounded 1c","Nunito",system-ui,sans-serif; letter-spacing:.06em; text-transform:none; color:#1d6260; opacity:.75; }
 .brand-word{ font:400 28px/1 "Delius","Baloo 2",system-ui,sans-serif; letter-spacing:.01em; text-transform:none; color:#1d6260; -webkit-text-stroke:.7px currentColor; }
-:root[data-theme="dark"] .brand-word{ color:#7fd3cd; }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .brand-word{ color:#7fd3cd; } }
+:root[data-theme="dark"] .brand-word, :root[data-theme="dark"] .brand-sub{ color:#7fd3cd; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .brand-word, :root:not([data-theme="light"]) .brand-sub{ color:#7fd3cd; } }
