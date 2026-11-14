@@ -4789,3 +4789,12 @@ footer .join-bar .join-bar-long{ display:none; }
 .lb-you{ display:flex; align-items:baseline; gap:6px; min-width:0; }
 .lb-you b{ font-weight:900; letter-spacing:.04em; color:#2563eb; }
 .lb-you small{ font-size:11px; font-weight:700; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* the header wordmark: "VedAnk" big, like an app name, the screen's name under it */
+.header-title h1.brand{ display:flex; flex-direction:column; align-items:flex-start; gap:1px; font-size:inherit; line-height:1; }
+.brand-word{ font:900 27px/0.95 "Baloo 2",system-ui,sans-serif; letter-spacing:-.01em; text-transform:none; }
+.brand-word b{ font-weight:900; color:#ff6a1a; }
+.brand-word i{ font-style:normal; color:#6a3fd1; }
+.brand-sub{ font:800 10.5px/1.1 "Nunito",system-ui,sans-serif; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding-left:2px; }
+:root[data-theme="dark"] .brand-word i{ color:#b79cff; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .brand-word i{ color:#b79cff; } }
