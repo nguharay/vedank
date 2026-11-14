@@ -123,7 +123,7 @@ import { useBuddy, line } from "./useBuddy";
 import { quoteOfTheDay, quoteText, quoteBy, type Quote } from "@/lib/game/quotes";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI } from "./i18n";
-import { rankLeague } from "@/lib/game/rankLeague";
+import { rankLeague, leagueCutoff } from "@/lib/game/rankLeague";
 import { ri, shuffle, weightedPick, urlBase64ToUint8Array, RollUp, fmt, sameLoc, haptic, rankLabel, SPRINT_LEN, BLITZ_DEFAULT_LEVEL, BLITZ_BOOST_MS } from "./util";
 import type { View, Mode, Loc } from "./util";
 import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, TricksView, BlitzView } from "./views";
@@ -273,6 +273,17 @@ export function GameApp({
   /* the Daily tab: today's winners, plus a Start button until today's
      challenge is played (then the result). Opening it never starts the timed
      quiz by itself, so it is safe to open just to look at the winners. */
+  /* the Dojo tab: Speed Quiz, Magic Tricks and the Matchstick Puzzles in one place.
+     A drill opened from it comes back to it. */
+  const fromTrainRef = useRef(false);
+  function openTrain() {
+    setLeaderboardOpen(false);
+    fromTrainRef.current = false;
+    setView("train");
+  }
+  function trainGo(go: () => void) {
+    return () => { fromTrainRef.current = true; go(); };
+  }
   function openMagic() {
     if (guestLocked("tricks")) return;
     setTrickId(null);
@@ -870,6 +881,7 @@ export function GameApp({
   /* set by Back out of a lesson; any other way home starts on the usual tab */
   const [homeFocus, setHomeFocus] = useState<string | null>(null);
   function goHome() {
+    fromTrainRef.current = false;
     setHomeFocus(null);
     /* already on Home (say, on the Learn tab): Home still means "back to the
        start" — the Play tab, at the top */
@@ -961,6 +973,9 @@ export function GameApp({
       window.dispatchEvent(ev);
       if (!ev.defaultPrevented) { gameFromHomeRef.current = false; openGames(); }
       return;
+    }
+    if ((view === "blitz" || view === "tricks" || view === "arena") && fromTrainRef.current) {
+      fromTrainRef.current = false; sprintRef.current = null; setSprintOver(null); setView("train"); return;
     }
     if (view === "practice") { openStageMap(currentTopicId!); }
     else if (view === "stagemap") { openTopic(currentTopicId!); }
@@ -1083,7 +1098,7 @@ export function GameApp({
   const dailyTab = view === "daily" && (dailyQs.length === 0 || !!dailyDone || !!dailyStatus?.played);
   const dailyStartRef = useRef(0);
   /* which bottom-bar item is open, so it can be lit */
-  const navAt = leaderboardOpen ? "rank" : dailyTab ? "daily" : view === "games" ? "play" : "home";
+  const navAt = leaderboardOpen ? "rank" : dailyTab ? "daily" : view === "games" ? "play" : view === "train" ? "train" : "home";
   const [stageIntro, setStageIntro] = useState<number | null>(null);
   const isBoss = curStage.n === STAGE_COUNT;
 
@@ -1981,6 +1996,7 @@ export function GameApp({
   /* games already played before unlocks existed stay open */
   useEffect(() => { seedPlayed(Object.keys(gameBests).filter((k) => (gameBests[k] ?? 0) > 0)); }, [gameBests]);
   function openGames() {
+    fromTrainRef.current = false;
     try {
       setGameBests({
         match: Number(localStorage.getItem("sutraSprint.matchBest") || 0),
@@ -2092,7 +2108,7 @@ export function GameApp({
     {
       /* the dojo used to be a stop on the learning map; it lives here now */
       id: "dojo", icon: "🔥", tint: "var(--sun1)",
-      name: "Matchstick Dojo", nameJa: "マッチ棒道場",
+      name: "Matchstick Puzzles", nameJa: "マッチ棒パズル",
       blurb: "Move one matchstick to fix the sum.",
       blurbJa: "マッチ棒を1本動かして式を直そう。",
       best: solvedCount, start: shelf(openDojo),
@@ -3448,7 +3464,7 @@ export function GameApp({
                   : "Online rooms match everyone's names and answers on our server. Sign up free with just your email. 🤖 Solo (against the computer) works right now without one.")
                 : lang === "ja"
                 ? "おためしでは最初の2トピックと一部のゲームが遊べます。無料のアカウントを作ると、すべてのトピック・ゲーム・デイリーチャレンジ・マッチ棒道場が開き、今までの記録もそのまま引き継がれます。"
-                : "Guests can play the first two topics and a few games. A free account opens every topic, every game, the Daily Challenge and the Matchstick Dojo, and keeps the progress you've made so far."}
+                : "Guests can play the first two topics and a few games. A free account opens every topic, every game, the Daily Challenge and the Matchstick Puzzles, and keeps the progress you've made so far."}
             </p>
             <a className="btn btn-primary auth-submit" href="/signup?from=%2F">
               {lang === "ja" ? "無料アカウントにログイン" : "Sign in to your free account"}
@@ -3933,7 +3949,7 @@ export function GameApp({
               </div>
               <div className="lb-rule">
                 <b>📘 {ja ? "レッスンのステージをクリアするほど、上のリーグへ" : "Clear more lesson stages to climb the leagues"}</b>
-                <span>{ja ? "上位10%が💎ダイヤ、次の20%が🥇ゴールド、次の30%が🥈シルバー、ほかは🥉ブロンズ。みんながすすむと線も上がるから、上にいるにはクリアしつづけよう！" : "Top 10% are 💎 Diamond, the next 20% 🥇 Gold, the next 30% 🥈 Silver, the rest 🥉 Bronze. When others clear more, the line moves up, so keep clearing to stay on top!"}</span>
+                <span>{ja ? "1〜2位が🔥伝説の忍者、3〜6位が⚡雷の忍者、7〜11位が🌀風の忍者、ほかは🌱見習い忍者。みんながすすむと線も上がるから、上にいるにはクリアしつづけよう！" : "Places 1 to 2 are 🔥 Legend Ninjas, 3 to 6 ⚡ Thunder Ninjas, 7 to 11 🌀 Wind Ninjas, everyone else 🌱 Rookie Ninjas. When others clear more, the line moves up, so keep clearing to stay on top!"}</span>
               </div>
               {lb && me && (
                 <div className="lb-me" style={me.position ? { borderColor: L(me.league).color } : undefined}>
@@ -3961,9 +3977,9 @@ export function GameApp({
               <div className="leaderboard-panel">
                 {leaderboardLoading && <div className="leaderboard-loading">{ja ? "読み込み中…" : "Loading…"}</div>}
                 {!leaderboardLoading && lb && !lb.top.length && <div className="leaderboard-loading">{ja ? "まだだれもいないよ。1番のりになろう！" : "Nobody yet, be the first!"}</div>}
-                {!leaderboardLoading && lb?.top.map((e, i) => (
+                {!leaderboardLoading && lb?.top.filter((e) => e.league > 0).map((e, i, rows) => (
                   <Fragment key={e.userId}>
-                    {(i === 0 || lb.top[i - 1].league !== e.league) && (
+                    {(i === 0 || rows[i - 1].league !== e.league) && (
                       <div className="lb-league-head" style={{ color: L(e.league).color, borderColor: L(e.league).color }}>
                         <span>{L(e.league).icon} {lname(e.league)}</span>
                       </div>
@@ -3976,7 +3992,7 @@ export function GameApp({
                     </div>
                   </Fragment>
                 ))}
-                {!leaderboardLoading && me?.position && me.position > (lb?.top.length ?? 0) && (
+                {!leaderboardLoading && me?.position && me.league > 0 && me.position > (lb?.top.filter((e) => e.league > 0).length ?? 0) && (
                   <div className="leaderboard-row me leaderboard-row-me-sep">
                     <span className="leaderboard-rank">{me.position}</span>
                     <span className="leaderboard-name">{L(me.league).icon} {me.name}</span>
@@ -3984,6 +4000,35 @@ export function GameApp({
                     <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{me.stars}</span>
                   </div>
                 )}
+                {/* the bottom league: no list of names, just you and how many others */}
+                {!leaderboardLoading && lb && (() => {
+                  const rookies = lb.total - leagueCutoff(1, lb.total);
+                  if (rookies <= 0) return null;
+                  const meIn = !!me?.position && me.league === 0;
+                  const others = rookies - (meIn ? 1 : 0);
+                  return (
+                    <>
+                      <div className="lb-league-head" style={{ color: L(0).color, borderColor: L(0).color }}>
+                        <span>{L(0).icon} {lname(0)}</span>
+                      </div>
+                      {meIn && me && (
+                        <div className="leaderboard-row me">
+                          <span className="leaderboard-rank">{me.position}</span>
+                          <span className="leaderboard-name">{me.name}</span>
+                          <span className="lb-lessons mono">📘 {me.lessons}</span>
+                          <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{me.stars}</span>
+                        </div>
+                      )}
+                      {others > 0 && (
+                        <div className="lb-league-rest">
+                          {meIn
+                            ? (ja ? `ほかの${L(0).nameJa}のみんな` : `and all the other ${L(0).name}s`)
+                            : (ja ? `${L(0).nameJa}のみんな` : `all the ${L(0).name}s`)}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </>
@@ -4340,6 +4385,48 @@ export function GameApp({
           </section>
         )}
 
+        {view === "train" && (
+          <section className="view active train-view">
+            <p className="games-lede">
+              {lang === "ja"
+                ? "ここは忍者の道場。毎日ちょっとずつ修行して、はやく、かしこく、ひらめこう！"
+                : "Welcome to the ninja dojo. Train a little every day to get quicker, sharper and full of tricks!"}
+            </p>
+            <button className="ttt-card train-card train-speed" onClick={trainGo(openBlitzPicker)}>
+              <span className="train-art" aria-hidden="true"><UiIcon name="speed" size="46px" /></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "スピードクイズ" : "Speed Quiz"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "時間内に何問とける？暗算のスピードをきたえよう。" : "How many can you solve before the clock runs out? Build your mental speed."}</span>
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
+            <button className="ttt-card train-card train-magic" onClick={trainGo(openMagic)}>
+              <span className="train-art" aria-hidden="true"><UiIcon name="magic" size="46px" /></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "マジック" : "Magic Tricks"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "友だちをびっくりさせる、数のマジックをおぼえよう。" : "Learn number tricks that will amaze your friends."}</span>
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
+            <button className="ttt-card train-card train-dojo" onClick={trainGo(openDojo)}>
+              <span className="train-art" aria-hidden="true"><UiIcon name="sticks" size="46px" /></span>
+              <span className="ttt-card-body">
+                <span className="ttt-card-name">{lang === "ja" ? "マッチ棒パズル" : "Matchstick Puzzles"}</span>
+                <span className="ttt-card-sub">{lang === "ja" ? "マッチ棒を1本動かして、式を正しくしよう。" : "Move one matchstick to make the sum right."}</span>
+                {solvedCount > 0 && <span className="feature-best mono">{lang === "ja" ? `${solvedCount}問クリア` : `${solvedCount} solved`}</span>}
+              </span>
+              <span className="game-card-go">›</span>
+            </button>
+            <button className="train-invite" onClick={() => { setInvite({}); track("invite_open", { from: "train" }); }}>
+              <span className="train-invite-ico" aria-hidden="true">🎁</span>
+              <span className="train-invite-body">
+                <strong>{lang === "ja" ? "友だちをさそおう！" : "Invite a friend!"}</strong>
+                <span>{lang === "ja" ? "いっしょに修行して、リーグで競争しよう。" : "Train together and race each other up the leagues."}</span>
+              </span>
+              <span className="train-invite-cta">{lang === "ja" ? "さそう" : "Invite"}</span>
+            </button>
+          </section>
+        )}
         {view === "games" && (
           <section className="view active games-view">
             {/* a friend's room code: the first thing on Play, in the page (not
@@ -4880,7 +4967,7 @@ export function GameApp({
         </div>
       )}
 
-      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" || view === "games" || dailyTab ? " home-dock" : ""}`} style={{ display: "flex" }}>
+      <footer ref={footerRef} className={`footerbar active${view === "arena" && !(sprintRef.current || sprintOver) ? " arena-foot" : ""}${view === "home" || view === "games" || view === "train" || dailyTab ? " home-dock" : ""}`} style={{ display: "flex" }}>
         {(view === "home" || view === "games") && guest ? (
           /* The home dock: a floating rounded bar with the games as a big raised
              PLAY button in the middle — the game is the point, everything else
@@ -4899,8 +4986,8 @@ export function GameApp({
               <span>{lang === "ja" ? "保存" : "Save"}</span>
             </a>
           </div>
-        ) : view === "home" || view === "games" || dailyTab ? (
-          <div className="dock-bar dock-7">
+        ) : view === "home" || view === "games" || view === "train" || dailyTab ? (
+          <div className="dock-bar">
             <button className={`bottomnav-item${navAt === "home" ? " active" : ""}`} onClick={goHome} aria-current={navAt === "home" ? "page" : undefined}>
               <span className="bottomnav-icon"><UiIcon name="home" /></span>
               <span>{lang === "ja" ? "ホーム" : "Home"}</span>
@@ -4912,19 +4999,11 @@ export function GameApp({
               </span>
               <span>{lang === "ja" ? "毎日" : "Daily"}</span>
             </button>
-            <button className="bottomnav-item" onClick={() => { setLeaderboardOpen(false); openBlitzPicker(); }}>
-              <span className="bottomnav-icon"><UiIcon name="speed" /></span>
-              <span>{lang === "ja" ? "スピード" : "Speed"}</span>
-            </button>
             <button className={`dock-play${view === "games" ? " on" : ""}`} onClick={openGames} aria-label={lang === "ja" ? "ゲームであそぶ" : "Play games"} aria-current={view === "games" ? "page" : undefined}>
               <span className="dock-play-ico" aria-hidden="true"><UiIcon name="play" /></span>
               <span className="dock-play-label">{lang === "ja" ? "あそぶ" : "PLAY"}</span>
             </button>
-            <button className="bottomnav-item" onClick={() => { setLeaderboardOpen(false); openMagic(); }}>
-              <span className="bottomnav-icon"><UiIcon name="magic" /></span>
-              <span>{lang === "ja" ? "マジック" : "Magic"}</span>
-            </button>
-            <button className="bottomnav-item" onClick={() => { setLeaderboardOpen(false); openDojo(); }}>
+            <button className={`bottomnav-item${navAt === "train" ? " active" : ""}`} onClick={openTrain} aria-current={navAt === "train" ? "page" : undefined}>
               <span className="bottomnav-icon"><UiIcon name="dojo" /></span>
               <span>{lang === "ja" ? "道場" : "Dojo"}</span>
             </button>

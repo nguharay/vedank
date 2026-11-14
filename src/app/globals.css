@@ -5143,3 +5143,19 @@ footer .join-bar .join-bar-long{ display:none; }
 .lb-league-head:first-child{ margin-top:2px; }
 .lb-me-league{ font:900 14px/1.2 "Baloo 2",system-ui,sans-serif; margin:2px 0 6px; }
 .lb-me-chase{ margin-top:4px; font-size:12px; font-weight:800; color:#c2410c; }
+
+/* the Train tab: the drills, one card each, and a friend invite */
+.train-view.active{ display:flex; flex-direction:column; gap:12px; }
+.train-card{ color:#fff; }
+.train-speed{ background:linear-gradient(135deg,#ff9a3d,#ff3d77); }
+.train-magic{ background:linear-gradient(135deg,#7a58c0,#4f6bed); }
+.train-dojo{ background:linear-gradient(135deg,#0f9b8e,#3cc3a0); }
+.train-art{ flex:0 0 auto; display:grid; place-items:center; width:68px; height:68px; border-radius:18px; background:rgba(255,255,255,.92); border:3px solid var(--ink-line); }
+.train-invite{ display:flex; align-items:center; gap:12px; width:100%; padding:14px; border-radius:20px; cursor:pointer; text-align:left; font-family:inherit; color:#1d1b33;
+  background:linear-gradient(135deg,#fff6d8,#ffe0ec); border:3px dashed #ff7a59; }
+.train-invite-ico{ font-size:34px; line-height:1; }
+.train-invite-body{ flex:1; display:flex; flex-direction:column; gap:2px; }
+.train-invite-body strong{ font:900 16px/1.2 "Baloo 2",system-ui,sans-serif; }
+.train-invite-body span{ font-size:12.5px; font-weight:700; color:#5b5675; }
+.train-invite-cta{ padding:8px 14px; border-radius:999px; background:#ff7a59; color:#fff; font-weight:900; font-size:13px; border:2px solid var(--ink-line); box-shadow:0 3px 0 var(--ink-line); }
+.lb-league-rest{ margin:6px 4px 2px; padding:10px 12px; border-radius:14px; text-align:center; font-size:13px; font-weight:800; color:var(--muted); background:color-mix(in srgb, var(--ink-line) 5%, transparent); }

@@ -147,7 +147,7 @@ export function HomeView({
     <section className="view active home-view">
       {/* Home is the Vedic Maths lessons: the level, the next lesson, the map,
           then the extras (cards, streak, shop, friends, invite). The Daily
-          Challenge, the games, Speed, Magic, the Dojo and the League are in the bottom bar. */}
+          Challenge, the games, the Dojo (Speed, Magic, Matchsticks) and the League are in the bottom bar. */}
       {/* a slim level strip in place of the old banner: tap it to share */}
       {/* the challenge winners link and the level share one swipeable row */}
       <div className="home-rail home-rail-top">
