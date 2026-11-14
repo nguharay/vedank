@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { runSlot, SLOTS, type Slot } from "@/lib/game/reminders";
-import { runLeagueReminders } from "@/lib/game/league";
 import { appendRows, jst } from "@/lib/activity-sheet";
 
 /* Called by Vercel Cron (see vercel.json): 08:00 JST morning, 19:00 JST
@@ -19,11 +18,6 @@ export async function GET(req: NextRequest) {
   if (!slot || !SLOTS.includes(slot)) return NextResponse.json({ error: "slot must be morning or evening" }, { status: 400 });
   try {
     const result = await runSlot(slot);
-    /* the personal league reminders ride on the evening run (once a day) */
-    let league: Awaited<ReturnType<typeof runLeagueReminders>> | { error: string } | null = null;
-    if (slot === "evening") {
-      try { league = await runLeagueReminders(); } catch (e) { league = { error: e instanceof Error ? e.message.slice(0, 120) : "failed" }; }
-    }
     /* one row a day in the sheet's Activity tab: what went out, to how many
        (taps arrive as "notification_open" rows) */
     if (result.picked) {
@@ -35,7 +29,7 @@ export async function GET(req: NextRequest) {
         Device: "", Installed: "", Lang: "",
       }]);
     }
-    return NextResponse.json({ slot, ...result, picked: result.picked ? { id: result.picked.id, titleJa: result.picked.titleJa } : null, league });
+    return NextResponse.json({ slot, ...result, picked: result.picked ? { id: result.picked.id, titleJa: result.picked.titleJa } : null });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message.slice(0, 200) : "failed" }, { status: 500 });
   }

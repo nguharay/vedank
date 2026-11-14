@@ -8,7 +8,7 @@ const O = "#1d1b33"; /* the outline, the same ink as the cards' borders */
 const s = { stroke: O, strokeWidth: 2, strokeLinejoin: "round" as const, strokeLinecap: "round" as const };
 
 export type UiIconName =
-  | "learn" | "today" | "play" | "world" | "home" | "quests" | "league" | "rank" | "save" | "gem" | "heart" | "lock" | "card";
+  | "learn" | "today" | "play" | "world" | "home" | "quests" | "league" | "rank" | "speed" | "magic" | "dojo" | "save" | "gem" | "heart" | "lock" | "card";
 
 export function UiIcon({ name, size = "1em" }: { name: UiIconName; size?: string }) {
   return (
@@ -88,6 +88,39 @@ const UI: Record<UiIconName, React.ReactNode> = {
       <circle cx="16" cy="16" r="12" fill="#4fb3e8" {...s} />
       <path d="M16 4c-4 4-4 20 0 24M16 4c4 4 4 20 0 24M4.5 12.5h23M4.5 19.5h23" fill="none" stroke={O} strokeWidth="1.5" />
       <path d="M7 10c1.5-3 4-4.5 6.5-5" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" opacity=".7" />
+    </>
+  ),
+  /* a lightning bolt: Speed Quiz */
+  speed: (
+    <>
+      <path d="M18.5 2.5L6 18h8l-2.5 11.5L26 13h-8.5z" fill="#ffc83a" {...s} />
+      <path d="M16 6.5l-5.5 7" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity=".8" />
+    </>
+  ),
+  /* a top hat and a wand with a spark: Magic Tricks */
+  magic: (
+    <>
+      <path d="M7 23h18v3.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 7 26.5z" fill="#3b3363" {...s} />
+      <path d="M9.5 10h13l-1 13h-11z" fill="#3b3363" {...s} />
+      <path d="M10 19.5h12" stroke="#ff5a6e" strokeWidth="3" />
+      <path d="M4 26.5h24" {...s} />
+      <path d="M21 9L27 3" stroke={O} strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M26.5 1.2l.9 2 2 .9-2 .9-.9 2-.9-2-2-.9 2-.9z" fill="#ffc83a" stroke={O} strokeWidth="1" strokeLinejoin="round" />
+      <path d="M12 12.5v4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" opacity=".6" />
+    </>
+  ),
+  /* three matchsticks: the Matchsticks Dojo */
+  dojo: (
+    <>
+      <path d="M6 27L20 7" stroke={O} strokeWidth="4.6" strokeLinecap="round" />
+      <path d="M6 27L20 7" stroke="#f2c27b" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M26 27L12 7" stroke={O} strokeWidth="4.6" strokeLinecap="round" />
+      <path d="M26 27L12 7" stroke="#f2c27b" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M8 20h16" stroke={O} strokeWidth="4.6" strokeLinecap="round" />
+      <path d="M8 20h16" stroke="#f2c27b" strokeWidth="2.4" strokeLinecap="round" />
+      <ellipse cx="20.6" cy="6.1" rx="2.4" ry="2.9" transform="rotate(35 20.6 6.1)" fill="#ff5a3c" {...s} strokeWidth="1.6" />
+      <ellipse cx="11.4" cy="6.1" rx="2.4" ry="2.9" transform="rotate(-35 11.4 6.1)" fill="#ff5a3c" {...s} strokeWidth="1.6" />
+      <ellipse cx="25" cy="20" rx="2.9" ry="2.4" fill="#ff5a3c" {...s} strokeWidth="1.6" />
     </>
   ),
   save: (

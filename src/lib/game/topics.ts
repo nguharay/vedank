@@ -1847,7 +1847,7 @@ export const BLITZ_LEVELS: BlitzLevel[] = [
    BLITZ_MAX_DIFF, so it stays mental), and the wrong options share the right
    answer's last two digits, so a glance at the units digit no longer picks
    the answer. */
-export const BLITZ_HARD_MIN_TIER = 2;            /* Silver */
+export const BLITZ_HARD_MIN_TIER = 2;            /* Gold (rankLeague.ts) */
 export function blitzHardOn(tier: number | null | undefined, now = new Date()): boolean {
   if (tier === null || tier === undefined || tier < BLITZ_HARD_MIN_TIER) return false;
   return (now.getUTCDay() + 6) % 7 >= 3;          /* Monday = 0 … Thursday = 3 */

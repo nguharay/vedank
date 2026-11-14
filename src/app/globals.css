@@ -5131,3 +5131,15 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 footer .join-bar .join-bar-long{ display:none; }
 /* Fix Your Misses rides in the Home rail too: same height as its neighbours */
 .home-rail > .review-cta, .home-rail > .review-rest{ margin:0; height:auto; }
+
+/* seven stops in the dock: tighter items and a smaller raised Play */
+.dock-bar.dock-7{ padding-inline:4px; }
+.dock-bar.dock-7 .bottomnav-item{ margin:0; padding-inline:0; font-size:9.5px; letter-spacing:-.02em; white-space:nowrap; }
+.dock-bar.dock-7 .dock-play{ flex-basis:74px; }
+.dock-bar.dock-7 .dock-play-ico{ width:62px; height:62px; font-size:30px; }
+
+/* the League board: one band per league, your league on your card */
+.lb-league-head{ display:flex; align-items:center; gap:6px; margin:10px 4px 4px; padding-bottom:3px; border-bottom:2px dashed; font:900 13px/1.2 "Baloo 2",system-ui,sans-serif; letter-spacing:.02em; }
+.lb-league-head:first-child{ margin-top:2px; }
+.lb-me-league{ font:900 14px/1.2 "Baloo 2",system-ui,sans-serif; margin:2px 0 6px; }
+.lb-me-chase{ margin-top:4px; font-size:12px; font-weight:800; color:#c2410c; }

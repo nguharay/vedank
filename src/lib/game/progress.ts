@@ -1,4 +1,5 @@
 import { eq, and, sql } from "drizzle-orm";
+import { leagueAt, leagueCutoff } from "./rankLeague";
 import { getDb } from "@/db";
 import { stageOutcome } from "./state";
 import { topicProgress, arenaProgress, users, inventory } from "@/db/schema";
@@ -259,12 +260,15 @@ export type LeaderboardEntry = {
   lessons: number;       /* lesson stages cleared, out of LESSONS_TOTAL */
   stars: number;         /* ⭐ earned across those stages (3 a stage at most) */
   dailyStreak: number;
+  league: number;        /* Rank league tier, see rankLeague.ts (0 if not ranked yet) */
 };
 
 export type LeaderboardData = {
   top: LeaderboardEntry[];
   me: (LeaderboardEntry & { position: number | null }) | null;   /* position null = not ranked yet */
   above: LeaderboardEntry | null;                                /* the player one place above me: "N more to pass X" */
+  below: LeaderboardEntry | null;                                /* the player one place below me: "X is catching up" */
+  nextGate: LeaderboardEntry | null;                             /* the last player inside the next league up: pass them to move up */
   total: number;                                                 /* how many players are ranked */
   lessonsTotal: number;
 };
@@ -294,14 +298,22 @@ export async function getLeaderboard(
   });
   const ranked = all.filter((e) => e.lessons > 0)
     .sort((x, y) => y.lessons - x.lessons || y.stars - x.stars || x.at - y.at);
-  const strip = (e: (typeof all)[number]): LeaderboardEntry => ({ userId: e.userId, name: e.name, lessons: e.lessons, stars: e.stars, dailyStreak: e.dailyStreak });
+  const n = ranked.length;
+  const pos = new Map(ranked.map((e, i) => [e.userId, i + 1]));
+  const strip = (e: (typeof all)[number]): LeaderboardEntry => {
+    const p = pos.get(e.userId);
+    return { userId: e.userId, name: e.name, lessons: e.lessons, stars: e.stars, dailyStreak: e.dailyStreak, league: p ? leagueAt(p, n) : 0 };
+  };
 
   const top = ranked.slice(0, limit).map(strip);
   const idx = ranked.findIndex((e) => e.userId === currentUserId);
   const mine = all.find((e) => e.userId === currentUserId);
   const me = mine ? { ...strip(mine), position: idx >= 0 ? idx + 1 : null } : null;
-  const above = idx > 0 ? strip(ranked[idx - 1]) : idx < 0 && ranked.length ? strip(ranked[ranked.length - 1]) : null;
-  return { top, me, above, total: ranked.length, lessonsTotal: LESSONS_TOTAL };
+  const above = idx > 0 ? strip(ranked[idx - 1]) : idx < 0 && n ? strip(ranked[n - 1]) : null;
+  const below = idx >= 0 && idx + 1 < n ? strip(ranked[idx + 1]) : null;
+  const myTier = idx >= 0 ? leagueAt(idx + 1, n) : -1;
+  const nextGate = myTier < 3 && n ? strip(ranked[Math.min(n, leagueCutoff(myTier + 1, n)) - 1]) : null;
+  return { top, me, above, below, nextGate: nextGate && nextGate.userId !== currentUserId ? nextGate : null, total: n, lessonsTotal: LESSONS_TOTAL };
 }
 
 export { QUESTIONS_PER_STAGE, PUZZLES };

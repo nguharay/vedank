@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { submitStageResult, importGuestProgress, submitPuzzleSolved, getLeaderboard } from "@/lib/game/progress";
-import { getDailyStatus, submitDaily, getLeagueStanding, getAllLeagues, getDailyWinners } from "@/lib/game/league";
+import { getDailyStatus, submitDaily, getDailyWinners } from "@/lib/game/league";
 import {
   getInventory, getWallet,
   buyItem, consumeItem, recordMistake, getMistakes, countMistakes, fixMistake, reviewStats,
@@ -70,18 +70,6 @@ export async function submitDailyAction(correct: number, elapsedMs: number) {
 export async function dailyWinnersAction() {
   const userId = await requireUserId();
   return getDailyWinners(userId);
-}
-
-export async function leagueAction() {
-  const userId = await requireUserId();
-  return getLeagueStanding(userId);
-}
-
-/* Admin only: every league's table this week (the sheet's "all leagues" tab). */
-export async function leagueAllAction() {
-  const userId = await requireUserId();
-  if (!(await getAdminSession())) return { error: "Not authorised." } as const;
-  return getAllLeagues(userId);
 }
 
 export async function leaderboardAction() {
