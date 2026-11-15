@@ -7,9 +7,9 @@ const dsOf = (n: number) => 1 + ((n - 1) % 9);
 
 /* Book pp.205–206, "Your Turn — Connect the Number Points": the player draws
    the design themselves. With `hint` (the first stages) the next step of the
-   table is shown with its product (7 × 3 = 21 → ?); without it nothing of the
-   table is given — the player writes the table and finds each Digit Sum
-   themselves, and only "point 3 of 10" says where they are. They tap that
+   table is shown with its product (7 × 3 = 21 → ?); without it no
+   product is given (7 × 3 → ?) — the player works out the product and its
+   Digit Sum themselves. They tap that
    Digit Sum on the 9-Point Circle and the line draws from the last point.
    One slip is forgiven; a second ends the question and the design is shown. */
 export function DrawCircle({ t, lang, hint = true, onDone }: { t: number; lang: Lang; hint?: boolean; onDone: (ok: boolean) => void }) {
@@ -60,10 +60,10 @@ export function DrawCircle({ t, lang, hint = true, onDone }: { t: number; lang: 
             : confirm
               ? (hint
                 ? <span className="dc-ok">{t} × {confirm.k} = {t * confirm.k} → <b>{confirm.ds}</b> ✓</span>
-                : <span className="dc-ok"><b>{confirm.ds}</b> ✓</span>)
+                : <span className="dc-ok">{t} × {confirm.k} → <b>{confirm.ds}</b> ✓</span>)
             : hint
               ? <>{t} × {k} = <b>{t * k}</b> → {ja ? "数字和は？" : "Digit Sum?"}</>
-              : <>{ja ? `${t}の段：${k}番目の数字和は？` : `Table of ${t}: Digit Sum no. ${k}?`} <small className="dc-of">{k}/10</small></>}
+              : <>{t} × {k} → {ja ? "数字和は？" : "Digit Sum?"} <small className="dc-of">{k}/10</small></>}
       </div>
       <svg viewBox="0 0 260 240" className="dc-svg">
         <circle cx={cx} cy={cy} r={R} fill="none" stroke="var(--muted)" strokeOpacity=".5" strokeWidth="2" />
