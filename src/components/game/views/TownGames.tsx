@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { RunResults } from "./RunResults";
 import { Mascot } from "../Mascot";
 import { Person } from "../Person";
@@ -383,6 +384,10 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
   const [tries, setTries] = useState(0);
   const [best, setBest] = useState(() => readBest(CROSSMATH_KEY));
   const [popped, setPopped] = useState<number | null>(null);
+  /* a number being dragged (from the tray, or from a square), and where the finger is */
+  const [drag, setDrag] = useState<{ v: number; from: "tray" | number; x: number; y: number; over: number | null } | null>(null);
+  const press = useRef<{ v: number; from: "tray" | number; x0: number; y0: number; moved: boolean } | null>(null);
+  const skipClick = useRef(false);
 
   function setup(g: CrossMath, lv: number) {
     setLevel(lv); setP(g);
@@ -421,6 +426,24 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
     const prev = next[at];
     next[at] = v;
     const t = [...tray]; t.splice(t.indexOf(v), 1); if (prev !== null) t.push(prev);
+    commit(next, t, at);
+  }
+  /* a placed number dragged to another square: it moves there, and swaps with
+     whatever was in that square */
+  function moveCell(from: number, to: number) {
+    if (solved || !p || from === to || !p.blanks.includes(to)) return;
+    const next = [...filled];
+    [next[from], next[to]] = [next[to], next[from]];
+    commit(next, tray, to);
+  }
+  /* a placed number dragged off the board goes back to the tray */
+  function unplace(i: number) {
+    if (solved || !p || filled[i] === null) return;
+    const next = [...filled]; const v = next[i]!; next[i] = null;
+    setFilled(next); setTray([...tray, v]); setSel(i); sound.click();
+  }
+  function commit(next: (number | null)[], t: number[], at: number) {
+    if (!p) return;
     setFilled(next); setTray(t); setPopped(at); setTimeout(() => setPopped((x) => (x === at ? null : x)), 350); sound.click();
     const empty = p.blanks.find((i) => next[i] === null);
     if (empty !== undefined) { setSel(empty); return; }
@@ -436,6 +459,38 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
     if (filled[i] !== null) { const next = [...filled]; setTray([...tray, filled[i]!]); next[i] = null; setFilled(next); }
     setSel(i); sound.click();
   }
+  /* Dragging works with a finger as well as a mouse (the browser's own drag and
+     drop does not on phones). A press that barely moves is a tap. */
+  const cellAt = (x: number, y: number): number | null => {
+    const el = document.elementFromPoint(x, y)?.closest("[data-cm]") as HTMLElement | null;
+    return el ? Number(el.dataset.cm) : null;
+  };
+  function onDown(e: React.PointerEvent, v: number | null, from: "tray" | number) {
+    if (solved || v === null) return;
+    press.current = { v, from, x0: e.clientX, y0: e.clientY, moved: false };
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  }
+  function onMove(e: React.PointerEvent) {
+    const pr = press.current;
+    if (!pr) return;
+    if (!pr.moved && Math.hypot(e.clientX - pr.x0, e.clientY - pr.y0) < 8) return;
+    pr.moved = true;
+    setDrag({ v: pr.v, from: pr.from, x: e.clientX, y: e.clientY, over: cellAt(e.clientX, e.clientY) });
+  }
+  function onUp(e: React.PointerEvent) {
+    const pr = press.current;
+    press.current = null;
+    if (!pr || !pr.moved) return;          /* a tap: the click handler does it */
+    skipClick.current = true;
+    setDrag(null);
+    const to = cellAt(e.clientX, e.clientY);
+    if (pr.from === "tray") { if (to !== null) place(pr.v, to); }
+    else if (to !== null) moveCell(pr.from, to);
+    else unplace(pr.from);
+  }
+  function onCancel() { press.current = null; setDrag(null); }
+  /* the click that follows a drag must not also count as a tap */
+  const tapOnly = (fn: () => void) => () => { if (skipClick.current) { skipClick.current = false; return; } fn(); };
   function resetAll() { if (p) setup(p, level); }
   /* the shape's name, for the small label on the board */
 
@@ -458,10 +513,9 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
             if (!c.blank) return <span key={i} className="cm-num mono">{c.v}</span>;
             const st = stateOf(i);
             return (
-              <button key={i} className={`cm-cell${sel === i ? " sel" : ""}${st ? ` ${st}` : ""}${solved ? " ok" : ""}${popped === i ? " pop" : ""}`}
-                onClick={() => tapCell(i)}
-                onDragOver={(e) => { if (!solved) e.preventDefault(); }}
-                onDrop={(e) => { e.preventDefault(); const v = Number(e.dataTransfer.getData("text/plain")); if (v) place(v, i); }}
+              <button key={i} data-cm={i} className={`cm-cell${sel === i ? " sel" : ""}${st ? ` ${st}` : ""}${solved ? " ok" : ""}${popped === i ? " pop" : ""}${drag?.over === i ? " drop" : ""}${drag?.from === i ? " lifted" : ""}`}
+                onClick={tapOnly(() => tapCell(i))}
+                onPointerDown={(e) => onDown(e, filled[i], i)} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}
                 aria-label={filled[i] === null ? (ja ? "空きマス" : "blank") : String(filled[i])}>
                 <span className="mono">{filled[i] ?? ""}</span>
               </button>
@@ -480,15 +534,19 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
         <>
           <div className="cm-tray" aria-label={ja ? "のこりの数字" : "Numbers left"}>
             {tray.map((v, k) => (
-              <button key={`${v}-${k}`} className="cm-tile mono" draggable onDragStart={(e) => e.dataTransfer.setData("text/plain", String(v))} onClick={() => place(v)} disabled={sel === null}>{v}</button>
+              <button key={`${v}-${k}`} className="cm-tile mono" onClick={tapOnly(() => place(v))}
+                onPointerDown={(e) => onDown(e, v, "tray")} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}>{v}</button>
             ))}
             {tray.length === 0 && <span className="cm-tray-empty">{ja ? "赤いマスをタップして数字をもどそう" : "Tap a red square to take its number back"}</span>}
           </div>
-          <p className="match-hint">{sel === null && tray.length > 0 ? (ja ? "空きマスをタップしてから数字をえらぼう" : "Tap an empty square, then a number") : (ja ? "数字をタップ（またはドラッグ）してマスに入れよう" : "Tap (or drag) a number into the square")}</p>
+          <p className="match-hint">{ja ? "数字をマスにドラッグ、またはマスをえらんでから数字をタップ" : "Drag a number onto a square, or pick a square and tap a number"}</p>
           <button className="cm-reset" onClick={resetAll}>↺ {ja ? "はじめから" : "Reset"}</button>
         </>
       )}
       {level > 1 && <button className="cm-reset" onClick={() => setup(buildCrossMath(1), 1)}>⏮ {ja ? "レベル1からやりなおす" : "Start again from level 1"}</button>}
+      {/* on the page itself: the screen's slide-in leaves a transform on the view,
+          which would offset a fixed element inside it from the finger */}
+      {drag && createPortal(<span className="cm-ghost mono" style={{ left: drag.x, top: drag.y }} aria-hidden="true">{drag.v}</span>, document.body)}
     </div>
   );
 }

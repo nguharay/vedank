@@ -195,7 +195,7 @@ export function PracticeView({
           <>
             <div className="question verify-ask">
               {problem.draw.shape === "square"
-                ? (lang === "ja" ? `数字和が ${problem.draw.t} のマスを、ぜんぶタップしよう。` : `Tap every box whose Digit Sum is ${problem.draw.t}.`)
+                ? (lang === "ja" ? `1〜9の段の表で、数字和が ${problem.draw.t} のマスをぜんぶタップしよう。` : `In the 1 to 9 tables, tap every box whose Digit Sum is ${problem.draw.t}.`)
                 : (lang === "ja" ? `${problem.draw.t}の段の数字和を、9点の円に順番につなごう。` : `Join the Digit Sums of the table of ${problem.draw.t} on the 9-Point Circle, in order.`)}
             </div>
             {problem.draw.shape === "square"
