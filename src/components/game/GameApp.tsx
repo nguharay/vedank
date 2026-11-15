@@ -1107,9 +1107,14 @@ export function GameApp({
     return p;
   }
 
-  function newStageQuestion(topic: Topic, n: number) {
+  function newStageQuestion(topic: Topic, n: number, q: number) {
     wrongRunRef.current = 0;
-    const problem = freshProblem(topic.id, () => topic.gen(STAGE_DIFF[n - 1] as Difficulty, n));
+    const diff = STAGE_DIFF[n - 1] as Difficulty;
+    /* design lessons: the first question of a stage is the drawing, the
+       rest are quick digit-sum questions */
+    const problem = topic.draws && q === 0
+      ? topic.gen(diff, n)
+      : freshProblem(topic.id, () => topic.gen(diff, topic.draws ? undefined : n));
     const mode =
       n === 1
         ? weightedPick<Mode>([["type", 1], ["choice", 2], ["truefalse", 2]])
@@ -1164,7 +1169,7 @@ export function GameApp({
     setRuns(0);
     setComboStreak(0);
     setFiftyLeft(1);
-    newStageQuestion(currentTopic, n);
+    newStageQuestion(currentTopic, n, 0);
     setView("practice");
     setStageIntro(n);
     setTimeout(() => setStageIntro(null), 900);
@@ -1184,7 +1189,7 @@ export function GameApp({
     setRuns(0);
     setComboStreak(0);
     setFiftyLeft(1);
-    newStageQuestion(topic, n);
+    newStageQuestion(topic, n, 0);
     setView("practice");
     setStageIntro(n);
     setTimeout(() => setStageIntro(null), 900);
@@ -1427,7 +1432,7 @@ export function GameApp({
       await finishStage();
     } else {
       setCurStage((s) => ({ ...s, qIndex: nextIndex }));
-      if (currentTopic) newStageQuestion(currentTopic, stage.n);
+      if (currentTopic) newStageQuestion(currentTopic, stage.n, nextIndex);
     }
   }
 
