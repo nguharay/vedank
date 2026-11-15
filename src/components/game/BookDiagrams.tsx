@@ -2205,6 +2205,10 @@ export const BOOK_FLOW: Partial<Record<string, { en: string[]; ja: string[] }>> 
   },
   dsCircle: { en: ["Find each Digit Sum", "Mark it, then join in order"], ja: ["数字和を出す", "円に印して順につなぐ"] },
   dsSquare: { en: ["Fill in the Digit Sums", "Colour or join one digit"], ja: ["数字和をうめる", "1つの数字をぬる・つなぐ"] },
+  mult99: { en: ["Left: the number − 1", "Right: all from 9, the last from 10"], ja: ["左：その数 − 1", "右：すべて9から、最後は10から"] },
+  divDouble: { en: ["Double the number", "Divide by 10, 100 or 1000"], ja: ["数を2倍にする", "10・100・1000でわる"] },
+  divHalve: { en: ["Halve the number", "Halve again until done"], ja: ["数を半分にする", "決まった回数だけ半分をくり返す"] },
+  multHalve: { en: ["Multiply by 10, 100 or 1000", "Halve"], ja: ["10・100・1000をかける", "半分にする"] },
 };
 
 export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {

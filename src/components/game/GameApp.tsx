@@ -1094,9 +1094,22 @@ export function GameApp({
   >(null);
   const [celebrate, setCelebrate] = useState<{ mood: "happy" | "excited"; title: string; body: string } | null>(null);
 
+  /* Lessons should feel new every time: a question asked recently in this
+     lesson (this visit or the last few, kept per lesson in this browser) is
+     drawn again, up to a few tries, before one is allowed to repeat. */
+  function freshProblem(topicId: string, make: () => Problem): Problem {
+    const key = `sutraSprint.recentQ.${topicId}`;
+    let recent: string[] = [];
+    try { recent = JSON.parse(localStorage.getItem(key) || "[]"); } catch {}
+    let p = make();
+    for (let i = 0; i < 15 && recent.includes(p.prompt); i++) p = make();
+    try { localStorage.setItem(key, JSON.stringify([...recent.filter((q) => q !== p.prompt), p.prompt].slice(-30))); } catch {}
+    return p;
+  }
+
   function newStageQuestion(topic: Topic, n: number) {
     wrongRunRef.current = 0;
-    const problem = topic.gen(STAGE_DIFF[n - 1] as Difficulty, n);
+    const problem = freshProblem(topic.id, () => topic.gen(STAGE_DIFF[n - 1] as Difficulty, n));
     const mode =
       n === 1
         ? weightedPick<Mode>([["type", 1], ["choice", 2], ["truefalse", 2]])

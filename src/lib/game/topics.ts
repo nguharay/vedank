@@ -1618,6 +1618,237 @@ export const TOPICS: Topic[] = [
       const b = ri(12, 99);
       return { prompt: `DS(${a} × ${b})`, answer: 1 + ((a * b - 1) % 9), visual: { kind: "square", key: true } };
     },
+  },  /* ---------- from "more VM topics" (Nov 2026) ---------- */
+  {
+    id: "mult99",
+    icon: "✕",
+    grad: ["#1D6260", "#4DB6AC"],
+    illus: "loop",
+    title: "Multiplying by 99, 999, …",
+    titleJa: "99・999…をかける",
+    sutraSa: "Ekanyūnena Pūrvena · Nikhilam",
+    sutraEn: "One less than the one before · All from 9 and the last from 10",
+    sutraEnJa: "前の数より1少なく・すべて9から、最後は10から",
+    pattern: "The multiplier is all 9s, with as many 9s as the other number has digits: 47 × 99, 538 × 999, 6724 × 9999.",
+    patternJa: "かける数が9だけでできていて、9の数ともう一方の数のケタ数が同じとき：47 × 99、538 × 999、6724 × 9999。",
+    blurb: "The answer comes in two parts. Left part: the number minus 1. Right part: take each digit of the number from 9, and the last digit from 10.",
+    blurbJa: "答えは2つの部分でできます。左：その数から1を引く。右：その数の各ケタを9から引き、最後のケタだけ10から引く。",
+    steps: [
+      "Take 1 away from the number. This is the left part.",
+      "Take each digit of the number from 9, but the last digit from 10. This is the right part.",
+      "Write the left part, then the right part. That's the answer!",
+    ],
+    stepsJa: [
+      "その数から1を引く。これが左の部分。",
+      "その数の各ケタを9から引く。最後のケタだけは10から引く。これが右の部分。",
+      "左の部分のあとに右の部分を書けば、答えのできあがり！",
+    ],
+    example: () => ({ n: 47 }),
+    example2: () => ({ n: 53276 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number, s = String(n), k = s.length;
+      const m = Number("9".repeat(k));
+      const left = n - 1;
+      const digs = s.split("").map(Number);
+      const right = digs.map((d, i) => (i === k - 1 ? 10 - d : 9 - d));
+      const how = digs.map((d, i) => (i === k - 1 ? `10−${d}` : `9−${d}`)).join(", ");
+      if (lang === "ja")
+        return [
+          [`${n} × ${m}`, "="],
+          [`左：${n} − 1`, `${left}`],
+          [`右：${how}`, right.join("")],
+          ["ならべる", `${left} | ${right.join("")}  →  ${n * m}`],
+        ];
+      return [
+        [`${n} × ${m}`, "="],
+        [`left: ${n} − 1`, `${left}`],
+        [`right: ${how}`, right.join("")],
+        ["put together", `${left} | ${right.join("")}  →  ${n * m}`],
+      ];
+    },
+    tip: "No multiplying at all, just take away!",
+    tipJa: "かけ算なし、引き算だけ！",
+    gen: (diff) => {
+      /* a last digit of 0 has no single-digit "from 10" partner, so the rule needs one */
+      let n: number;
+      do {
+        n = diff === "easy" ? ri(11, 99) : diff === "medium" ? ri(101, 999) : ri(1001, 9999);
+      } while (n % 10 === 0);
+      const m = Number("9".repeat(String(n).length));
+      return { prompt: `${n} × ${m}`, answer: n * m };
+    },
+  },
+  {
+    id: "divDouble",
+    icon: "➗",
+    grad: ["#EF6C00", "#FFB74D"],
+    illus: "ladder",
+    title: "Dividing by 5, 50, 25, 125",
+    titleJa: "5・50・25・125でわる",
+    sutraSa: "Ānurūpyeṇa",
+    sutraEn: "Proportionately · doubling",
+    sutraEnJa: "比例して・2倍にする",
+    pattern: "Dividing by 5, 50, 25 or 125. Dividing by 10, 100 or 1000 is easy, so turn the hard division into one of those.",
+    patternJa: "5・50・25・125でわるとき。10・100・1000でわるのはかんたんなので、むずかしいわり算をそれに変えます。",
+    blurb: "Double the number, then divide by 10, 100 or 1000. ÷ 5: double once, ÷ 10. ÷ 50: double once, ÷ 100. ÷ 25: double twice, ÷ 100. ÷ 125: double three times, ÷ 1000.",
+    blurbJa: "数を2倍にしてから、10・100・1000でわります。÷5：1回2倍して÷10。÷50：1回2倍して÷100。÷25：2回2倍して÷100。÷125：3回2倍して÷1000。",
+    steps: [
+      "÷ 5: double the number once, then ÷ 10.",
+      "÷ 50: double the number once, then ÷ 100.",
+      "÷ 25: double the number twice, then ÷ 100.",
+      "÷ 125: double the number three times, then ÷ 1000.",
+    ],
+    stepsJa: [
+      "÷5：数を1回2倍して、÷10。",
+      "÷50：数を1回2倍して、÷100。",
+      "÷25：数を2回2倍して、÷100。",
+      "÷125：数を3回2倍して、÷1000。",
+    ],
+    example: () => ({ n: 460, d: 5 }),
+    example2: () => ({ n: 425, d: 25 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number, d = ex.d as number;
+      const times = d === 125 ? 3 : d === 25 ? 2 : 1;
+      const by = d === 5 ? 10 : d === 125 ? 1000 : 100;
+      const chain = [n];
+      for (let i = 0; i < times; i++) chain.push(chain[chain.length - 1] * 2);
+      const big = chain[chain.length - 1];
+      const ans = big / by;
+      if (lang === "ja")
+        return [
+          [`${n} ÷ ${d}`, "="],
+          [times === 1 ? "2倍にする" : `${times}回2倍にする`, chain.join(" → ")],
+          [`÷ ${by}`, `${big} ÷ ${by} = ${ans}`],
+          ["答え", `${n} ÷ ${d} = ${ans}`],
+        ];
+      return [
+        [`${n} ÷ ${d}`, "="],
+        [times === 1 ? "double it" : `double it ${times === 2 ? "twice" : "three times"}`, chain.join(" → ")],
+        [`÷ ${by}`, `${big} ÷ ${by} = ${ans}`],
+        ["answer", `${n} ÷ ${d} = ${ans}`],
+      ];
+    },
+    tip: "Dividing by 10, 100 and 1000 is easy, isn't it?",
+    tipJa: "10・100・1000でわるのはかんたんだね！",
+    gen: (diff, stage) => {
+      /* stages 1–4 each practise one divisor; stage 5 and the games mix them.
+         Only whole-number answers, so the answer pad never needs a decimal point. */
+      const d = stage && stage <= 4 ? [5, 50, 25, 125][stage - 1] : [5, 50, 25, 125][ri(0, 3)];
+      const q = d === 5 ? (diff === "easy" ? ri(6, 40) : diff === "medium" ? ri(41, 199) : ri(200, 999))
+        : d === 50 ? (diff === "easy" ? ri(2, 20) : diff === "medium" ? ri(21, 99) : ri(100, 400))
+        : d === 25 ? (diff === "easy" ? ri(3, 30) : diff === "medium" ? ri(31, 99) : ri(100, 400))
+        : (diff === "easy" ? ri(2, 12) : diff === "medium" ? ri(13, 60) : ri(61, 200));
+      return { prompt: `${q * d} ÷ ${d}`, answer: q };
+    },
+  },
+  {
+    id: "divHalve",
+    icon: "➗",
+    grad: ["#6A3FD1", "#B39DDB"],
+    illus: "ladder",
+    title: "Dividing by 4, 8, 16",
+    titleJa: "4・8・16でわる",
+    sutraSa: "Ānurūpyeṇa",
+    sutraEn: "Proportionately · halving",
+    sutraEnJa: "比例して・半分にする",
+    pattern: "Dividing by 4, 8 or 16. Halving is easy, so halve again and again instead of dividing.",
+    patternJa: "4・8・16でわるとき。半分にするのはかんたんなので、わり算のかわりに何回か半分にします。",
+    blurb: "Halving is the same as dividing by 2. ÷ 4: halve twice. ÷ 8: halve three times. ÷ 16: halve four times. To halve a big number, halve each part and add: half of 254 = 100 + 25 + 2 = 127.",
+    blurbJa: "半分にするのは÷2と同じです。÷4：2回半分。÷8：3回半分。÷16：4回半分。大きな数は、部分ごとに半分にしてたします：254の半分 = 100 + 25 + 2 = 127。",
+    steps: [
+      "÷ 4: halve the number twice.",
+      "÷ 8: halve the number three times.",
+      "÷ 16: halve the number four times.",
+      "Big number? Split it into parts, halve each part, then add.",
+    ],
+    stepsJa: [
+      "÷4：数を2回半分にする。",
+      "÷8：数を3回半分にする。",
+      "÷16：数を4回半分にする。",
+      "大きな数は、部分に分けてそれぞれ半分にし、たす。",
+    ],
+    example: () => ({ n: 1000, d: 8 }),
+    example2: () => ({ n: 4240, d: 16 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number, d = ex.d as number;
+      const times = d === 16 ? 4 : d === 8 ? 3 : 2;
+      const chain = [n];
+      for (let i = 0; i < times; i++) chain.push(chain[chain.length - 1] / 2);
+      const ans = chain[chain.length - 1];
+      const rows: ExStep[] = [[`${n} ÷ ${d}`, "="]];
+      for (let i = 1; i < chain.length; i++)
+        rows.push([lang === "ja" ? `${i}回目の半分` : `halve (${i})`, `${chain[i - 1]} → ${chain[i]}`]);
+      rows.push([lang === "ja" ? "答え" : "answer", `${n} ÷ ${d} = ${ans}`]);
+      return rows;
+    },
+    tip: "Halve, halve, halve. That's ÷ 8!",
+    tipJa: "半分、半分、半分。これで÷8！",
+    gen: (diff, stage) => {
+      /* stages 1–2 ÷ 4, 3–4 ÷ 8, stage 5 ÷ 16; the games mix all three */
+      const d = stage ? (stage <= 2 ? 4 : stage <= 4 ? 8 : 16) : [4, 8, 16][ri(0, 2)];
+      const q = diff === "easy" ? ri(6, 40) : diff === "medium" ? ri(41, 150) : ri(151, 500);
+      return { prompt: `${q * d} ÷ ${d}`, answer: q };
+    },
+  },
+  {
+    id: "multHalve",
+    icon: "✕",
+    grad: ["#C2185B", "#F48FB1"],
+    illus: "grid",
+    title: "Multiplying by 5, 50, 25, 125",
+    titleJa: "5・50・25・125をかける",
+    sutraSa: "Ānurūpyeṇa",
+    sutraEn: "Proportionately · halving",
+    sutraEnJa: "比例して・半分にする",
+    pattern: "Multiplying by 5, 50, 25 or 125. Multiplying by 10, 100 or 1000 is easy, so do that first, then halve.",
+    patternJa: "5・50・25・125をかけるとき。10・100・1000をかけるのはかんたんなので、先にそれをかけてから半分にします。",
+    blurb: "Multiply by 10, 100 or 1000, then halve. × 5: × 10, halve once. × 50: × 100, halve once. × 25: × 100, halve twice. × 125: × 1000, halve three times.",
+    blurbJa: "10・100・1000をかけてから半分にします。×5：×10して1回半分。×50：×100して1回半分。×25：×100して2回半分。×125：×1000して3回半分。",
+    steps: [
+      "× 5: multiply by 10, then halve once.",
+      "× 50: multiply by 100, then halve once.",
+      "× 25: multiply by 100, then halve twice.",
+      "× 125: multiply by 1000, then halve three times.",
+    ],
+    stepsJa: [
+      "×5：10をかけて、1回半分にする。",
+      "×50：100をかけて、1回半分にする。",
+      "×25：100をかけて、2回半分にする。",
+      "×125：1000をかけて、3回半分にする。",
+    ],
+    example: () => ({ n: 36, m: 5 }),
+    example2: () => ({ n: 76, m: 25 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number, m = ex.m as number;
+      const by = m === 5 ? 10 : m === 125 ? 1000 : 100;
+      const times = m === 125 ? 3 : m === 25 ? 2 : 1;
+      const chain = [n * by];
+      for (let i = 0; i < times; i++) chain.push(chain[chain.length - 1] / 2);
+      const ans = chain[chain.length - 1];
+      if (lang === "ja")
+        return [
+          [`${n} × ${m}`, "="],
+          [`× ${by}`, `${n} × ${by} = ${n * by}`],
+          [times === 1 ? "半分にする" : `${times}回半分にする`, chain.join(" → ")],
+          ["答え", `${n} × ${m} = ${ans}`],
+        ];
+      return [
+        [`${n} × ${m}`, "="],
+        [`× ${by}`, `${n} × ${by} = ${n * by}`],
+        [times === 1 ? "halve it" : `halve it ${times === 2 ? "twice" : "three times"}`, chain.join(" → ")],
+        ["answer", `${n} × ${m} = ${ans}`],
+      ];
+    },
+    tip: "Multiplying by 10, 100 and 1000 is easy!",
+    tipJa: "10・100・1000をかけるのはかんたん！",
+    gen: (diff, stage) => {
+      /* stages 1–4 each practise one multiplier; stage 5 and the games mix them */
+      const m = stage && stage <= 4 ? [5, 50, 25, 125][stage - 1] : [5, 50, 25, 125][ri(0, 3)];
+      const n = m === 125
+        ? (diff === "easy" ? ri(2, 16) : diff === "medium" ? ri(17, 99) : ri(100, 800))
+        : diff === "easy" ? ri(12, 48) : diff === "medium" ? ri(49, 199) : ri(200, 999);
+      return { prompt: `${n} × ${m}`, answer: n * m };
+    },
   },
 ];
 
