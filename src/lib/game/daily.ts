@@ -2,12 +2,23 @@ import { TOPICS, type Problem, type Difficulty } from "./topics";
 
 export const DAILY_QUESTIONS = 10;
 
-/** The challenge day as YYYY-MM-DD. A new day starts at 9:00 in Japan
- * (00:00 UTC) for everyone, on every phone and on the server alike, so the
- * questions, the "played today" record and the winners all turn
- * over together. */
-export function todayKey(d = new Date()): string {
-  return d.toISOString().slice(0, 10);
+/** The challenge day as YYYY-MM-DD. A new day starts at 9:00 in the
+ * player's own time zone: the phone passes its zone to the server, so the
+ * questions, the "played today" record and the winners all turn over
+ * together for that player. Without a zone the runtime's own zone is used
+ * (the phone's, in the app); a bad zone falls back to 9:00 in Japan. */
+export function todayKey(tz?: string, now = Date.now()): string {
+  const d = new Date(now - 9 * 3600_000);
+  try {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  } catch {
+    return new Date(now).toISOString().slice(0, 10);
+  }
+}
+
+/** This phone's time zone, e.g. "Asia/Kolkata". */
+export function myTimeZone(): string {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; }
 }
 
 /** Deterministic PRNG so every player gets the same puzzle on the same date. */

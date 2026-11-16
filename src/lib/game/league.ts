@@ -11,9 +11,9 @@ export type DailyStatus = {
   points: number;
 };
 
-export async function getDailyStatus(userId: string): Promise<DailyStatus> {
+export async function getDailyStatus(userId: string, tz?: string): Promise<DailyStatus> {
   const db = getDb();
-  const day = todayKey();
+  const day = todayKey(tz);
   const row = (
     await db
       .select()
@@ -31,9 +31,9 @@ export async function getDailyStatus(userId: string): Promise<DailyStatus> {
 }
 
 /** Records the one allowed attempt for today. */
-export async function submitDaily(userId: string, correct: number, elapsedMs: number) {
+export async function submitDaily(userId: string, correct: number, elapsedMs: number, tz?: string) {
   const db = getDb();
-  const day = todayKey();
+  const day = todayKey(tz);
 
   const existing = (
     await db
@@ -65,25 +65,33 @@ export async function submitDaily(userId: string, correct: number, elapsedMs: nu
    A winner is anyone who got every question right, fastest first. Each one
    carries a streak: perfect days in a row ending on the day shown (1 = just
    that day). Before anyone has a perfect score today, yesterday's winners are
-   shown instead, so the card on Home is never empty in the morning. */
+   shown instead, so the card on Home is never empty in the morning.
+   `close` is today's 9 out of 10 players, fastest first: a cheer for
+   nearly getting there. */
 export type DailyWinner = { userId: string; name: string; secs: number; streak: number; isMe: boolean };
-export type DailyWinners = { day: string; isToday: boolean; winners: DailyWinner[] };
+export type DailyClose = { userId: string; name: string; isMe: boolean };
+export type DailyWinners = { day: string; isToday: boolean; winners: DailyWinner[]; close: DailyClose[] };
 const WINNER_LIMIT = 40, STREAK_LOOKBACK = 120;
-const dayBefore = (day: string, n = 1) => { const d = new Date(day + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - n); return todayKey(d); };
+const dayBefore = (day: string, n = 1) => { const d = new Date(day + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
 
-export async function getDailyWinners(viewerId: string): Promise<DailyWinners> {
+export async function getDailyWinners(viewerId: string, tz?: string): Promise<DailyWinners> {
   const db = getDb();
   const perfect = sql`${dailyChallenge.total} > 0 and ${dailyChallenge.correct} >= ${dailyChallenge.total}`;
-  const on = (day: string) => db
+  const nearly = sql`${dailyChallenge.total} > 0 and ${dailyChallenge.correct} = ${dailyChallenge.total} - 1`;
+  const on = (day: string, which = perfect) => db
     .select({ userId: dailyChallenge.userId, ms: dailyChallenge.elapsedMs, name: users.name, username: users.username })
     .from(dailyChallenge).innerJoin(users, eq(users.id, dailyChallenge.userId))
-    .where(and(eq(dailyChallenge.day, day), perfect))
+    .where(and(eq(dailyChallenge.day, day), which))
     .orderBy(dailyChallenge.elapsedMs).limit(WINNER_LIMIT);
+  const nameOf = (r: { name: string | null; username: string | null }) => r.username || r.name || "Player";
 
-  const today = todayKey();
-  let day = today, rows = await on(today);
+  const today = todayKey(tz);
+  let day = today;
+  const [first, closeRows] = await Promise.all([on(today), on(today, nearly)]);
+  let rows = first;
+  const close = closeRows.map((r) => ({ userId: r.userId, name: nameOf(r), isMe: r.userId === viewerId }));
   if (!rows.length) { day = dayBefore(today); rows = await on(day); }
-  if (!rows.length) return { day: today, isToday: true, winners: [] };
+  if (!rows.length) return { day: today, isToday: true, winners: [], close };
 
   const past = await db.select({ userId: dailyChallenge.userId, day: dailyChallenge.day }).from(dailyChallenge)
     .where(and(inArray(dailyChallenge.userId, rows.map((r) => r.userId)), lt(dailyChallenge.day, day),
@@ -94,7 +102,8 @@ export async function getDailyWinners(viewerId: string): Promise<DailyWinners> {
     winners: rows.map((r) => {
       let streak = 1;
       for (let d = dayBefore(day); won.has(`${r.userId}|${d}`); d = dayBefore(d)) streak++;
-      return { userId: r.userId, name: r.username || r.name || "Player", secs: Math.round(r.ms / 1000), streak, isMe: r.userId === viewerId };
+      return { userId: r.userId, name: nameOf(r), secs: Math.round(r.ms / 1000), streak, isMe: r.userId === viewerId };
     }),
+    close,
   };
 }

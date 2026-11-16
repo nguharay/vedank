@@ -6,7 +6,8 @@ import type { DailyWinners } from "@/lib/game/league";
 /* ---- 🏆 Today's Daily Challenge winners ----
    Everyone who got all 10 right, fastest first. A player who has done it more
    than one day running wears a flame with the number of days. Until someone
-   wins today, yesterday's winners stay up with a nudge to be the first. */
+   wins today, yesterday's winners stay up with a nudge to be the first.
+   Under it, a cheer for today's 9 out of 10 players. */
 const SHOWN = 6;
 
 export function DailyWinnersCard({ data, ja, onPlay }: {
@@ -19,7 +20,9 @@ export function DailyWinnersCard({ data, ja, onPlay }: {
   const { winners, isToday } = data;
   const list = all ? winners : winners.slice(0, SHOWN);
   const more = winners.length - list.length;
+  const close = data.close ?? [];
   return (
+    <>
     <div className="dw-card" role="region" aria-label={ja ? "チャレンジの勝者" : "Challenge winners"}>
       <div className="dw-head">
         <span className="dw-cup" aria-hidden="true">🏆</span>
@@ -55,5 +58,22 @@ export function DailyWinnersCard({ data, ja, onPlay }: {
         </button>
       )}
     </div>
+    {close.length > 0 && (
+      <div className="dw-close" role="region" aria-label={ja ? "おしい！9問正解" : "So close: 9 out of 10"}>
+        <div className="dw-close-head">
+          <span aria-hidden="true">👏</span>
+          <span className="dw-titles">
+            <b>{ja ? "おしい！10問中9問正解" : "So close! 9 out of 10"}</b>
+            <small>{ja ? "よくがんばったね。あと1問で勝者！" : "Great effort today. One more and you're a winner!"}</small>
+          </span>
+        </div>
+        <ul className="dw-close-list">
+          {close.map((c) => (
+            <li key={c.userId} className={c.isMe ? "me" : undefined}>{c.isMe ? (ja ? "あなた" : "YOU") : c.name}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+    </>
   );
 }
