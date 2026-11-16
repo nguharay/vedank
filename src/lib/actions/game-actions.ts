@@ -56,19 +56,23 @@ export async function solvePuzzleAction(puzzleId: string, moves: number) {
   return submitPuzzleSolved(userId, puzzleId, moves);
 }
 
-export async function dailyStatusAction() {
+/* tz: the phone's time zone; the challenge day starts at 9:00 there
+   (Japan when an older app sends none) */
+const zone = (tz: unknown) => (typeof tz === "string" && tz && tz.length < 64 ? tz : "Asia/Tokyo");
+
+export async function dailyStatusAction(tz?: string) {
   const userId = await requireUserId();
-  return getDailyStatus(userId);
+  return getDailyStatus(userId, zone(tz));
 }
 
-export async function submitDailyAction(correct: number, elapsedMs: number) {
+export async function submitDailyAction(correct: number, elapsedMs: number, tz?: string) {
   const userId = await requireUserId();
-  return submitDaily(userId, correct, elapsedMs);
+  return submitDaily(userId, correct, elapsedMs, zone(tz));
 }
 
-export async function dailyWinnersAction() {
+export async function dailyWinnersAction(tz?: string) {
   const userId = await requireUserId();
-  return getDailyWinners(userId);
+  return getDailyWinners(userId, zone(tz));
 }
 
 export async function leaderboardAction() {

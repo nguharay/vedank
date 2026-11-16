@@ -76,7 +76,7 @@ import type { LeaderboardData } from "@/lib/game/progress";
 import { ACHIEVEMENTS } from "@/lib/game/achievements";
 import { Mascot } from "./Mascot";
 import { TRICK_BY_ID } from "@/lib/game/tricks";
-import { dailyQuestions, todayKey, seededRandom, withSeededRandom, type DailyQuestion } from "@/lib/game/daily";
+import { dailyQuestions, todayKey, myTimeZone, seededRandom, withSeededRandom, type DailyQuestion } from "@/lib/game/daily";
 import { applyOverride, type OverrideMap, type TopicOverride } from "@/lib/game/overrides";
 import { newGame as tttNewGame, play as tttPlay, pass as tttPass, cpuMove as tttCpu, turnSeconds as tttTurnSeconds, normaliseRoomCode, type TTTState, type TTTLevel, type Mark } from "@/lib/game/ttt";
 import type { RoomView } from "@/lib/game/tttOnline";
@@ -262,8 +262,8 @@ export function GameApp({
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
   useEffect(() => {
-    dailyStatusAction().then(setDailyStatus).catch(() => {});
-    dailyWinnersAction().then(setDailyWinners).catch(() => {});
+    dailyStatusAction(myTimeZone()).then(setDailyStatus).catch(() => {});
+    dailyWinnersAction(myTimeZone()).then(setDailyWinners).catch(() => {});
   }, []);
 
   /* the streak the next gem chest opens at: day 5, day 7, then every 7th day */
@@ -297,7 +297,7 @@ export function GameApp({
     if (guestLocked("daily")) return;
     setDailyQs([]);
     setDailyDone(null);
-    dailyWinnersAction().then(setDailyWinners).catch(() => {});
+    dailyWinnersAction(myTimeZone()).then(setDailyWinners).catch(() => {});
     setView("daily");
   }
   function startDaily() {
@@ -328,11 +328,11 @@ export function GameApp({
     setTimeout(async () => {
       if (dailyIdx + 1 >= dailyQs.length) {
         const elapsed = Date.now() - dailyStartRef.current;
-        const res = await submitDailyAction(nextCorrect, elapsed);
+        const res = await submitDailyAction(nextCorrect, elapsed, myTimeZone());
         track("daily_done", { score: res.points, correct: res.correct, questions: dailyQs.length, secs: Math.round(elapsed / 1000) });
         setDailyDone({ points: res.points, correct: res.correct });
         setDailyStatus({ day: todayKey(), played: true, correct: res.correct, total: dailyQs.length, points: res.points });
-        dailyWinnersAction().then(setDailyWinners).catch(() => {});
+        dailyWinnersAction(myTimeZone()).then(setDailyWinners).catch(() => {});
         if (res.correct >= 6) confetti.burstCenter();
       } else {
         setDailyIdx((i) => i + 1);

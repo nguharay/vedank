@@ -48,8 +48,8 @@ export function DailyView({
           <div className="daily-done-points">+{points} {lang === "ja" ? "ポイント" : "points"}</div>
           <p className="daily-done-note">
             {lang === "ja"
-              ? "同じ問題を世界中のみんなが解いています。次の問題は朝9時（日本時間）に出るよ！"
-              : "Everyone in the world got these same questions today. New ones arrive at 9:00 am Japan time!"}
+              ? "同じ問題を世界中のみんなが解いています。次の問題は朝9時に出るよ！"
+              : "Everyone in the world got these same questions today. New ones arrive at 9:00 am!"}
           </p>
           <DailyWinnersCard data={winners ?? null} ja={lang === "ja"} />
           <button className="btn btn-primary" onClick={onHome}>
@@ -71,7 +71,7 @@ export function DailyView({
           <h1>{lang === "ja" ? "デイリーチャレンジ" : "Daily Challenge"}</h1>
           <p>{lang === "ja"
             ? `みんな同じ${DAILY_QUESTIONS}問。1日1回だけ（毎朝9時に新しくなるよ）。ぜんぶ正解で勝者にのるよ。`
-            : `The same ${DAILY_QUESTIONS} questions for everyone, one try a day, new every day at 9:00 am Japan time. Get them all right to join the winners.`}</p>
+            : `The same ${DAILY_QUESTIONS} questions for everyone, one try a day, new every day at 9:00 am. Get them all right to join the winners.`}</p>
           <button className="btn btn-primary" onClick={onStart}>{lang === "ja" ? "スタート ▶" : "Start ▶"}</button>
         </div>
         <DailyWinnersCard data={winners ?? null} ja={lang === "ja"} />

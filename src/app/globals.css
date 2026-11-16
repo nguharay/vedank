@@ -4632,7 +4632,12 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .dw-streak{ flex:0 0 auto; font-size:11px; font-weight:900; color:#fff; background:#e8452c; border-radius:999px; padding:2px 8px; white-space:nowrap; }
 .dw-time{ flex:0 0 auto; font-size:12px; opacity:.7; }
 .dw-more{ display:block; margin:8px auto 0; border:0; background:none; color:#3a2500; font:inherit; font-weight:900; font-size:12.5px; text-decoration:underline; cursor:pointer; }
-.daily-done .dw-card{ margin:16px 0; width:100%; }
+.daily-done .dw-card{ margin:16px 0 12px; width:100%; }
+.dw-close{ margin:0 0 12px; padding:10px 12px; border-radius:18px; border:2px dashed #2a8c6a; background:#eaf8f1; color:#1c1838; width:100%; box-sizing:border-box; text-align:left; }
+.dw-close-head{ display:flex; align-items:center; gap:10px; font-size:24px; line-height:1; }
+.dw-close-list{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px; }
+.dw-close-list li{ padding:4px 10px; border-radius:999px; background:#fff; font-weight:800; font-size:13px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dw-close-list li.me{ color:#2563eb; outline:2px solid #2563eb; }
 /* the map heading now carries two lines of text: keep the first node's
    "BATTLE!" bubble clear of it */
 .home-sec + .path-wrap{ margin-top:44px; }
