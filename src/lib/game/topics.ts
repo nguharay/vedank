@@ -1854,6 +1854,53 @@ export const TOPICS: Topic[] = [
       return { prompt: `${n} × ${m}`, answer: n * m };
     },
   },
+  {
+    id: "multDouble",
+    icon: "✕",
+    grad: ["#E65100", "#FFB74D"],
+    illus: "ladder",
+    title: "Doubling: Multiplying by 4, 8, 16",
+    titleJa: "2倍：4・8・16をかける",
+    sutraSa: "Ānurūpyeṇa",
+    sutraEn: "Proportionately · doubling",
+    sutraEnJa: "比例して・2倍にする",
+    pattern: "Multiplying by 4, 8 or 16. Doubling is easy, so double again and again instead of multiplying.",
+    patternJa: "4・8・16をかけるとき。2倍にするのはかんたんなので、かけ算のかわりに何回か2倍にします。",
+    blurb: "Doubling means adding a number to itself, the same as × 2. × 4: double twice. × 8: double three times. × 16: double four times. To double a big number, double each part and add: double 76 = 140 + 12 = 152.",
+    blurbJa: "2倍にするのは、同じ数をたすこと（×2と同じ）です。×4：2回2倍。×8：3回2倍。×16：4回2倍。大きな数は、部分ごとに2倍にしてたします：76の2倍 = 140 + 12 = 152。",
+    steps: [
+      "× 4: double the number twice.",
+      "× 8: double the number three times.",
+      "× 16: double the number four times.",
+      "Big number? Split it into parts, double each part, then add.",
+    ],
+    stepsJa: [
+      "×4：数を2回2倍にする。",
+      "×8：数を3回2倍にする。",
+      "×16：数を4回2倍にする。",
+      "大きな数は、部分に分けてそれぞれ2倍にし、たす。",
+    ],
+    example: () => ({ n: 45, m: 4 }),
+    example2: () => ({ n: 36, m: 8 }),
+    exSteps: (ex, lang) => {
+      const n = ex.n as number, m = ex.m as number;
+      const rows: ExStep[] = [[`${n} × ${m}`, "="]];
+      for (let i = 1, v = n; i < m; i *= 2, v *= 2)
+        rows.push([lang === "ja" ? `${Math.log2(i) + 1}回目の2倍` : `double (${Math.log2(i) + 1})`, `${v} → ${v * 2}`]);
+      rows.push([lang === "ja" ? "答え" : "answer", `${n} × ${m} = ${n * m}`]);
+      return rows;
+    },
+    tip: "Double, double, double. That's × 8!",
+    tipJa: "2倍、2倍、2倍。これで×8！",
+    gen: (diff, stage) => {
+      /* stages 1–2 × 4, 3–4 × 8, stage 5 × 16; the games mix all three */
+      const m = stage ? (stage <= 2 ? 4 : stage <= 4 ? 8 : 16) : [4, 8, 16][ri(0, 2)];
+      const n = m === 16
+        ? (diff === "easy" ? ri(11, 40) : diff === "medium" ? ri(41, 99) : ri(101, 250))
+        : diff === "easy" ? ri(12, 49) : diff === "medium" ? ri(51, 99) : ri(101, 250);
+      return { prompt: `${n} × ${m}`, answer: n * m };
+    },
+  },
 ];
 
 export const TOPIC_BY_ID: Record<string, Topic> = Object.fromEntries(

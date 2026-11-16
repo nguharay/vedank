@@ -2209,6 +2209,7 @@ export const BOOK_FLOW: Partial<Record<string, { en: string[]; ja: string[] }>> 
   divDouble: { en: ["Double the number", "Divide by 10, 100 or 1000"], ja: ["数を2倍にする", "10・100・1000でわる"] },
   divHalve: { en: ["Halve the number", "Halve again until done"], ja: ["数を半分にする", "決まった回数だけ半分をくり返す"] },
   multHalve: { en: ["Multiply by 10, 100 or 1000", "Halve"], ja: ["10・100・1000をかける", "半分にする"] },
+  multDouble: { en: ["Double the number", "Double again until done"], ja: ["数を2倍にする", "決まった回数だけ2倍をくり返す"] },
 };
 
 export const BOOK_DIAGRAM_EQ: Partial<Record<string, string>> = {
