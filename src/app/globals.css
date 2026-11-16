@@ -647,10 +647,11 @@ main{ scroll-padding-top:104px; }
 #confettiCanvas{ position:fixed; inset:0; z-index:60; pointer-events:none; }
 
 /* ---------- matchstick dojo ---------- */
-.puzzle-nav{ display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:13px; color:var(--ink-dim); font-weight:800; }
-.dot-row{ display:flex; gap:6px; }
-.dot{ width:8px; height:8px; border-radius:50%; background:var(--line-strong); transition:all .2s; }
-.dot.on{ background:linear-gradient(135deg,var(--sun2),var(--sun1)); width:22px; border-radius:5px; }
+.puzzle-nav{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:14px; font-size:13px; color:var(--ink-dim); font-weight:800; }
+.puzzle-nav > span{ flex:0 0 auto; }
+.dot-row{ display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px 4px; max-width:142px; }
+.dot{ width:7px; height:7px; border-radius:50%; background:var(--line-strong); transition:all .2s; }
+.dot.on{ background:linear-gradient(135deg,var(--sun2),var(--sun1)); width:16px; border-radius:4px; }
 .dot.solved{ background:var(--green); }
 .par-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
 .par-chip{ display:inline-flex; gap:6px; align-items:center; font-size:11.5px; font-weight:800; color:#B4560F; background:#FFE3C2;

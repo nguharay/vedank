@@ -50,6 +50,9 @@ export function glyphOp(sym: string): Glyph {
   return g;
 }
 
+/* "15-16=8" → its glyphs, one per character */
+const eq = (s: string): Glyph[] => [...s].map((c) => (c >= "0" && c <= "9" ? glyphDigit(c) : glyphOp(c)));
+
 export type Puzzle = {
   id: string;
   par: number;
@@ -124,6 +127,135 @@ export const PUZZLES: Puzzle[] = [
     hint: () => [glyphDigit("6"), glyphOp("+"), glyphDigit("3"), glyphOp("="), glyphDigit("9")],
     story: "9 + 3 = 9 is wrong. One stick move turns the 9 into a 6.",
     storyJa: "9 + 3 = 9 はまちがい。1本動かすと、9が6に変わる。",
+  },
+  /* from "Matchsticks Puzzle for App" (Nov 2026) */
+  {
+    id: "p9",
+    par: 1,
+    start: () => eq("9+5=9"),
+    hint: () => eq("3+6=9"),
+    story: "9 + 5 = 9 is wrong. Move one stick from the first 9 to the 5: 3 + 6 = 9. (3 + 5 = 8 works too!)",
+    storyJa: "9 + 5 = 9 はまちがい。最初の9から1本を5に動かすと 3 + 6 = 9。（3 + 5 = 8 でもOK！）",
+  },
+  {
+    id: "p10",
+    par: 1,
+    start: () => eq("0+7=1"),
+    hint: () => eq("8-7=1"),
+    story: "0 + 7 = 1 is wrong. Move the upright stick of the + into the middle of the 0: 8 − 7 = 1.",
+    storyJa: "0 + 7 = 1 はまちがい。＋のたての1本を0のまん中に動かすと 8 − 7 = 1。",
+  },
+  {
+    id: "p11",
+    par: 1,
+    start: () => eq("1+7=0"),
+    hint: () => eq("7-7=0"),
+    story: "1 + 7 = 0 is wrong. Move the upright stick of the + to the top of the 1: 7 − 7 = 0.",
+    storyJa: "1 + 7 = 0 はまちがい。＋のたての1本を1の上に動かすと 7 − 7 = 0。",
+  },
+  {
+    id: "p12",
+    par: 1,
+    start: () => eq("7-5=6"),
+    hint: () => eq("1+5=6"),
+    story: "7 − 5 = 6 is wrong. Move the top stick of the 7 onto the − to make a +: 1 + 5 = 6.",
+    storyJa: "7 − 5 = 6 はまちがい。7の上の1本を−にたてて＋にすると 1 + 5 = 6。",
+  },
+  {
+    id: "p13",
+    par: 1,
+    start: () => eq("15+0=7"),
+    hint: () => eq("15-8=7"),
+    story: "15 + 0 = 7 is wrong. Move the upright stick of the + into the middle of the 0: 15 − 8 = 7.",
+    storyJa: "15 + 0 = 7 はまちがい。＋のたての1本を0のまん中に動かすと 15 − 8 = 7。",
+  },
+  {
+    id: "p14",
+    par: 1,
+    start: () => eq("7-0=1"),
+    hint: () => eq("7-6=1"),
+    story: "7 − 0 = 1 is wrong. Move the top-right stick of the 0 to its middle: 7 − 6 = 1. (1 + 0 = 1 works too!)",
+    storyJa: "7 − 0 = 1 はまちがい。0の右上の1本をまん中に動かすと 7 − 6 = 1。（1 + 0 = 1 でもOK！）",
+  },
+  {
+    id: "p15",
+    par: 1,
+    start: () => eq("9-5=9"),
+    hint: () => eq("9-6=3"),
+    story: "9 − 5 = 9 is wrong. Move one stick from the last 9 to the 5: 9 − 6 = 3. (8 − 5 = 3 works too!)",
+    storyJa: "9 − 5 = 9 はまちがい。最後の9から1本を5に動かすと 9 − 6 = 3。（8 − 5 = 3 でもOK！）",
+  },
+  {
+    id: "p16",
+    par: 1,
+    start: () => eq("15-16=8"),
+    hint: () => eq("16-16=0"),
+    story: "15 − 16 = 8 is wrong. Move the middle stick of the 8 to the 5: 16 − 16 = 0.",
+    storyJa: "15 − 16 = 8 はまちがい。8のまん中の1本を5に動かすと 16 − 16 = 0。",
+  },
+  {
+    id: "p17",
+    par: 1,
+    start: () => eq("3+6=14"),
+    hint: () => eq("9+5=14"),
+    story: "3 + 6 = 14 is wrong. Move the bottom-left stick of the 6 to the 3: 9 + 5 = 14.",
+    storyJa: "3 + 6 = 14 はまちがい。6の左下の1本を3に動かすと 9 + 5 = 14。",
+  },
+  {
+    id: "p18",
+    par: 1,
+    start: () => eq("10-5=14"),
+    hint: () => eq("19-5=14"),
+    story: "10 − 5 = 14 is wrong. Move the bottom-left stick of the 0 to its middle: 19 − 5 = 14.",
+    storyJa: "10 − 5 = 14 はまちがい。0の左下の1本をまん中に動かすと 19 − 5 = 14。",
+  },
+  {
+    id: "p19",
+    par: 1,
+    start: () => eq("3-8=3"),
+    hint: () => eq("3+0=3"),
+    story: "3 − 8 = 3 is wrong. Move the middle stick of the 8 onto the − to make a +: 3 + 0 = 3. (9 − 6 = 3 works too!)",
+    storyJa: "3 − 8 = 3 はまちがい。8のまん中の1本を−にたてて＋にすると 3 + 0 = 3。（9 − 6 = 3 でもOK！）",
+  },
+  {
+    id: "p20",
+    par: 1,
+    start: () => eq("6-7=7"),
+    hint: () => eq("6+1=7"),
+    story: "6 − 7 = 7 is wrong. Move the top stick of the first 7 onto the − to make a +: 6 + 1 = 7. (8 − 1 = 7 works too!)",
+    storyJa: "6 − 7 = 7 はまちがい。最初の7の上の1本を−にたてて＋にすると 6 + 1 = 7。（8 − 1 = 7 でもOK！）",
+  },
+  {
+    id: "p21",
+    par: 1,
+    start: () => eq("12-6=7"),
+    hint: () => eq("13-6=7"),
+    story: "12 − 6 = 7 is wrong. Move the bottom-left stick of the 2 to the bottom-right: 13 − 6 = 7.",
+    storyJa: "12 − 6 = 7 はまちがい。2の左下の1本を右下に動かすと 13 − 6 = 7。",
+  },
+  {
+    id: "p22",
+    par: 1,
+    start: () => eq("5+18=19"),
+    hint: () => eq("9+10=19"),
+    story: "5 + 18 = 19 is wrong. Move the middle stick of the 8 to the 5: 9 + 10 = 19.",
+    storyJa: "5 + 18 = 19 はまちがい。8のまん中の1本を5に動かすと 9 + 10 = 19。",
+  },
+  {
+    id: "p23",
+    par: 1,
+    start: () => eq("1-9=2"),
+    hint: () => eq("7-5=2"),
+    story: "1 − 9 = 2 is wrong. Move the top-right stick of the 9 to the top of the 1: 7 − 5 = 2.",
+    storyJa: "1 − 9 = 2 はまちがい。9の右上の1本を1の上に動かすと 7 − 5 = 2。",
+  },
+  {
+    id: "p24",
+    par: 1,
+    start: () => eq("3+19=10"),
+    hint: () => eq("3+15=18"),
+    story: "3 + 19 = 10 is wrong. Move the top-right stick of the 9 into the middle of the 0: 3 + 15 = 18.",
+    storyJa: "3 + 19 = 10 はまちがい。9の右上の1本を0のまん中に動かすと 3 + 15 = 18。",
   },
 ];
 export const TRAY_SIZE = 2;
