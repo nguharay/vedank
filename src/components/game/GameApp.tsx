@@ -2082,14 +2082,7 @@ export function GameApp({
       blurbJa: "ふせたカードでペア探し。少ない回数でクリア。",
       best: gameBests.memory ?? 0, start: shelf(() => startMemory(), "memory"),
     },
-    {
-      /* the dojo used to be a stop on the learning map; it lives here now */
-      id: "dojo", icon: "🔥", tint: "var(--sun1)",
-      name: "Matchstick Puzzles", nameJa: "マッチ棒パズル",
-      blurb: "Move one matchstick to fix the sum.",
-      blurbJa: "マッチ棒を1本動かして式を直そう。",
-      best: solvedCount, start: shelf(openDojo),
-    },
+    /* (Matchstick Puzzles left the shelf too: they live in the 道場 tab) */
     /* (Matchstick Sprint left the shelf: two matchstick games was one too
        many. The mode itself still exists for old links.) */
     ...QUICK_GAMES.map((g) => ({
@@ -3438,7 +3431,7 @@ export function GameApp({
                   ? "オンラインの部屋では、みんなの名前と答えをサーバーで合わせます。メールだけで無料登録できるよ。🤖 ひとりで（コンピューターと）なら、このまま遊べます。"
                   : "Online rooms match everyone's names and answers on our server. Sign up free with just your email. 🤖 Solo (against the computer) works right now without one.")
                 : lang === "ja"
-                ? "おためしでは最初の2トピックと一部のゲームが遊べます。無料のアカウントを作ると、すべてのトピック・ゲーム・デイリーチャレンジ・マッチ棒道場が開き、今までの記録もそのまま引き継がれます。"
+                ? "おためしでは最初の2トピックと一部のゲームが遊べます。無料のアカウントを作ると、すべてのトピック・ゲーム・毎日のチャレンジ・マッチ棒道場が開き、今までの記録もそのまま引き継がれます。"
                 : "Guests can play the first two topics and a few games. A free account opens every topic, every game, the Daily Challenge and the Matchstick Puzzles, and keeps the progress you've made so far."}
             </p>
             <a className="btn btn-primary auth-submit" href="/signup?from=%2F">
@@ -4526,7 +4519,7 @@ export function GameApp({
                     {/* the record sits under the text, so the row never runs out of room on a phone */}
                     {g.best > 0 && !gameLocked(g.id) && (
                       <span className="game-card-best mono">
-                        {g.id === "dojo" ? `◯ ${g.best}/${PUZZLES.length}` : `${lang === "ja" ? "ベスト" : "best"} ${g.best}`}
+                        {lang === "ja" ? "ベスト" : "best"} {g.best}
                       </span>
                     )}
                   </span>

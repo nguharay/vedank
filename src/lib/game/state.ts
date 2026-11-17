@@ -16,9 +16,12 @@ export function starsForStage(state: ProgressState, id: string, n: number): numb
 
 // A stage opens only once the stage before it in the same topic is cleared AND
 // the same-numbered stage of the previous topic is cleared, so the whole course
-// advances one stage at a time across topics.
+// advances one stage at a time across topics. A stage already cleared stays
+// open, so moving a lesson on the map never locks what a player has done.
 export function stageUnlocked(state: ProgressState, topicId: string, n: number): boolean {
-  if (n > topicProgressOf(state, topicId).cleared + 1) return false;
+  const cleared = topicProgressOf(state, topicId).cleared;
+  if (n <= cleared) return true;
+  if (n > cleared + 1) return false;
   const gate = gateOf(topicId);
   return !gate || topicProgressOf(state, gate.id).cleared >= n;
 }

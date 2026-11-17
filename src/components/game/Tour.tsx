@@ -25,7 +25,7 @@ function steps(guest: boolean): Step[] {
     { sel: ".dock-play", icon: "🎮", title: ["Games", "ゲーム"],
       text: ["All the maths games are here, 25+ of them. Finish a game for the first time to win a Great Minds card 🃏", "ゲームはここ！25こ以上あるよ。はじめてクリアすると偉人カードがもらえる🃏"] },
     { sel: ".stat-cards||.level-strip", icon: "🃏", title: ["Level up, win cards", "レベルアップでカード"],
-      text: ["Every new level wins you a Great Minds card 🃏, and there's a new daily challenge each day.", "レベルが上がるたびに偉人カード🃏がもらえる。毎日のデイリーチャレンジもあるよ。"] },
+      text: ["Every new level wins you a Great Minds card 🃏, and there's a new daily challenge each day.", "レベルが上がるたびに偉人カード🃏がもらえる。毎日のチャレンジもあるよ。"] },
   ];
   if (guest) s.push({ sel: ".dock-save", icon: "💾", title: ["Free account", "無料アカウント"],
     text: ["Sign up free with just your email, so your progress is never lost, and play every game.", "メールアドレスだけで無料登録！データが消えないし、全部のゲームであそべるよ。"] });

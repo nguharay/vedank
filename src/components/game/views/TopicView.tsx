@@ -247,7 +247,8 @@ export function TopicView({
       <div className="topic-head">
         <div className="icon-badge" style={{ background: gradCss(topic.grad) }}>{topic.icon}</div>
         <h1>{title}</h1>
-        <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 8, lineHeight: 1.5, fontWeight: 600, whiteSpace: "pre-line" }}>{blurb}</p>
+        {/* just the opening line: the full rules are in the Method box below */}
+        <p style={{ color: "var(--muted)", fontSize: 14, marginTop: 8, lineHeight: 1.5, fontWeight: 600 }}>{blurb.split("\n\n")[0]}</p>
       </div>
       <div className="card">
         <h4>{t.topicView.howItWorks}</h4>

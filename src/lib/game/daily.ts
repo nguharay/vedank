@@ -72,6 +72,10 @@ function distractors(rand: () => number, answer: number, n: number): number[] {
   return [...out];
 }
 
+/* Topics in a fixed order (by id), so moving lessons on the map never changes
+   a day's questions. */
+const POOL = [...TOPICS].sort((a, b) => (a.id < b.id ? -1 : 1));
+
 /**
  * The day's puzzle set. Pure function of the date string, so the server and
  * every client independently derive an identical set without storing it.
@@ -82,10 +86,10 @@ export function dailyQuestions(dayKey: string): DailyQuestion[] {
   const used = new Set<string>();
 
   for (let i = 0; i < DAILY_QUESTIONS; i++) {
-    let topic = TOPICS[Math.floor(rand() * TOPICS.length)];
+    let topic = POOL[Math.floor(rand() * POOL.length)];
     let guard = 0;
-    while (used.has(topic.id) && used.size < TOPICS.length && guard++ < 50) {
-      topic = TOPICS[Math.floor(rand() * TOPICS.length)];
+    while (used.has(topic.id) && used.size < POOL.length && guard++ < 50) {
+      topic = POOL[Math.floor(rand() * POOL.length)];
     }
     used.add(topic.id);
 

@@ -16,12 +16,12 @@ const ICON_PATHS: Record<string, string> = {
 
 /* Direct ways to reach Ray先生, shown under the form. */
 const CONTACTS = [
-  { key: "tel", href: "tel:+817084553125", icon: "📞", en: "Call", ja: "電話", sub: "+81-708-455-3125", color: "#2E7D32" },
-  { key: "line", href: "https://line.me/ti/p/BATZBOmDb8", icon: "🟩", en: "LINE", ja: "LINE", sub: "Add friend", color: "#06C755" },
-  { key: "fb", href: "https://www.facebook.com/vedankacademy", icon: "👍", en: "Facebook", ja: "Facebook", sub: "vedankacademy", color: "#1877F2" },
-  { key: "ig", href: "https://www.instagram.com/vedankac/", icon: "📸", en: "Instagram", ja: "Instagram", sub: "@vedankac", color: "#D62976" },
-  { key: "mail", href: "mailto:vedankac@gmail.com", icon: "✉️", en: "Email", ja: "メール", sub: "vedankac@gmail.com", color: "#E8631C" },
-  { key: "wa", href: "https://wa.me/817084663784", icon: "💬", en: "WhatsApp", ja: "WhatsApp", sub: "+81 70-8466-3784", color: "#25D366" },
+  { key: "tel", href: "tel:+817084553125", icon: "📞", en: "Call", ja: "電話", color: "#2E7D32" },
+  { key: "line", href: "https://line.me/ti/p/BATZBOmDb8", icon: "🟩", en: "LINE", ja: "LINE", color: "#06C755" },
+  { key: "fb", href: "https://www.facebook.com/vedankacademy", icon: "👍", en: "Facebook", ja: "Facebook", color: "#1877F2" },
+  { key: "ig", href: "https://www.instagram.com/vedankac/", icon: "📸", en: "Instagram", ja: "Instagram", color: "#D62976" },
+  { key: "mail", href: "mailto:vedankac@gmail.com", icon: "✉️", en: "Email", ja: "メール", color: "#E8631C" },
+  { key: "wa", href: "https://wa.me/817084663784", icon: "💬", en: "WhatsApp", ja: "WhatsApp", color: "#25D366" },
 ] as const;
 
 export function ContactLinks({ lang }: { lang: "ja" | "en" }) {
@@ -34,12 +34,9 @@ export function ContactLinks({ lang }: { lang: "ja" | "en" }) {
           <a key={c.key} className="contact-btn" href={c.href} target={c.key === "tel" || c.key === "mail" ? undefined : "_blank"} rel="noopener noreferrer"
             style={{ "--c": c.color } as React.CSSProperties}>
             <span className="contact-ic" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="18" height="18"><path d={ICON_PATHS[c.key]} fill="#fff" /></svg>
+              <svg viewBox="0 0 24 24" width="22" height="22"><path d={ICON_PATHS[c.key]} fill="#fff" /></svg>
             </span>
-            <span className="contact-txt">
-              <span className="contact-name">{ja ? c.ja : c.en}</span>
-              <span className="contact-sub">{c.key === "line" ? (ja ? "友だち追加" : "Add friend") : c.sub}</span>
-            </span>
+            <span className="contact-name">{ja ? c.ja : c.en}</span>
           </a>
         ))}
       </div>

@@ -24,8 +24,8 @@ export function turfColor(room: PartyView, key: string | null): string | null {
   return p.me ? TURF_ME : TURF_PALETTE[idx % TURF_PALETTE.length];
 }
 
-/* base font size per board size; a sum shrinks below it only as far as its
-   own width needs (see .turf-sum). Spaces become thin spaces so the figures
+/* base font size per board size; all sums shrink below it together, as far
+   as the longest one needs (see .turf-sum). Spaces become thin spaces so the figures
    themselves can be bigger, and the width is counted in "units": a figure
    or sign is one, a thin space a third. */
 const TURF_FS: Record<number, number> = { 5: 22, 6: 19, 7: 16, 8: 14, 9: 12 };
@@ -71,6 +71,8 @@ export function TurfStage({ room, ja, now, sel, onSel, prompts }: {
   const finale = tf.finaleOn && room.status !== "done";
   const board = teams ? null : [...room.players].sort((a, b) => b.score - a.score).slice(0, 4);
   const lineFlash = seen.lineAt > 0 && now - seen.lineAt < 1300;
+  /* every sum on the board at one size: the size the longest one needs */
+  const units = prompts.reduce((m, q) => Math.max(m, unitsOf(q ?? "")), 3);
 
   return (
     <div className={`turf-field${finale ? " finale" : ""}`}>
@@ -79,8 +81,8 @@ export function TurfStage({ room, ja, now, sel, onSel, prompts }: {
       {!finale && lineFlash && <div className="turf-banner line">🔒 {ja ? `ライン完成！+${TURF_LINE_BONUS}` : `LINE! +${TURF_LINE_BONUS}`}</div>}
 
       {/* the sums as big as the tiles allow: the base size follows the board
-          (5×5 → 19px … 9×9 → 11px) and only the longest sums shrink to fit */}
-      <div className="turf-grid" style={{ gridTemplateColumns: `repeat(${n}, 1fr)`, ["--turf-fs" as string]: `${TURF_FS[Math.min(9, Math.max(5, n))]}px` }} role="grid" aria-label={ja ? "ナワバリの盤" : "The turf board"}>
+          (5×5 → 22px … 9×9 → 12px), shrunk so the longest sum fits */}
+      <div className="turf-grid" style={{ gridTemplateColumns: `repeat(${n}, 1fr)`, ["--turf-fs" as string]: `${TURF_FS[Math.min(9, Math.max(5, n))]}px`, ["--units" as string]: String(units) }} role="grid" aria-label={ja ? "ナワバリの盤" : "The turf board"}>
         {tf.tiles.map((t, i) => {
           const color = turfColor(room, t.owner);
           const mine = !!me && (t.owner === me.key || (teams && t.team !== null && t.team === me.team));
@@ -93,7 +95,7 @@ export function TurfStage({ room, ja, now, sel, onSel, prompts }: {
             <button key={i} role="gridcell" className={`turf-tile${mine ? " mine" : ""}${t.gold ? " gold" : ""}${locked ? " locked" : ""}${sel === i ? " sel" : ""}${popped ? " pop" : ""}${lostNow ? " lost" : ""}${!can ? " off" : ""}`}
               style={color ? { background: color } : undefined} onClick={() => can && onSel(i)} disabled={!can}
               aria-label={`${prompts[i] ?? ""}${t.owner ? `, ${room.players.find((p) => p.key === t.owner)?.name ?? ""}` : ""}${locked ? (ja ? "、ロック中" : ", locked") : ""}`}>
-              <span className="turf-sum mono" style={{ ["--units" as string]: String(Math.max(3, unitsOf(prompts[i] ?? ""))) }}>{tight(prompts[i] ?? "")}</span>
+              <span className="turf-sum mono">{tight(prompts[i] ?? "")}</span>
               {t.gold && <span className="turf-star" aria-hidden="true">★</span>}
               {locked && <span className="turf-lock" aria-hidden="true"><i style={{ width: `${lockFrac * 100}%` }} /></span>}
             </button>
