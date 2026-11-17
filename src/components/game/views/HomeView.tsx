@@ -288,7 +288,7 @@ export function HomeView({
       <ThreeStarList progress={progress} lang={lang} onOpenTopic={onOpenTopic} locked={(id, i) => !topicUnlocked(progress, id) || i >= guestTopicLimit} />
       <SectionHead icon="🗺️" title={lang === "ja" ? "インド式数学の学びのマップ" : "Learning map for Vedic Math"} sub={lang === "ja"
         ? "インド式数学の「ひらめき」を、モンスターとのバトルで身につけよう。トピックを順番にクリアして、先へ進もう。"
-        : "Learn the clever shortcuts of Indian maths by battling monsters. Clear topics in order to move ahead."} />
+        : "Learn the clever shortcuts of Vedic maths by battling monsters. Clear topics in order to move ahead."} />
 
       <div className="path-wrap" ref={pathWrapRef}>
         {mapGeo.d && (

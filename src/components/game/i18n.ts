@@ -226,7 +226,7 @@ export const UI: Record<LangCode, UIDict> = {
   },
   ja: {
     appName: "インド式数学",
-    headerTitles: { home: "インド式数学", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒パズル", blitz: "スピードクイズ", tricks: "マジック", daily: "デイリーチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "VedAnkゲーム", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！", konbini: "コンビニのレジ", crossword: "数字クロスワード", crossmath: "クロス計算", rhythm: "リズムタップ", ninja: "忍者スライス", party: "みんなであそぶ", space: "スペースシューター", river: "かえるジャンプ", train: "道場" },
+    headerTitles: { home: "インド式数学", topic: "レッスン", stagemap: "ステージマップ", practice: "バトル", arena: "マッチ棒パズル", blitz: "スピードクイズ", tricks: "マジック", daily: "毎日のチャレンジ", review: "まちがいなおし", comp: "コンペティション", match: "ナンバーマッチ", games: "VedAnkゲーム", memory: "神経衰弱", quick: "クイックゲーム", ttt: "計算○×ゲーム", pop: "かずの風船ポップ", runner: "計算ランナー", race: "計算レース", sushi: "おすし屋さん", castle: "お城をまもれ！", konbini: "コンビニのレジ", crossword: "数字クロスワード", crossmath: "クロス計算", rhythm: "リズムタップ", ninja: "忍者スライス", party: "みんなであそぶ", space: "スペースシューター", river: "かえるジャンプ", train: "道場" },
     menu: {
       accountLabel: "アカウントメニュー",
       player: "プレイヤー",

@@ -2143,15 +2143,13 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .interest-hp{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
 .contact-box{ margin-top:4px; padding:12px; border-radius:18px; border:2px dashed var(--line-strong); }
 .contact-title{ font-size:13px; font-weight:900; color:var(--ink); margin-bottom:8px; text-align:center; }
-.contact-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; }
-.contact-btn{ display:flex; align-items:center; gap:8px; text-align:left; padding:9px 10px; border-radius:14px; text-decoration:none; color:var(--ink);
-  background:color-mix(in srgb, var(--c) 12%, var(--surface)); border:2px solid color-mix(in srgb, var(--c) 55%, transparent); min-width:0; }
-.contact-btn:active{ transform:scale(.97); }
-.contact-ic{ display:grid; place-items:center; width:32px; height:32px; flex:none; border-radius:50%; background:var(--c); }
+.contact-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px 6px; }
+@media (min-width:560px){ .contact-grid{ grid-template-columns:repeat(6,1fr); } }
+.contact-btn{ display:flex; flex-direction:column; align-items:center; gap:5px; text-decoration:none; min-width:0; }
+.contact-btn:active{ transform:scale(.95); }
+.contact-ic{ display:grid; place-items:center; width:46px; height:46px; border-radius:16px; background:var(--c); box-shadow:0 3px 0 color-mix(in srgb, var(--c) 60%, #000); }
 .contact-btn[href*="instagram"] .contact-ic{ background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%); }
-.contact-txt{ display:flex; flex-direction:column; min-width:0; }
-.contact-name{ font-size:13px; font-weight:900; color:var(--c); filter:brightness(.8); }
-.contact-sub{ font-size:10.5px; font-weight:700; color:var(--ink-dim); overflow-wrap:anywhere; line-height:1.3; }
+.contact-name{ font-size:11px; font-weight:800; color:var(--ink); text-align:center; line-height:1.2; }
 .interest-done{ position:relative; text-align:center; padding:8px 0; display:flex; flex-direction:column; align-items:center; gap:6px; }
 .interest-done h3{ margin:4px 0 0; font-size:20px; }
 .interest-done p{ margin:0 0 6px; color:var(--ink-dim); font-size:13.5px; }

@@ -68,10 +68,10 @@ export function DailyView({
       <section className="view active">
         <div className="daily-lobby">
           <div className="daily-lobby-icon" aria-hidden="true">🗓️</div>
-          <h1>{lang === "ja" ? "デイリーチャレンジ" : "Daily Challenge"}</h1>
+          <h1>{lang === "ja" ? "毎日のチャレンジ" : "Daily Challenge"}</h1>
           <p>{lang === "ja"
-            ? `みんな同じ${DAILY_QUESTIONS}問。1日1回だけ（毎朝9時に新しくなるよ）。ぜんぶ正解で勝者にのるよ。`
-            : `The same ${DAILY_QUESTIONS} questions for everyone, one try a day, new every day at 9:00 am. Get them all right to join the winners.`}</p>
+            ? `${DAILY_QUESTIONS}問、1日1回だけ（毎朝9時に新しくなるよ）。ぜんぶ正解で勝者にのるよ。`
+            : `${DAILY_QUESTIONS} questions, one try a day, new every day at 9:00 am. Get them all right to join the winners.`}</p>
           <button className="btn btn-primary" onClick={onStart}>{lang === "ja" ? "スタート ▶" : "Start ▶"}</button>
         </div>
         <DailyWinnersCard data={winners ?? null} ja={lang === "ja"} />
