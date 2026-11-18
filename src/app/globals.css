@@ -4627,6 +4627,9 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .dw-row{ display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:12px; background:rgba(255,255,255,.72); font-weight:800; font-size:14px; }
 .dw-row.me{ background:#fff; outline:2px solid var(--ink,#1c1838); }
 .dw-pos{ flex:0 0 22px; text-align:center; font-size:14px; }
+.dw-crown{ flex:none; margin-right:-4px; transform:rotate(-8deg); filter:drop-shadow(0 1px 0 rgba(29,27,51,.25)); animation:dw-crown 2.4s ease-in-out infinite; }
+@keyframes dw-crown{ 0%,100%{ transform:rotate(-8deg) translateY(0); } 50%{ transform:rotate(-4deg) translateY(-1.5px); } }
+@media (prefers-reduced-motion:reduce){ .dw-crown{ animation:none; } }
 .dw-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dw-streak{ flex:0 0 auto; font-size:11px; font-weight:900; color:#fff; background:#e8452c; border-radius:999px; padding:2px 8px; white-space:nowrap; }
 .dw-time{ flex:0 0 auto; font-size:12px; opacity:.7; }
