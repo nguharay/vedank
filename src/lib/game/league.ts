@@ -83,7 +83,7 @@ export async function getDailyWinners(viewerId: string, tz?: string): Promise<Da
     .from(dailyChallenge).innerJoin(users, eq(users.id, dailyChallenge.userId))
     .where(and(eq(dailyChallenge.day, day), which))
     .orderBy(dailyChallenge.elapsedMs).limit(WINNER_LIMIT);
-  const nameOf = (r: { name: string | null; username: string | null }) => r.username || r.name || "Player";
+  const nameOf = (r: { name: string | null; username: string | null }) => r.name?.trim() || r.username || "Player";
 
   const today = todayKey(tz);
   let day = today;
