@@ -4630,6 +4630,10 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .dw-crown{ flex:none; margin-right:-4px; transform:rotate(-8deg); filter:drop-shadow(0 1px 0 rgba(29,27,51,.25)); animation:dw-crown 2.4s ease-in-out infinite; }
 @keyframes dw-crown{ 0%,100%{ transform:rotate(-8deg) translateY(0); } 50%{ transform:rotate(-4deg) translateY(-1.5px); } }
 @media (prefers-reduced-motion:reduce){ .dw-crown{ animation:none; } }
+/* the League #1's crown: a royal one, with a slow glint */
+.lb-crown{ flex:none; margin:-4px -2px -2px 0; transform:rotate(-6deg); filter:drop-shadow(0 1px 0 rgba(29,27,51,.25)) drop-shadow(0 0 4px rgba(255,200,61,.55)); animation:lb-crown 3s ease-in-out infinite; }
+@keyframes lb-crown{ 0%,100%{ transform:rotate(-6deg) scale(1); } 50%{ transform:rotate(-3deg) scale(1.06); } }
+@media (prefers-reduced-motion:reduce){ .lb-crown{ animation:none; } }
 .dw-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dw-streak{ flex:0 0 auto; font-size:11px; font-weight:900; color:#fff; background:#e8452c; border-radius:999px; padding:2px 8px; white-space:nowrap; }
 .dw-time{ flex:0 0 auto; font-size:12px; opacity:.7; }

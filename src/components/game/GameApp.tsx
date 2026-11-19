@@ -88,6 +88,7 @@ import { buildMatchRound, isPair, matchScore,
   type QuickRound,
   type MatchTile } from "@/lib/game/minigames";
 import type { DailyStatus, DailyWinners } from "@/lib/game/league";
+import { LeagueCrown } from "./LeagueCrown";
 import { useConfetti } from "./useConfetti";
 import { useSound } from "./useSound";
 import dynamic from "next/dynamic";
@@ -3936,7 +3937,7 @@ export function GameApp({
               {lb && me && (
                 <div className="lb-me" style={me.position ? { borderColor: L(me.league).color } : undefined}>
                   <div className="lb-me-top">
-                    <span className="lb-me-pos">{me.position ? <><LeagueBadge tier={me.league} size="1em" /> {ja ? `${me.position}位` : `#${me.position}`}</> : "-"}</span>
+                    <span className="lb-me-pos">{me.position ? <><LeagueBadge tier={me.league} size="1em" /> {ja ? `${me.position}位` : `#${me.position}`}{me.position === 1 && <LeagueCrown ja={ja} />}</> : "-"}</span>
                     <span className="lb-me-stats">
                       <span><UiIcon name="learn" size="1em" /> <b className="mono">{me.lessons}</b><small> / {lb.lessonsTotal}</small></span>
                       <span><i className="lb-ico" aria-hidden="true">⭐</i><b className="mono">{me.stars}</b></span>
@@ -3968,6 +3969,7 @@ export function GameApp({
                     )}
                     <div className={`leaderboard-row${e.userId === me?.userId ? " me" : ""}`}>
                       <span className={`leaderboard-rank${i < 3 ? ` top${i + 1}` : ""}`}>{i + 1}</span>
+                      {i === 0 && <LeagueCrown ja={ja} />}
                       {e.userId === me?.userId ? youName(e.name) : <span className="leaderboard-name">{e.name}</span>}
                       <span className="lb-lessons mono"><UiIcon name="learn" size="1em" /> {e.lessons}</span>
                       <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{e.stars}</span>
