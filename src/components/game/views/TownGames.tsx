@@ -367,6 +367,10 @@ function FragmentRow({ children }: { children: React.ReactNode }) {
    level. */
 const CROSSMATH_KEY = "sutraSprint.crossMathBest";
 const CROSSMATH_AT = "sutraSprint.crossMathAt";  /* the level to resume on */
+/* Hard keeps its own level and best, so Normal's record stays as it was */
+const CROSSMATH_HARD_KEY = "sutraSprint.crossMathHardBest";
+const CROSSMATH_HARD_AT = "sutraSprint.crossMathHardAt";
+const CROSSMATH_MODE = "sutraSprint.crossMathMode";
 const CM_INTRO: Record<number, [string, string]> = {
   3: ["Level 3: × joins in!", "レベル3：✖ が登場！"],
   4: ["Level 4: two frames, linked at the corner", "レベル4：2つのわくが角でつながる"],
@@ -375,6 +379,10 @@ const CM_INTRO: Record<number, [string, string]> = {
 
 export function CrossMath({ lang, sound, celebrate }: Props) {
   const ja = lang === "ja";
+  const [hard, setHard] = useState(false);
+  const bestKey = hard ? CROSSMATH_HARD_KEY : CROSSMATH_KEY;
+  const atKey = hard ? CROSSMATH_HARD_AT : CROSSMATH_AT;
+  const build = (lv: number, shape?: string, avoid?: string, h = hard) => buildCrossMath(lv, shape, avoid, h);
   const [level, setLevel] = useState(1);
   const [p, setP] = useState<CrossMath | null>(null);
   const [filled, setFilled] = useState<(number | null)[]>([]);
@@ -389,11 +397,11 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
   const press = useRef<{ v: number; from: "tray" | number; x0: number; y0: number; moved: boolean } | null>(null);
   const skipClick = useRef(false);
 
-  function setup(g: CrossMath, lv: number) {
+  function setup(g: CrossMath, lv: number, at = atKey) {
     setLevel(lv); setP(g);
-    writeBest(CROSSMATH_AT, lv);
+    writeBest(at, lv);
     setFilled(g.cells.map((c) => (c && c.t === "num" && !c.blank ? c.v : null)));
-    const t = g.blanks.map((i) => (g.cells[i] as { v: number }).v);
+    const t = [...g.blanks.map((i) => (g.cells[i] as { v: number }).v), ...g.decoys];
     for (let i = t.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [t[i], t[j]] = [t[j], t[i]]; }
     setTray(t); setSel(g.blanks[0] ?? null); setSolved(false); setTries(0);
   }
@@ -405,9 +413,23 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
     let force: string | undefined;
     try { force = new URLSearchParams(window.location.search).get("cmshape") || undefined; } catch {}
     /* back on the level the player was on last time */
-    const lv = force ? 7 : resumeLevel(CROSSMATH_AT, CROSSMATH_KEY);
-    setup(buildCrossMath(lv, force), lv);
-  }, []);
+    let h = false;
+    try { h = localStorage.getItem(CROSSMATH_MODE) === "hard"; } catch {}
+    const lv = force ? 7 : h ? resumeLevel(CROSSMATH_HARD_AT, CROSSMATH_HARD_KEY) : resumeLevel(CROSSMATH_AT, CROSSMATH_KEY);
+    if (h) { setHard(true); setBest(readBest(CROSSMATH_HARD_KEY)); }
+    setup(build(lv, force, undefined, h), lv, h ? CROSSMATH_HARD_AT : CROSSMATH_AT);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /* Normal ⇄ Hard: each picks up on its own level */
+  function switchMode(h: boolean) {
+    if (h === hard) return;
+    setHard(h);
+    try { localStorage.setItem(CROSSMATH_MODE, h ? "hard" : "normal"); } catch {}
+    const [at, bk] = h ? [CROSSMATH_HARD_AT, CROSSMATH_HARD_KEY] : [CROSSMATH_AT, CROSSMATH_KEY];
+    const lv = resumeLevel(at, bk);
+    setBest(readBest(bk));
+    setup(build(lv, undefined, undefined, h), lv, at);
+    sound.click();
+  }
 
   if (!p) return <div className="rg" />;
   const lineOk = p.eqs.map((eq) => cmLineOk(p, filled, eq));
@@ -449,8 +471,8 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
     if (empty !== undefined) { setSel(empty); return; }
     if (cmSolved(p, next)) {
       setSolved(true); setSel(null); sound.stageClear(); haptic([15, 30, 15]);
-      if (level > best) { writeBest(CROSSMATH_KEY, level); setBest(level); }
-      writeBest(CROSSMATH_AT, level + 1);
+      if (level > best) { writeBest(bestKey, level); setBest(level); }
+      writeBest(atKey, level + 1);
       if (level % 3 === 0) celebrate();
     } else { setTries((n) => n + 1); sound.wrong(); haptic(30); setSel(null); }
   }
@@ -494,9 +516,16 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
   function resetAll() { if (p) setup(p, level); }
   /* the shape's name, for the small label on the board */
 
-  const intro = CM_INTRO[level];
+  const intro = hard ? (level === 1 ? (["Hard: all four signs, big numbers, and decoys in the tray that fit nowhere!", "ハード：＋−×÷ぜんぶ、大きな数、どこにも入らないダミーの数字もあるよ！"] as [string, string]) : undefined) : CM_INTRO[level];
   return (
     <div className="rg">
+      <div className="cm-mode" role="radiogroup" aria-label={ja ? "むずかしさ" : "Difficulty"}>
+        {([false, true] as const).map((h) => (
+          <button key={String(h)} role="radio" aria-checked={hard === h} className={hard === h ? "on" : undefined} onClick={() => switchMode(h)}>
+            {h ? (ja ? "🔥 ハード" : "🔥 Hard") : (ja ? "ノーマル" : "Normal")}
+          </button>
+        ))}
+      </div>
       <div className="match-head">
         <div className="match-stat"><span className="match-stat-k">{ja ? "レベル" : "Level"}</span><span className="match-stat-v mono">{level}</span></div>
         <div className="match-stat"><span className="match-stat-k">{ja ? "まちがい" : "Retries"}</span><span className="match-stat-v mono">{tries}</span></div>
@@ -528,7 +557,7 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
         <div className="match-done">
           <div className="match-done-title">{tries === 0 ? (ja ? "パーフェクト！" : "Perfect!") : (ja ? "とけた！" : "Solved!")}</div>
           <div className="match-done-line">{ja ? `次はレベル ${level + 1}` : `Next: level ${level + 1}`}</div>
-          <button className="btn btn-primary match-again" onClick={() => setup(buildCrossMath(level + 1, undefined, p.shape), level + 1)}>{ja ? "次のパズル ▶" : "Next puzzle ▶"}</button>
+          <button className="btn btn-primary match-again" onClick={() => setup(build(level + 1, undefined, p.shape), level + 1)}>{ja ? "次のパズル ▶" : "Next puzzle ▶"}</button>
         </div>
       ) : (
         <>
@@ -537,13 +566,13 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
               <button key={`${v}-${k}`} className="cm-tile mono" onClick={tapOnly(() => place(v))}
                 onPointerDown={(e) => onDown(e, v, "tray")} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}>{v}</button>
             ))}
-            {tray.length === 0 && <span className="cm-tray-empty">{ja ? "赤いマスをタップして数字をもどそう" : "Tap a red square to take its number back"}</span>}
+            {p.blanks.every((i) => filled[i] !== null) && <span className="cm-tray-empty">{ja ? "赤いマスをタップして数字をもどそう" : "Tap a red square to take its number back"}</span>}
           </div>
           <p className="match-hint">{ja ? "数字をマスにドラッグ、またはマスをえらんでから数字をタップ" : "Drag a number onto a square, or pick a square and tap a number"}</p>
           <button className="cm-reset" onClick={resetAll}>↺ {ja ? "はじめから" : "Reset"}</button>
         </>
       )}
-      {level > 1 && <button className="cm-reset" onClick={() => setup(buildCrossMath(1), 1)}>⏮ {ja ? "レベル1からやりなおす" : "Start again from level 1"}</button>}
+      {level > 1 && <button className="cm-reset" onClick={() => setup(build(1), 1)}>⏮ {ja ? "レベル1からやりなおす" : "Start again from level 1"}</button>}
       {/* on the page itself: the screen's slide-in leaves a transform on the view,
           which would offset a fixed element inside it from the finger */}
       {drag && createPortal(<span className="cm-ghost mono" style={{ left: drag.x, top: drag.y }} aria-hidden="true">{drag.v}</span>, document.body)}

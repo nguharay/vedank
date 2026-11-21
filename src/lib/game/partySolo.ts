@@ -30,7 +30,7 @@ export type SoloLevel = 0 | 1 | 2;
 export const SOLO_LEVELS: { id: SoloLevel; en: string; ja: string; icon: string }[] = [
   { id: 0, en: "Easy", ja: "やさしい", icon: "🐢" },
   { id: 1, en: "Normal", ja: "ふつう", icon: "🐰" },
-  { id: 2, en: "Strong", ja: "つよい", icon: "🐆" },
+  { id: 2, en: "Hard", ja: "むずかしい", icon: "🐆" },
 ];
 export const SOLO_ME = "me";
 

@@ -248,11 +248,14 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
   }, [solo, level]);
   useEffect(() => {
     if (!roomCode) return;
+    /* a poll still on its way when the player leaves must not put the room
+       back: that made Back look like it did nothing on the results screen */
+    let live = true;
     const poll = setInterval(async () => {
-      try { const r = await partyRoomAction(roomCode); if (r) take(r); } catch {}
+      try { const r = await partyRoomAction(roomCode); if (live && r) take(r); } catch {}
     }, roomGame === "buzz" ? 500 : 1000);   /* the buzzer needs "answered!" to arrive fast */
     const tick = setInterval(() => setNow(clock() + offset.current), 100);
-    return () => { clearInterval(poll); clearInterval(tick); };
+    return () => { live = false; clearInterval(poll); clearInterval(tick); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomCode, roomGame]);
   useEffect(() => () => { if (lockTimer.current) clearTimeout(lockTimer.current); }, []);
@@ -451,8 +454,8 @@ export function PartyGames({ lang, sound, celebrate, game: initialGame, joinCode
         <div className="race-online-menu party-menu">
           <div className="rg-card-title">🎉 {ja ? "みんなであそぶ" : "Multiplayer games"}</div>
           <p className="rg-card-sub">{ja ? `🤖 ひとりでコンピューターと、🌐 みんなで（2〜${PARTY_ROOM_MAX}人）でも。` : `🤖 Solo against the computer, or 🌐 with friends (2–${PARTY_ROOM_MAX}).`}</p>
-          <div className="party-levels" role="radiogroup" aria-label={ja ? "コンピューターの強さ" : "Computer strength"}>
-            <span>{ja ? "🤖 の強さ" : "🤖 strength"}</span>
+          <div className="party-levels" role="radiogroup" aria-label={ja ? "コンピューターのレベル" : "Computer level"}>
+            <span>{ja ? "🤖 レベル" : "🤖 Level"}</span>
             {SOLO_LEVELS.map((lv) => (
               <button key={lv.id} role="radio" aria-checked={level === lv.id} className={level === lv.id ? "on" : ""} onClick={() => setLevel(lv.id)}>{lv.icon} {ja ? lv.ja : lv.en}</button>
             ))}

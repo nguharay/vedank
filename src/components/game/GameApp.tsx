@@ -122,7 +122,7 @@ import { useBuddy, line } from "./useBuddy";
 import { quoteOfTheDay, quoteText, quoteBy, type Quote } from "@/lib/game/quotes";
 import { ShareSheet, type ShareFocus } from "./ShareCard";
 import { useLang, UI } from "./i18n";
-import { rankLeague, leagueCutoff } from "@/lib/game/rankLeague";
+import { rankLeague, leagueCutoff, topicBadge, topicBadges } from "@/lib/game/rankLeague";
 import { ri, shuffle, weightedPick, urlBase64ToUint8Array, RollUp, fmt, sameLoc, haptic, rankLabel, SPRINT_LEN, BLITZ_DEFAULT_LEVEL, BLITZ_BOOST_MS } from "./util";
 import type { View, Mode, Loc } from "./util";
 import { HomeView, PracticeView, ArenaView, TopicView, StageMapView, DailyView, TricksView, BlitzView } from "./views";
@@ -3895,6 +3895,11 @@ export function GameApp({
           <span className="leaderboard-name lb-you"><b>{ja ? "あなた" : "YOU"}</b><small>{name}</small></span>
         );
         const lname = (tier: number) => (ja ? `${L(tier).nameJa}リーグ` : `${L(tier).name} League`);
+        /* a badge by the name for topics finished: 10, 15, 25, then all of them */
+        const badge = (topics: number) => {
+          const b = topicBadge(topics, TOPICS.length);
+          return b && <span className="lb-badge" role="img" title={ja ? `${b.nameJa}：${b.at}トピック完了` : `${b.name}: ${b.at} topics done`} aria-label={ja ? b.nameJa : b.name}>{b.emoji}</span>;
+        };
         /* what it takes to pass someone: more stages, or the same stages and more ⭐ */
         const gapTo = (o: { lessons: number; stars: number }) => {
           const g = o.lessons - (me?.lessons ?? 0);
@@ -3931,6 +3936,11 @@ export function GameApp({
                         <small>{t === 3 ? (ja ? "上位2人" : "Top 2 players") : t === 2 ? (ja ? "次の4人" : "Next 4 players") : t === 1 ? (ja ? "次の5人" : "Next 5 players") : (ja ? "ほかのみんな" : "All other players")}</small>
                       </span>
                     </span>
+                  ))}
+                </span>
+                <span className="lb-badges">
+                  {topicBadges(TOPICS.length).slice().reverse().map((b) => (
+                    <span key={b.at}><i aria-hidden="true">{b.emoji}</i> {ja ? `${b.at}トピック ${b.nameJa}` : `${b.at} topics ${b.name}`}</span>
                   ))}
                 </span>
               </div>
@@ -3971,6 +3981,7 @@ export function GameApp({
                       <span className={`leaderboard-rank${i < 3 ? ` top${i + 1}` : ""}`}>{i + 1}</span>
                       {i === 0 && <LeagueCrown ja={ja} />}
                       {e.userId === me?.userId ? youName(e.name) : <span className="leaderboard-name">{e.name}</span>}
+                      {badge(e.topics)}
                       <span className="lb-lessons mono"><UiIcon name="learn" size="1em" /> {e.lessons}</span>
                       <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{e.stars}</span>
                     </div>
@@ -3980,6 +3991,7 @@ export function GameApp({
                   <div className="leaderboard-row me leaderboard-row-me-sep">
                     <span className="leaderboard-rank">{me.position}</span>
                     {youName(me.name)}
+                    {badge(me.topics)}
                     <span className="lb-lessons mono"><UiIcon name="learn" size="1em" /> {me.lessons}</span>
                     <span className="lb-stars mono"><i className="lb-ico" aria-hidden="true">⭐</i>{me.stars}</span>
                   </div>

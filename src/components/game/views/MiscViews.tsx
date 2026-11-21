@@ -108,7 +108,8 @@ export function DailyView({
                 disabled={pick !== null}
                 onClick={() => onPick(o)}
               >
-                {fmt(o)}
+                {/* long answers (9909 × 9999) shrink to fit, like in the lessons */}
+                <span className="tile-num" style={{ "--chars": fmt(o).length } as React.CSSProperties}>{fmt(o)}</span>
               </button>
             );
           })}

@@ -628,11 +628,12 @@ function OnlineRace({ lang, sound, celebrate, joinCode, onJoined, onBack }: Prop
   const roomCode = room?.code;
   useEffect(() => {
     if (!roomCode) return;
+    let live = true;   /* a late poll must not bring a room back after Leave */
     const poll = setInterval(async () => {
-      try { const r = await raceRoomAction(roomCode); if (r) take(r); } catch {}
+      try { const r = await raceRoomAction(roomCode); if (live && r) take(r); } catch {}
     }, 1000);
     const tick = setInterval(() => setNow(Date.now() + offset.current), 100);
-    return () => { clearInterval(poll); clearInterval(tick); };
+    return () => { live = false; clearInterval(poll); clearInterval(tick); };
   }, [roomCode]);
   useEffect(() => () => { if (stumbleTimer.current) clearTimeout(stumbleTimer.current); }, []);
 

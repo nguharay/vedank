@@ -28,3 +28,18 @@ export function leagueAt(position: number, total: number): number {
   for (const l of RANK_LEAGUES) if (position <= leagueCutoff(l.tier, total)) return l.tier;
   return 0;
 }
+
+/* Badges for topics finished (every stage of a topic cleared), shown by the
+   name on the League. Best first; the last one is every topic. */
+export type TopicBadge = { at: number; emoji: string; name: string; nameJa: string };
+export function topicBadges(total: number): TopicBadge[] {
+  return [
+    { at: total, emoji: "🐉", name: "Legend", nameJa: "伝説" },
+    { at: 25, emoji: "🥷", name: "Ninja", nameJa: "忍者" },
+    { at: 15, emoji: "🦸", name: "Hero", nameJa: "ヒーロー" },
+    { at: 10, emoji: "🧭", name: "Explorer", nameJa: "探検家" },
+  ];
+}
+export function topicBadge(done: number, total: number): TopicBadge | null {
+  return topicBadges(total).find((b) => done >= b.at) ?? null;
+}
