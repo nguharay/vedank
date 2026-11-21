@@ -260,6 +260,7 @@ export type LeaderboardEntry = {
   lessons: number;       /* lesson stages cleared, out of LESSONS_TOTAL */
   stars: number;         /* ⭐ earned across those stages (3 a stage at most) */
   dailyStreak: number;
+  topics: number;        /* topics finished: every stage cleared */
   league: number;        /* Rank league tier, see rankLeague.ts (0 if not ranked yet) */
 };
 
@@ -283,18 +284,20 @@ export async function getLeaderboard(
     db.select().from(topicProgress),
   ]);
 
-  const agg = new Map<string, { lessons: number; stars: number; at: number }>();
+  const live = new Set(TOPICS.map((t) => t.id));
+  const agg = new Map<string, { lessons: number; stars: number; topics: number; at: number }>();
   for (const row of tRows) {
-    const a = agg.get(row.userId) ?? { lessons: 0, stars: 0, at: 0 };
+    const a = agg.get(row.userId) ?? { lessons: 0, stars: 0, topics: 0, at: 0 };
     a.lessons += Math.max(0, Math.min(STAGE_COUNT, row.cleared || 0));
+    if (live.has(row.topicId) && (row.cleared || 0) >= STAGE_COUNT) a.topics++;
     for (const v of Object.values((row.stageStars as Record<string, number>) || {})) a.stars += Math.max(0, Math.min(3, v || 0));
     a.at = Math.max(a.at, row.updatedAt.getTime());
     agg.set(row.userId, a);
   }
 
   const all = userRows.map((u) => {
-    const a = agg.get(u.id) ?? { lessons: 0, stars: 0, at: 0 };
-    return { userId: u.id, name: u.name, lessons: a.lessons, stars: a.stars, dailyStreak: u.dailyStreak, at: a.at };
+    const a = agg.get(u.id) ?? { lessons: 0, stars: 0, topics: 0, at: 0 };
+    return { userId: u.id, name: u.name, lessons: a.lessons, stars: a.stars, topics: a.topics, dailyStreak: u.dailyStreak, at: a.at };
   });
   const ranked = all.filter((e) => e.lessons > 0)
     .sort((x, y) => y.lessons - x.lessons || y.stars - x.stars || x.at - y.at);
@@ -302,7 +305,7 @@ export async function getLeaderboard(
   const pos = new Map(ranked.map((e, i) => [e.userId, i + 1]));
   const strip = (e: (typeof all)[number]): LeaderboardEntry => {
     const p = pos.get(e.userId);
-    return { userId: e.userId, name: e.name, lessons: e.lessons, stars: e.stars, dailyStreak: e.dailyStreak, league: p ? leagueAt(p, n) : 0 };
+    return { userId: e.userId, name: e.name, lessons: e.lessons, stars: e.stars, dailyStreak: e.dailyStreak, topics: e.topics, league: p ? leagueAt(p, n) : 0 };
   };
 
   const top = ranked.slice(0, limit).map(strip);

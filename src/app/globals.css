@@ -4634,6 +4634,13 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .lb-crown{ flex:none; margin:-4px -2px -2px 0; transform:rotate(-6deg); filter:drop-shadow(0 1px 0 rgba(29,27,51,.25)) drop-shadow(0 0 4px rgba(255,200,61,.55)); animation:lb-crown 3s ease-in-out infinite; }
 @keyframes lb-crown{ 0%,100%{ transform:rotate(-6deg) scale(1); } 50%{ transform:rotate(-3deg) scale(1.06); } }
 @media (prefers-reduced-motion:reduce){ .lb-crown{ animation:none; } }
+/* topic badges by the name, and the key to them under the league tiers */
+.lb-badge{ flex:none; font-size:15px; line-height:1; margin-left:-4px; }
+/* in a League row the name takes only its width, so a badge sits right by it */
+.leaderboard-row:has(.lb-lessons) .leaderboard-name{ flex:0 1 auto; }
+.leaderboard-row .lb-lessons{ margin-left:auto; }
+.lb-badges{ display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:8px; font-size:11.5px; font-weight:800; color:var(--muted); }
+.lb-badges i{ font-style:normal; font-size:14px; }
 .dw-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dw-streak{ flex:0 0 auto; font-size:11px; font-weight:900; color:#fff; background:#e8452c; border-radius:999px; padding:2px 8px; white-space:nowrap; }
 .dw-time{ flex:0 0 auto; font-size:12px; opacity:.7; }
@@ -4814,3 +4821,9 @@ header .header-home + .header-title{ margin-left:-10px; }
 .cm-ghost{ position:fixed; z-index:90; pointer-events:none; transform:translate(-50%,-65%) scale(1.15); display:grid; place-items:center;
   min-width:46px; height:46px; padding:0 8px; border-radius:12px; font-size:22px; font-weight:900; color:#1d1b33;
   background:#fff6c2; border:3px solid #1d1b33; box-shadow:0 8px 16px rgba(20,20,50,.3); }
+
+/* Cross Math: Normal / Hard switch */
+.cm-mode{ display:flex; gap:4px; margin:0 auto 10px; padding:4px; width:max-content; border:2px solid var(--line); border-radius:999px; background:var(--surface-2); }
+.cm-mode button{ border:0; background:none; font:inherit; font-weight:900; font-size:13px; padding:6px 16px; border-radius:999px; color:var(--muted); cursor:pointer; }
+.cm-mode button.on{ background:var(--ink); color:var(--surface); }
+.cm-mode button.on:last-child{ background:#e8452c; color:#fff; }
