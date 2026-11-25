@@ -12,6 +12,7 @@ import {
   TURF_SHIELD_MS, TURF_LOCK_MS,
   type PartyGame, type PartyPlayer, type PartyState, type PartyView,
 } from "./party";
+import { targetInfo, targetPuzzle, tDecode, tRun, tAttemptStr, TARGET_MAX_TRIES } from "./target";
 
 /* tower ledger: add `by` to one counter in state.waves (missing counts as 0) */
 const bumpSql = (code: string, round: number, key: string, by: number) => raw`
@@ -333,6 +334,29 @@ export async function throwPartyRoom(userId: string, code: string, targetKey: st
        and coalesce((state->'waves'->>${towerKey("b", userId)}::text)::int, 0) = ${thrown}::int
      returning code`);
   if (spent.rows?.length) await getDb().execute(bumpSql(row.code, st.round, towerKey("h", target), 1));
+  const fresh = await load(row.code);
+  return fresh ? view(fresh, userId) : { error: "No such room." };
+}
+
+/* Target Hunt: one attempt (its steps) for the round on now. Checked against
+   the seeded puzzle, then appended to the room's attempts in one write; the
+   clock, the first hit and the scores all follow from the attempts. */
+export async function targetPartyRoom(userId: string, code: string, round: number, enc: string): Promise<PartyRoomView | { error: string }> {
+  const row = await load(code);
+  if (!row) return { error: "No such room." };
+  const st = row.state as PartyState;
+  if (st.game !== "target" || !(userId in st.players) || st.startAt === null) return { error: "Not in this game." };
+  const now = Date.now();
+  const info = targetInfo(st.seed, st.startAt, st.wins, now);
+  if (info.over || info.phase !== "play" || info.r !== round) return view(row, userId);
+  const steps = tDecode(String(enc ?? ""));
+  if (!steps || !tRun(targetPuzzle(st.seed, round).nums, steps)) return { error: "wrong" };
+  if (st.wins.filter((w) => w?.startsWith(`${round}|${userId}|`)).length >= TARGET_MAX_TRIES) return view(row, userId);
+  await getDb().execute(raw`
+    update party_rooms
+       set state = jsonb_set(state, '{wins}', coalesce(state->'wins', '[]'::jsonb) || to_jsonb(${tAttemptStr(round, userId, now, steps)}::text)),
+           updated_at = now()
+     where code = ${row.code}::text and (state->>'round')::int = ${st.round}::int`);
   const fresh = await load(row.code);
   return fresh ? view(fresh, userId) : { error: "No such room." };
 }

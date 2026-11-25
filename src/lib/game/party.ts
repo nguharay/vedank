@@ -22,9 +22,10 @@
    Pure functions only: the server stores the state and checks answers, the
    client draws it. */
 import { raceQuestion, type ChoiceRound } from "./minigames";
+import { targetInfo, targetPuzzle, tText } from "./target";
 
-export type PartyGame = "tug" | "buzz" | "bingo" | "space" | "river" | "tower" | "turf" | "turfteam";
-export const PARTY_GAMES: PartyGame[] = ["turf", "turfteam", "tower", "tug", "buzz", "bingo", "space", "river"];
+export type PartyGame = "tug" | "buzz" | "bingo" | "space" | "river" | "tower" | "turf" | "turfteam" | "target";
+export const PARTY_GAMES: PartyGame[] = ["target", "turf", "turfteam", "tower", "tug", "buzz", "bingo", "space", "river"];
 
 /* 🎨 Turf War: one grid for the whole room, every tile carrying a sum. Answer
    a tile's sum to paint it your colour; a tile someone else holds asks a
@@ -349,6 +350,7 @@ export function partyStatus(st: PartyState, now: number): PartyStatus {
   if (st.game === "tug") return tugInfo(st, now).winner !== null ? "done" : "playing";
   if (st.game === "bingo") return bingoInfo(st, now).over ? "done" : "playing";
   if (isRaceGame(st.game)) return raceInfo(st, now).over ? "done" : "playing";
+  if (st.game === "target") return targetInfo(st.seed, st.startAt, st.wins, now).over ? "done" : "playing";
   return st.q >= BUZZ_QS ? "done" : "playing";
 }
 
@@ -361,6 +363,7 @@ export const PARTY_NAMES: Record<PartyGame, [string, string, string]> = {
   tower: ["🏯", "Sutra Tower", "スートラタワー"],
   turf: ["🎨", "Turf War", "計算ナワバリ"],
   turfteam: ["🟥", "Turf War: Teams", "ナワバリ チーム戦"],
+  target: ["🏹", "Target Hunt", "ねらいうち計算"],
 };
 
 /* ---------- what a phone draws ----------
@@ -387,6 +390,14 @@ export type PartyView = {
   tower: (TowerInfo & { winnerKeys: string[]; by: Record<string, TowerPlayer>; bossOn: boolean }) | null;
   /* turf: the board (owner by view key, lock, version, gold), every player's
      tally, and who holds the most when the clock stops */
+  /* target hunt: this round's puzzle, the clock, who hit it first, and (in the
+     reveal, or once over) everyone's working for the round */
+  target: {
+    r: number; phase: "play" | "reveal"; endsAt: number; nextAt: number;
+    nums: number[]; target: number; hitKey: string | null; myTries: number;
+    reveal: { key: string; value: number; text: string; pts: number; exact: boolean; bonus: boolean }[] | null;
+    solution: string | null;
+  } | null;
   turf: (TurfInfo & { tiles: { owner: string | null; team: 0 | 1 | null; lock: number; v: number; gold: boolean }[]; winnerKeys: string[]; by: Record<string, TurfPlayer>; finaleOn: boolean }) | null;
 };
 
@@ -394,12 +405,13 @@ export function buildPartyView(st: PartyState, o: { code: string; hostId: string
   const entries = Object.entries(st.players).sort((a, b) => a[1].joinedAt - b[1].joinedAt);
   const keyOf = new Map(entries.map(([id], i) => [id, `p${i}`]));
   const buzzScore = (id: string) => st.wins.filter((w) => w === id).length;
+  const tInfo = st.game === "target" && st.startAt !== null ? targetInfo(st.seed, st.startAt, st.wins, o.now) : null;
   return {
     code: o.code, game: st.game, status: partyStatus(st, o.now), isHost: o.hostId === o.viewerId, inRoom: o.viewerId in st.players,
     now: o.now, startAt: st.startAt, seed: st.seed, round: st.round, mySlot: st.players[o.viewerId]?.slot ?? 0,
     players: entries.map(([id, p]) => ({
       key: keyOf.get(id)!, name: p.name, team: p.team, done: p.done, me: id === o.viewerId, host: id === o.hostId,
-      score: st.game === "buzz" ? buzzScore(id) : st.game === "bingo" ? marksOf(p.done) : st.game === "tower" ? towerPlayer(st, id).height : isTurfGame(st.game) ? turfPlayer(st, id).score : p.done, cpu: id.startsWith("cpu:") || undefined,
+      score: st.game === "target" ? (tInfo?.total[id] ?? 0) : st.game === "buzz" ? buzzScore(id) : st.game === "bingo" ? marksOf(p.done) : st.game === "tower" ? towerPlayer(st, id).height : isTurfGame(st.game) ? turfPlayer(st, id).score : p.done, cpu: id.startsWith("cpu:") || undefined,
     })),
     tower: st.game === "tower" && st.startAt !== null ? (() => {
       const info = towerInfo(st, o.now);
@@ -417,6 +429,19 @@ export function buildPartyView(st: PartyState, o: { code: string; hostId: string
         return { owner: owner ? keyOf.get(owner) ?? null : null, team: owner ? st.players[owner].team : null, lock: turfVal(st, turfKey("l", i)), v: turfVal(st, turfKey("v", i)), gold: gold.has(i) };
       });
       return { ...info, tiles, winnerKeys: info.winners.map((id) => keyOf.get(id)!).filter(Boolean), by, finaleOn: turfFinaleOn(st, o.now) };
+    })() : null,
+    target: tInfo ? (() => {
+      const pz = targetPuzzle(st.seed, tInfo.r);
+      const showAll = tInfo.phase === "reveal";
+      const b = tInfo.best[tInfo.r] ?? {};
+      return {
+        r: tInfo.r, phase: tInfo.phase, endsAt: tInfo.endsAt, nextAt: tInfo.nextAt, nums: pz.nums, target: pz.target,
+        hitKey: tInfo.hitBy ? keyOf.get(tInfo.hitBy) ?? null : null,
+        myTries: st.wins.filter((w) => w?.startsWith(`${tInfo.r}|${o.viewerId}|`)).length,
+        reveal: showAll ? entries.filter(([id]) => b[id]).map(([id]) => ({ key: keyOf.get(id)!, value: b[id].value, text: tText(pz.nums, b[id].steps), pts: b[id].pts, exact: b[id].exact, bonus: b[id].bonus }))
+          .sort((x, y) => y.pts - x.pts) : null,
+        solution: showAll ? tText(pz.nums, pz.best) : null,
+      };
     })() : null,
     tug: st.game === "tug" && st.startAt !== null ? tugInfo(st, o.now) : null,
     bingo: st.game === "bingo" ? (() => {

@@ -3877,7 +3877,7 @@ html[data-nav="right"]::view-transition-new(app-main){ animation:.26s ease-out b
 .party-picks{ display:grid; gap:9px; }
 .party-pick{ display:grid; grid-template-columns:48px 1fr; grid-template-rows:auto auto; column-gap:10px; align-items:center; text-align:left; padding:10px 12px; border-radius:16px; border:3px solid #1d1b33; box-shadow:0 4px 0 #1d1b33; cursor:pointer; font-family:inherit; color:#1d1b33; }
 .party-pick:active{ transform:translateY(3px); box-shadow:0 1px 0 #1d1b33; }
-.party-pick.tug{ background:linear-gradient(120deg,#ffe0e0,#fff); } .party-pick.buzz{ background:linear-gradient(120deg,#fff3c4,#fff); } .party-pick.boss{ background:linear-gradient(120deg,#e4dcff,#fff); }
+.party-pick.target{ background:linear-gradient(120deg,#dff3ff,#fff); } .party-pick.tug{ background:linear-gradient(120deg,#ffe0e0,#fff); } .party-pick.buzz{ background:linear-gradient(120deg,#fff3c4,#fff); } .party-pick.boss{ background:linear-gradient(120deg,#e4dcff,#fff); }
 .party-pick-ico{ grid-row:1 / 3; font-size:34px; line-height:1; text-align:center; }
 .party-pick b{ font:900 16px/1.15 "Baloo 2",system-ui,sans-serif; }
 .party-pick small{ font-size:11.5px; font-weight:700; color:#5a5675; line-height:1.35; }
@@ -4830,3 +4830,38 @@ header .header-home + .header-title{ margin-left:-10px; }
 
 /* Cross Math: three-digit numbers (Hard) a size smaller so they sit inside the square */
 .cm-num.n3, .cm-cell.n3{ font-size:clamp(10px, 3.3vw, 16px); letter-spacing:-.04em; }
+
+/* ---------- 🏹 Target Hunt ---------- */
+.tg{ display:flex; flex-direction:column; gap:10px; padding:12px; border-radius:18px; background:linear-gradient(160deg,#eaf6ff,#fdf7ff); border:2px solid #1d1b33; color:#1d1b33; }
+.tg-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.tg-round{ font-size:12px; font-weight:800; opacity:.7; }
+.tg-clock{ font-size:13px; font-weight:900; }
+.tg-clock.hot{ color:#e8452c; animation:tg-pulse 1s ease-in-out infinite; }
+@keyframes tg-pulse{ 50%{ transform:scale(1.12); } }
+.tg-target{ font:900 clamp(30px, 10vw, 44px)/1 "Baloo 2",system-ui,sans-serif; background:#1d1b33; color:#ffd84a; padding:6px 18px; border-radius:14px; box-shadow:0 4px 0 #e8452c; }
+.tg-hit{ text-align:center; font-weight:900; font-size:13px; background:#ffe1dc; border:2px solid #e8452c; border-radius:12px; padding:6px 10px; }
+.tg-tiles{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; min-height:58px; }
+.tg-tile{ min-width:58px; height:54px; padding:0 10px; border-radius:12px; border:2px solid #1d1b33; background:#fff; font-size:22px; font-weight:900; color:#1d1b33; box-shadow:0 3px 0 #1d1b33; cursor:pointer; transition:transform .1s; }
+.tg-tile.made{ background:#fff6cf; }
+.tg-tile.sel{ background:#5bc8f5; transform:translateY(-3px); }
+.tg-tile.bull{ background:#9ad35b; }
+.tg-tile:active{ transform:translateY(2px); box-shadow:0 1px 0 #1d1b33; }
+.tg-ops{ display:flex; justify-content:center; gap:8px; }
+.tg-op{ width:48px; height:46px; border-radius:50%; border:2px solid #1d1b33; background:#fff; font-size:24px; font-weight:900; color:#1d1b33; cursor:pointer; }
+.tg-op.on{ background:#ffd84a; }
+.tg-op:disabled{ opacity:.35; cursor:default; }
+.tg-undo{ font-size:20px; background:#f1eef8; }
+.tg-work{ min-height:20px; text-align:center; font-size:13px; font-weight:700; color:#3a3657; overflow-wrap:anywhere; }
+.tg-oops{ text-align:center; font-size:12.5px; font-weight:800; color:#e8452c; }
+.tg-best{ text-align:center; font-size:13px; font-weight:900; background:#fff; border:2px dashed #8f7f58; border-radius:10px; padding:6px 8px; }
+.tg-best.exact{ background:#e7f8d9; border:2px solid #2E8B57; color:#1f6b40; }
+.tg-reveal-head{ font-weight:900; font-size:15px; text-align:center; margin-bottom:6px; }
+.tg-reveal ol{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.tg-reveal li{ display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:8px; background:#fff; border:2px solid #d8d2ea; border-radius:10px; padding:6px 8px; font-size:12.5px; }
+.tg-reveal li.exact{ border-color:#2E8B57; background:#f1fbe9; }
+.tg-reveal li span{ overflow-wrap:anywhere; }
+.tg-reveal li em{ font-style:normal; font-weight:900; color:#2E8B57; white-space:nowrap; }
+.tg-reveal p{ text-align:center; font-weight:700; opacity:.7; }
+.tg-sol{ margin-top:8px; font-size:12.5px; font-weight:800; text-align:center; background:#fff6cf; border-radius:10px; padding:6px 8px; }
+.tg-next{ margin-top:8px; text-align:center; font-size:12px; font-weight:800; opacity:.7; }
+.party-target .party-stage{ height:auto; min-height:240px; overflow:visible; border:0; border-radius:18px; }
