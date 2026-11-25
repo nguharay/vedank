@@ -1895,8 +1895,8 @@ const VERIFY_SPECS: Record<string, VerifySpec> = {
     left: ["DS:  5 + 2 + 6 = 13 → 4", "DS：5 + 2 + 6 = 13 → 4"],
   },
   sub: {
-    kind: ["Subtraction", "ひき算"], cols: ["7342", "4786"], op: "−", answer: "2546",
-    dsRows: [["7342", 7], ["4786", 8]], dsOp: "−", dsTotal: "−1", dsReduce: "→ −1 + 9 → 8",
+    kind: ["Subtraction", "ひき算"], cols: ["7342", "4796"], op: "−", answer: "2546",
+    dsRows: [["7342", 7], ["4796", 8]], dsOp: "−", dsTotal: "−1", dsReduce: "→ −1 + 9 → 8",
     left: ["DS:  7 − 8 = −1 → −1 + 9 → 8", "DS：7 − 8 = −1 → −1 + 9 → 8"],
   },
   mul: {
@@ -2149,7 +2149,7 @@ export const BOOK_DIAGRAM_EQ2: Partial<Record<string, string>> = {
   squareStart5: "512²",
   duplexSquare: "648²",
   dsCircle: "Table of 2",
-  verifyDS: "Verify: 7342 − 4786 = 2546",
+  verifyDS: "Verify: 7342 − 4796 = 2546",
   dsSquare: "Colour all 8s",
   additionGeneral: "54 + 39",
   subtractionGeneral: "62535 − 26756",
@@ -2189,7 +2189,7 @@ export const BOOK_EQ_JA: Partial<Record<string, string>> = {
   "Worked example: DS of the 7 times table": "例：7の段の数字和",
   "Table of 2": "2の段",
   "Verify: 5963 + 3278 + 5649 = 14890": "たしかめ：5963 + 3278 + 5649 = 14890",
-  "Verify: 7342 − 4786 = 2546": "たしかめ：7342 − 4786 = 2546",
+  "Verify: 7342 − 4796 = 2546": "たしかめ：7342 − 4796 = 2546",
   "Verify: 342 × 874 = 298908": "たしかめ：342 × 874 = 298908",
   "Verify: 123123 ÷ 99 = Q 1243, R 66": "たしかめ：123123 ÷ 99 = 商 1243、あまり 66",
   "DS of the tables 1 to 9": "1〜9の段の数字和",

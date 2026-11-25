@@ -854,7 +854,7 @@ export const TOPICS: Topic[] = [
       "一致すれば答えは正しい ◯。ちがえばまちがい ✕。",
     ],
     example: () => ({ q: "5963 + 3278 + 5649", ans: 14890 }),
-    example2: () => ({ q: "7342 − 4786", ans: 2546 }),
+    example2: () => ({ q: "7342 − 4796", ans: 2546 }),
     exSteps: (ex, lang) => {
       const ans = ex.ans as number;
       const ds = 1 + ((ans - 1) % 9);
