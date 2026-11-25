@@ -1309,8 +1309,11 @@ circle.stick-tip.sel-tip{ fill:#2B6FEA; }
 .score-duel-btn:active{ transform:scale(.95); }
 
 /* ---------- header logo is a home button ---------- */
-.header-home{ flex:0 0 auto; padding:0; border:none; background:none; line-height:0;
+.header-home{ flex:0 0 auto; padding:0; border:none; background:none; cursor:pointer; line-height:0;
   border-radius:12px; }
+.header-home:active{ transform:scale(.92); }
+.header-home:focus-visible{ outline:3px solid var(--blue); outline-offset:2px; }
+@media (hover:hover){ .header-home:hover{ filter:brightness(1.06); } }
 
 /* ---------- the buddy ----------
    Layered SVGs in one square: cape behind, mascot, attire in front, sparks on

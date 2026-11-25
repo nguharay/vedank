@@ -3026,10 +3026,10 @@ export function GameApp({
             {(user.name?.[0] || user.email?.[0] || "?").toUpperCase()}
           </button>
         )}
-        {/* the logo is only the logo: tapping it does nothing (the bottom bar moves between tabs) */}
-        <span className="header-home" aria-hidden="true">
+        {/* the tree logo goes Home from anywhere (on Home: back to the top) */}
+        <button className="header-home" onClick={goHome} aria-label={ja ? "ホームへ" : "Go to home"}>
           <img src="/brand/vedank-mark.png" alt="" className="header-mark" />
-        </span>
+        </button>
         <div className="header-title">
           {/^VedAnk/.test(headerTitle ?? "") ? (
             /* the app's own name as a wordmark, in the logo's lettering and teal */
