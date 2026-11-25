@@ -539,10 +539,10 @@ export function CrossMath({ lang, sound, celebrate }: Props) {
             if (!c) return <span key={i} className="cm-empty" />;
             if (c.t === "op") return <span key={i} className="cm-op" data-op={c.o}><span>{c.o}</span></span>;
             if (c.t === "eq") return <span key={i} className="cm-eq"><span>=</span></span>;
-            if (!c.blank) return <span key={i} className="cm-num mono">{c.v}</span>;
+            if (!c.blank) return <span key={i} className={`cm-num mono${c.v >= 100 ? " n3" : ""}`}>{c.v}</span>;
             const st = stateOf(i);
             return (
-              <button key={i} data-cm={i} className={`cm-cell${sel === i ? " sel" : ""}${st ? ` ${st}` : ""}${solved ? " ok" : ""}${popped === i ? " pop" : ""}${drag?.over === i ? " drop" : ""}${drag?.from === i ? " lifted" : ""}`}
+              <button key={i} data-cm={i} className={`cm-cell${(filled[i] ?? 0) >= 100 ? " n3" : ""}${sel === i ? " sel" : ""}${st ? ` ${st}` : ""}${solved ? " ok" : ""}${popped === i ? " pop" : ""}${drag?.over === i ? " drop" : ""}${drag?.from === i ? " lifted" : ""}`}
                 onClick={tapOnly(() => tapCell(i))}
                 onPointerDown={(e) => onDown(e, filled[i], i)} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}
                 aria-label={filled[i] === null ? (ja ? "空きマス" : "blank") : String(filled[i])}>

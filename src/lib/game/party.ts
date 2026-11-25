@@ -36,7 +36,7 @@ export const PARTY_GAMES: PartyGame[] = ["turf", "turfteam", "tower", "tug", "bu
    Most points (tiles held + line bonuses + finale captures) when the clock
    stops wins. "turfteam" is the same game as red vs white: a teammate's tile
    is already yours, and the team's tiles and lines are scored together. */
-export const TURF_MS = 90_000;
+export const TURF_MS = 150_000;
 export const TURF_FINALE_MS = 15_000;
 export const TURF_LOCK_MS = 10_000;
 export const TURF_SHIELD_MS = 5_000;
@@ -52,16 +52,16 @@ export const turfGoldTiles = (n: number) => [n + 1, 2 * n - 2, (n - 2) * n + 1, 
    gold block that counts double; a wrong answer hands you a wrecking ball
    to drop on any rival's tower (−1 block); in the last TOWER_BOSS_MS every
    block counts double. Tallest tower when the gong sounds wins. */
-export const TOWER_MS = 90_000;
+export const TOWER_MS = 150_000;
 export const TOWER_BOSS_MS = 15_000;
 export const TOWER_GOLD_EVERY = 4;
 export const PARTY_ROOM_MAX = 50;
 export const PARTY_COUNTDOWN_MS = 3500;
 
-export const TUG_MS = 90_000;
+export const TUG_MS = 150_000;
 export const TUG_WIN = 6;            /* team-average answers ahead */
 
-export const BUZZ_QS = 10;
+export const BUZZ_QS = 25;
 export const BUZZ_Q_MS = 15_000;     /* a question nobody gets moves on after this */
 export const BUZZ_GAP_MS = 2200;     /* "Riko got it!" before the next one */
 
@@ -73,7 +73,7 @@ export const BINGO_POOL = 14;
 export type RaceGame = "space" | "river";
 export const isRaceGame = (g: PartyGame): g is RaceGame => g === "space" || g === "river";
 export const RACE_GOAL: Record<RaceGame, number> = { space: 15, river: 12 };
-export const RACE_MS = 120_000;        /* cards are drawn from the first 14 calls, so lines come in time */
+export const RACE_MS = 180_000;        /* cards are drawn from the first 14 calls, so lines come in time */
 
 /* `done`: answers so far (tug); for bingo, the marked cells as a 9-bit mask */
 export type PartyPlayer = { name: string; joinedAt: number; slot: number; team: 0 | 1; done: number };

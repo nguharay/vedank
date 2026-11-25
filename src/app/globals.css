@@ -4827,3 +4827,6 @@ header .header-home + .header-title{ margin-left:-10px; }
 .cm-mode button{ border:0; background:none; font:inherit; font-weight:900; font-size:13px; padding:6px 16px; border-radius:999px; color:var(--muted); cursor:pointer; }
 .cm-mode button.on{ background:var(--ink); color:var(--surface); }
 .cm-mode button.on:last-child{ background:#e8452c; color:#fff; }
+
+/* Cross Math: three-digit numbers (Hard) a size smaller so they sit inside the square */
+.cm-num.n3, .cm-cell.n3{ font-size:clamp(10px, 3.3vw, 16px); letter-spacing:-.04em; }
