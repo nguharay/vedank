@@ -30,7 +30,7 @@ import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getAdminSession } from "@/lib/admin";
-import { createPartyRoom, joinPartyRoom, getPartyRoom, startPartyRoom, answerPartyRoom, switchPartyGame, throwPartyRoom } from "@/lib/game/partyOnline";
+import { createPartyRoom, joinPartyRoom, getPartyRoom, startPartyRoom, answerPartyRoom, switchPartyGame, throwPartyRoom, targetPartyRoom } from "@/lib/game/partyOnline";
 import type { PartyGame } from "@/lib/game/party";
 import { TOPIC_BY_ID } from "@/lib/game/topics";
 
@@ -301,6 +301,7 @@ export async function partyRoomAction(code: string) { return getPartyRoom(await 
 export async function partyStartAction(code: string) { return startPartyRoom(await requireUserId(), String(code ?? "")); }
 export async function partySwitchAction(code: string, game: PartyGame) { return switchPartyGame(await requireUserId(), String(code ?? ""), game); }
 export async function partyThrowAction(code: string, targetKey: string) { return throwPartyRoom(await requireUserId(), String(code ?? ""), String(targetKey ?? "")); }
+export async function partyTargetAction(code: string, round: number, steps: string) { return targetPartyRoom(await requireUserId(), String(code ?? ""), Math.floor(Number(round)), String(steps ?? "")); }
 export async function partyAnswerAction(code: string, idx: number, answer: number) {
   return answerPartyRoom(await requireUserId(), String(code ?? ""), Number(idx), Number(answer));
 }

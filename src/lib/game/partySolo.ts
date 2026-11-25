@@ -25,6 +25,7 @@ import {
   isTurfGame, turfN, turfCapture, turfQuestion, turfMiss, turfIsMine, turfLocked, turfGoldTiles, turfLinesThrough, turfOwnerId, turfVal,
   type PartyGame, type PartyPlayer, type PartyState,
 } from "./party";
+import { targetInfo, targetPuzzle, tRun, tAttemptStr, TARGET_GRACE_MS, type TStep } from "./target";
 
 export type SoloLevel = 0 | 1 | 2;
 export const SOLO_LEVELS: { id: SoloLevel; en: string; ja: string; icon: string }[] = [
@@ -55,6 +56,18 @@ const TOWER_THROW_MS = 1600;      /* a CPU drops its ball this long after earnin
    (which shields the tile it was after) */
 const TURF_PACE = [5600, 4100, 3000];
 const TURF_SLIP = [4, 5, 7];
+/* target hunt: when a CPU sends its answer (ms into the round) and how often
+   (out of 100) it is the exact one */
+const TARGET_PACE = [52_000, 36_000, 24_000];
+const TARGET_HIT = [45, 70, 90];
+function nearMiss(nums: number[], reach: Map<number, TStep[]>, target: number, h: number): TStep[] | null {
+  /* a route that does not pass through the target on the way */
+  const ok = (s?: TStep[]) => !!s && !tRun(nums, s)!.pool.slice(nums.length, -1).includes(target);
+  for (let d = 1 + (h % 3); d < target; d++) {
+    for (const v of [target + d, target - d]) { const s = reach.get(v); if (ok(s)) return s!; }
+  }
+  return null;
+}
 const CPU_NAMES: [string, string][] = [["Ray", "レイ"], ["Mimi", "ミミ"], ["Taro", "タロウ"]];
 
 /* a small deterministic hash so a CPU's timing is fixed for a given question */
@@ -173,6 +186,26 @@ function turfPick(st: PartyState, id: string, habit: number, k: number, n: numbe
 export function soloTick(st: PartyState, now: number, level: SoloLevel): PartyState {
   if (partyStatus(st, now) !== "playing" || st.startAt === null) return st;
   const t = now - st.startAt;
+
+  if (st.game === "target") {
+    /* Each CPU, each round: at its moment it either finds the shortest way
+       (how often depends on the level) or settles for a near miss. */
+    const info = targetInfo(st.seed, st.startAt, st.wins, now);
+    if (info.phase !== "play") return st;
+    const pz = targetPuzzle(st.seed, info.r);
+    let wins = st.wins;
+    Object.entries(st.players).filter(([id]) => id.startsWith("cpu:")).forEach(([id, p], i) => {
+      if (wins.some((w) => w?.startsWith(`${info.r}|${id}|`))) return;
+      const h = hash(st.seed, p.slot, info.r);
+      let at = info.start + TARGET_PACE[level] * [0.85, 1.0, 1.2][i % 3] * (0.7 + (h % 60) / 100);
+      /* someone hit it: the rest scramble before the countdown runs out */
+      if (info.hitBy && info.hitBy !== id) at = Math.min(at, info.endsAt - TARGET_GRACE_MS * (0.2 + ((h >> 8) % 60) / 100));
+      if (now < at) return;
+      const steps = h % 100 < TARGET_HIT[level] ? pz.best : nearMiss(pz.nums, pz.reach, pz.target, h);
+      if (steps) wins = [...wins, tAttemptStr(info.r, id, at, steps)];
+    });
+    return wins === st.wins ? st : { ...st, wins };
+  }
 
   if (st.game === "tower") {
     /* Each CPU "answers" on a fixed schedule: answer k lands at k × pace
@@ -300,4 +333,12 @@ export function soloTick(st: PartyState, now: number, level: SoloLevel): PartySt
     return players === st.players ? st : { ...st, players, wins };
   }
   return st;
+}
+
+/* Target Hunt: my attempt for the round on now (the same checks the server makes) */
+export function soloTarget(st: PartyState, now: number, round: number, steps: TStep[]): PartyState {
+  if (st.game !== "target" || st.startAt === null || partyStatus(st, now) !== "playing") return st;
+  const info = targetInfo(st.seed, st.startAt, st.wins, now);
+  if (info.phase !== "play" || info.r !== round || !tRun(targetPuzzle(st.seed, round).nums, steps)) return st;
+  return { ...st, wins: [...st.wins, tAttemptStr(round, SOLO_ME, now, steps)] };
 }
