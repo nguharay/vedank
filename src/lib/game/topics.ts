@@ -1826,7 +1826,7 @@ export const TOPICS: Topic[] = [
     tip: "Work out every Digit Sum in your head!",
     tipJa: "数字和は 頭の中で 出そう！",
     gen: (diff, stage) => {
-      /* The first question of each stage: the player draws the design (pp.205–206). The
+      /* Every question of a stage: the player draws the design (pp.205–206). The
          tables come out of a shuffled bag of 1–9, so no table repeats until
          every one has been drawn. Stages 1–2 show each step of the table with
          its product; from stage 3 no step is shown — the player writes the
@@ -1882,7 +1882,7 @@ export const TOPICS: Topic[] = [
       ];
     },
     gen: (diff, stage) => {
-      /* The first question of each stage: the player makes the design (pp.208–209): tap
+      /* Every question of a stage: the player makes the design (pp.208–209): tap
          every box of one digit in the square. 9 is left out — it fills 21
          boxes. Stages 1–2 show the digit sums in the boxes; from stage 3 the
          boxes are blank, as in the circle lesson: the player works out

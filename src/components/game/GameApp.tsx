@@ -1111,11 +1111,13 @@ export function GameApp({
   function newStageQuestion(topic: Topic, n: number, q: number) {
     wrongRunRef.current = 0;
     const diff = STAGE_DIFF[n - 1] as Difficulty;
-    /* design lessons: the first question of a stage is the drawing, the
-       rest are quick digit-sum questions */
-    const problem = topic.draws && q === 0
+    /* design lessons: every question of a stage is a design to draw (join the
+       digit sums on the circle, or colour the square), each on a different
+       table / digit from the lesson's bag; DS(a × b) sums stay in Blitz and
+       the daily mix */
+    const problem = topic.draws
       ? topic.gen(diff, n)
-      : freshProblem(topic.id, () => topic.gen(diff, topic.draws ? undefined : n));
+      : freshProblem(topic.id, () => topic.gen(diff, n));
     const mode =
       n === 1
         ? weightedPick<Mode>([["type", 1], ["choice", 2], ["truefalse", 2]])
